@@ -1,0 +1,370 @@
+<title>Migration Accelerator — The Story</title>
+<style>
+  :root {
+    --bg: #EEF1EE;
+    --paper: #F5F7F4;
+    --ink: #16232B;
+    --ink-soft: #4B5B57;
+    --ink-faint: #7C8C86;
+    --accent: #B75A28;
+    --accent-soft: #B75A28;
+    --line: #C9D2C8;
+    --panel: #E4E9E1;
+    --panel-line: #D2DACC;
+    --good: #3D6B4F;
+    --pending: #96702E;
+    --shadow: 0 1px 0 rgba(22,35,43,0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10161A;
+      --paper: #141C21;
+      --ink: #E9EEEA;
+      --ink-soft: #A6B6AE;
+      --ink-faint: #6F8079;
+      --accent: #E08A52;
+      --accent-soft: #E08A52;
+      --line: #2A3630;
+      --panel: #182220;
+      --panel-line: #2C3A33;
+      --good: #7FBA95;
+      --pending: #D8AE68;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10161A; --paper: #141C21; --ink: #E9EEEA; --ink-soft: #A6B6AE; --ink-faint: #6F8079;
+    --accent: #E08A52; --accent-soft: #E08A52; --line: #2A3630; --panel: #182220; --panel-line: #2C3A33;
+    --good: #7FBA95; --pending: #D8AE68; --shadow: none;
+  }
+  :root[data-theme="light"] {
+    --bg: #EEF1EE; --paper: #F5F7F4; --ink: #16232B; --ink-soft: #4B5B57; --ink-faint: #7C8C86;
+    --accent: #B75A28; --accent-soft: #B75A28; --line: #C9D2C8; --panel: #E4E9E1; --panel-line: #D2DACC;
+    --good: #3D6B4F; --pending: #96702E; --shadow: 0 1px 0 rgba(22,35,43,0.04);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+    line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .sans { font-family: Optima, Candara, "Segoe UI", "Noto Sans", -apple-system, BlinkMacSystemFont, sans-serif; }
+  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace; }
+  .page { max-width: 62rem; margin: 0 auto; padding: 4.5rem 1.75rem 6rem; }
+
+  .masthead { margin-bottom: 3.25rem; }
+  .eyebrow {
+    font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent);
+    font-weight: 600; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; flex: none; }
+  h1.title { font-size: clamp(2rem, 4.4vw, 2.85rem); line-height: 1.1; letter-spacing: -0.01em; margin: 0.75rem 0 0.9rem; text-wrap: balance; font-weight: 700; }
+  .subhead { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; color: var(--ink-soft); font-size: 1.05rem; max-width: 42rem; text-wrap: pretty; }
+
+  .routeline { display: flex; align-items: center; gap: 0.5rem; margin: 3rem 0; color: var(--ink-faint); }
+  .routeline::before, .routeline::after { content: ""; flex: 1; height: 1px; background: repeating-linear-gradient(to right, var(--line) 0, var(--line) 5px, transparent 5px, transparent 10px); }
+  .routeline .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-faint); flex: none; }
+
+  section.entry { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1.5rem 2rem; margin-bottom: 3.25rem; }
+  .entry .coord { padding-top: 0.3rem; }
+  .coord .num { font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace; font-size: 0.95rem; color: var(--accent); letter-spacing: 0.02em; }
+  .coord .kicker { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin-top: 0.3rem; max-width: 6rem; }
+  .entry .body p { margin: 0 0 0.9rem; }
+  .entry .body p:last-child { margin-bottom: 0; }
+  .lede { font-size: 1.08rem; color: var(--ink); }
+
+  ul.plain, ol.plain { margin: 0.9rem 0; padding-left: 1.2rem; }
+  ul.plain li, ol.plain li { margin-bottom: 0.45rem; }
+  ul.plain li:last-child, ol.plain li:last-child { margin-bottom: 0; }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1.1rem 0 1.3rem; font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; }
+  .flow .step { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 3px; padding: 0.42rem 0.75rem; font-size: 0.88rem; color: var(--ink); white-space: nowrap; }
+  .flow .step.new { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .flow .arrow { color: var(--ink-faint); font-size: 0.9rem; }
+
+  .example { border-left: 2px solid var(--accent); padding: 0.15rem 0 0.15rem 1rem; font-style: italic; color: var(--ink-soft); margin-top: 1rem; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--panel-line); border-radius: 4px; overflow: hidden; margin: 1.2rem 0 0.5rem; }
+  .compare .col { padding: 1.1rem 1.3rem; }
+  .compare .col + .col { border-left: 1px solid var(--panel-line); }
+  .compare .old { background: var(--paper); }
+  .compare .new { background: var(--panel); }
+  .compare .label { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin-bottom: 0.7rem; display: block; }
+  .compare .new .label { color: var(--accent); }
+  .compare ul { margin: 0; padding-left: 1.1rem; font-size: 0.94rem; }
+  .compare li { margin-bottom: 0.55rem; }
+  .compare li:last-child { margin-bottom: 0; }
+  @media (max-width: 640px) { .compare { grid-template-columns: 1fr; } .compare .col + .col { border-left: none; border-top: 1px solid var(--panel-line); } }
+
+  .audience { display: grid; gap: 0.9rem; margin: 1.1rem 0; }
+  .aud-card { display: grid; grid-template-columns: 9.5rem 1fr; gap: 0.3rem 1.2rem; padding: 0.9rem 0; border-top: 1px solid var(--line); }
+  .aud-role { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-weight: 600; font-size: 0.92rem; padding-top: 0.1rem; }
+  .aud-desc { font-size: 0.98rem; color: var(--ink-soft); }
+  @media (max-width: 560px) { .aud-card { grid-template-columns: 1fr; } }
+
+  .lenses { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.3rem 0 0.5rem; }
+  @media (max-width: 700px) { .lenses { grid-template-columns: 1fr; } }
+  .lens { border-top: 2px solid var(--ink); padding-top: 1rem; }
+  .lens.bd { border-top-color: var(--accent); }
+  .lens h3 { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.2rem; color: var(--ink-faint); }
+  .lens .who { font-size: 0.85rem; color: var(--ink-faint); margin-bottom: 0.8rem; font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; }
+  .lens .pitch { font-style: italic; color: var(--ink); font-size: 1rem; margin-bottom: 0.9rem; text-wrap: pretty; }
+  .lens ul { margin: 0; padding-left: 1.1rem; font-size: 0.93rem; color: var(--ink-soft); }
+  .lens li { margin-bottom: 0.5rem; }
+
+  .mini-head { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin: 1.7rem 0 0.6rem; }
+  .entry .body > .mini-head:first-child { margin-top: 0; }
+  .next-step { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--panel-line); font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.85rem; color: var(--ink-faint); }
+  .next-step strong { color: var(--accent); }
+  .cap-list { margin: 0; padding-left: 1.1rem; font-size: 0.93rem; color: var(--ink-soft); }
+  .cap-list li { margin-bottom: 0.5rem; }
+  .cap-list li:last-child { margin-bottom: 0; }
+  .cap-list li.new { color: var(--ink); font-weight: 600; }
+  .cap-list li.new .tag { font-family: ui-monospace, monospace; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 0.05rem 0.35rem; margin-left: 0.4rem; font-weight: 600; }
+
+  .qa-list { margin-top: 1.4rem; border-top: 1px solid var(--line); }
+  .qa-row { display: grid; grid-template-columns: 1fr auto; gap: 0.4rem 1rem; align-items: baseline; padding: 0.95rem 0; border-bottom: 1px solid var(--line); }
+  .qa-row .question { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-weight: 600; font-size: 0.97rem; grid-column: 1; }
+  .qa-row .verdict { grid-column: 2; font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.55rem; border-radius: 2px; white-space: nowrap; height: fit-content; }
+  .verdict.yes { color: var(--good); border: 1px solid var(--good); }
+  .verdict.qualified { color: var(--pending); border: 1px solid var(--pending); }
+  .qa-row .answer { grid-column: 1 / -1; font-size: 0.95rem; color: var(--ink-soft); margin: 0.15rem 0 0; }
+
+  .caveat { margin-top: 1.4rem; padding: 0.9rem 1.1rem; background: var(--panel); border: 1px solid var(--panel-line); border-radius: 4px; font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.88rem; color: var(--ink-soft); }
+  .caveat strong { color: var(--ink); }
+
+  footer { margin-top: 4rem; padding-top: 1.4rem; border-top: 1px solid var(--line); font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.78rem; color: var(--ink-faint); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+  ::selection { background: var(--accent); color: var(--paper); }
+</style>
+
+<div class="page">
+
+  <div class="masthead">
+    <div class="eyebrow sans">Internal positioning notes · Not for external distribution</div>
+    <h1 class="title">Migration Accelerator — The Story</h1>
+    <p class="subhead">Where it fits, what it does, why it matters, who wants it, how to use it — and the go-to-market story built on top of all five.</p>
+  </div>
+
+  <section class="entry">
+    <div class="coord">
+      <div class="num mono">00</div>
+      <div class="kicker">Where this fits</div>
+    </div>
+    <div class="body">
+      <p class="lede">Before the platform: Publicis Sapient runs the migration, not just the software. Strategy, environment assessment, and delivery sit under one team on every engagement — the Accelerator is the evidence layer that runs underneath all three, not a separate product bolted onto the front of the pitch.</p>
+      <div class="flow">
+        <span class="step">Strategy &amp; business case</span><span class="arrow">→</span>
+        <span class="step">Environment assessment</span><span class="arrow">→</span>
+        <span class="step">Delivery &amp; build</span>
+      </div>
+      <p>Concretely, it plugs in at more than one point. The Virtual Lab ingests the business case decks, briefs, and goals documents a client already has and extracts them into structured strategy — so the engagement's strategy work starts from the client's actual context, not a blank workshop. Separately, the environment assessment reads the client's live platform directly. Both feed the same delivery team that owns the build — and, for the first time, that team can now carry a migration all the way to a live cutover instead of handing off a spec and stepping back.</p>
+      <p class="caveat sans"><strong>Why this matters for the pitch:</strong> the differentiator isn't "we have a migration tool." A competitor can build one of those. It's that the tool is load-bearing across a consulting engagement we already run end to end — strategy through a live cutover — which is a harder thing to replicate than a feature.</p>
+    </div>
+  </section>
+
+  <div class="routeline"><span class="dot"></span></div>
+
+  <section class="entry">
+    <div class="coord">
+      <div class="num mono">01</div>
+      <div class="kicker">What it does</div>
+    </div>
+    <div class="body">
+      <p class="lede">It's an AI-assisted platform that runs a MarTech migration engagement end-to-end — point it at a client's email tool (Eloqua, SFMC) and it takes you from raw export all the way through a live, rollback-protected cutover, instead of stopping at a plan.</p>
+      <div class="flow">
+        <span class="step">Ingest the environment</span><span class="arrow">→</span>
+        <span class="step">Model it</span><span class="arrow">→</span>
+        <span class="step">Decide what moves</span><span class="arrow">→</span>
+        <span class="step">Plan the sequence</span><span class="arrow">→</span>
+        <span class="step">Draft the build specs</span><span class="arrow">→</span>
+        <span class="step new">Execute, with rollback</span>
+      </div>
+      <p>Concretely: upload a source export and the platform auto-builds an inventory, an audited health score, and keep/rework/retire calls — then pulls in every dependency an assigned object actually needs, so nothing ships missing a shared asset. From there it drafts a real build requirement for every object, previews the move with a dry run, and — for supported objects — executes it live, with rollback on standby and a verification pass once it's done.</p>
+      <p class="example">In practice: hand it an Eloqua export and a target SFMC org, and you get an inventory, a health score, disposition decisions, a dependency-correct sequencing plan, drafted build specs, and — when you're ready — a live run you can dry-run first and roll back if it doesn't go clean.</p>
+    </div>
+  </section>
+
+  <div class="routeline"><span class="dot"></span></div>
+
+  <section class="entry">
+    <div class="coord">
+      <div class="num mono">02</div>
+      <div class="kicker">Why it matters</div>
+    </div>
+    <div class="body">
+      <p class="lede">Migrations are one of the most labor-intensive, margin-thin things a consultancy sells. The pain is almost entirely manual, unglamorous work: reading through years of undocumented campaigns, tracing what depends on what by hand, and guessing at scope before anyone really knows what's there.</p>
+      <div class="compare">
+        <div class="col old">
+          <span class="label sans">The old way</span>
+          <ul>
+            <li>Scoping is intuition plus client-reported counts — estimates swing widely</li>
+            <li>Discovery means an analyst building inventory docs by hand from exports</li>
+            <li>Planning happens in spreadsheets with no real dependency awareness</li>
+            <li>Shared assets get missed, sequenced wrong, or rebuilt twice</li>
+            <li>The engagement ends in a manual handoff — a spec, and someone else's afternoon</li>
+          </ul>
+        </div>
+        <div class="col new">
+          <span class="label sans">With the Accelerator</span>
+          <ul>
+            <li>A health score comes straight from an automated audit of the actual environment</li>
+            <li>Inventory and object descriptions generate automatically on ingest</li>
+            <li>Assigning a campaign pulls its full dependency closure with it</li>
+            <li>A shared asset is built once, in the earliest wave that needs it</li>
+            <li>Supported objects can be dry-run, executed, and verified without a manual rebuild</li>
+          </ul>
+        </div>
+      </div>
+      <p>Speed is part of the payoff. The bigger shift is that decisions, dependencies, and now the cutover itself stop living in one analyst's head and start living in the system, which is what makes the engagement estimable, reviewable, and repeatable across teams.</p>
+    </div>
+  </section>
+
+  <div class="routeline"><span class="dot"></span></div>
+
+  <section class="entry">
+    <div class="coord">
+      <div class="num mono">03</div>
+      <div class="kicker">Who wants it</div>
+    </div>
+    <div class="body">
+      <p class="lede">Two audiences, for two different reasons.</p>
+      <div class="audience">
+        <div class="aud-card">
+          <div class="aud-role sans">Delivery teams</div>
+          <div class="aud-desc">Solution architects, migration leads, analysts, and engineers already staffed on a migration. For them it's a faster, less error-prone way to do the job they already have — less time spent building inventory docs and chasing dependencies by hand, more time on the judgment calls that need a human, and for the first time, a real path to executing the cutover instead of just planning it.</div>
+        </div>
+        <div class="aud-card">
+          <div class="aud-role sans">BD &amp; sales</div>
+          <div class="aud-desc">A live, demoable capability set — not slideware — for winning migration engagements. A data-backed complexity assessment produced during presales is a materially different pitch than a promise to figure it out after signature.</div>
+        </div>
+        <div class="aud-card">
+          <div class="aud-role sans">Ideal client</div>
+          <div class="aud-desc">Enterprise accounts migrating between major marketing automation platforms, with a sizable, messy, under-documented environment (roughly 500–2,000+ objects) — exactly where manual discovery pain is worst and the platform's advantage is largest.</div>
+        </div>
+      </div>
+      <p class="caveat sans"><strong>Being straight about today's boundary:</strong> clients don't log into the platform directly yet — they receive exported reports and review decisions in working sessions. It's a delivery and presales instrument first, not (yet) a client-facing portal.</p>
+    </div>
+  </section>
+
+  <div class="routeline"><span class="dot"></span></div>
+
+  <section class="entry">
+    <div class="coord">
+      <div class="num mono">04</div>
+      <div class="kicker">How to use it</div>
+    </div>
+    <div class="body">
+      <ol class="plain">
+        <li><strong class="sans">Presales.</strong> Run a prospect's raw extract through the platform before the SOW is signed. Walk into the scoping conversation with an actual health score and object count instead of a rough order of magnitude — it changes both the credibility and the accuracy of the estimate.</li>
+        <li><strong class="sans">Delivery.</strong> Run the live engagement through it start to finish — ingestion, disposition decisions, dependency-aware sequencing, generated build specs, and for supported objects, the cutover itself — so analyst and documentation hours go down without cutting corners on rigor.</li>
+        <li><strong class="sans">BD enablement.</strong> Use it as the live proof point in a pitch: show a real environment turning into a real plan, and where it applies, a real dry run, in real time, rather than describing the capability in the abstract.</li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="routeline"><span class="dot"></span></div>
+
+  <section class="entry">
+    <div class="coord">
+      <div class="num mono">05</div>
+      <div class="kicker">The GTM story</div>
+    </div>
+    <div class="body">
+      <p class="lede">Three things need answering before this becomes a deck: what we're actually selling, what the differentiator story is, and who owns sharpening which half of it.</p>
+
+      <div class="mini-head sans">What we need to sell</div>
+      <p>We're selling two bundled things: the migration itself, done faster and with less risk (what's on the SOW), and live proof — not slideware — that we run migrations differently than a generalist competitor would (what wins the deal before the SOW exists). Internally, that's delivery buying back margin on thin-margin work, and BD buying a wedge that's demonstrable on the first call instead of promised for later.</p>
+
+      <div class="mini-head sans">The differentiator story</div>
+      <p>Same underlying capability, two different pitches: to a client, different means faster, better-evidenced, and now actually executed for them; to our own BD, different means what it lets them close and staff differently. Both point at the same platform — neither works told to the wrong room.</p>
+
+      <div class="lenses">
+        <div class="lens customer">
+          <h3>Lens 1 — The client pitch</h3>
+          <div class="who">Told to the client or prospect</div>
+          <p class="pitch">"We'll move faster, every decision about your environment is backed by data we pulled directly from it, and for the pieces that are ready, we'll run the cutover for you with a safety net."</p>
+          <ul>
+            <li><strong class="sans">Make it faster.</strong> Assessment moves from weeks of discovery calls to about an hour; the full plan for a mid-size environment is designed to land inside a single sprint, not a phase.</li>
+            <li><strong class="sans">Make the data better.</strong> Every disposition and every plan traces back to the real environment through a full audit trail — the migration runs on what's actually there, not on one architect's memory of the last similar client.</li>
+            <li><strong class="sans">Lower the risk.</strong> Scope is set from the extracted environment rather than client-reported counts, and supported objects get a dry run and a rollback path before anything goes live.</li>
+          </ul>
+          <div class="next-step"><strong>Next step:</strong> bring this back to Jason to sharpen before it's client-facing.</div>
+        </div>
+        <div class="lens bd">
+          <h3>Lens 2 — The BD pitch</h3>
+          <div class="who">Told internally, to BD</div>
+          <p class="pitch">"Here's how this lets you sell more, and here's the capability behind the promise."</p>
+          <div class="mini-head sans" style="margin-top:0;">How it helps them sell more</div>
+          <ul>
+            <li>Wins competitive RFPs by answering the risk question with evidence instead of reassurance</li>
+            <li>Defends deal economics — the SOW is priced against a demonstrated capability, not padded for the unknown</li>
+            <li>Opens a wedge for follow-on phases (broader live-execution coverage, the next platform pair) once the first engagement proves the model</li>
+            <li>Lets the practice run more concurrent migrations without a one-to-one hire of platform specialists</li>
+          </ul>
+          <div class="mini-head sans">Here are the capabilities, currently</div>
+          <ul class="cap-list">
+            <li>Source ingestion and auto-generated inventory for Eloqua and SFMC (Content Builder)</li>
+            <li class="new">Automated audit scoring — a health score plus an exportable report, on demand <span class="tag">new</span></li>
+            <li>Audited disposition decisions — port, rework, or retire — on every object</li>
+            <li>Dependency-aware destination planning: assigning an object pulls in everything it needs automatically</li>
+            <li>Agent-assisted wave sequencing that builds a shared asset once, in the earliest wave that needs it</li>
+            <li>AI-drafted, human-reviewed migration requirements per object, down to SFMC Journey Builder and SFMC Next specs</li>
+            <li class="new">Dry-run, live execution, and rollback for supported objects, with a post-run verification pass <span class="tag">new</span></li>
+            <li class="new">A design-to-email pipeline — an approved Figma layout goes straight to a built, publishable email <span class="tag">new</span></li>
+            <li>Target platforms live today: SFMC and SFMC Next, with Eloqua as a source</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mini-head sans" style="margin-top:1.7rem;">FAQ — the questions this needs to survive</div>
+      <div class="qa-list">
+        <div class="qa-row">
+          <div class="question sans">Does it let us run a migration with fewer people?</div>
+          <div class="verdict yes">Yes</div>
+          <p class="answer">AI drafts the first-pass inventory, object descriptions, and per-object build requirements — work that today is analyst hours. The analyst reviews and refines instead of authoring from a blank page.</p>
+        </div>
+        <div class="qa-row">
+          <div class="question sans">Does it let us do it faster?</div>
+          <div class="verdict yes">Yes</div>
+          <p class="answer">Environment assessment is designed to go from days-to-weeks down to about an hour; the design target for a mid-size environment is a full plan inside a single sprint.</p>
+        </div>
+        <div class="qa-row">
+          <div class="question sans">Can it actually execute the migration, or just plan it?</div>
+          <div class="verdict yes">Yes — for supported objects</div>
+          <p class="answer">Dry-run first, then live, with rollback and a post-run verification pass. This is the newest piece of the platform, so it isn't exercised on every object type yet — check with delivery on coverage for a given engagement before promising a client the full cutover.</p>
+        </div>
+        <div class="qa-row">
+          <div class="question sans">Does it mean fewer defects?</div>
+          <div class="verdict yes">Yes</div>
+          <p class="answer">Dependency-aware planning won't let a destination ship without what it needs to run — the exact class of miss (a forgotten shared asset, a wrong build order) that spreadsheet planning routinely lets through.</p>
+        </div>
+        <div class="qa-row">
+          <div class="question sans">Does it give us better scoping — less risk?</div>
+          <div class="verdict yes">Yes</div>
+          <p class="answer">The health score comes from an automated audit of the actual extracted environment, not client-reported counts, which is where scoping risk usually starts.</p>
+        </div>
+        <div class="qa-row">
+          <div class="question sans">Does it let us scale without deep platform specialists on every deal?</div>
+          <div class="verdict qualified">Qualified yes</div>
+          <p class="answer">Platform knowledge — field semantics, translation heuristics, vocabulary — lives in the platform, so an analyst without years of Eloqua/SFMC tribal knowledge can operate it credibly. A specialist is still the right person to review and approve; the platform raises the floor, it doesn't replace the judgment call.</p>
+        </div>
+      </div>
+
+      <div class="next-step"><strong>Next step:</strong> bring the capability list and the six answers above to Brett — the current, honest version of that conversation.</div>
+
+      <div class="caveat sans"><strong>One honest caveat on where the capability actually lives:</strong> two engines feed this offering today. The older, fully spec-governed core handles ingestion, planning, and drafted build specs. A newer, faster-moving engine handles the audit scoring, live execution with rollback, and the Figma-to-email pipeline — real, working code, but not yet merged into the primary codebase or carried through the same review process. We're positioning them as one offering because the client shouldn't have to care which engine did what. Delivery should — know which piece you're standing behind on a given engagement, and don't promise live execution on an object type nobody's actually run it against yet.</div>
+
+      <div class="caveat sans"><strong>One honest caveat for whoever finalizes the GTM numbers:</strong> the speed figures above are the platform's design targets, grounded in what's actually built today — they aren't yet backed by measured results from a live engagement. Worth closing that gap (instrument time-to-assessment, track automation-level outcomes) before these numbers go into an external deck.</div>
+
+      <div class="caveat sans"><strong>For John:</strong> this section — both lenses, the capability list, and the FAQ — is the raw material for the client-facing configurator. Worth a short sync before it gets built out further.</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Migration Accelerator — positioning working draft</span>
+    <span>Blended against ma-migrator + project-conduit, August 18, 2026</span>
+  </footer>
+
+</div>
