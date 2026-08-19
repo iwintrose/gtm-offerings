@@ -1,0 +1,934 @@
+<title>Migration Accelerator — Publicis Sapient</title>
+<style>
+  :root {
+    --paper: #FFFFFF; --ground: #F7F4F0; --ink: #17140F; --ink-soft: #57534D; --ink-faint: #8B857D;
+    --line: #E7E2DB; --coral: #EE3D23; --coral-ink: #C42E17; --coral-soft: rgba(238,61,35,0.09); --on-coral: #FFFFFF;
+    --teal: #0E7C74; --teal-soft: rgba(14,124,116,0.1); --good: #2E7D5B;
+    --shadow: 0 20px 50px -24px rgba(23,20,15,0.30); --shadow-soft: 0 8px 24px -14px rgba(23,20,15,0.22);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #1A1613; --ground: #131110; --ink: #F4F1EC; --ink-soft: #B4ADA3; --ink-faint: #837B71;
+      --line: #2E2A24; --coral: #FF5A3C; --coral-ink: #FF7358; --coral-soft: rgba(255,90,60,0.15); --on-coral: #1A0d08;
+      --teal: #3FC2B8; --teal-soft: rgba(63,194,184,0.14); --good: #6FBF97;
+      --shadow: 0 24px 60px -22px rgba(0,0,0,0.7); --shadow-soft: 0 10px 30px -16px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #FFFFFF; --ground: #F7F4F0; --ink: #17140F; --ink-soft: #57534D; --ink-faint: #8B857D;
+    --line: #E7E2DB; --coral: #EE3D23; --coral-ink: #C42E17; --coral-soft: rgba(238,61,35,0.09); --on-coral: #FFFFFF;
+    --teal: #0E7C74; --teal-soft: rgba(14,124,116,0.1); --good: #2E7D5B;
+    --shadow: 0 20px 50px -24px rgba(23,20,15,0.30); --shadow-soft: 0 8px 24px -14px rgba(23,20,15,0.22);
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1613; --ground: #131110; --ink: #F4F1EC; --ink-soft: #B4ADA3; --ink-faint: #837B71;
+    --line: #2E2A24; --coral: #FF5A3C; --coral-ink: #FF7358; --coral-soft: rgba(255,90,60,0.15); --on-coral: #1A0d08;
+    --teal: #3FC2B8; --teal-soft: rgba(63,194,184,0.14); --good: #6FBF97;
+    --shadow: 0 24px 60px -22px rgba(0,0,0,0.7); --shadow-soft: 0 10px 30px -16px rgba(0,0,0,0.6);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Söhne", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace; }
+
+  .psbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 60px;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 clamp(1rem, 4vw, 2.5rem);
+    background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line);
+  }
+  .wm { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; font-size: 0.98rem; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
+  .wm .tick { width: 12px; height: 12px; background: var(--coral); display: inline-block; border-radius: 2px; flex: none; }
+  .wm b { font-weight: 700; }
+  .bar-right { display: flex; align-items: center; gap: 0.6rem; }
+  .cta {
+    font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none;
+    background: var(--coral); color: var(--on-coral); border: 1px solid var(--coral); border-radius: 100px;
+    padding: 0.5rem 1rem; white-space: nowrap; transition: transform .1s, filter .2s; display: inline-flex; align-items: center; gap: 0.4rem;
+  }
+  .cta:hover { filter: brightness(1.05); } .cta:active { transform: translateY(1px); }
+  .tbtn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink-soft); cursor: pointer; font-family: ui-monospace, monospace; font-size: 0.72rem; }
+  .tbtn:hover { color: var(--ink); border-color: var(--coral); }
+  @media (max-width: 620px) { .cta .cta-long { display: none; } }
+  .progress { position: fixed; top: 60px; left: 0; height: 2px; background: var(--coral); width: 0; z-index: 60; transition: width .1s linear; }
+
+  .chap { padding: clamp(4.5rem, 12vh, 9rem) clamp(1.4rem, 6vw, 5rem); border-bottom: 1px solid var(--line); position: relative; }
+  .chap.band { background: var(--ground); }
+  .wrap { max-width: 70rem; margin: 0 auto; width: 100%; }
+  .wrap-tight { max-width: 54rem; }
+
+  .eyebrow { font-family: ui-monospace, monospace; font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--coral); font-weight: 600; margin-bottom: 1.3rem; display: flex; align-items: center; gap: 0.6rem; }
+  .chap-num { font-size: clamp(3rem, 9vw, 6.5rem); font-weight: 700; line-height: 0.8; letter-spacing: -0.04em; color: var(--line); position: absolute; top: clamp(2rem,6vh,4rem); right: clamp(1.4rem,6vw,5rem); pointer-events: none; }
+  @media (max-width: 720px) { .chap-num { font-size: 3rem; opacity: 0.7; } }
+
+  h1 { font-size: clamp(2.6rem, 7vw, 5.4rem); line-height: 0.98; letter-spacing: -0.03em; margin: 0; font-weight: 700; text-wrap: balance; }
+  h2 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.02; letter-spacing: -0.025em; margin: 0 0 1.2rem; font-weight: 700; text-wrap: balance; }
+  .lede { font-size: clamp(1.1rem, 1.9vw, 1.4rem); line-height: 1.5; color: var(--ink-soft); max-width: 44rem; text-wrap: pretty; }
+  .accent { color: var(--coral); }
+  strong, b { color: var(--ink); }
+
+  html.js .rv { opacity: 0; transform: translateY(20px); transition: opacity .8s cubic-bezier(.4,0,.2,1), transform .8s cubic-bezier(.4,0,.2,1); }
+  html.js .rv.in { opacity: 1; transform: none; }
+  html.js .rv.d1 { transition-delay: .08s; } html.js .rv.d2 { transition-delay: .16s; } html.js .rv.d3 { transition-delay: .24s; } html.js .rv.d4 { transition-delay: .32s; }
+
+  .cover { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding-top: 60px; }
+  .cover .prepared { margin-top: 2rem; font-size: 0.9rem; color: var(--ink-faint); font-family: ui-monospace, monospace; letter-spacing: 0.04em; }
+  .cover .prepared b { color: var(--ink); }
+  .rule { height: 4px; width: 64px; background: var(--coral); border-radius: 2px; margin: 1.8rem 0; }
+  .scrollcue { position: absolute; bottom: 1.6rem; left: 50%; transform: translateX(-50%); font-family: ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+  .scrollcue .ln { width: 1px; height: 28px; background: var(--line); position: relative; overflow: hidden; }
+  .scrollcue .ln::after { content: ""; position: absolute; top: -70%; left: 0; width: 100%; height: 70%; background: var(--coral); animation: drop 2s ease-in-out infinite; }
+  @keyframes drop { 0%{top:-70%} 60%,100%{top:100%} }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 2rem; }
+  .chip { border: 1px solid var(--line); border-radius: 100px; padding: 0.55rem 1rem; font-size: 0.92rem; color: var(--ink); background: var(--paper); display: inline-flex; align-items: center; gap: 0.5rem; }
+  .chip .x { color: var(--coral); font-weight: 700; }
+
+  .cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+  @media (max-width: 800px) { .cards3 { grid-template-columns: 1fr; } }
+  .pcard { border: 1px solid var(--line); border-top: 3px solid var(--coral); border-radius: 12px; padding: 1.3rem 1.4rem; background: var(--paper); box-shadow: var(--shadow-soft); }
+  .pcard .pk { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .pcard p { margin: 0; font-size: 0.95rem; color: var(--ink-soft); line-height: 1.5; }
+
+  /* ---------- proof, in a Sapient-style gradient panel ---------- */
+  .proof-panel {
+    margin-top: 2rem; border-radius: 20px; padding: clamp(1.6rem, 4vw, 2.6rem);
+    background: linear-gradient(115deg, var(--teal) 0%, var(--teal) 38%, var(--coral) 100%);
+    position: relative; overflow: hidden;
+  }
+  .proof-panel::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.5;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 34px);
+  }
+  .proof { border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); background: var(--paper); position: relative; transform: translateY(0); }
+  .proof-bar { display: flex; align-items: center; gap: 0.7rem; padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--line); background: var(--ground); }
+  .proof-bar .pd { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .proof-bar .pt { font-size: 0.85rem; color: var(--ink-soft); } .proof-bar .pt b { color: var(--ink); }
+  .proof-body { padding: 1.6rem; min-height: 300px; display: flex; flex-direction: column; }
+  .proof-cta { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; flex: 1; text-align: center; color: var(--ink-soft); }
+  .proof-result { display: none; }
+  .proof.revealed .proof-cta { display: none; }
+  .proof.revealed .proof-result { display: block; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.4rem; }
+  @media (max-width: 640px) { .metrics { grid-template-columns: 1fr; } }
+  .metric { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem; background: var(--ground); }
+  .metric .mn { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .metric .ml { font-size: 0.8rem; color: var(--ink-faint); margin-top: 0.45rem; font-family: ui-monospace, monospace; letter-spacing: 0.03em; }
+  .metric .gauge-ring { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; margin-right: 0.5rem;
+    background: conic-gradient(var(--teal) calc(var(--pct,0) * 1%), var(--line) 0); vertical-align: middle; }
+  .metric .gauge-ring span { background: var(--ground); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.72rem; }
+  .dep { border-top: 1px dashed var(--line); padding-top: 1.2rem; }
+  .dep-h { font-size: 0.78rem; font-family: ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 0.8rem; }
+  .dep-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+  .node { border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.8rem; font-size: 0.88rem; background: var(--paper); opacity: 0; transform: translateY(6px); }
+  .node.root { border-color: var(--coral); box-shadow: inset 0 0 0 1px var(--coral); font-weight: 650; }
+  .node .tag { font-size: 0.64rem; font-family: ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--coral); margin-left: 0.4rem; }
+  .arrow { color: var(--ink-faint); }
+  .proof.revealed .node { animation: pop .5s forwards; }
+  .proof.revealed .node:nth-child(1){animation-delay:.05s} .proof.revealed .node:nth-child(3){animation-delay:.35s} .proof.revealed .node:nth-child(4){animation-delay:.5s} .proof.revealed .node:nth-child(5){animation-delay:.65s} .proof.revealed .node:nth-child(6){animation-delay:.8s} .proof.revealed .node:nth-child(7){animation-delay:.95s}
+  @keyframes pop { to { opacity: 1; transform: none; } }
+  .proof-foot { margin-top: 1.3rem; font-size: 0.95rem; color: var(--ink); font-weight: 600; opacity: 0; display: flex; align-items: center; }
+  .proof.revealed .proof-foot { animation: pop .5s 1.2s forwards; }
+  .proof-foot .accent { color: var(--coral); }
+  .proof-status { display: inline-flex; align-items: center; gap: 0.5rem; font-family: ui-monospace, monospace; font-size: 0.78rem; margin-top: 0.8rem; color: var(--good); opacity: 0; }
+  .proof.revealed .proof-status { animation: pop .5s 1.4s forwards; }
+  .proof-status .lv { width: 7px; height: 7px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 25%, transparent); }
+  .proof-note { font-size: 0.78rem; color: rgba(255,255,255,0.85); margin-top: 1.1rem; font-style: italic; position: relative; }
+
+  .deliv { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
+  @media (max-width: 720px) { .deliv { grid-template-columns: 1fr; } }
+  .dcard { border: 1px solid var(--line); border-radius: 12px; padding: 1.3rem 1.4rem; background: var(--paper); display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 1rem; align-items: start; }
+  .dcard .dnum { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--coral); grid-row: 1 / 3; font-weight: 600; }
+  .dcard .dt { font-weight: 650; font-size: 1.05rem; }
+  .dcard .dd { font-size: 0.92rem; color: var(--ink-soft); grid-column: 2; line-height: 1.5; }
+  .dcard.new { border-color: var(--coral); box-shadow: 0 0 0 1px var(--coral); }
+
+  .phases { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 2.2rem; }
+  @media (max-width: 820px) { .phases { grid-template-columns: 1fr 1fr; gap: 1.5rem 1rem; } }
+  @media (max-width: 480px) { .phases { grid-template-columns: 1fr; } }
+  .phase { padding: 0 1.2rem; position: relative; }
+  .phase::before { content: ""; position: absolute; top: 8px; left: 0; right: 0; height: 2px; background: var(--line); }
+  .phase:first-child::before { left: 50%; } .phase:last-child::before { right: 50%; }
+  @media (max-width: 820px) { .phase::before { display: none; } }
+  .phase .pdot { width: 18px; height: 18px; border-radius: 50%; background: var(--paper); border: 3px solid var(--line); position: relative; z-index: 1; margin: 0 auto 1rem; }
+  .band .phase .pdot { background: var(--ground); }
+  .phase:first-child .pdot { border-color: var(--coral); }
+  .phase:last-child .pdot { border-color: var(--teal); }
+  .phase .php { font-family: ui-monospace, monospace; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; }
+  .phase .pht { font-size: 1.1rem; font-weight: 700; text-align: center; margin: 0.2rem 0 0.5rem; }
+  .phase .phb { font-size: 0.85rem; color: var(--ink-soft); text-align: center; line-height: 1.45; }
+  .starthere { display: inline-block; margin-top: 2rem; font-size: 0.85rem; color: var(--coral); font-weight: 600; border: 1px dashed var(--coral); border-radius: 100px; padding: 0.4rem 0.9rem; }
+
+  .why { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.2rem; margin-top: 2rem; }
+  @media (max-width: 800px) { .why { grid-template-columns: 1fr; } }
+  .wcol { border-left: 3px solid var(--coral); padding-left: 1.1rem; }
+  .wcol .wt { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.4rem; }
+  .wcol p { margin: 0; font-size: 0.93rem; color: var(--ink-soft); line-height: 1.5; }
+
+  .next-card { margin-top: 2rem; background: var(--ink); color: var(--paper); border-radius: 18px; padding: clamp(1.8rem, 4vw, 3rem); box-shadow: var(--shadow); }
+  .next-card .nh { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em; margin: 0 0 0.8rem; color: var(--paper); text-wrap: balance; }
+  .next-card p { color: color-mix(in srgb, var(--paper) 78%, transparent); font-size: 1.05rem; line-height: 1.5; max-width: 40rem; margin: 0 0 1.6rem; }
+  .next-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center; }
+  .next-card .cta { font-size: 0.92rem; padding: 0.7rem 1.3rem; }
+  .next-card .cta.line { background: transparent; color: var(--paper); border-color: color-mix(in srgb, var(--paper) 40%, transparent); }
+  .next-meta { margin-top: 1.6rem; padding-top: 1.3rem; border-top: 1px solid color-mix(in srgb, var(--paper) 20%, transparent); font-size: 0.85rem; color: color-mix(in srgb, var(--paper) 65%, transparent); display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; }
+  .next-meta a { color: var(--paper); text-decoration: none; border-bottom: 1px solid var(--coral); }
+
+  footer.pf { padding: 2rem clamp(1.4rem,6vw,5rem); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; font-size: 0.76rem; color: var(--ink-faint); }
+  footer.pf .wm { font-size: 0.85rem; color: var(--ink-soft); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    html.js .rv { opacity: 1 !important; transform: none !important; transition: none; }
+    .scrollcue .ln::after { animation: none; }
+    .proof.revealed .node, .proof.revealed .proof-foot, .proof.revealed .proof-status { animation: none !important; opacity: 1 !important; transform: none !important; }
+  }
+  ::selection { background: var(--coral); color: #fff; }
+
+  .tok.empty { color: var(--coral); background: var(--coral-soft); border-bottom: 1px dashed var(--coral); border-radius: 3px; padding: 0 0.2em; font-family: ui-monospace, "SF Mono", monospace; font-size: 0.85em; white-space: nowrap; }
+  .next-card .tok.empty { color: var(--paper); background: color-mix(in srgb, var(--paper) 20%, transparent); border-bottom-color: color-mix(in srgb, var(--paper) 55%, transparent); }
+
+  .cust { position: fixed; top: 0; right: 0; bottom: 0; width: min(360px, 88vw); z-index: 80; background: var(--paper); border-left: 1px solid var(--line); box-shadow: -20px 0 50px -24px rgba(0,0,0,0.4); transform: translateX(100%); transition: transform .32s cubic-bezier(.6,.02,.2,1); display: flex; flex-direction: column; }
+  .cust.open { transform: none; }
+  .cust-h { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.2rem; border-bottom: 1px solid var(--line); }
+  .cust-h .ct { font-weight: 700; font-size: 1rem; }
+  .cust-h .ct small { display: block; font-weight: 400; font-size: 0.76rem; color: var(--ink-faint); margin-top: 0.15rem; }
+  .cust-x { background: none; border: none; font-size: 1.3rem; color: var(--ink-faint); cursor: pointer; line-height: 1; }
+  .cust-x:hover { color: var(--ink); }
+  .cust-scroll { flex: 1; overflow-y: auto; padding: 1.1rem 1.2rem; }
+  .cust-body { display: flex; flex-direction: column; gap: 0.9rem; }
+  .fld { display: flex; flex-direction: column; gap: 0.3rem; }
+  .fld label { font-size: 0.74rem; font-family: ui-monospace, monospace; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+  .fld input { font-family: inherit; font-size: 0.92rem; color: var(--ink); background: var(--ground); border: 1px solid var(--line); border-radius: 8px; padding: 0.55rem 0.7rem; }
+  .fld input:focus { outline: none; border-color: var(--coral); }
+  .cust-foot { padding: 1rem 1.2rem; border-top: 1px solid var(--line); display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .cust-foot button { font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; border-radius: 8px; padding: 0.5rem 0.8rem; border: 1px solid var(--line); background: transparent; color: var(--ink-soft); }
+  .cust-foot button.primary { background: var(--coral); border-color: var(--coral); color: var(--on-coral); }
+  .cust-foot button:hover { border-color: var(--coral); }
+  .cust-scrim { position: fixed; inset: 0; z-index: 79; background: rgba(0,0,0,0.28); opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .cust-scrim.open { opacity: 1; pointer-events: auto; }
+
+  .bk { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(23,20,15,0.55); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .bk.open { opacity: 1; pointer-events: auto; }
+  .bk-card { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); width: min(560px, 100%); max-height: 92vh; overflow-y: auto; }
+  .bk-h { padding: 1.4rem 1.6rem 0.5rem; }
+  .bk-eyebrow { font-family: ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--coral); font-weight: 600; }
+  .bk-t { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 0.35rem 0 0.25rem; }
+  .bk-s { font-size: 0.92rem; color: var(--ink-soft); margin: 0; line-height: 1.45; }
+  .bk-x { position: absolute; top: 0.9rem; right: 1rem; background: none; border: none; font-size: 1.5rem; line-height: 1; color: var(--ink-faint); cursor: pointer; }
+  .bk-x:hover { color: var(--ink); }
+  .bk-body { padding: 1rem 1.6rem 1.6rem; display: flex; flex-direction: column; gap: 0.85rem; }
+  .bk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+  @media (max-width: 520px) { .bk-row { grid-template-columns: 1fr; } }
+  .bk-field { display: flex; flex-direction: column; gap: 0.3rem; }
+  .bk-field label { font-size: 0.72rem; font-family: ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-faint); }
+  .bk-field label .req { color: var(--coral); }
+  .bk-field input, .bk-field select, .bk-field textarea { font-family: inherit; font-size: 0.92rem; color: var(--ink); background: var(--ground); border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 0.7rem; width: 100%; }
+  .bk-field textarea { resize: vertical; min-height: 60px; }
+  .bk-field input:focus, .bk-field select:focus, .bk-field textarea:focus { outline: none; border-color: var(--coral); }
+  .bk-field.invalid input, .bk-field.invalid select { border-color: var(--coral); background: var(--coral-soft); }
+  .bk-actions { display: flex; gap: 0.7rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
+  .bk-note { font-size: 0.76rem; color: var(--ink-faint); line-height: 1.4; }
+  .bk-cal { text-align: center; padding: 1.2rem 0 0.6rem; }
+  .bk-cal .chk { width: 52px; height: 52px; border-radius: 50%; background: var(--coral); color: var(--on-coral); display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 700; margin-bottom: 0.9rem; }
+  .bk-cal .cta { margin-top: 1.2rem; }
+  .cfg-hint { font-size: 0.72rem; color: var(--coral); background: var(--coral-soft); border-radius: 6px; padding: 0.4rem 0.6rem; }
+
+  .cobrand { display: inline-flex; align-items: center; gap: 0.6rem; margin-bottom: 1.6rem; padding: 0.4rem; border: 1px solid var(--line); border-radius: 100px; background: var(--paper); }
+  .cobrand .mono { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #fff; background: var(--coral); flex: none; }
+  .cobrand .cn { font-weight: 650; font-size: 0.9rem; padding-right: 0.3rem; }
+  .cobrand .cx { font-size: 0.78rem; color: var(--ink-faint); border-left: 1px solid var(--line); padding: 0 0.7rem 0 0.6rem; }
+
+  .lb { border: 1px solid var(--line); border-radius: 10px; padding: 0.9rem 1rem; background: var(--ground); margin-bottom: 1.1rem; }
+  .lb .lb-t { font-weight: 700; font-size: 0.92rem; margin-bottom: 0.15rem; }
+  .lb .lb-s { font-size: 0.76rem; color: var(--ink-faint); margin-bottom: 0.7rem; }
+  .lb .lb-out { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
+  .lb .lb-out input { flex: 1; font-family: ui-monospace, monospace; font-size: 0.74rem; }
+  .lb .lb-copy { border: 1px solid var(--coral); background: var(--coral); color: var(--on-coral); border-radius: 8px; padding: 0 0.7rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+  .lb .lb-recent { margin-top: 0.8rem; }
+  .lb .lb-recent .rl { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.76rem; padding: 0.35rem 0.3rem; border-top: 1px solid var(--line); border-radius: 6px; }
+  .lb .lb-recent .rl.editing { background: var(--coral-soft); }
+  .lb .lb-recent .rl a { color: var(--coral); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .lb .lb-recent .rl-actions { display: flex; align-items: center; gap: 0.15rem; flex: none; }
+  .lb .lb-recent .rl-actions button { border: none; background: none; cursor: pointer; font-size: 0.82rem; line-height: 1; padding: 0.25rem 0.35rem; color: var(--ink-faint); border-radius: 5px; }
+  .lb .lb-recent .rl-actions button:hover { color: var(--coral); background: var(--coral-soft); }
+  .lb-swatch { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); cursor: pointer; padding: 0; }
+  .lb-swatch:hover { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--coral); }
+  .lb-note { font-size: 0.72rem; color: var(--ink-faint); margin-top: 0.7rem; line-height: 1.4; }
+
+  .indbox { margin-top: 1.9rem; border: 1px solid var(--line); border-left: 4px solid var(--coral); border-radius: 12px; padding: 1.3rem 1.5rem; background: var(--ground); }
+  .indbox .ib-k { font-family: ui-monospace, monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--coral); margin-bottom: 0.6rem; }
+  .indbox .ib-uc { margin: 0 0 0.7rem; font-size: 1rem; color: var(--ink-soft); line-height: 1.55; }
+  .indbox .ib-sol { margin: 0; font-size: 1.05rem; color: var(--ink); font-weight: 650; line-height: 1.45; }
+
+  .chooser { position: fixed; inset: 0; z-index: 95; background: var(--paper); display: flex; flex-direction: column; overflow-y: auto; }
+  .chooser[hidden] { display: none; }
+  .expired { position: fixed; inset: 0; z-index: 97; background: var(--ground); display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
+  .expired.on { display: flex; }
+  .expired .xt { font-size: clamp(1.5rem,4vw,2.2rem); font-weight: 700; margin-bottom: 0.6rem; }
+  .expired p { color: var(--ink-soft); max-width: 30rem; }
+</style>
+
+<div class="psbar">
+  <span class="wm"><span class="tick"></span> Publicis <b>Sapient</b></span>
+  <div class="bar-right">
+    <a href="#next" class="cta open-book"><span class="cta-long">Book an&nbsp;</span>environment assessment →</a>
+    <button class="tbtn" id="custBtn" title="Fill in client details" style="width:auto;padding:0 0.7rem;">Customize</button>
+    <button class="tbtn" id="themeBtn" title="Theme">◐</button>
+  </div>
+</div>
+<div class="progress" id="progress"></div>
+
+<div class="cust-scrim" id="custScrim"></div>
+<aside class="cust" id="cust" aria-label="Customize deck">
+  <div class="cust-h"><div class="ct">Customize this page<small>Fill in the blanks — saves automatically</small></div><button class="cust-x" id="custClose" aria-label="Close">×</button></div>
+  <div class="cust-scroll" id="custScroll"><div class="cust-body" id="custBody"></div></div>
+  <div class="cust-foot">
+    <button class="primary" id="custClose2">Done</button>
+    <button id="custExample">Load example</button>
+    <button id="custClear">Clear all</button>
+  </div>
+</aside>
+
+<div class="bk" id="bk" role="dialog" aria-modal="true" aria-label="Book an environment assessment">
+  <div class="bk-card">
+    <button class="bk-x" id="bkClose" aria-label="Close">×</button>
+    <div id="bkStep1">
+      <div class="bk-h">
+        <div class="bk-eyebrow">Environment assessment</div>
+        <div class="bk-t">Book your assessment</div>
+        <p class="bk-s">A few quick details so we come prepared, then pick a time. Takes under a minute.</p>
+      </div>
+      <form class="bk-body" id="bkForm" novalidate>
+        <div class="bk-row">
+          <div class="bk-field" data-f="name"><label for="bf_name">Full name <span class="req">*</span></label><input id="bf_name" type="text" autocomplete="name"></div>
+          <div class="bk-field" data-f="email"><label for="bf_email">Work email <span class="req">*</span></label><input id="bf_email" type="email" autocomplete="email"></div>
+        </div>
+        <div class="bk-row">
+          <div class="bk-field" data-f="company"><label for="bf_company">Company</label><input id="bf_company" type="text" autocomplete="organization"></div>
+          <div class="bk-field" data-f="role"><label for="bf_role">Your role</label><input id="bf_role" type="text"></div>
+        </div>
+        <div class="bk-row">
+          <div class="bk-field" data-f="platform"><label for="bf_platform">Current platform</label>
+            <select id="bf_platform"><option value="">Select…</option><option>Oracle Eloqua</option><option>Salesforce Marketing Cloud</option><option>Marketo</option><option>HubSpot</option><option>Adobe / Pardot</option><option>Other</option><option>Not sure</option></select>
+          </div>
+          <div class="bk-field" data-f="size"><label for="bf_size">Approx. environment size</label>
+            <select id="bf_size"><option value="">Select…</option><option>Under 500 assets</option><option>500–2,000</option><option>2,000–10,000</option><option>10,000+</option><option>Not sure yet</option></select>
+          </div>
+        </div>
+        <div class="bk-field" data-f="timeline"><label for="bf_timeline">Migration timeline</label>
+          <select id="bf_timeline"><option value="">Select…</option><option>Active — next 3 months</option><option>3–6 months</option><option>6–12 months</option><option>Just exploring</option></select>
+        </div>
+        <div class="bk-field" data-f="context"><label for="bf_context">What's prompting the move? <span style="text-transform:none;letter-spacing:0;color:var(--ink-faint)">(optional)</span></label><textarea id="bf_context" placeholder="Contract renewal, platform sunset, consolidation…"></textarea></div>
+        <div class="cfg-hint" id="bkCfgHint" hidden>Presenter: set the destination email in <b>Customize</b> so requests reach your team.</div>
+        <div class="bk-actions">
+          <button type="submit" class="cta">Request my assessment →</button>
+          <span class="bk-note">We'll only use this to prepare for your assessment.</span>
+        </div>
+      </form>
+    </div>
+    <div id="bkStep2" hidden>
+      <div class="bk-h" style="text-align:center;">
+        <div class="bk-cal">
+          <div class="chk">✓</div>
+          <div class="bk-t">Your details are on the way, <span id="bkName">there</span>.</div>
+          <p class="bk-s" id="bkConfirm">We've prepared your request for our team. Now pick a time that works and we'll be ready for you.</p>
+          <a id="bkBooking" class="cta" target="_blank" rel="noopener">Pick a time in our calendar →</a>
+        </div>
+      </div>
+      <div class="bk-body" style="padding-top:0;">
+        <p class="bk-note" style="text-align:center;">Booking opens our Microsoft Bookings calendar in a new tab. Didn't send? <a href="#" id="bkResend" style="color:var(--coral)">Re-open the request</a>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="expired" id="expired">
+  <div><div class="xt">This preview link has expired.</div><p>Please reach out to your Publicis Sapient contact for an up-to-date version.</p></div>
+</div>
+
+<!-- 00 COVER -->
+<section class="chap cover" id="s0">
+  <div class="wrap">
+    <div class="cobrand rv" id="cobrand" hidden><span class="mono" id="coMono">D</span><span class="cn" id="coName">Company</span><span class="cx">with Publicis Sapient</span></div>
+    <div class="eyebrow rv">Publicis Sapient · <span data-ind-slot="tag">Marketing Automation</span></div>
+    <h1 class="rv d1"><span class="tok" data-tok="CLIENT">{{CLIENT}}</span>'s migration should have taken months.<br>We did the first pass in <span class="accent">an afternoon.</span></h1>
+    <div class="rule rv d2"></div>
+    <p class="lede rv d2">Your migration, de-risked from day one — moving off <span class="tok" data-tok="SOURCE_PLATFORM">Eloqua</span> without the months of manual discovery, the scope surprises, or the go-live risk. Here's how we get you there as your delivery partner, not just a tool, and what the first step looks like.</p>
+    <p class="lede rv d2" data-ind-slot="coverSub" style="display:none;"></p>
+    <div class="prepared rv d3" id="preparedLine" hidden>Prepared for <b><span id="preparedCo"></span></b> · Marketing Technology</div>
+  </div>
+  <div class="scrollcue"><span>read on</span><span class="ln"></span></div>
+</section>
+
+<!-- 01 CONTEXT -->
+<section class="chap" id="sctx">
+  <span class="chap-num">01</span>
+  <div class="wrap wrap-tight">
+    <div class="eyebrow rv">01 — How we work with you</div>
+    <h2 class="rv d1">A migration partner first.<br>The Accelerator is how we prove it.</h2>
+    <p class="lede rv d2">Publicis Sapient runs your migration end-to-end — strategy, data, and engineering under one team, not a tool handed off and left to your side of the table. The Migration Accelerator isn't a separate product we're selling; it's the same platform our own delivery teams use to ground every engagement in evidence, from the first conversation through a live cutover.</p>
+    <div class="cards3 rv d3">
+      <div class="pcard"><div class="pk">Strategy &amp; business case</div><p>Our Virtual Lab reads the business case decks, briefs, and goals docs you already have, so strategy starts from your context, not a blank page.</p></div>
+      <div class="pcard"><div class="pk">Environment assessment</div><p>The Accelerator reads your live platform directly and scores it, every asset, every dependency, an audited health check.</p></div>
+      <div class="pcard"><div class="pk">Delivery &amp; build</div><p>One team carries it through, and for supported objects, all the way to a finished cutover with rollback on standby.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 CHALLENGE -->
+<section class="chap band" id="s1">
+  <span class="chap-num">02</span>
+  <div class="wrap wrap-tight">
+    <div class="eyebrow rv">02 — The challenge</div>
+    <h2 class="rv d1">Migrations stall<br>in the dark.</h2>
+    <p class="lede rv d2" id="challengeGeneric">Years of campaigns, built by people who've since moved on. No map of what connects to what. A go-live date that won't move. The hardest part of a migration usually isn't the rebuild, it's not knowing what you actually have before you start.</p>
+    <p class="lede rv d2" data-ind-slot="challengeExtra" style="margin-top:1rem; color:var(--ink);"></p>
+    <div class="chips rv d3" id="uniqueChips">
+      <span class="chip"><span class="x">—</span> Undocumented environment</span>
+      <span class="chip"><span class="x">—</span> Scope you can't confidently size</span>
+      <span class="chip"><span class="x">—</span> Risk of breaking what works</span>
+    </div>
+  </div>
+</section>
+
+<!-- 03 APPROACH -->
+<section class="chap" id="s2">
+  <span class="chap-num">03</span>
+  <div class="wrap">
+    <div class="eyebrow rv">03 — Our approach</div>
+    <h2 class="rv d1">We read your environment first.<br>Then we build the plan.</h2>
+    <p class="lede rv d2">The Migration Accelerator ingests your platform and audits it automatically, turning it into one clear model and a health score, so every decision about what moves, what changes, and what retires is grounded in what's genuinely there.</p>
+    <div class="cards3 rv d3">
+      <div class="pcard"><div class="pk">Faster</div><p>A real, audited read on your whole environment in about an hour, not the usual weeks of discovery.</p></div>
+      <div class="pcard"><div class="pk">Evidence-based</div><p>Every scope and estimate traces back to your actual data, with a full audit trail on every decision.</p></div>
+      <div class="pcard"><div class="pk">Lower risk</div><p>We size, sequence, and where it applies, execute from what's really there, dry-run first, rollback ready.</p></div>
+    </div>
+    <div class="indbox rv d3" id="indBox" style="display:none;">
+      <div class="ib-k">For <span data-ind-slot="tag">Marketing Automation</span></div>
+      <p class="ib-uc" data-ind-slot="useCase"></p>
+      <p class="ib-sol" data-ind-slot="solution"></p>
+    </div>
+  </div>
+</section>
+
+<!-- 04 SEE IT -->
+<section class="chap band" id="s3">
+  <span class="chap-num">04</span>
+  <div class="wrap">
+    <div class="eyebrow rv">04 — See it</div>
+    <h2 class="rv d1">Everything you have, mapped,<br>audited, and ready to move.</h2>
+    <p class="lede rv d2">Point the Accelerator at your environment and it does the archaeology for you: counts every asset, scores its health, and traces what depends on what. Here's a preview of what an assessment surfaces.</p>
+    <p class="lede rv d2" data-ind-slot="proofLine" style="display:none;color:var(--ink);font-weight:600;"></p>
+    <div class="proof-panel rv d3">
+      <div class="proof" id="proof">
+        <div class="proof-bar"><span class="pd"></span><span class="pd"></span><span class="pd"></span><span class="pt">Environment assessment · <b><span class="tok" data-tok="CLIENT">{{CLIENT}}</span></b></span></div>
+        <div class="proof-body">
+          <div class="proof-cta">
+            <p style="max-width:26rem;">A snapshot of what the Accelerator reads from a client's environment, automatically, on day one.</p>
+            <button class="cta" id="revealBtn">Reveal what the Accelerator sees →</button>
+          </div>
+          <div class="proof-result">
+            <div class="metrics">
+              <div class="metric"><div class="mn" id="mObjects">0</div><div class="ml">assets mapped</div></div>
+              <div class="metric"><div style="display:flex;align-items:center;"><div class="gauge-ring" id="gaugeRing" style="--pct:0;"><span id="gaugeNum">0</span></div><div class="ml" style="margin-top:0;">health score</div></div></div>
+              <div class="metric"><div class="mn" id="mDeps">0</div><div class="ml">dependencies traced</div></div>
+            </div>
+            <div class="dep">
+              <div class="dep-h">One campaign, and everything it needs to run</div>
+              <div class="dep-flow">
+                <span class="node root" id="demoRoot">Welcome Series</span>
+                <span class="arrow">→</span>
+                <span id="demoDeps" style="display:contents;"></span>
+              </div>
+            </div>
+            <div class="proof-foot">You choose one campaign. The Accelerator brings <span class="accent">everything it depends on</span> with it, so nothing gets left behind at go-live.</div>
+            <div class="proof-status"><span class="lv"></span> dry run complete · rollback armed</div>
+          </div>
+        </div>
+      </div>
+      <p class="proof-note rv">Preview figures are illustrative until populated with <span class="tok" data-tok="CLIENT" style="color:#fff;">{{CLIENT}}</span>'s actual assessment; the behavior shown is real.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 WHAT YOU GET -->
+<section class="chap" id="s4">
+  <span class="chap-num">05</span>
+  <div class="wrap">
+    <div class="eyebrow rv">05 — What you get</div>
+    <h2 class="rv d1">Deliverables you can act on.</h2>
+    <div class="deliv rv d2">
+      <div class="dcard"><span class="dnum">01</span><span class="dt">Environment assessment</span><span class="dd">A complete, categorized inventory of your marketing estate, surfaced automatically, not hand-built.</span></div>
+      <div class="dcard new"><span class="dnum">02</span><span class="dt">An audited health score</span><span class="dd">An evidence-based read of size, complexity, and risk, the numbers your estimate and business case can stand on.</span></div>
+      <div class="dcard"><span class="dnum">03</span><span class="dt">Dependency-aware migration plan</span><span class="dd">A sequenced plan where shared assets are built once and nothing ships broken.</span></div>
+      <div class="dcard new"><span class="dnum">04</span><span class="dt">A live cutover, where it applies</span><span class="dd">Dry-run first, then executed, with rollback ready and a verification pass once it's done.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 ENGAGEMENT -->
+<section class="chap band" id="s5">
+  <span class="chap-num">06</span>
+  <div class="wrap">
+    <div class="eyebrow rv">06 — How we work together</div>
+    <h2 class="rv d1">Start small. Prove it. Scale.</h2>
+    <p class="lede rv d2">You don't have to commit to the whole migration to see the value. It begins with a focused environment assessment, low commitment, high signal, and grows from there.</p>
+    <div class="phases rv d3">
+      <div class="phase"><div class="pdot"></div><div class="php">Start here</div><div class="pht">Assess</div><div class="phb">A fixed-scope read of your environment, and a health score you can act on.</div></div>
+      <div class="phase"><div class="pdot"></div><div class="php">Design</div><div class="pht">Blueprint</div><div class="phb">What moves, what changes, what retires, decided with you, backed by data.</div></div>
+      <div class="phase"><div class="pdot"></div><div class="php">Sequence</div><div class="pht">Plan</div><div class="phb">A dependency-aware, wave-by-wave plan your teams can execute against.</div></div>
+      <div class="phase"><div class="pdot"></div><div class="php">Build</div><div class="pht">Execute</div><div class="phb">Build-ready specs, and for supported objects, a live cutover with rollback.</div></div>
+    </div>
+    <span class="starthere rv">Your first step is just the assessment.</span>
+  </div>
+</section>
+
+<!-- 07 WHY PS -->
+<section class="chap" id="s6">
+  <span class="chap-num">07</span>
+  <div class="wrap">
+    <div class="eyebrow rv">07 — Why Publicis Sapient</div>
+    <h2 class="rv d1" id="whyHead">Martech depth, plus a platform<br>no one else brings.</h2>
+    <p class="lede rv d1" data-ind-slot="whyLine" style="display:none;"></p>
+    <div class="why rv d2">
+      <div class="wcol"><div class="wt">Deep platform expertise</div><p>Years of hands-on Eloqua and Salesforce Marketing Cloud delivery across global, regulated enterprises.</p></div>
+      <div class="wcol"><div class="wt">A platform, not just hands</div><p>Our AI-powered Accelerator does the discovery, audit, and increasingly the cutover, work that normally burns months of effort.</p></div>
+      <div class="wcol"><div class="wt">End-to-end partnership</div><p>Strategy, data, and engineering under one roof, from the first assessment through go-live and beyond.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 NEXT STEP -->
+<section class="chap band" id="next">
+  <span class="chap-num">08</span>
+  <div class="wrap wrap-tight">
+    <div class="eyebrow rv">08 — The next step</div>
+    <h2 class="rv d1">See what's really in<br>your environment.</h2>
+    <div class="next-card rv d2">
+      <div class="nh">Start with an environment assessment.</div>
+      <p>Even if you're only exploring, you'll walk away with a genuine, audited read on your migration, the size, the risk, the effort, whether or not we go further. No months of discovery required.</p>
+      <div class="next-actions">
+        <a href="#next" class="cta open-book">Book the assessment →</a>
+        <a href="https://www.publicissapient.com" target="_blank" rel="noopener" class="cta line">Explore Publicis Sapient</a>
+      </div>
+      <div class="next-meta">
+        <span>Your contact · <a href="mailto:" data-mailto><span class="tok" data-tok="CONTACT_NAME">{{CONTACT_NAME}}</span></a> · <span class="tok" data-tok="CONTACT_EMAIL">{{CONTACT_EMAIL}}</span></span>
+        <span><a href="https://www.publicissapient.com" target="_blank" rel="noopener">publicissapient.com</a></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="pf">
+  <span class="wm"><span class="tick"></span> Publicis <b>Sapient</b></span>
+  <span>Migration Accelerator, prepared with the Publicis Sapient Marketing Automation practice.</span>
+</footer>
+
+<script>
+(function(){
+  document.documentElement.classList.add('js');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if ('IntersectionObserver' in window && !reduce) {
+    var ro = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); ro.unobserve(e.target);} }); }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('.rv').forEach(function(el){ ro.observe(el); });
+  } else { document.querySelectorAll('.rv').forEach(function(el){ el.classList.add('in'); }); }
+
+  var pg = document.getElementById('progress');
+  function onScroll(){ var h=document.documentElement; var max=h.scrollHeight-h.clientHeight; pg.style.width=(max>0?(h.scrollTop/max*100):0)+'%'; }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  var tb = document.getElementById('themeBtn');
+  function dark(){ var a=document.documentElement.getAttribute('data-theme'); return a?a==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches; }
+  tb.addEventListener('click', function(){ document.documentElement.setAttribute('data-theme', dark()?'light':'dark'); });
+
+  /* ---------- fill-in-the-blanks template ---------- */
+  var FIELDS = [
+    {k:'SOURCE_PLATFORM', label:'Current platform', ph:'e.g. Eloqua'},
+    {k:'TARGET_PLATFORM', label:'Target platform', ph:'e.g. Salesforce Marketing Cloud'},
+    {k:'ASSET_COUNT', label:'Assets mapped (proof number)', ph:'e.g. 4,128'},
+    {k:'DEPENDENCY_COUNT', label:'Dependencies traced (proof number)', ph:'e.g. 9,640'},
+    {k:'HEALTH_SCORE', label:'Health score (proof number, 0-100)', ph:'e.g. 84'},
+    {k:'CONTACT_NAME', label:'Your name', ph:'e.g. Alex Rivera'},
+    {k:'CONTACT_EMAIL', label:'Destination email, where requests are sent', ph:'assessments@publicissapient.com'},
+    {k:'BOOKING_URL', label:'Microsoft Bookings link (optional)', ph:'https://outlook.office365.com/owa/calendar/…/bookings/'},
+    {k:'FORM_ENDPOINT', label:'Form endpoint URL (optional)', ph:'https://prod-xx.logic.azure.com/workflows/…'}
+  ];
+  var DEFAULTS = { SOURCE_PLATFORM:'Eloqua', TARGET_PLATFORM:'Salesforce Marketing Cloud', ASSET_COUNT:'4,128', DEPENDENCY_COUNT:'9,640', HEALTH_SCORE:'62' };
+  var EXAMPLE = { SOURCE_PLATFORM:'Eloqua', TARGET_PLATFORM:'Salesforce Marketing Cloud', ASSET_COUNT:'4,128', DEPENDENCY_COUNT:'9,640', HEALTH_SCORE:'62', CONTACT_NAME:'Alex Rivera', CONTACT_EMAIL:'assessments@publicissapient.com', BOOKING_URL:'https://outlook.office365.com/owa/calendar/MigrationAssessment@publicissapient.com/bookings/' };
+  var COMPANY = '';
+  var KEY = 'ps_ma_configurator_v1';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch(e) { state = {}; }
+  FIELDS.forEach(function(f){ if (state[f.k] === undefined && DEFAULTS[f.k] !== undefined) state[f.k] = DEFAULTS[f.k]; });
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+  function val(k){ return (state[k] != null && String(state[k]).trim() !== '') ? String(state[k]) : ''; }
+  function numOf(k, fb){ var n = parseFloat(val(k).replace(/[^0-9.]/g,'')); return isNaN(n) ? fb : n; }
+  function renderCompany(){
+    var name = COMPANY;
+    document.querySelectorAll('[data-tok="CLIENT"]').forEach(function(el){ el.textContent = name || 'your organization'; el.classList.remove('empty'); });
+    var pl = document.getElementById('preparedLine'), pc = document.getElementById('preparedCo');
+    if (pl && pc){ if (name){ pc.textContent = name; pl.hidden = false; } else { pl.hidden = true; } }
+    var cb = document.getElementById('cobrand');
+    if (cb){ if (name){ document.getElementById('coName').textContent = name; document.getElementById('coMono').textContent = initials(name).toUpperCase(); cb.hidden = false; } else { cb.hidden = true; } }
+  }
+  function renderTokens(){
+    FIELDS.forEach(function(f){
+      var v = val(f.k), empty = (v === '');
+      var disp = empty ? '{{'+f.k+'}}' : v;
+      document.querySelectorAll('[data-tok="'+f.k+'"]').forEach(function(el){ el.textContent = disp; el.classList.toggle('empty', empty); });
+    });
+    var email = val('CONTACT_EMAIL');
+    var subj = encodeURIComponent('Environment assessment' + (COMPANY ? ' — ' + COMPANY : ''));
+    document.querySelectorAll('[data-mailto]').forEach(function(a){ a.setAttribute('href', 'mailto:' + email + '?subject=' + subj); });
+    renderCompany();
+  }
+  function buildPanel(){
+    var body = document.getElementById('custBody'); if (!body) return; body.innerHTML = '';
+    FIELDS.forEach(function(f){
+      var wrap = document.createElement('div'); wrap.className = 'fld';
+      var lab = document.createElement('label'); lab.textContent = f.label; lab.setAttribute('for','fld_'+f.k);
+      var inp = document.createElement('input'); inp.id = 'fld_'+f.k; inp.value = state[f.k] || ''; inp.placeholder = f.ph;
+      inp.addEventListener('input', function(){ state[f.k] = inp.value; save(); renderTokens(); });
+      wrap.appendChild(lab); wrap.appendChild(inp); body.appendChild(wrap);
+    });
+  }
+  var cust = document.getElementById('cust'), scrim = document.getElementById('custScrim');
+  function openCust(){ cust.classList.add('open'); scrim.classList.add('open'); }
+  function closeCust(){ cust.classList.remove('open'); scrim.classList.remove('open'); }
+  var cbtn = document.getElementById('custBtn'); if (cbtn) cbtn.addEventListener('click', openCust);
+  ['custClose','custClose2'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click', closeCust); });
+  if (scrim) scrim.addEventListener('click', closeCust);
+  var ce = document.getElementById('custExample'); if (ce) ce.addEventListener('click', function(){ state = Object.assign({}, EXAMPLE); save(); buildPanel(); renderTokens(); });
+  var cc = document.getElementById('custClear'); if (cc) cc.addEventListener('click', function(){ state = {}; FIELDS.forEach(function(f){ if (DEFAULTS[f.k] !== undefined) state[f.k] = DEFAULTS[f.k]; }); save(); buildPanel(); renderTokens(); });
+  buildPanel(); renderTokens();
+
+  /* ---------- industry engine ---------- */
+  var INDUSTRIES = {
+    fintech: { label:'Financial Services', blurb:'Consent, disclosures, and audit trails, under the regulator’s eye.',
+      coverSub:'For banks and insurers, a migration is a compliance event as much as a technology one. Here’s how we move you without putting consent, disclosures, or audit trails at risk.',
+      problem:'Your marketing runs under the regulator’s eye. Consent states, suppression lists, disclosure language, and audit trails aren’t metadata, they’re obligations, and in most enterprises they’re spread across a decade of undocumented campaigns.',
+      useCase:'Take a global retail bank moving off Eloqua: thousands of assets across regions, each carrying consent rules and regional disclosures nobody fully documented.',
+      solution:'The Accelerator reads the whole environment and preserves what regulators care about, consent, suppression, disclosures, and audit lineage, so nothing compliance-critical is ever rebuilt from memory.',
+      unique:['Consent & suppression preserved','Disclosure & audit lineage intact','Data residency across regions'],
+      proofLine:'Every object mapped with its consent and suppression state, so the plan is defensible, not just fast.',
+      whyLine:'Deep delivery experience with regulated financial institutions, where a comms error carries real regulatory weight.',
+      whyHead:'Built for regulated financial marketing.',
+      demo:{ root:'Rate-change notification', deps:['Statement email','Disclosure block','Rates data extension','Compliance footer'] } },
+    medtech: { label:'MedTech', blurb:'MLR-approved content and HCP/patient lines that can’t blur.',
+      coverSub:'For medical-device organizations, promotional content is regulated content. Here’s how we migrate without losing MLR-approved assets or blurring the HCP/patient line.',
+      problem:'Every promotional asset has passed MLR review, and HCP and patient audiences must never bleed into each other. A migration that treats them as ordinary emails puts approvals, and compliance, at risk.',
+      useCase:'Take a global device manufacturer moving to Salesforce: campaigns spanning HCP and patient journeys, each asset tied to an approval record.',
+      solution:'The Accelerator carries approved content, claims, and the approval records behind them into the new platform, with HCP and patient audiences kept distinct by construction.',
+      unique:['MLR-approved content preserved','HCP vs. patient separation','Adverse-event & consent handling'],
+      proofLine:'Each asset mapped with its approval lineage, so nothing regulated gets rebuilt off-record.',
+      whyLine:'Hands-on delivery for regulated medical-device marketing, where approval and audience integrity are non-negotiable.',
+      whyHead:'Built for regulated medical-device marketing.',
+      demo:{ root:'HCP product update', deps:['Approved email','ISI safety block','HCP data extension','Brand header'] } },
+    lifesci: { label:'Life Sciences', blurb:'Regulated content, global markets, approval lineage.',
+      coverSub:'For pharma and life sciences, content is regulated and every market differs. Here’s how we migrate without losing approval lineage or market-specific rules.',
+      problem:'Regulated content, many markets, and Veeva-shaped approval workflows. The risk in a migration isn’t rebuilding an email, it’s losing the approval lineage and the market-by-market rules that make it compliant.',
+      useCase:'Take a global pharma brand consolidating onto Salesforce: the same campaign expressed differently per market, each version approved separately.',
+      solution:'The Accelerator preserves approval lineage and market-specific rules as it moves your content, so compliance travels with the campaign, market by market.',
+      unique:['Approval lineage kept auditable','Market-by-market content rules','Regulated content-system integration'],
+      proofLine:'Every market variant mapped with its approval record, so nothing regulated ships unreviewed.',
+      whyLine:'Global life-sciences delivery experience, across regulated markets and content systems.',
+      whyHead:'Built for regulated, multi-market life sciences.',
+      demo:{ root:'Patient support program', deps:['Approved email — US','Approved email — EU','Consent data extension','Localized footer'] } },
+    media: { label:'Media & Entertainment', blurb:'Many brands, millions of subscribers, daily cadence.',
+      coverSub:'For media and entertainment, the challenge is scale and breadth. Here’s how we migrate dozens of brands and millions of subscribers without a visible seam.',
+      problem:'Dozens of brands, millions of subscribers, campaigns shipping daily. Shared assets are reused across franchises, and at your scale a single dropped journey is a visible failure to real audiences.',
+      useCase:'Take a streaming-and-studios group moving onto Salesforce: overlapping brands sharing templates and data, subscriber lifecycles running around the clock.',
+      solution:'The Accelerator maps the whole estate across brands, finds what’s shared, and sequences the rebuild so subscribers never feel the move, and shared assets are built once, not per brand.',
+      unique:['Many brands & business units','Subscriber lifecycle at scale','Shared assets built once across franchises'],
+      proofLine:'Shared assets found and de-duplicated across brands, built once, never twice.',
+      whyLine:'Experience delivering personalization and lifecycle at consumer-media scale.',
+      whyHead:'Built for personalization at media scale.',
+      demo:{ root:'New season launch', deps:['Announcement email','Trailer content block','Subscriber segment','Brand header'] } },
+    transport: { label:'Transportation & Logistics', blurb:'Operational, real-time, triggered comms people rely on.',
+      coverSub:'For transportation and logistics, comms are operational. Here’s how we migrate real-time, triggered journeys without a customer feeling it at the worst possible moment.',
+      problem:'Half your comms are operational, itineraries, disruptions, delay alerts, loyalty. They’re real-time and triggered; a migration that drops one leaves a customer stranded without an update.',
+      useCase:'Take an international airline moving onto Salesforce: hundreds of triggered journeys firing on operational events, each with dependencies nobody has fully traced.',
+      solution:'The Accelerator maps every trigger and its dependencies, so operational journeys are rebuilt intact and in the right order, not rediscovered after go-live.',
+      unique:['Operational & triggered comms','Real-time journeys preserved','Global, multi-region delivery'],
+      proofLine:'Every triggered journey mapped with its dependencies, so nothing operational goes dark at cutover.',
+      whyLine:'Delivery experience where operational comms are mission-critical, not marketing nice-to-haves.',
+      whyHead:'Built for mission-critical operational comms.',
+      demo:{ root:'Flight disruption alert', deps:['Delay email','Rebooking block','Itinerary data extension','Loyalty footer'] } },
+    government: { label:'Government & Public Sector', blurb:'Accessible, secure, plain-language citizen comms.',
+      coverSub:'For government and public sector, citizen comms must be accessible, secure, and plain. Here’s how we migrate while carrying the compliance, not just the templates.',
+      problem:'Citizen communications must be accessible (WCAG / Section 508), secure, multilingual, and plain-spoken. A migration has to carry accessibility and security posture, not just move the content.',
+      useCase:'Take a federal agency consolidating onto Salesforce: citizen notifications across programs and languages, each bound by accessibility and security requirements.',
+      solution:'The Accelerator preserves accessibility, security posture, and multilingual content as it migrates, so citizen comms stay compliant by construction.',
+      unique:['Accessibility (WCAG / Section 508)','Security & data-handling posture','Multilingual, plain-language content'],
+      proofLine:'Content mapped with its accessibility and language requirements, so compliance isn’t rebuilt by hand.',
+      whyLine:'Public-sector delivery experience where accessibility and security are requirements, not options.',
+      whyHead:'Built for accessible, secure citizen comms.',
+      demo:{ root:'Benefits renewal notice', deps:['Notice email','Accessibility footer','Citizen data extension','Translation set'] } },
+    municipal: { label:'Municipal & Civic', blurb:'Alerts and services across departments, on lean teams.',
+      coverSub:'For cities and civic agencies, it’s citizen services on lean teams. Here’s how we consolidate without dropping the alerts and services residents rely on.',
+      problem:'Alerts, services, and notifications span departments, often on lean teams and tight budgets. The migration has to consolidate without dropping the citizen-facing services residents depend on.',
+      useCase:'Take a metro authority consolidating several departments onto one platform: overlapping alert systems and service notifications, built up independently over years.',
+      solution:'The Accelerator maps every department’s comms, finds the overlap, and plans one consolidated estate, so nothing citizen-facing falls through the cracks.',
+      unique:['Multi-department consolidation','Citizen alerts & service comms','Accessible, budget-aware delivery'],
+      proofLine:'Every department’s comms mapped and de-duplicated, so consolidation doesn’t drop a service.',
+      whyLine:'Civic delivery experience, consolidating services for lean public-sector teams.',
+      whyHead:'Built for lean, multi-department civic teams.',
+      demo:{ root:'Service outage alert', deps:['Alert email','SMS block','Resident data extension','Department footer'] } }
+  };
+  var IND_ORDER = ['fintech','medtech','lifesci','media','transport','government','municipal'];
+  var CURRENT_IND = '';
+  var GENERIC_CHIPS = (document.getElementById('uniqueChips')||{}).innerHTML || '';
+
+  function param(name){
+    try { var u = new URLSearchParams(location.search); if (u.has(name)) return u.get(name);
+      var h = new URLSearchParams((location.hash||'').replace(/^#/,'')); if (h.has(name)) return h.get(name); } catch(e){}
+    return null;
+  }
+  function setSlot(name, text){ document.querySelectorAll('[data-ind-slot="'+name+'"]').forEach(function(el){ if (text){ el.textContent = text; el.style.display=''; el.classList.add('in'); } else { el.textContent=''; el.style.display='none'; } }); }
+  function applyIndustry(key){
+    var ind = INDUSTRIES[key]; CURRENT_IND = ind ? key : '';
+    document.querySelectorAll('[data-ind-slot="tag"]').forEach(function(el){ el.textContent = ind ? ind.label : 'Marketing Automation'; });
+    setSlot('coverSub', ind ? ind.coverSub : '');
+    setSlot('challengeExtra', ind ? ind.problem : '');
+    setSlot('useCase', ind ? ind.useCase : '');
+    setSlot('solution', ind ? ind.solution : '');
+    setSlot('proofLine', ind ? ind.proofLine : '');
+    setSlot('whyLine', ind ? ind.whyLine : '');
+    var box = document.getElementById('indBox'); if (box){ box.style.display = ind ? '' : 'none'; if (ind) box.classList.add('in'); }
+    var cg = document.getElementById('challengeGeneric'); if (cg) cg.style.display = ind ? 'none' : '';
+    var wh = document.getElementById('whyHead'); if (wh){ if (!wh.dataset.gen) wh.dataset.gen = wh.innerHTML; wh.innerHTML = ind ? ind.whyHead : wh.dataset.gen; }
+    var dr = document.getElementById('demoRoot'); if (dr) dr.textContent = ind ? ind.demo.root : 'Welcome Series';
+    var dd = document.getElementById('demoDeps');
+    if (dd){ var deps = ind ? ind.demo.deps : ['Welcome email 1','Welcome email 2','Shared data extension','Brand header']; dd.innerHTML=''; deps.forEach(function(x){ var s=document.createElement('span'); s.className='node'; s.innerHTML = x + ' <span class="tag">found</span>'; dd.appendChild(s); }); }
+    var chips = document.getElementById('uniqueChips');
+    if (chips){ if (ind){ chips.innerHTML=''; ind.unique.forEach(function(u){ var s=document.createElement('span'); s.className='chip'; s.innerHTML='<span class="x">—</span> '+u; chips.appendChild(s); }); } else { chips.innerHTML = GENERIC_CHIPS; } }
+  }
+  function initials(name){ var p = name.trim().split(/\s+/); return ((p[0]||'')[0]||'')+(p.length>1?(p[p.length-1][0]||''):''); }
+  function applyAccent(hex){
+    var r = document.documentElement.style;
+    hex = (hex||'').trim();
+    if (!/^#?[0-9a-fA-F]{6}$/.test(hex)) { r.removeProperty('--coral'); r.removeProperty('--coral-soft'); return; }
+    if (hex[0] !== '#') hex = '#' + hex;
+    r.setProperty('--coral', hex); r.setProperty('--coral-soft', hex + '1a');
+  }
+
+  var pCompany=param('company'), pIndustry=param('industry'), pExp=param('exp'), pAccent=param('accent');
+  if (param('rep')) state.CONTACT_EMAIL = param('rep');
+  if (param('repname')) state.CONTACT_NAME = param('repname');
+  if (param('book')) state.BOOKING_URL = param('book');
+  if (param('ep')) state.FORM_ENDPOINT = param('ep');
+
+  var PROSPECT = !!(pIndustry || pCompany);
+  if (pAccent) applyAccent(pAccent);
+  COMPANY = pCompany || '';
+  applyIndustry(pIndustry || '');
+  renderTokens();
+
+  if (pExp){ var t = /^\d+$/.test(pExp) ? parseInt(pExp,10) : Date.parse(pExp); if (t && Date.now() > t){ var ex=document.getElementById('expired'); if(ex) ex.classList.add('on'); } }
+  if (PROSPECT && cbtn) cbtn.style.display='none';
+
+  /* ---------- rep link builder (in Customize panel) ---------- */
+  (function(){
+    var panelBody = document.getElementById('custBody'); if (!panelBody) return;
+    var lb = document.createElement('div'); lb.className = 'lb';
+    var opts = '<option value="">Generic (no industry)</option>' + IND_ORDER.map(function(k){ return '<option value="'+k+'">'+INDUSTRIES[k].label+'</option>'; }).join('');
+    var SWATCHES = [
+      {name:'PS Coral (default)', hex:'EE3D23'}, {name:'Corporate blue', hex:'0B5FFF'}, {name:'Slate navy', hex:'1E293B'},
+      {name:'Forest green', hex:'166534'}, {name:'Deep purple', hex:'5B21B6'}, {name:'Steel gray', hex:'44403C'}
+    ];
+    var swatchHtml = SWATCHES.map(function(s){ return '<button type="button" class="lb-swatch" data-hex="'+s.hex+'" title="'+s.name+'" style="background:#'+s.hex+'"></button>'; }).join('');
+    lb.innerHTML =
+      '<div class="lb-t">Personalize this page</div>' +
+      '<div class="lb-s">Type a client name, pick their industry, the page above updates live.</div>' +
+      '<div class="fld"><label>Company</label><input id="lbCompany" placeholder="e.g. Metrolinx"></div>' +
+      '<div class="fld" style="margin-top:.6rem"><label>Industry</label><select id="lbIndustry" style="font-family:inherit;font-size:.92rem;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:.55rem .7rem">'+opts+'</select></div>' +
+      '<div class="fld" style="margin-top:.6rem"><label>Brand accent colour</label>' +
+        '<div style="display:flex;gap:.5rem;align-items:center;">' +
+          '<input type="color" id="lbAccentPicker" value="#EE3D23" style="width:38px;height:38px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--paper);cursor:pointer;flex:none;">' +
+          '<input id="lbAccent" placeholder="#EE3D23" style="flex:1;">' +
+          '<span id="lbPreviewMono" title="Live monogram preview" style="width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;color:#fff;background:var(--coral);flex:none;">—</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;">'+swatchHtml+'</div>' +
+        '<div class="lb-note" style="margin-top:.5rem;">These are generic starting colours, not verified brand colours, this preview can’t reach outside services to look up a real company’s actual brand. Paste the client’s real hex from their brand guide if you have it.</div>' +
+      '</div>' +
+      '<div class="fld" style="margin-top:.6rem"><label>Expires (only affects a hosted link)</label><input id="lbExp" type="date"></div>' +
+      '<div class="lb-t" style="margin-top:1rem">Link for the hosted version</div>' +
+      '<div class="lb-out"><input id="lbUrl" readonly placeholder="Parameter link appears here"><button class="lb-copy" id="lbCopy">Save &amp; copy</button></div>' +
+      '<div id="lbEditBar" style="display:none;margin-top:.5rem;font-size:.74rem;"><span style="color:var(--coral);font-weight:600;">Editing a saved link</span> · <a href="#" id="lbCancelEdit" style="color:var(--ink-faint);">cancel</a></div>' +
+      '<div class="lb-recent" id="lbRecent"></div>' +
+      '<div class="lb-note"><b>The preview above is live, that’s the personalization working.</b> The link below only auto-personalizes once this page is hosted on your own domain. The claude.ai preview address is not a client-ready share link, and visit / submission tracking also needs the hosted version.</div>';
+    panelBody.parentNode.insertBefore(lb, panelBody);
+
+    var lbCompany=document.getElementById('lbCompany'), lbIndustry=document.getElementById('lbIndustry'),
+        lbAccent=document.getElementById('lbAccent'), lbAccentPicker=document.getElementById('lbAccentPicker'),
+        lbExp=document.getElementById('lbExp'), lbUrl=document.getElementById('lbUrl'),
+        lbCopyBtn=document.getElementById('lbCopy'), lbEditBar=document.getElementById('lbEditBar'), lbCancelEdit=document.getElementById('lbCancelEdit');
+    if (CURRENT_IND) lbIndustry.value = CURRENT_IND;
+    if (COMPANY) lbCompany.value = COMPANY;
+
+    var LKEY='ps_ma_links_v1', links=[]; try{ links=JSON.parse(localStorage.getItem(LKEY)||'[]')||[]; }catch(e){ links=[]; }
+    var editingIndex = null;
+
+    function base(){ return location.origin + location.pathname; }
+    function make(){
+      var q=new URLSearchParams();
+      if(lbCompany.value.trim()) q.set('company', lbCompany.value.trim());
+      if(lbIndustry.value) q.set('industry', lbIndustry.value);
+      if(/^#?[0-9a-fA-F]{6}$/.test(lbAccent.value.trim())) q.set('accent', lbAccent.value.trim().replace(/^#/,''));
+      if(lbExp.value){ var t=Date.parse(lbExp.value+'T23:59:59'); if(t) q.set('exp',t); }
+      if(val('CONTACT_EMAIL')) q.set('rep',val('CONTACT_EMAIL'));
+      if(val('CONTACT_NAME')) q.set('repname',val('CONTACT_NAME'));
+      if(val('BOOKING_URL')) q.set('book',val('BOOKING_URL'));
+      if(val('FORM_ENDPOINT')) q.set('ep',val('FORM_ENDPOINT'));
+      return base()+'?'+q.toString();
+    }
+    function updatePreviewMono(){ var name = lbCompany.value.trim(); document.getElementById('lbPreviewMono').textContent = name ? initials(name).toUpperCase() : '—'; }
+    function renderRecent(){
+      var r=document.getElementById('lbRecent'); if(!r) return; r.innerHTML='';
+      links.slice(0,8).forEach(function(l, idx){
+        var d=document.createElement('div'); d.className='rl' + (editingIndex===idx?' editing':'');
+        var a=document.createElement('a'); a.href=l.url; a.target='_blank'; a.rel='noopener';
+        a.textContent = (l.company||'(no company)') + ' · ' + (INDUSTRIES[l.industry]?INDUSTRIES[l.industry].label:(l.industry||'generic'));
+        var meta=document.createElement('span'); meta.style.cssText='display:flex;align-items:center;gap:.5rem;flex:none;';
+        var date=document.createElement('span'); date.style.color='var(--ink-faint)'; date.textContent=new Date(l.ts).toLocaleDateString();
+        var actions=document.createElement('span'); actions.className='rl-actions';
+        var editBtn=document.createElement('button'); editBtn.type='button'; editBtn.title='Edit this link'; editBtn.textContent='✎';
+        editBtn.addEventListener('click', function(){ startEdit(idx); });
+        var delBtn=document.createElement('button'); delBtn.type='button'; delBtn.title='Delete this link'; delBtn.textContent='🗑';
+        delBtn.addEventListener('click', function(){
+          links.splice(idx,1); try{ localStorage.setItem(LKEY, JSON.stringify(links)); }catch(e){}
+          if (editingIndex===idx) cancelEdit(); else { if (editingIndex!=null && idx<editingIndex) editingIndex--; renderRecent(); }
+        });
+        actions.appendChild(editBtn); actions.appendChild(delBtn);
+        meta.appendChild(date); meta.appendChild(actions);
+        d.appendChild(a); d.appendChild(meta);
+        r.appendChild(d);
+      });
+    }
+    function startEdit(idx){
+      var l = links[idx]; if (!l) return; editingIndex = idx;
+      lbCompany.value = l.company || ''; lbIndustry.value = l.industry || ''; lbAccent.value = l.accent || '';
+      lbAccentPicker.value = l.accent ? '#'+l.accent : '#EE3D23';
+      lbExp.value = l.exp ? new Date(l.exp).toISOString().slice(0,10) : '';
+      COMPANY = lbCompany.value; renderCompany();
+      applyIndustry(lbIndustry.value); applyAccent(lbAccent.value);
+      updatePreviewMono(); refresh(); renderRecent();
+      lbEditBar.style.display=''; lbCopyBtn.textContent = 'Save changes';
+    }
+    function cancelEdit(){ editingIndex = null; lbEditBar.style.display='none'; lbCopyBtn.textContent = 'Save & copy'; renderRecent(); }
+    if (lbCancelEdit) lbCancelEdit.addEventListener('click', function(e){ e.preventDefault(); cancelEdit(); });
+
+    function refresh(){ lbUrl.value = make(); }
+    lbCompany.addEventListener('input', function(){ COMPANY = lbCompany.value.trim(); renderCompany(); updatePreviewMono(); refresh(); });
+    lbIndustry.addEventListener('change', function(){ applyIndustry(lbIndustry.value); refresh(); });
+    lbAccent.addEventListener('input', function(){
+      applyAccent(lbAccent.value);
+      if (/^#?[0-9a-fA-F]{6}$/.test(lbAccent.value.trim())) { var h=lbAccent.value.trim(); if (h[0]!=='#') h='#'+h; lbAccentPicker.value = h; }
+      refresh();
+    });
+    lbAccentPicker.addEventListener('input', function(){ var hex = lbAccentPicker.value.replace('#',''); lbAccent.value = hex; applyAccent(hex); refresh(); });
+    Array.prototype.slice.call(lb.querySelectorAll('.lb-swatch')).forEach(function(btn){
+      btn.addEventListener('click', function(){ var hex = btn.getAttribute('data-hex'); lbAccent.value = hex; lbAccentPicker.value = '#'+hex; applyAccent(hex); refresh(); });
+    });
+    lbExp.addEventListener('input', refresh);
+    updatePreviewMono(); refresh(); renderRecent();
+
+    document.getElementById('lbCopy').addEventListener('click', function(){
+      var url = make(); lbUrl.value = url;
+      lbUrl.removeAttribute('readonly'); lbUrl.focus(); lbUrl.select();
+      try { lbUrl.setSelectionRange(0, url.length); } catch(e){}
+      var ok = false; try { ok = document.execCommand('copy'); } catch(e){}
+      lbUrl.setAttribute('readonly','');
+      if (!ok && navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(function(){}, function(){}); ok = true; }
+      var entry = {
+        url: url, company: lbCompany.value.trim(), industry: lbIndustry.value,
+        accent: /^#?[0-9a-fA-F]{6}$/.test(lbAccent.value.trim()) ? lbAccent.value.trim().replace(/^#/,'') : '',
+        exp: lbExp.value ? Date.parse(lbExp.value+'T23:59:59') : null, ts: Date.now()
+      };
+      if (editingIndex != null && links[editingIndex]) { links[editingIndex] = entry; } else { links.unshift(entry); links = links.slice(0,20); }
+      try{ localStorage.setItem(LKEY, JSON.stringify(links)); }catch(e){}
+      cancelEdit();
+      var b=document.getElementById('lbCopy'); b.textContent = ok ? 'Copied' : 'Press ⌘/Ctrl-C'; setTimeout(function(){ b.textContent='Save & copy'; }, 1600);
+    });
+  })();
+
+  /* ---------- booking: form → send → calendar ---------- */
+  var bk = document.getElementById('bk');
+  var bkStep1 = document.getElementById('bkStep1'), bkStep2 = document.getElementById('bkStep2');
+  function openBook(){ if(!bk) return; bkStep1.hidden=false; bkStep2.hidden=true; document.getElementById('bkCfgHint').hidden = !!val('CONTACT_EMAIL'); bk.classList.add('open'); }
+  function closeBook(){ if(bk) bk.classList.remove('open'); }
+  Array.prototype.slice.call(document.querySelectorAll('.open-book')).forEach(function(a){ a.addEventListener('click', function(e){ e.preventDefault(); openBook(); }); });
+  var bkx = document.getElementById('bkClose'); if (bkx) bkx.addEventListener('click', closeBook);
+  if (bk) bk.addEventListener('click', function(e){ if (e.target === bk) closeBook(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeBook(); });
+  var bkResend = document.getElementById('bkResend'); if (bkResend) bkResend.addEventListener('click', function(e){ e.preventDefault(); bkStep2.hidden=true; bkStep1.hidden=false; });
+
+  function fieldVal(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; }
+  function mark(name, bad){ var el=document.querySelector('.bk-field[data-f="'+name+'"]'); if(el) el.classList.toggle('invalid', !!bad); }
+  var form = document.getElementById('bkForm');
+  if (form) form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = fieldVal('bf_name'), email = fieldVal('bf_email');
+    var okName = name.length > 0, okEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+    mark('name', !okName); mark('email', !okEmail);
+    if (!okName || !okEmail) { var f=document.getElementById(!okName?'bf_name':'bf_email'); if(f) f.focus(); return; }
+
+    var data = {
+      name: name, email: email, company: fieldVal('bf_company'), role: fieldVal('bf_role'),
+      current_platform: fieldVal('bf_platform'), environment_size: fieldVal('bf_size'),
+      timeline: fieldVal('bf_timeline'), context: fieldVal('bf_context'),
+      prospect: COMPANY, industry: (INDUSTRIES[CURRENT_IND] ? INDUSTRIES[CURRENT_IND].label : ''),
+      source: 'Migration Accelerator configurator', submitted_at: new Date().toISOString()
+    };
+    function goStep2(){
+      document.getElementById('bkName').textContent = name.split(' ')[0] || 'there';
+      var booking = val('BOOKING_URL'), bl = document.getElementById('bkBooking');
+      if (booking) { bl.href = booking; bl.style.display=''; document.getElementById('bkConfirm').textContent = "We’ve sent your request to our team. Now pick a time that works and we’ll be ready for you."; }
+      else { bl.style.display='none'; document.getElementById('bkConfirm').textContent = "We’ve sent your request to our team, we’ll follow up at " + email + " to find a time."; }
+      bkStep1.hidden = true; bkStep2.hidden = false;
+    }
+    function sendMailto(){
+      var lines = ['New environment-assessment request','',
+        'Name: '+data.name,'Work email: '+data.email,'Company: '+(data.company||'—'),'Role: '+(data.role||'—'),
+        'Current platform: '+(data.current_platform||'—'),'Environment size: '+(data.environment_size||'—'),
+        'Timeline: '+(data.timeline||'—'),'What’s prompting the move: '+(data.context||'—'),
+        '','Prospect: '+(data.prospect||'—'),'Industry: '+(data.industry||'—'),'Sent from the Migration Accelerator configurator.'];
+      var to = val('CONTACT_EMAIL');
+      var href = 'mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent('Assessment request — '+(data.company||name))+'&body='+encodeURIComponent(lines.join('\n'));
+      var a=document.createElement('a'); a.href=href; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); },0);
+    }
+    var endpoint = val('FORM_ENDPOINT');
+    if (endpoint){
+      try {
+        fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) })
+          .then(function(r){ if(!r || !r.ok) throw 0; goStep2(); })
+          .catch(function(){ sendMailto(); goStep2(); });
+      } catch(e){ sendMailto(); goStep2(); }
+    } else { sendMailto(); goStep2(); }
+  });
+
+  /* ---------- proof reveal + count-up ---------- */
+  var proof = document.getElementById('proof'), rb = document.getElementById('revealBtn');
+  function countTo(el, target, dur){
+    if (!el) return; if (reduce){ el.textContent = target.toLocaleString(); return; }
+    var start=null; function step(t){ if(!start)start=t; var p=Math.min((t-start)/dur,1); el.textContent=Math.floor(p*target).toLocaleString(); if(p<1) requestAnimationFrame(step); else el.textContent=target.toLocaleString(); } requestAnimationFrame(step);
+  }
+  function animateGauge(target, dur){
+    var g = document.getElementById('gaugeRing'), n = document.getElementById('gaugeNum');
+    if (reduce){ g.style.setProperty('--pct', target); n.textContent = target; return; }
+    var start=null; function step(t){ if(!start)start=t; var p=Math.min((t-start)/dur,1); var v=Math.floor(p*target); g.style.setProperty('--pct', v); n.textContent=v; if(p<1) requestAnimationFrame(step); } requestAnimationFrame(step);
+  }
+  if (rb) rb.addEventListener('click', function(){
+    proof.classList.add('revealed');
+    countTo(document.getElementById('mObjects'), Math.round(numOf('ASSET_COUNT', 4128)), 1100);
+    countTo(document.getElementById('mDeps'), Math.round(numOf('DEPENDENCY_COUNT', 9640)), 1300);
+    animateGauge(Math.round(numOf('HEALTH_SCORE', 62)), 1200);
+  });
+})();
+</script>
