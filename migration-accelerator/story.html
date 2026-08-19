@@ -1,274 +1,410 @@
 <title>Migration Accelerator — The Story</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #F7F8F6;
-    --paper: #FFFFFF;
-    --ink: #171E22;
-    --ink-soft: #57636A;
-    --ink-faint: #8B959B;
-    --line: #DEE3E1;
-    --panel: #EFF2EF;
-    --panel-line: #DCE2DE;
-    --accent: #1E6E63;
-    --accent-soft: rgba(30,110,99,0.1);
-    --good: #3D7A56;
-    --warn: #A97A2B;
-    --shadow: 0 1px 0 rgba(23,30,34,0.04);
+    --bg: #F5F5F8; --paper: #FFFFFF; --ink: #181721; --ink-soft: #5B5A6B; --ink-faint: #8D8C9B;
+    --line: #E2E1EA; --panel: #EFEEF5; --panel-line: #E2E1EA;
+    --accent: #5B4FA3; --accent-ink: #423876; --accent-soft: rgba(91,79,163,0.09);
+    --good: #2F8058; --warn: #B4842E;
+    --shadow: 0 16px 40px -20px rgba(24,23,33,0.18);
+    --shadow-soft: 0 6px 18px -10px rgba(24,23,33,0.14);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #171D1F; --paper: #1D2427; --ink: #E7ECEA; --ink-soft: #A9B3B1; --ink-faint: #71797A;
-      --line: #2B3335; --panel: #1B2224; --panel-line: #2A3234;
-      --accent: #4FB3A4; --accent-soft: rgba(79,179,164,0.14);
-      --good: #6FBF8E; --warn: #D8AE68; --shadow: none;
+      --bg: #14131C; --paper: #1C1A28; --ink: #ECEBF3; --ink-soft: #ABA9BC; --ink-faint: #716F84;
+      --line: #2C2A3B; --panel: #201E2E; --panel-line: #2C2A3B;
+      --accent: #A79AEE; --accent-ink: #C7BEF5; --accent-soft: rgba(167,154,238,0.14);
+      --good: #5FBF8E; --warn: #E0AC5C;
+      --shadow: 0 20px 50px -20px rgba(0,0,0,0.55); --shadow-soft: 0 8px 22px -12px rgba(0,0,0,0.45);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #171D1F; --paper: #1D2427; --ink: #E7ECEA; --ink-soft: #A9B3B1; --ink-faint: #71797A;
-    --line: #2B3335; --panel: #1B2224; --panel-line: #2A3234;
-    --accent: #4FB3A4; --accent-soft: rgba(79,179,164,0.14);
-    --good: #6FBF8E; --warn: #D8AE68; --shadow: none;
+    --bg: #14131C; --paper: #1C1A28; --ink: #ECEBF3; --ink-soft: #ABA9BC; --ink-faint: #716F84;
+    --line: #2C2A3B; --panel: #201E2E; --panel-line: #2C2A3B;
+    --accent: #A79AEE; --accent-ink: #C7BEF5; --accent-soft: rgba(167,154,238,0.14);
+    --good: #5FBF8E; --warn: #E0AC5C;
+    --shadow: 0 20px 50px -20px rgba(0,0,0,0.55); --shadow-soft: 0 8px 22px -12px rgba(0,0,0,0.45);
   }
   :root[data-theme="light"] {
-    --bg: #F7F8F6; --paper: #FFFFFF; --ink: #171E22; --ink-soft: #57636A; --ink-faint: #8B959B;
-    --line: #DEE3E1; --panel: #EFF2EF; --panel-line: #DCE2DE;
-    --accent: #1E6E63; --accent-soft: rgba(30,110,99,0.1);
-    --good: #3D7A56; --warn: #A97A2B; --shadow: 0 1px 0 rgba(23,30,34,0.04);
+    --bg: #F5F5F8; --paper: #FFFFFF; --ink: #181721; --ink-soft: #5B5A6B; --ink-faint: #8D8C9B;
+    --line: #E2E1EA; --panel: #EFEEF5; --panel-line: #E2E1EA;
+    --accent: #5B4FA3; --accent-ink: #423876; --accent-soft: rgba(91,79,163,0.09);
+    --good: #2F8058; --warn: #B4842E;
+    --shadow: 0 16px 40px -20px rgba(24,23,33,0.18); --shadow-soft: 0 6px 18px -10px rgba(24,23,33,0.14);
   }
 
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
-    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
-    line-height: 1.6; -webkit-font-smoothing: antialiased;
+    font-family: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.55; overflow-x: hidden;
   }
-  .sans { font-family: Optima, Candara, "Segoe UI", "Noto Sans", -apple-system, BlinkMacSystemFont, sans-serif; }
-  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace; }
+  .display { font-family: "Sora", "IBM Plex Sans", sans-serif; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
 
-  .page { max-width: 42rem; margin: 0 auto; padding: clamp(2.6rem, 8vw, 5rem) 1.4rem clamp(4rem, 10vw, 6rem); }
-  .wide { max-width: 52rem; }
+  html.js .rv { opacity: 0; transform: translateY(16px); transition: opacity .6s cubic-bezier(.4,0,.2,1), transform .6s cubic-bezier(.4,0,.2,1); }
+  html.js .rv.in { opacity: 1; transform: none; }
+  html.js .rv.d1 { transition-delay: .06s; } html.js .rv.d2 { transition-delay: .12s; } html.js .rv.d3 { transition-delay: .18s; }
 
-  /* ---------- masthead ---------- */
-  .masthead { margin-bottom: clamp(3rem, 9vw, 5rem); }
+  /* ---------- top bar ---------- */
+  .bar {
+    position: sticky; top: 0; z-index: 40; height: 52px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 clamp(1rem,4vw,2rem); background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px) saturate(1.3);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar-wm { display: flex; align-items: center; gap: 0.55rem; font-weight: 700; font-size: 0.92rem; }
+  .bar-wm .tick { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); flex: none; }
+  .bar-tag { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; color: var(--ink-faint); letter-spacing: 0.04em; }
+  @media (max-width: 560px) { .bar-tag { display: none; } }
+  .bar-right { display: flex; align-items: center; gap: 0.5rem; }
+  .tbtn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); cursor: pointer; font-size: 0.75rem; }
+  .tbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .progress { position: fixed; top: 52px; left: 0; height: 2px; background: var(--accent); width: 0; z-index: 40; transition: width .1s linear; }
+
+  .wrap { max-width: 50rem; margin: 0 auto; padding: 0 clamp(1.1rem, 4vw, 2rem); }
+  .wide { max-width: 60rem; }
+
+  /* ---------- hero ---------- */
+  .hero { min-height: 82vh; display: flex; flex-direction: column; justify-content: center; padding: 2.5rem 0 4rem; position: relative; }
   .eyebrow {
-    font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent);
-    font-weight: 600; display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.2rem;
+    font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 0.55rem; margin-bottom: 1.3rem;
   }
-  .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; flex: none; }
-  h1.title { font-size: clamp(1.9rem, 7vw, 2.7rem); line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 1.1rem; text-wrap: balance; font-weight: 700; }
-  .subhead { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; color: var(--ink-soft); font-size: clamp(0.98rem, 2.4vw, 1.08rem); text-wrap: pretty; }
+  .eyebrow .bead { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); flex: none; }
+  h1.hero-h { font-family: "Sora", sans-serif; font-weight: 800; font-size: clamp(2.1rem, 7vw, 3.6rem); line-height: 1.06; letter-spacing: -0.02em; margin: 0 0 1.2rem; text-wrap: balance; }
+  h1.hero-h .accent { color: var(--accent); }
+  .hero-sub { font-size: clamp(1rem, 2.6vw, 1.16rem); color: var(--ink-soft); max-width: 34rem; text-wrap: pretty; }
+  .scroll-cue { display: flex; align-items: center; gap: 0.5rem; margin-top: 2.6rem; font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+  .scroll-cue .ln { width: 26px; height: 1px; background: var(--ink-faint); position: relative; overflow: hidden; }
+  .scroll-cue .ln::after { content: ""; position: absolute; left: -60%; top: 0; width: 60%; height: 100%; background: var(--accent); animation: drift 1.8s ease-in-out infinite; }
+  @keyframes drift { 0%{left:-60%} 60%,100%{left:100%} }
 
-  /* ---------- section rhythm ---------- */
-  section.beat { margin: clamp(3rem, 9vw, 4.6rem) 0; }
-  section.beat:first-of-type { margin-top: 0; }
-  .beat-eyebrow {
-    font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.72rem; text-transform: uppercase;
-    letter-spacing: 0.1em; color: var(--accent); font-weight: 600; margin-bottom: 0.7rem;
-    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
-  }
-  .beat-eyebrow::after { content: ""; flex: 1 1 16px; min-width: 16px; height: 1px; background: var(--line); }
-  h2.beat-h { font-size: clamp(1.4rem, 4.4vw, 1.85rem); line-height: 1.2; margin: 0 0 1.1rem; letter-spacing: -0.005em; text-wrap: balance; }
-  .beat p { margin: 0 0 1.05rem; font-size: clamp(1rem, 2.4vw, 1.05rem); }
-  .beat p:last-child { margin-bottom: 0; }
-  .lede { font-size: clamp(1.05rem, 2.6vw, 1.16rem); color: var(--ink); }
+  /* ---------- beat rhythm ---------- */
+  .beat { padding: clamp(3.2rem, 9vw, 5.5rem) 0; border-top: 1px solid var(--line); }
+  .beat h2.beat-h { font-family: "Sora", sans-serif; font-weight: 700; font-size: clamp(1.5rem, 4.6vw, 2.15rem); line-height: 1.16; margin: 0 0 0.9rem; letter-spacing: -0.01em; text-wrap: balance; }
+  .beat p.lede { font-size: clamp(1rem, 2.4vw, 1.08rem); color: var(--ink-soft); max-width: 38rem; margin: 0 0 1.6rem; text-wrap: pretty; }
 
-  .transition {
-    font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-style: italic; color: var(--ink-faint);
-    font-size: 0.95rem; text-align: center; margin: clamp(2.2rem, 6vw, 3rem) 0; position: relative;
-  }
-  .transition::before {
-    content: ""; display: block; width: 28px; height: 1px; background: var(--line); margin: 0 auto 1rem;
-  }
+  /* ---------- problem chips ---------- */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 0.65rem; margin: 1.6rem 0; }
+  .chip { background: var(--paper); border: 1px solid var(--line); border-radius: 100px; padding: 0.6rem 1.05rem; font-size: 0.92rem; box-shadow: var(--shadow-soft); }
+  .chip b { color: var(--accent); font-weight: 700; margin-right: 0.3rem; }
+  .close-line { font-size: 1.02rem; color: var(--ink); max-width: 36rem; margin-top: 1.6rem; }
 
-  ul.plain, ol.plain { margin: 0.9rem 0 1.2rem; padding-left: 1.2rem; }
-  ul.plain li, ol.plain li { margin-bottom: 0.55rem; }
-  ul.plain li:last-child, ol.plain li:last-child { margin-bottom: 0; }
-  .cap-list { list-style: none; margin: 1.1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
-  .cap-list li {
-    display: flex; align-items: baseline; gap: 0.7rem; padding: 0.7rem 0; border-top: 1px solid var(--line);
-    font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.95rem;
-  }
-  .cap-list li:last-child { border-bottom: 1px solid var(--line); }
-  .cap-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); flex: none; margin-top: 0.55rem; }
-  .cap-list li.new .cap-dot { background: var(--accent); }
-  .cap-list li.new .cap-txt strong { color: var(--accent); }
-  .cap-txt { color: var(--ink-soft); }
-  .cap-txt strong { color: var(--ink); font-weight: 600; }
-  .cap-tag {
-    font-family: ui-monospace, monospace; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em;
-    color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 0.06rem 0.35rem; margin-left: 0.5rem;
-  }
-  .bonus {
-    margin-top: 1.3rem; padding: 0.95rem 1.1rem; background: var(--panel); border-radius: 6px;
-    border-left: 3px solid var(--accent); font-size: 0.95rem; color: var(--ink-soft);
-  }
-  .bonus strong { color: var(--ink); }
+  /* ---------- route diagram ---------- */
+  .route { display: flex; align-items: flex-start; gap: 0; margin: 2.2rem 0 1rem; overflow-x: auto; padding-bottom: 0.5rem; }
+  .route-node { flex: 1; min-width: 7.2rem; text-align: center; position: relative; padding: 0 0.4rem; }
+  .route-node .rdot { width: 13px; height: 13px; border-radius: 50%; background: var(--paper); border: 2px solid var(--accent); margin: 0 auto 0.7rem; position: relative; z-index: 1; }
+  .route-node .rt { font-weight: 700; font-size: 0.86rem; margin-bottom: 0.3rem; }
+  .route-node .rd { font-size: 0.74rem; color: var(--ink-faint); line-height: 1.35; }
+  .route-line { position: absolute; top: 6px; left: -50%; width: 100%; height: 2px; background: var(--line); z-index: 0; }
+  .route-node:first-child .route-line { display: none; }
+  @media (max-width: 700px) { .route { flex-wrap: nowrap; } .route-node { min-width: 6.4rem; } }
 
-  .compare { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--panel-line); border-radius: 6px; overflow: hidden; margin: 1.3rem 0; }
-  .compare .col { padding: 1rem 1.2rem; background: var(--paper); }
-  .compare .col + .col { border-left: 1px solid var(--panel-line); }
-  .compare .col.new { background: var(--accent-soft); }
-  .compare .label { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-faint); margin-bottom: 0.6rem; display: block; }
-  .compare .col.new .label { color: var(--accent); }
-  .compare ul { margin: 0; padding-left: 1.05rem; font-size: 0.88rem; }
-  .compare li { margin-bottom: 0.5rem; }
-  .compare li:last-child { margin-bottom: 0; }
-  @media (max-width: 560px) {
-    .compare { grid-template-columns: 1fr; }
-    .compare .col + .col { border-left: none; border-top: 1px solid var(--panel-line); }
-  }
+  /* ---------- proof panel ---------- */
+  .proof { margin-top: 2rem; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); box-shadow: var(--shadow); overflow: hidden; }
+  .proof-bar { display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .proof-bar .pd { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .proof-bar .pt { font-size: 0.8rem; color: var(--ink-soft); font-family: "IBM Plex Mono", monospace; }
+  .proof-body { padding: 1.5rem; min-height: 220px; display: flex; flex-direction: column; }
+  .proof-cta { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; flex: 1; text-align: center; color: var(--ink-soft); }
+  .proof-result { display: none; }
+  .proof.on .proof-cta { display: none; } .proof.on .proof-result { display: block; }
+  .btn { font-family: "IBM Plex Sans", sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; border-radius: 9px; padding: 0.65rem 1.2rem; border: 1px solid var(--accent); background: var(--accent); color: #fff; transition: filter .15s, transform .1s; }
+  .btn:hover { filter: brightness(1.06); } .btn:active { transform: translateY(1px); }
+  .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin-bottom: 1.3rem; }
+  @media (max-width: 560px) { .proof-grid { grid-template-columns: 1fr; } }
+  .p-stat { border: 1px solid var(--line); border-radius: 10px; padding: 0.95rem 1rem; background: var(--panel); }
+  .p-stat .ps-n { font-family: "Sora", sans-serif; font-weight: 800; font-size: 1.7rem; }
+  .p-stat .ps-l { font-size: 0.72rem; color: var(--ink-faint); margin-top: 0.2rem; }
+  .gauge-mini { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; margin-right: 0.6rem;
+    background: conic-gradient(var(--accent) calc(var(--pct,0) * 1%), var(--panel-line) 0); transition: background 1s ease; }
+  .gauge-mini span { background: var(--panel); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: "Sora", sans-serif; font-weight: 700; font-size: 0.78rem; }
+  .p-dep { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; font-size: 0.76rem; }
+  .p-node { border: 1px solid var(--line); border-radius: 7px; padding: 0.35rem 0.6rem; background: var(--panel); opacity: 0; transform: translateY(6px); }
+  .p-node.root { border-color: var(--accent); font-weight: 600; }
+  .proof.on .p-node { animation: rise .45s forwards; }
+  .proof.on .p-node:nth-child(2){animation-delay:.15s} .proof.on .p-node:nth-child(3){animation-delay:.3s} .proof.on .p-node:nth-child(4){animation-delay:.45s} .proof.on .p-node:nth-child(5){animation-delay:.6s}
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .p-status { display: inline-flex; align-items: center; gap: 0.5rem; font-family: "IBM Plex Mono", monospace; font-size: 0.8rem; }
+  .p-status .lv { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 25%, transparent); }
+
+  /* ---------- capability cards ---------- */
+  .cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin-top: 1.8rem; }
+  @media (max-width: 820px) { .cap-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 540px) { .cap-grid { grid-template-columns: 1fr; } }
+  .cap-card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.15rem; box-shadow: var(--shadow-soft); }
+  .cap-card .cc-ic { width: 30px; height: 30px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.86rem; margin-bottom: 0.7rem; font-family: "Sora", sans-serif; }
+  .cap-card.new .cc-ic { background: var(--accent); color: #fff; }
+  .cap-card .cc-t { font-weight: 700; font-size: 0.96rem; margin-bottom: 0.35rem; }
+  .cap-card .cc-d { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.45; }
+  .bonus-card { margin-top: 0.9rem; border: 1px dashed var(--accent); border-radius: 12px; padding: 1rem 1.15rem; font-size: 0.88rem; color: var(--ink-soft); background: var(--accent-soft); }
+  .bonus-card strong { color: var(--ink); }
+
+  /* ---------- stat callout ---------- */
+  .stat-block { display: flex; align-items: baseline; gap: 1.2rem; flex-wrap: wrap; margin: 1.8rem 0 1.4rem; }
+  .stat-big { font-family: "Sora", sans-serif; font-weight: 800; font-size: clamp(2.6rem, 9vw, 4rem); color: var(--accent); line-height: 1; }
+  .stat-desc { font-size: 0.98rem; color: var(--ink-soft); max-width: 26rem; }
+  .note-line { font-size: 0.95rem; color: var(--ink-soft); max-width: 36rem; }
+
+  /* ---------- BD cards + comparison ---------- */
+  .use-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin: 1.8rem 0; }
+  @media (max-width: 720px) { .use-grid { grid-template-columns: 1fr; } }
+  .use-card { border-top: 3px solid var(--accent); background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 10px; padding: 1.05rem 1.15rem; box-shadow: var(--shadow-soft); }
+  .use-card .uc-t { font-weight: 700; font-size: 0.98rem; margin-bottom: 0.4rem; }
+  .use-card .uc-d { font-size: 0.86rem; color: var(--ink-soft); line-height: 1.5; }
+
+  .pitch-shift { display: flex; align-items: center; gap: 1.1rem; margin: 1.8rem 0; flex-wrap: wrap; }
+  .ps-col { flex: 1; min-width: 13rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .ps-label { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 0.2rem; }
+  .ps-chip { border-radius: 8px; padding: 0.55rem 0.8rem; font-size: 0.85rem; }
+  .ps-col.old .ps-chip { background: var(--panel); color: var(--ink-soft); border: 1px solid var(--panel-line); }
+  .ps-col.new .ps-chip { background: var(--accent-soft); color: var(--ink); border: 1px solid var(--accent); font-weight: 500; }
+  .ps-arrow { font-size: 1.3rem; color: var(--ink-faint); flex: none; }
+  @media (max-width: 620px) { .ps-arrow { transform: rotate(90deg); align-self: center; } }
 
   .callout {
-    margin: 1.3rem 0; padding: 1rem 1.2rem; border: 1px solid var(--panel-line); border-radius: 6px;
-    background: var(--panel); font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif;
+    margin-top: 1.6rem; padding: 1rem 1.2rem; border-radius: 10px; background: var(--panel); border: 1px solid var(--panel-line);
     font-size: 0.92rem; color: var(--ink-soft); line-height: 1.55;
   }
   .callout strong { color: var(--ink); }
 
-  .qa-list { margin-top: 1.2rem; border-top: 1px solid var(--line); }
-  .qa-row { padding: 1rem 0; border-bottom: 1px solid var(--line); }
-  .qa-row .question {
-    font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-weight: 600; font-size: 0.97rem;
-    display: flex; align-items: baseline; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap;
+  /* ---------- FAQ accordion ---------- */
+  .faq { margin-top: 1.6rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .faq-item { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
+  .faq-q {
+    width: 100%; text-align: left; font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 0.94rem; color: var(--ink);
+    background: none; border: none; cursor: pointer; padding: 0.95rem 1.1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   }
-  .qa-row .verdict {
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace; font-size: 0.68rem; text-transform: uppercase;
-    letter-spacing: 0.05em; padding: 0.18rem 0.5rem; border-radius: 2px; white-space: nowrap; flex: none;
-  }
-  .verdict.yes { color: var(--good); border: 1px solid var(--good); }
-  .verdict.qualified { color: var(--warn); border: 1px solid var(--warn); }
-  .qa-row .answer { font-size: 0.93rem; color: var(--ink-soft); margin: 0.4rem 0 0; }
+  .faq-q .fq-plus { flex: none; font-family: "Sora", sans-serif; font-weight: 400; font-size: 1.2rem; color: var(--accent); transition: transform .2s; }
+  .faq-item.open .fq-plus { transform: rotate(45deg); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+  .faq-a-in { padding: 0 1.1rem 1rem; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.55; }
+  .faq-item.open .faq-a { max-height: 220px; }
+  .faq-verdict { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.15rem 0.5rem; border-radius: 3px; margin-left: 0.6rem; white-space: nowrap; }
+  .faq-verdict.yes { color: var(--good); border: 1px solid var(--good); }
+  .faq-verdict.qualified { color: var(--warn); border: 1px solid var(--warn); }
 
-  .closing { border-top: 2px solid var(--ink); padding-top: 1.6rem; }
-  .closing .note { margin-bottom: 1.3rem; }
-  .closing .note:last-child { margin-bottom: 0; }
-  .closing .note-h { font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.3rem; }
+  /* ---------- closing ---------- */
+  .closing { text-align: center; padding: clamp(3.5rem, 10vw, 6rem) 0 clamp(3rem, 8vw, 4.5rem); }
+  .closing h2 { font-family: "Sora", sans-serif; font-weight: 800; font-size: clamp(1.6rem, 5vw, 2.4rem); line-height: 1.14; margin: 0 auto 1.1rem; max-width: 34rem; text-wrap: balance; }
+  .closing p { color: var(--ink-soft); max-width: 30rem; margin: 0 auto; font-size: 1rem; }
 
   footer.pf {
-    margin-top: clamp(3rem, 8vw, 4.5rem); padding-top: 1.3rem; border-top: 1px solid var(--line);
-    font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.76rem; color: var(--ink-faint);
-    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
+    padding: 1.6rem clamp(1.1rem,4vw,2rem) 2.4rem; font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; color: var(--ink-faint);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid var(--line); max-width: 50rem; margin: 0 auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    html.js .rv { opacity: 1 !important; transform: none !important; transition: none; }
+    .scroll-cue .ln::after { animation: none; }
+    .proof.on .p-node { animation: none !important; opacity: 1 !important; transform: none !important; }
   }
   ::selection { background: var(--accent); color: #fff; }
 </style>
 
-<div class="page">
+<div class="bar">
+  <div class="bar-wm"><span class="tick"></span> Migration Accelerator <span class="bar-tag mono">/ the story</span></div>
+  <div class="bar-right"><button class="tbtn" id="themeBtn" title="Theme">◐</button></div>
+</div>
+<div class="progress" id="progress"></div>
 
-  <div class="masthead">
-    <div class="eyebrow sans">Internal positioning · Migration Accelerator</div>
-    <h1 class="title">Migration Accelerator — The Story</h1>
-    <p class="subhead">What a client is actually up against, how this offering resolves it, what Business Development and Industry Leaders need to turn that into a specific pitch, and where the story runs ahead of what we've proven.</p>
+<section class="hero wrap">
+  <div class="eyebrow rv"><span class="bead"></span> Internal positioning · GTM buy-in</div>
+  <h1 class="hero-h rv d1">Every migration starts with a decade nobody documented.<br>We read it in <span class="accent">an afternoon.</span></h1>
+  <p class="hero-sub rv d2">How Migration Accelerator turns an untrusted platform and a go-live date that won't move into a plan, and increasingly, a finished migration.</p>
+  <div class="scroll-cue rv d3"><span>scroll</span><span class="ln"></span></div>
+</section>
+
+<section class="beat wrap">
+  <p class="lede rv">Every enterprise migration starts the same way.</p>
+  <div class="chip-row rv d1">
+    <span class="chip"><b>—</b>A platform nobody fully trusts</span>
+    <span class="chip"><b>—</b>A decade of undocumented campaigns</span>
+    <span class="chip"><b>—</b>A go-live date that won't move</span>
+  </div>
+  <p class="close-line rv d2">Migration Accelerator starts working before the rebuild, before the plan, at the part everyone dreads: finding out what's actually there.</p>
+</section>
+
+<section class="beat wrap wide">
+  <div class="eyebrow rv"><span class="bead"></span> The mechanism</div>
+  <h2 class="beat-h rv d1">Point it at the platform.<br>Get a plan you can act on.</h2>
+  <p class="lede rv d1">Eloqua or Salesforce Marketing Cloud, in, a build-ready plan out, and for the pieces it's confident about, a finished migration.</p>
+
+  <div class="route rv d2">
+    <div class="route-node"><div class="route-line"></div><div class="rdot"></div><div class="rt">Ingest</div><div class="rd">Every asset, read directly</div></div>
+    <div class="route-node"><div class="route-line"></div><div class="rdot"></div><div class="rt">Audit</div><div class="rd">A live health score</div></div>
+    <div class="route-node"><div class="route-line"></div><div class="rdot"></div><div class="rt">Decide</div><div class="rd">Port, rework, retire, logged</div></div>
+    <div class="route-node"><div class="route-line"></div><div class="rdot"></div><div class="rt">Plan</div><div class="rd">Dependencies pulled automatically</div></div>
+    <div class="route-node"><div class="route-line"></div><div class="rdot"></div><div class="rt">Execute</div><div class="rd">Dry run, then live, rollback ready</div></div>
   </div>
 
-  <section class="beat">
-    <p class="lede">Every enterprise migration starts the same way: a platform nobody fully trusts anymore, a decade of campaigns nobody fully remembers building, and a go-live date that arrives before anyone finishes counting what's actually there.</p>
-    <p>That's the moment this offering exists for. Not the migration itself, the part before it: the months normally spent just finding out what you have, done in an afternoon instead, so the real decisions, what moves, what changes, what finally gets retired, get made on evidence instead of institutional memory and best guesses.</p>
-    <p>This is that story, what it's built on, and how to put it to work.</p>
-  </section>
-
-  <div class="transition">Here's how it actually goes.</div>
-
-  <section class="beat">
-    <div class="beat-eyebrow">The mechanism</div>
-    <h2 class="beat-h">How Migration Accelerator resolves it</h2>
-    <p>Point it at the platform in question, Eloqua or Salesforce Marketing Cloud, and it reads the whole environment directly: every campaign, every asset, every dependency between them. What used to take an analyst weeks of manual documentation now runs in about an hour, and what comes out the other end isn't a guess dressed up as an estimate. It's an audited health score, built from what's actually there.</p>
-    <p>From there, a person still makes the calls that need a person: keep this, rework that, retire the rest. But every decision is logged, and picking one thing pulls in everything it actually depends on, so a plan can't quietly ship a destination that's missing a shared asset it needed to work. The platform drafts a real build requirement for each object, the kind an engineer can start from rather than a summary they'd have to reverse-engineer.</p>
-    <p>And for the pieces it's confident about, it doesn't stop at the plan. It previews the change with a dry run, executes it live against the target platform, and keeps a rollback ready in case anything doesn't land clean. That piece is new, and it's the difference between handing a client a plan and finishing the job.</p>
-  </section>
-
-  <section class="beat">
-    <div class="beat-eyebrow">The capabilities</div>
-    <h2 class="beat-h">What's actually in the box</h2>
-    <p>Everything above breaks down into a short list of concrete pieces. Worth naming them plainly, because Business Development and Industry Leaders will need to know exactly what's provable and what's still catching up to the story:</p>
-    <ul class="cap-list">
-      <li><span class="cap-dot"></span><span class="cap-txt">Source ingestion and automatic inventory for Eloqua and Salesforce Marketing Cloud (Content Builder)</span></li>
-      <li class="new"><span class="cap-dot"></span><span class="cap-txt"><strong>An automated audit</strong>, a health score plus an exportable report, generated on demand<span class="cap-tag">new</span></span></li>
-      <li><span class="cap-dot"></span><span class="cap-txt">Audited disposition decisions, port, rework, or retire, on every object, with full history</span></li>
-      <li><span class="cap-dot"></span><span class="cap-txt">Dependency-aware destination planning: assigning one object pulls in everything it needs</span></li>
-      <li><span class="cap-dot"></span><span class="cap-txt">AI-drafted, human-reviewed build requirements per object, down to Journey Builder and SFMC Next specs</span></li>
-      <li class="new"><span class="cap-dot"></span><span class="cap-txt"><strong>Dry-run, live execution, and rollback</strong> for supported objects, with a verification pass once the run finishes<span class="cap-tag">new</span></span></li>
-    </ul>
-    <div class="bonus"><strong>One more, off to the side:</strong> a design-to-email pipeline that takes an approved Figma layout and turns it into a built, publishable email, no separate rebuild required. It doesn't fit neatly into the migration story, but it's real, and worth knowing about.</div>
-  </section>
-
-  <section class="beat">
-    <div class="beat-eyebrow">The client profile</div>
-    <h2 class="beat-h">Who this fits</h2>
-    <p>The clients where this lands hardest are enterprise accounts migrating between major marketing automation platforms, carrying a sizable, under-documented environment, somewhere in the range of 500 to 2,000-plus objects. That's exactly where the old way of doing this hurts most, and exactly where the gap between our answer and a generalist's guess is largest.</p>
-    <p class="callout"><strong>One honest boundary, worth stating plainly:</strong> clients don't log into the platform themselves yet. They receive the reports, and review the decisions, in working sessions with us. This is a delivery and presales instrument first. A client-facing portal is a real possibility, not a promise we've made yet.</p>
-  </section>
-
-  <div class="transition">Which is where Business Development and Industry Leaders come in.</div>
-
-  <section class="beat wide">
-    <div class="beat-eyebrow">For Business Development and Industry Leaders</div>
-    <h2 class="beat-h">Putting it to work</h2>
-    <p>None of the above is a separate pitch for Business Development and Industry Leaders to invent. It's the pitch, full stop, the same story a client hears. What the team needs isn't a different version of it, it's fluency in this one, plus the tools to make it specific to whoever's actually in the room.</p>
-    <p>That's what the customizer is for. Fill in a client's name and industry, and the story above reframes itself around their real business problem and their real stakes, before it ever reaches an inbox. Presales can run a prospect's raw export through the platform ahead of a scoping call and walk in with a real health score instead of a rough guess. Delivery can run the full engagement through it end to end, cutting analyst hours without cutting rigor. And in a pitch, this is the live proof: a real environment turning into a real plan, and where it applies, a real dry run, in front of the client instead of described to them afterward.</p>
-    <div class="compare">
-      <div class="col">
-        <span class="label sans">The old pitch</span>
-        <ul>
-          <li>A promise to figure out scope after signature</li>
-          <li>An estimate built on intuition and client-reported counts</li>
-          <li>A plan that ends in a manual handoff to engineering</li>
-        </ul>
+  <div class="proof rv d3" id="proof">
+    <div class="proof-bar"><span class="pd"></span><span class="pd"></span><span class="pd"></span><span class="pt">migration-accelerator · live preview</span></div>
+    <div class="proof-body">
+      <div class="proof-cta">
+        <p style="max-width:22rem;margin:0;">A snapshot of what the platform reads from an environment, automatically, on day one.</p>
+        <button class="btn" id="revealBtn">See it work →</button>
       </div>
-      <div class="col new">
-        <span class="label sans">This pitch</span>
-        <ul>
-          <li>A real health score, produced live, in the room</li>
-          <li>Scope set from the actual extracted environment</li>
-          <li>A dry run and, where it applies, a finished cutover</li>
-        </ul>
+      <div class="proof-result">
+        <div class="proof-grid">
+          <div class="p-stat"><div class="ps-n" id="mObjects">0</div><div class="ps-l">objects mapped</div></div>
+          <div class="p-stat" style="display:flex;align-items:center;">
+            <div class="gauge-mini" id="gaugeMini" style="--pct:0;"><span id="gaugeNum">0</span></div>
+            <div><div class="ps-l" style="margin-top:0;">health score</div></div>
+          </div>
+          <div class="p-stat"><div class="ps-n" id="mDeps">0</div><div class="ps-l">dependencies traced</div></div>
+        </div>
+        <div class="p-dep">
+          <span class="p-node root">APAC Onboarding</span>
+          <span class="p-node">Welcome email</span><span class="p-node">Shared data extension</span><span class="p-node">Brand header</span>
+        </div>
+        <div style="margin-top:1.1rem;"><span class="p-status"><span class="lv"></span> dry run complete · rollback armed</span></div>
       </div>
     </div>
-    <p><strong>The one thing worth being careful about:</strong> live execution and rollback are the newest part of the platform, and coverage isn't complete for every object type yet. Don't promise a client live execution on an object type nobody on the team has actually run it against. Check coverage with delivery before that line goes into a proposal.</p>
-  </section>
+  </div>
+</section>
 
-  <section class="beat">
-    <div class="beat-eyebrow">FAQ</div>
-    <h2 class="beat-h">The questions this needs to survive</h2>
-    <div class="qa-list">
-      <div class="qa-row">
-        <div class="question sans">Does it let us run a migration with fewer people?<span class="verdict yes">Yes</span></div>
-        <p class="answer">The AI drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.</p>
-      </div>
-      <div class="qa-row">
-        <div class="question sans">Does it let us do it faster?<span class="verdict yes">Yes</span></div>
-        <p class="answer">Assessment is designed to run in about an hour instead of weeks; a full plan for a mid-size environment is designed to fit inside a single sprint.</p>
-      </div>
-      <div class="qa-row">
-        <div class="question sans">Can it actually execute the migration, or just plan it?<span class="verdict yes">Yes, for supported objects</span></div>
-        <p class="answer">Dry run first, then live, with rollback and a verification pass after. This is the newest capability, so coverage isn't complete yet, check with delivery before promising the full cutover on a specific engagement.</p>
-      </div>
-      <div class="qa-row">
-        <div class="question sans">Does it mean fewer defects?<span class="verdict yes">Yes</span></div>
-        <p class="answer">Dependency-aware planning won't let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely.</p>
-      </div>
-      <div class="qa-row">
-        <div class="question sans">Does it give us better scoping, less risk?<span class="verdict yes">Yes</span></div>
-        <p class="answer">The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.</p>
-      </div>
-      <div class="qa-row">
-        <div class="question sans">Does it let us scale without deep platform specialists on every deal?<span class="verdict qualified">Qualified yes</span></div>
-        <p class="answer">Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve; this raises the floor, it doesn't replace judgment.</p>
-      </div>
+<section class="beat wrap">
+  <div class="eyebrow rv"><span class="bead"></span> The capabilities</div>
+  <h2 class="beat-h rv d1">What's actually built.</h2>
+  <div class="cap-grid rv d2">
+    <div class="cap-card"><div class="cc-ic">In</div><div class="cc-t">Ingestion &amp; inventory</div><div class="cc-d">Automatic, for Eloqua and Salesforce Marketing Cloud (Content Builder).</div></div>
+    <div class="cap-card new"><div class="cc-ic">Au</div><div class="cc-t">Automated audit</div><div class="cc-d">A health score plus an exportable report, generated on demand.</div></div>
+    <div class="cap-card"><div class="cc-ic">De</div><div class="cc-t">Disposition &amp; audit trail</div><div class="cc-d">Port, rework, or retire, on every object, with full history.</div></div>
+    <div class="cap-card"><div class="cc-ic">Pl</div><div class="cc-t">Dependency-aware planning</div><div class="cc-d">Assigning one object pulls in everything it needs, automatically.</div></div>
+    <div class="cap-card"><div class="cc-ic">Sp</div><div class="cc-t">AI-drafted build specs</div><div class="cc-d">Human-reviewed requirements per object, down to Journey Builder specs.</div></div>
+    <div class="cap-card new"><div class="cc-ic">Ex</div><div class="cc-t">Live execution &amp; rollback</div><div class="cc-d">Dry run, then live, with a verification pass once it finishes.</div></div>
+  </div>
+  <div class="bonus-card rv d3"><strong>Also in the toolkit:</strong> a design-to-email pipeline. An approved Figma layout becomes a built, publishable email, no separate rebuild.</div>
+</section>
+
+<section class="beat wrap">
+  <div class="eyebrow rv"><span class="bead"></span> The client profile</div>
+  <h2 class="beat-h rv d1">Who this fits.</h2>
+  <div class="stat-block rv d2">
+    <span class="stat-big">500–2,000+</span>
+    <span class="stat-desc">objects is where this offering's advantage is largest, enterprise accounts migrating between major marketing automation platforms, carrying a sizable, under-documented environment.</span>
+  </div>
+  <p class="note-line rv d3">Today, this runs through us, in working sessions, not a self-serve portal, and that's exactly how it should work for now.</p>
+</section>
+
+<section class="beat wrap wide">
+  <div class="eyebrow rv"><span class="bead"></span> For Business Development and Industry Leaders</div>
+  <h2 class="beat-h rv d1">One story. Here's how to run it.</h2>
+  <p class="lede rv d1">This is the pitch, the same one a client hears. The job is fluency in it, plus the tools to make it specific to whoever's in the room.</p>
+
+  <div class="use-grid rv d2">
+    <div class="use-card"><div class="uc-t">Presales</div><div class="uc-d">Run a prospect's export before the SOW. Walk in with a real health score, not a guess.</div></div>
+    <div class="use-card"><div class="uc-t">Delivery</div><div class="uc-d">Run the full engagement through it, start to finish, and increasingly, the cutover itself.</div></div>
+    <div class="use-card"><div class="uc-t">The pitch</div><div class="uc-d">A real environment becoming a real plan, live, in the room, not described afterward.</div></div>
+  </div>
+
+  <div class="pitch-shift rv d3">
+    <div class="ps-col old">
+      <span class="ps-label">The old pitch</span>
+      <span class="ps-chip">A promise to figure out scope after signature</span>
+      <span class="ps-chip">An estimate built on intuition</span>
+      <span class="ps-chip">A plan that ends in a manual handoff</span>
     </div>
-  </section>
-
-  <section class="beat closing">
-    <div class="beat-eyebrow">Where we stand</div>
-    <div class="note">
-      <div class="note-h sans">The numbers are targets, not results yet</div>
-      <p>The speed figures throughout, the hour-long assessment, the single-sprint plan, are design targets grounded in what's actually built, not numbers pulled from a completed, measured engagement. Worth closing that gap, instrumenting time-to-assessment, tracking real outcomes, before they go into anything client-facing.</p>
+    <div class="ps-arrow">→</div>
+    <div class="ps-col new">
+      <span class="ps-label">This pitch</span>
+      <span class="ps-chip">A real health score, produced live, in the room</span>
+      <span class="ps-chip">Scope set from the actual environment</span>
+      <span class="ps-chip">A dry run, and where it applies, a finished cutover</span>
     </div>
-  </section>
+  </div>
 
-  <footer class="pf">
-    <span>Migration Accelerator — positioning working draft</span>
-    <span>Blended against ma-migrator + project-conduit, August 18, 2026</span>
-  </footer>
+  <p class="note-line rv d3" style="margin-top:1.6rem;">The customizer turns this story into something specific, a client's name, their industry, their stakes, before it ever reaches an inbox. More on that next.</p>
+</section>
 
-</div>
+<section class="beat wrap">
+  <div class="eyebrow rv"><span class="bead"></span> FAQ</div>
+  <h2 class="beat-h rv d1">The questions this needs to survive.</h2>
+  <div class="faq rv d2" id="faq">
+    <div class="faq-item">
+      <button class="faq-q">Does it let us run a migration with fewer people?<span><span class="faq-verdict yes">Yes</span><span class="fq-plus">+</span></span></button>
+      <div class="faq-a"><div class="faq-a-in">The platform drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Does it let us do it faster?<span><span class="faq-verdict yes">Yes</span><span class="fq-plus">+</span></span></button>
+      <div class="faq-a"><div class="faq-a-in">Assessment runs in about an hour instead of weeks. A full plan for a mid-size environment fits inside a single sprint.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Can it actually execute the migration, or just plan it?<span><span class="faq-verdict yes">Yes</span><span class="fq-plus">+</span></span></button>
+      <div class="faq-a"><div class="faq-a-in">For supported objects, the platform previews the change with a dry run, executes it live, and keeps rollback ready if anything doesn't land clean.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Does it mean fewer defects?<span><span class="faq-verdict yes">Yes</span><span class="fq-plus">+</span></span></button>
+      <div class="faq-a"><div class="faq-a-in">Dependency-aware planning won't let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Does it give us better scoping, less risk?<span><span class="faq-verdict yes">Yes</span><span class="fq-plus">+</span></span></button>
+      <div class="faq-a"><div class="faq-a-in">The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q">Does it let us scale without deep platform specialists on every deal?<span><span class="faq-verdict qualified">Qualified yes</span><span class="fq-plus">+</span></span></button>
+      <div class="faq-a"><div class="faq-a-in">Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="closing wrap">
+  <h2 class="rv">This is Migration Accelerator today: an offering built on evidence, moving toward a finished migration instead of a plan for one.</h2>
+  <p class="rv d1">The next step is putting a name and an industry behind it.</p>
+</section>
+
+<footer class="pf">
+  <span>Migration Accelerator — positioning working draft</span>
+  <span>Grounded against ma-migrator + project-conduit, August 18, 2026</span>
+</footer>
+
+<script>
+(function(){
+  document.documentElement.classList.add('js');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if ('IntersectionObserver' in window && !reduce) {
+    var ro = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); ro.unobserve(e.target);} }); }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    document.querySelectorAll('.rv').forEach(function(el){ ro.observe(el); });
+  } else { document.querySelectorAll('.rv').forEach(function(el){ el.classList.add('in'); }); }
+
+  var pg = document.getElementById('progress');
+  function onScroll(){ var h=document.documentElement; var max=h.scrollHeight-h.clientHeight; pg.style.width=(max>0?(h.scrollTop/max*100):0)+'%'; }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  var tb = document.getElementById('themeBtn');
+  function dark(){ var a=document.documentElement.getAttribute('data-theme'); return a?a==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches; }
+  tb.addEventListener('click', function(){ document.documentElement.setAttribute('data-theme', dark()?'light':'dark'); });
+
+  var proof = document.getElementById('proof'), rb = document.getElementById('revealBtn');
+  function countTo(el, target, dur){
+    if (!el) return; if (reduce){ el.textContent = target.toLocaleString(); return; }
+    var start=null; function step(t){ if(!start)start=t; var p=Math.min((t-start)/dur,1); el.textContent=Math.floor(p*target).toLocaleString(); if(p<1) requestAnimationFrame(step); else el.textContent=target.toLocaleString(); } requestAnimationFrame(step);
+  }
+  function animateGauge(target, dur){
+    var g = document.getElementById('gaugeMini'), n = document.getElementById('gaugeNum');
+    if (reduce){ g.style.setProperty('--pct', target); n.textContent = target; return; }
+    var start=null; function step(t){ if(!start)start=t; var p=Math.min((t-start)/dur,1); var v=Math.floor(p*target); g.style.setProperty('--pct', v); n.textContent=v; if(p<1) requestAnimationFrame(step); } requestAnimationFrame(step);
+  }
+  if (rb) rb.addEventListener('click', function(){
+    proof.classList.add('on');
+    countTo(document.getElementById('mObjects'), 1284, 900);
+    countTo(document.getElementById('mDeps'), 3140, 1100);
+    animateGauge(84, 1000);
+  });
+
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var q = item.querySelector('.faq-q');
+    q.addEventListener('click', function(){
+      var open = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(o){ if(o!==item) o.classList.remove('open'); });
+      item.classList.toggle('open', !open);
+    });
+  });
+})();
+</script>
