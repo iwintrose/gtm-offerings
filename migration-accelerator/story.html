@@ -64,10 +64,10 @@
   section.beat:first-of-type { margin-top: 0; }
   .beat-eyebrow {
     font-family: Optima, Candara, "Segoe UI", -apple-system, sans-serif; font-size: 0.72rem; text-transform: uppercase;
-    letter-spacing: 0.12em; color: var(--accent); font-weight: 600; margin-bottom: 0.7rem;
-    display: flex; align-items: center; gap: 0.6rem;
+    letter-spacing: 0.1em; color: var(--accent); font-weight: 600; margin-bottom: 0.7rem;
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
   }
-  .beat-eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .beat-eyebrow::after { content: ""; flex: 1 1 16px; min-width: 16px; height: 1px; background: var(--line); }
   h2.beat-h { font-size: clamp(1.4rem, 4.4vw, 1.85rem); line-height: 1.2; margin: 0 0 1.1rem; letter-spacing: -0.005em; text-wrap: balance; }
   .beat p { margin: 0 0 1.05rem; font-size: clamp(1rem, 2.4vw, 1.05rem); }
   .beat p:last-child { margin-bottom: 0; }
@@ -158,7 +158,7 @@
   <div class="masthead">
     <div class="eyebrow sans">Internal positioning · Migration Accelerator</div>
     <h1 class="title">Migration Accelerator — The Story</h1>
-    <p class="subhead">What a client is actually up against, how this offering resolves it, what BD needs to turn that into a specific pitch, and where the story runs ahead of what we've proven.</p>
+    <p class="subhead">What a client is actually up against, how this offering resolves it, what Business Development and Industry Leaders need to turn that into a specific pitch, and where the story runs ahead of what we've proven.</p>
   </div>
 
   <section class="beat">
@@ -180,7 +180,7 @@
   <section class="beat">
     <div class="beat-eyebrow">The capabilities</div>
     <h2 class="beat-h">What's actually in the box</h2>
-    <p>Everything above breaks down into a short list of concrete pieces. Worth naming them plainly, because BD will need to know exactly what's provable and what's still catching up to the story:</p>
+    <p>Everything above breaks down into a short list of concrete pieces. Worth naming them plainly, because Business Development and Industry Leaders will need to know exactly what's provable and what's still catching up to the story:</p>
     <ul class="cap-list">
       <li><span class="cap-dot"></span><span class="cap-txt">Source ingestion and automatic inventory for Eloqua and Salesforce Marketing Cloud (Content Builder)</span></li>
       <li class="new"><span class="cap-dot"></span><span class="cap-txt"><strong>An automated audit</strong>, a health score plus an exportable report, generated on demand<span class="cap-tag">new</span></span></li>
@@ -199,12 +199,12 @@
     <p class="callout"><strong>One honest boundary, worth stating plainly:</strong> clients don't log into the platform themselves yet. They receive the reports, and review the decisions, in working sessions with us. This is a delivery and presales instrument first. A client-facing portal is a real possibility, not a promise we've made yet.</p>
   </section>
 
-  <div class="transition">Which is where BD comes in.</div>
+  <div class="transition">Which is where Business Development and Industry Leaders come in.</div>
 
   <section class="beat wide">
-    <div class="beat-eyebrow">For BD</div>
+    <div class="beat-eyebrow">For Business Development and Industry Leaders</div>
     <h2 class="beat-h">Putting it to work</h2>
-    <p>None of the above is a separate pitch for BD to invent. It's the pitch, full stop, the same story a client hears. What BD needs isn't a different version of it, it's fluency in this one, plus the tools to make it specific to whoever's actually in the room.</p>
+    <p>None of the above is a separate pitch for Business Development and Industry Leaders to invent. It's the pitch, full stop, the same story a client hears. What the team needs isn't a different version of it, it's fluency in this one, plus the tools to make it specific to whoever's actually in the room.</p>
     <p>That's what the customizer is for. Fill in a client's name and industry, and the story above reframes itself around their real business problem and their real stakes, before it ever reaches an inbox. Presales can run a prospect's raw export through the platform ahead of a scoping call and walk in with a real health score instead of a rough guess. Delivery can run the full engagement through it end to end, cutting analyst hours without cutting rigor. And in a pitch, this is the live proof: a real environment turning into a real plan, and where it applies, a real dry run, in front of the client instead of described to them afterward.</p>
     <div class="compare">
       <div class="col">
@@ -224,7 +224,7 @@
         </ul>
       </div>
     </div>
-    <p><strong>The one thing worth being careful about:</strong> two different engines currently power this offering. The older one, ingestion, planning, drafted specs, has been through a full spec-and-review process. The newer one, audit scoring, live execution and rollback, the Figma pipeline, is real and it works, but it hasn't gone through that same process yet. Don't promise a client live execution on an object type nobody on the team has actually run it against. Check coverage with delivery before that line goes into a proposal.</p>
+    <p><strong>The one thing worth being careful about:</strong> live execution and rollback are the newest part of the platform, and coverage isn't complete for every object type yet. Don't promise a client live execution on an object type nobody on the team has actually run it against. Check coverage with delivery before that line goes into a proposal.</p>
   </section>
 
   <section class="beat">
@@ -263,10 +263,6 @@
     <div class="note">
       <div class="note-h sans">The numbers are targets, not results yet</div>
       <p>The speed figures throughout, the hour-long assessment, the single-sprint plan, are design targets grounded in what's actually built, not numbers pulled from a completed, measured engagement. Worth closing that gap, instrumenting time-to-assessment, tracking real outcomes, before they go into anything client-facing.</p>
-    </div>
-    <div class="note">
-      <div class="note-h sans">Two engines, one story, for now</div>
-      <p>This offering currently runs on two codebases that haven't been unified. That's not a flaw to hide, it's the actual state of the practice's fastest-moving work, and it's worth being straightforward about internally, so the story we tell a client always matches what we can actually stand behind.</p>
     </div>
   </section>
 
