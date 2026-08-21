@@ -19,6 +19,17 @@ export default class MaConfigCustomize extends LightningElement {
     @api industry = '';
     @api accent = '';
 
+    /** Not company-page tokens like company/industry/accent above -- these
+     * only ever feed Sales Cloud (Account/Contact/Opportunity linkage),
+     * never the shared client URL, so they're not read from or written to
+     * the URL and don't round-trip when reopening an existing link for
+     * edit (see MaSavedConfigurationController's blank-input handling,
+     * which is what keeps a resave from wiping out what a prior save
+     * already resolved). */
+    @track clientContactName = '';
+    @track clientContactEmail = '';
+    @track estimatedValue = '';
+
     _savedRecordId = '';
     /** Record Id of the saved config this page was opened from (via the
      * ?cfgId= param a saved-links click adds). Seeds knownRecordId below,
@@ -181,6 +192,18 @@ export default class MaConfigCustomize extends LightningElement {
 
     handleIndustryChange(event) {
         this.emit('industrychange', { value: event.currentTarget.value });
+    }
+
+    handleClientContactNameInput(event) {
+        this.clientContactName = event.currentTarget.value;
+    }
+
+    handleClientContactEmailInput(event) {
+        this.clientContactEmail = event.currentTarget.value;
+    }
+
+    handleEstimatedValueInput(event) {
+        this.estimatedValue = event.currentTarget.value;
     }
 
     handleAccentInput(event) {
@@ -451,7 +474,10 @@ export default class MaConfigCustomize extends LightningElement {
                     industry: entry.industry,
                     company: entry.company,
                     generatedUrl: entry.url,
-                    configPayload: JSON.stringify(this._state)
+                    configPayload: JSON.stringify(this._state),
+                    clientContactName: this.clientContactName,
+                    clientContactEmail: this.clientContactEmail,
+                    estimatedValue: this.estimatedValue
                 }
             });
             entry.serverId = recordId;

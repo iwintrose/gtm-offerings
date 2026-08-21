@@ -39,6 +39,44 @@
           </select>
         </div>
 
+        <div class="lb-t spaced-top">Sales Cloud</div>
+        <div class="lb-s">
+          Optional -- fills in automatically the first time you save. An
+          Account is created (or matched) from Company above; a Contact
+          only if you give an email here. Booking an assessment on this
+          link creates an Opportunity automatically if one doesn't exist
+          yet.
+        </div>
+
+        <div class="fld spaced">
+          <label for="lbContactName">Client contact name</label>
+          <input
+            id="lbContactName"
+            placeholder="e.g. Jordan Lee"
+            value={clientContactName}
+            oninput={handleClientContactNameInput}
+          />
+        </div>
+        <div class="fld spaced">
+          <label for="lbContactEmail">Client contact email</label>
+          <input
+            id="lbContactEmail"
+            type="email"
+            placeholder="jordan.lee@client.com"
+            value={clientContactEmail}
+            oninput={handleClientContactEmailInput}
+          />
+        </div>
+        <div class="fld spaced">
+          <label for="lbEstValue">Estimated deal value</label>
+          <input
+            id="lbEstValue"
+            placeholder="e.g. 120000"
+            value={estimatedValue}
+            oninput={handleEstimatedValueInput}
+          />
+        </div>
+
         <div class="fld spaced">
           <label for="lbBrandDomain">Look up their brand colour</label>
           <div class="accent-row">

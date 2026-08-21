@@ -57,11 +57,24 @@ public with sharing class MaSavedConfigurationController {
             Industry__c = trimTo(input.industry, MAX_INDUSTRY),
             Company__c = trimTo(input.company, MAX_COMPANY),
             Generated_URL__c = input.generatedUrl,
-            Config_Payload__c = input.configPayload,
-            Account__c = accountId,
-            Contact__c = contactId,
-            Estimated_Value__c = parseDecimal(input.estimatedValue)
+            Config_Payload__c = input.configPayload
         );
+        // Set only when resolved to something real: the Customize panel
+        // doesn't reload an existing record's Account/Contact/value on
+        // reopen (they're not in the URL, unlike company/industry), so
+        // every resave sends these blank unless the rep retypes them.
+        // Unconditionally assigning null here would silently wipe out
+        // whatever was already resolved on a prior save.
+        if (accountId != null) {
+            record.Account__c = accountId;
+        }
+        if (contactId != null) {
+            record.Contact__c = contactId;
+        }
+        Decimal estimatedValue = parseDecimal(input.estimatedValue);
+        if (estimatedValue != null) {
+            record.Estimated_Value__c = estimatedValue;
+        }
 
         try {
             if (String.isNotBlank(input.recordId)) {

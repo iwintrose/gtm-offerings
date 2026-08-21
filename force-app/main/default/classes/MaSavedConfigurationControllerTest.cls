@@ -187,6 +187,37 @@ private class MaSavedConfigurationControllerTest {
     }
 
     @IsTest
+    static void resavingWithBlankContactAndValueDoesNotWipeThemOut() {
+        MaSavedConfigurationController.SaveInput first = new MaSavedConfigurationController.SaveInput();
+        first.offering = 'migration-accelerator';
+        first.company = 'Acme Bank';
+        first.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+        first.clientContactName = 'Jordan Lee';
+        first.clientContactEmail = 'jordan.lee@acmebank.example.com';
+        first.estimatedValue = '90000';
+        Id recordId = MaSavedConfigurationController.saveConfiguration(first);
+
+        // Simulates reopening this link for editing: the Customize panel
+        // doesn't reload Contact/Estimated Value from the record, so a
+        // resave sends them blank unless the rep retypes them.
+        MaSavedConfigurationController.SaveInput second = new MaSavedConfigurationController.SaveInput();
+        second.recordId = recordId;
+        second.offering = 'migration-accelerator';
+        second.company = 'Acme Bank';
+        second.generatedUrl = first.generatedUrl;
+
+        Test.startTest();
+        MaSavedConfigurationController.saveConfiguration(second);
+        Test.stopTest();
+
+        MA_Saved_Configuration__c saved = [
+            SELECT Contact__c, Estimated_Value__c FROM MA_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.isNotNull(saved.Contact__c, 'A blank resend should not wipe out the Contact set on the first save');
+        Assert.areEqual(90000, saved.Estimated_Value__c, 'A blank resend should not wipe out the Estimated Value');
+    }
+
+    @IsTest
     static void wrapsDmlFailureOnSaveAsFriendlyError() {
         MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
