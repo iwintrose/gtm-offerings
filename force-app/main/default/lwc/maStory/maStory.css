@@ -204,7 +204,13 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 2.5rem 0 4rem;
+  /* top/bottom only -- this element also carries .wrap, and a shorthand
+     "padding: X 0 Y" here zeroes .wrap's horizontal padding out entirely
+     since this rule is declared later in the stylesheet. That's what was
+     pinning every section of this page flush to the screen edge, worst on
+     mobile where .wrap's own max-width never kicks in to compensate. */
+  padding-top: 2.5rem;
+  padding-bottom: 4rem;
   position: relative;
 }
 .eyebrow {
@@ -284,7 +290,9 @@ h1.hero-h .accent {
 
 /* ---------- beat rhythm ---------- */
 .beat {
-  padding: clamp(3.2rem, 9vw, 5.5rem) 0;
+  /* Same fix as .hero above -- also carries .wrap, so no horizontal value here. */
+  padding-top: clamp(3.2rem, 9vw, 5.5rem);
+  padding-bottom: clamp(3.2rem, 9vw, 5.5rem);
   border-top: 1px solid var(--line);
 }
 .beat h2.beat-h {
@@ -831,7 +839,9 @@ h1.hero-h .accent {
 /* ---------- closing ---------- */
 .closing {
   text-align: center;
-  padding: clamp(3.5rem, 10vw, 6rem) 0 clamp(3rem, 8vw, 4.5rem);
+  /* Same fix as .hero above -- also carries .wrap, so no horizontal value here. */
+  padding-top: clamp(3.5rem, 10vw, 6rem);
+  padding-bottom: clamp(3rem, 8vw, 4.5rem);
 }
 .closing h2 {
   font-family: 'Sora', sans-serif;
