@@ -8,7 +8,6 @@ import {
     EXAMPLE,
     GENERIC_DEMO,
     GENERIC_CHIPS,
-    STORAGE_KEY,
     initials,
     isHex6
 } from 'c/maConfigData';
@@ -100,31 +99,18 @@ export default class MaConfigurator extends LightningElement {
 
     // ------------------------------------------------------------------ state
 
+    /**
+     * Deliberately not localStorage-backed. It used to be: this browser's
+     * last-edited token values would load on ANY page visit, including a
+     * bare /configurator with no saved-link params, and even leaked into
+     * OTHER saved links on the same machine (nothing scoped the shared
+     * storage key to a specific record). Customization belongs to the
+     * specific record it was saved against, not to "whatever this browser
+     * last had open" -- readUrlParams below is what actually restores a
+     * saved link's own values, from the link itself, not from storage.
+     */
     loadState() {
-        let saved = {};
-        try {
-            const raw = window.localStorage.getItem(STORAGE_KEY);
-            saved = raw ? JSON.parse(raw) || {} : {};
-        } catch (e) {
-            saved = {};
-        }
-        FIELDS.forEach((f) => {
-            if (saved[f.k] === undefined && DEFAULTS[f.k] !== undefined) {
-                saved[f.k] = DEFAULTS[f.k];
-            }
-        });
-        return saved;
-    }
-
-    saveState() {
-        try {
-            window.localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(this.tokenState)
-            );
-        } catch (e) {
-            // Storage unavailable — the page still works, it just won't persist.
-        }
+        return { ...DEFAULTS };
     }
 
     readUrlParams() {
@@ -149,6 +135,22 @@ export default class MaConfigurator extends LightningElement {
         if (rep) next.CONTACT_EMAIL = rep;
         if (repname) next.CONTACT_NAME = repname;
         if (book) next.BOOKING_URL = book;
+
+        // Same fix as rep/repname/book: these override whatever's sitting
+        // in this browser's shared localStorage draft, so a saved link
+        // always shows its own values instead of leaking whatever another
+        // config was last edited to on this machine.
+        const src = get('src');
+        const tgt = get('tgt');
+        const assets = get('assets');
+        const deps = get('deps');
+        const health = get('health');
+        if (src) next.SOURCE_PLATFORM = src;
+        if (tgt) next.TARGET_PLATFORM = tgt;
+        if (assets) next.ASSET_COUNT = assets;
+        if (deps) next.DEPENDENCY_COUNT = deps;
+        if (health) next.HEALTH_SCORE = health;
+
         this.tokenState = next;
 
         const companyParam = get('company');
@@ -401,7 +403,6 @@ export default class MaConfigurator extends LightningElement {
     handleFieldChange(event) {
         const { key, value } = event.detail;
         this.tokenState = { ...this.tokenState, [key]: value };
-        this.saveState();
     }
 
     handleCompanyChange(event) {
@@ -419,7 +420,6 @@ export default class MaConfigurator extends LightningElement {
 
     handleLoadExample() {
         this.tokenState = { ...EXAMPLE };
-        this.saveState();
     }
 
     handleClearAll() {
@@ -428,7 +428,6 @@ export default class MaConfigurator extends LightningElement {
             if (DEFAULTS[f.k] !== undefined) cleared[f.k] = DEFAULTS[f.k];
         });
         this.tokenState = cleared;
-        this.saveState();
     }
 
     // -------------------------------------------------------- booking events

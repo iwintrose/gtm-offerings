@@ -14,8 +14,8 @@
   --ink-faint: #8b8e96;
   --line: #e1e2e6;
   --panel: #ecedf0;
-  --accent: #3a3e4c;
-  --accent-soft: rgba(58, 62, 76, 0.07);
+  --accent: #ee3d23;
+  --accent-soft: rgba(238, 61, 35, 0.09);
   --shadow: 0 16px 40px -20px rgba(23, 24, 28, 0.16);
   --shadow-soft: 0 6px 18px -10px rgba(23, 24, 28, 0.12);
 
@@ -37,8 +37,8 @@
     --ink-faint: #6e717a;
     --line: #2a2c33;
     --panel: #1f2025;
-    --accent: #c6c9d6;
-    --accent-soft: rgba(198, 201, 214, 0.1);
+    --accent: #ff5a3c;
+    --accent-soft: rgba(255, 90, 60, 0.15);
     --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
     --shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
   }
@@ -52,8 +52,8 @@
   --ink-faint: #6e717a;
   --line: #2a2c33;
   --panel: #1f2025;
-  --accent: #c6c9d6;
-  --accent-soft: rgba(198, 201, 214, 0.1);
+  --accent: #ff5a3c;
+  --accent-soft: rgba(255, 90, 60, 0.15);
   --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
   --shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
 }
@@ -66,8 +66,8 @@
   --ink-faint: #8b8e96;
   --line: #e1e2e6;
   --panel: #ecedf0;
-  --accent: #3a3e4c;
-  --accent-soft: rgba(58, 62, 76, 0.07);
+  --accent: #ee3d23;
+  --accent-soft: rgba(238, 61, 35, 0.09);
   --shadow: 0 16px 40px -20px rgba(23, 24, 28, 0.16);
   --shadow-soft: 0 6px 18px -10px rgba(23, 24, 28, 0.12);
 }
@@ -204,8 +204,8 @@ h1 {
     border-color 0.15s ease;
 }
 .tile.live {
-  --tile-accent: #5b4fa3;
-  --tile-accent-soft: rgba(91, 79, 163, 0.1);
+  --tile-accent: #ee3d23;
+  --tile-accent-soft: rgba(238, 61, 35, 0.1);
 }
 .tile:hover {
   transform: translateY(-3px);

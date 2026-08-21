@@ -394,6 +394,18 @@ export default class MaConfigCustomize extends LightningElement {
         push('rep', this._state.CONTACT_EMAIL);
         push('repname', this._state.CONTACT_NAME);
         push('book', this._state.BOOKING_URL);
+        // These five were previously only ever written to a single
+        // localStorage key shared by every config on the same browser --
+        // editing one client's proof numbers/platform silently changed
+        // what every other saved link on that machine showed, since none
+        // of them carried their own values. Round-tripping them through
+        // the URL, same as rep/repname/book above, makes each saved link
+        // fully self-contained.
+        push('src', this._state.SOURCE_PLATFORM);
+        push('tgt', this._state.TARGET_PLATFORM);
+        push('assets', this._state.ASSET_COUNT);
+        push('deps', this._state.DEPENDENCY_COUNT);
+        push('health', this._state.HEALTH_SCORE);
         if (!excludeId && this.knownRecordId) {
             push('cfgId', this.knownRecordId);
         }
