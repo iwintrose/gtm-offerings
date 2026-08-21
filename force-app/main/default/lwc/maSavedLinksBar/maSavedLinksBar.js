@@ -1,5 +1,4 @@
-import { LightningElement, wire } from 'lwc';
-import { refreshApex } from '@salesforce/apex';
+import { LightningElement } from 'lwc';
 import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 
@@ -8,16 +7,24 @@ export default class MaSavedLinksBar extends LightningElement {
     isOpen = false;
     groups = [];
 
-    _wiredResult;
+    connectedCallback() {
+        this.loadConfigurations();
+    }
 
-    @wire(getMyConfigurations)
-    wiredConfigurations(result) {
-        this._wiredResult = result;
-        const { data, error } = result;
-        if (data) {
+    /**
+     * Deliberately imperative, not @wire(cacheable=true): the wire cache
+     * was serving a stale (often empty) result across page navigations --
+     * a page freshly saved on Configurator would still show "no saved
+     * links" on Choose Industry moments later. Every fresh page load (this
+     * is a multi-page site, not an SPA) should hit the server, not a
+     * cached response from before the save happened.
+     */
+    async loadConfigurations() {
+        try {
+            const data = await getMyConfigurations();
             this.hasAccess = true;
             this.groups = this.groupRecords(data);
-        } else if (error) {
+        } catch (error) {
             this.hasAccess = false;
             this.groups = [];
             // Guests (and anyone else without the MA Config Manager
@@ -59,7 +66,7 @@ export default class MaSavedLinksBar extends LightningElement {
         if (!recordId) return;
         try {
             await deleteConfiguration({ recordId });
-            await refreshApex(this._wiredResult);
+            await this.loadConfigurations();
         } catch (e) {
             // Deletion failing (e.g. someone else's record, no delete
             // access) just leaves the row in place — nothing to recover.
