@@ -55,7 +55,16 @@ public with sharing class MaSavedConfigurationController {
         return record.Id;
     }
 
-    @AuraEnabled(cacheable=true)
+    /**
+     * Deliberately NOT cacheable: this is an Aura site (Digital
+     * Experience), and Aura's own action-transport layer caches any
+     * cacheable=true method's results regardless of whether the caller
+     * uses @wire or a plain imperative call -- switching maSavedLinksBar
+     * to an imperative call fixed staleness across page navigations, but
+     * not a same-session reload (e.g. right after toggling active/
+     * inactive), because that caching happens below the LWC wire layer.
+     */
+    @AuraEnabled
     public static List<MA_Saved_Configuration__c> getMyConfigurations() {
         return [
             SELECT Id, Name, Offering__c, Industry__c, Company__c,

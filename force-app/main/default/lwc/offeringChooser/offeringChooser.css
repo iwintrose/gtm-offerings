@@ -118,14 +118,14 @@
   }
 }
 .tbtn {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   border: 1px solid var(--line);
-  background: var(--paper);
+  background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
 }
 .tbtn:hover {
   border-color: var(--ink);

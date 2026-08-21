@@ -258,9 +258,24 @@ export default class MaConfigCustomize extends LightningElement {
             ? this.links.find((l) => l.id === this.editingId)
             : null;
         const knownServerId = existing ? existing.serverId : this.knownRecordId || null;
+        const targetServerId = asNew ? null : knownServerId;
+
+        // A local entry can already represent this exact server record
+        // even without editingId set -- e.g. this page was opened from a
+        // Saved Links bar click (knownRecordId came from the URL, not
+        // from clicking Edit on a local row). Without this lookup, every
+        // "Update this link" from a bar-opened page added a second local
+        // row for a record that only ever existed once on the server.
+        const existingByServerId = targetServerId
+            ? this.links.find((l) => l.serverId === targetServerId)
+            : null;
+        const targetLocalId = (this.editingId && !asNew ? this.editingId : null) ||
+            existingByServerId?.id ||
+            null;
+
         const entry = {
-            id: this.editingId || `l${Date.now()}`,
-            serverId: asNew ? null : knownServerId,
+            id: targetLocalId || `l${Date.now()}`,
+            serverId: targetServerId,
             url,
             company: (this.company || '').trim(),
             industry: this.industry || '',
@@ -271,10 +286,9 @@ export default class MaConfigCustomize extends LightningElement {
             ts: Date.now()
         };
 
-        if (this.editingId && !asNew) {
-            this.links = this.links.map((l) => (l.id === entry.id ? entry : l));
+        if (targetLocalId) {
+            this.links = this.links.map((l) => (l.id === targetLocalId ? entry : l));
         } else {
-            entry.id = `l${Date.now()}`;
             this.links = [entry, ...this.links].slice(0, 20);
         }
         this.writeLinks();

@@ -2,6 +2,7 @@ import { LightningElement, api } from 'lwc';
 import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import setActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
+import { INDUSTRIES } from 'c/maConfigData';
 
 export default class MaSavedLinksBar extends LightningElement {
     hasAccess = false;
@@ -136,7 +137,9 @@ export default class MaSavedLinksBar extends LightningElement {
             byIndustry.forEach((links, industryKey) => {
                 industries.push({
                     key: `${offeringKey}-${industryKey}`,
-                    name: formatLabel(industryKey),
+                    name: INDUSTRIES[industryKey]
+                        ? INDUSTRIES[industryKey].label
+                        : formatLabel(industryKey),
                     links
                 });
             });
