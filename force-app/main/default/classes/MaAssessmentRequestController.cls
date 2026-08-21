@@ -110,6 +110,17 @@ public without sharing class MaAssessmentRequestController {
 
         MA_Assessment_Config__mdt cfg = loadConfig();
         ConfigContext ctx = resolveConfigContext(input.savedRecordId);
+        // A company name is a company name wherever it shows up in this
+        // flow -- it should resolve to a real Account, not sit as a bare
+        // string on the request. If a linked Engagement Link already
+        // resolved one, that's authoritative and left alone; this only
+        // fills the gap for a direct booking (no savedRecordId at all, or
+        // a link whose own Account resolution didn't happen for some
+        // reason) so it isn't the one Company field in this whole feature
+        // that never connects to Sales Cloud.
+        if (ctx.accountId == null) {
+            ctx.accountId = resolveAccount(trimTo(input.company, MAX_SHORT));
+        }
         ensureOpportunity(input.savedRecordId, ctx);
 
         try {
@@ -173,6 +184,36 @@ public without sharing class MaAssessmentRequestController {
             // Malformed id, or no read access -- proceed unlinked.
         }
         return ctx;
+    }
+
+    /**
+     * Same exact-name-match find-or-create as
+     * MaSavedConfigurationController.resolveAccount -- kept as its own copy
+     * rather than a shared utility because the two callers run under
+     * different sharing contexts (this class is without sharing and
+     * guest-reachable; that one is with sharing and rep-only) and each
+     * file in this feature already owns its own small helpers rather than
+     * pulling in a shared library for one method.
+     */
+    private static Id resolveAccount(String company) {
+        if (String.isBlank(company)) {
+            return null;
+        }
+        try {
+            List<Account> existing = [
+                SELECT Id FROM Account WHERE Name = :company LIMIT 1
+            ];
+            if (!existing.isEmpty()) {
+                return existing[0].Id;
+            }
+            Account acc = new Account(Name = company);
+            insert acc;
+            return acc.Id;
+        } catch (Exception e) {
+            // No Account access, or a DML failure -- proceed unlinked
+            // rather than blocking the submission over it.
+            return null;
+        }
     }
 
     /**

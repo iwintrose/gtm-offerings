@@ -407,6 +407,71 @@ private class MaAssessmentRequestControllerTest {
     }
 
     @isTest
+    static void directBookingWithNoEngagementLinkStillResolvesAccount() {
+        // No savedRecordId at all -- e.g. a booking from the Story page's
+        // own CTA, with no client link in the picture. The company name
+        // the requester typed is the only signal available, and it should
+        // still connect to a real Account rather than sit as bare text.
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = null;
+        input.company = 'Northwind Retail';
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        MA_Assessment_Request__c req = [
+            SELECT Account__c, Account__r.Name
+            FROM MA_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.isNotNull(req.Account__c, 'A direct booking should still resolve an Account from the company name');
+        Assert.areEqual('Northwind Retail', req.Account__r.Name);
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Account WHERE Name = 'Northwind Retail'],
+            'Exactly one Account should exist, not a duplicate'
+        );
+    }
+
+    @isTest
+    static void engagementLinkAccountTakesPriorityOverBookingFormCompany() {
+        Account existing = new Account(Name = 'Northwind Retail Holdings');
+        insert existing;
+
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail Holdings',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Account__c = existing.Id,
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+        // Deliberately different text than the link's own Company -- the
+        // already-resolved Account from the link should win, not get
+        // second-guessed by whatever the requester typed in the form.
+        input.company = 'Northwind Retail (typo)';
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        MA_Assessment_Request__c req = [
+            SELECT Account__c FROM MA_Assessment_Request__c WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(existing.Id, req.Account__c);
+        Assert.areEqual(0, [SELECT COUNT() FROM Account WHERE Name = 'Northwind Retail (typo)']);
+    }
+
+    @isTest
     static void failsOpenOnMalformedSavedRecordId() {
         MaAssessmentRequestController.configOverride = config(true, false, 'Task');
         MaAssessmentRequestController.RequestInput input = sampleInput();
