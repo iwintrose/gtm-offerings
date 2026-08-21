@@ -1,28 +1,43 @@
+:host {
+  /* No box of its own when the template renders nothing (guest/no
+     access) -- this custom element sits inside the same content
+     column as the page's main component, so without this it can leave
+     an empty strip from Salesforce's own component-slot wrapper even
+     when our template is empty. */
+  display: contents;
+}
+
 .sl-root {
-  position: relative;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  display: flex;
-  justify-content: flex-end;
-  padding: 0.4rem 1rem;
 }
 
 .sl-toggle {
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  padding: 0.35rem 0.7rem;
+  background: rgba(20, 20, 24, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 100px;
+  padding: 0.45rem 0.9rem;
   cursor: pointer;
-  color: inherit;
+  color: #f5f5f5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.sl-toggle:hover {
+  border-color: #ee3d23;
 }
 
 .sl-panel {
   display: none;
   position: absolute;
-  top: 100%;
-  right: 1rem;
+  top: calc(100% + 0.5rem);
+  right: 0;
   z-index: 100;
   min-width: 320px;
   max-width: 420px;
@@ -32,7 +47,7 @@
   color: #1a1a1a;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 10px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   padding: 0.75rem;
 }
 
