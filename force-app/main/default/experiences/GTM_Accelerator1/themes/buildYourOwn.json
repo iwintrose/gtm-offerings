@@ -118,7 +118,6 @@
         "componentAttributes" : { },
         "componentName" : "c:maSavedLinksBar",
         "id" : "b6f2e1a4-7c3d-4e12-9a4f-2d5e8c1f9a30",
-        "renderPriority" : "NEUTRAL",
         "renditionMap" : { },
         "type" : "component"
       } ],
