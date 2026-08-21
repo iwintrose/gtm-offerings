@@ -86,13 +86,16 @@
         <div class="lb-t spaced-top">Link for the hosted version</div>
         <div class="lb-out">
           <input class="lb-url" readonly value={linkUrl} />
-          <button class="lb-copy" onclick={handleCopy}>{copyLabel}</button>
+          <button class="lb-copy" onclick={handleCopyLink}>{copyFeedback}</button>
         </div>
-        <template if:true={canSaveAsNew}>
-          <button class="lb-saveas" onclick={handleSaveAsNew}>
-            Save as new version →
-          </button>
-        </template>
+        <div class="lb-save-row">
+          <button class="lb-save" onclick={handleSave}>{saveLabel}</button>
+          <template if:true={canSaveAsNew}>
+            <button class="lb-saveas" onclick={handleSaveAsNew}>
+              Save as new version →
+            </button>
+          </template>
+        </div>
 
         <template if:true={editing}>
           <div class="lb-editbar">

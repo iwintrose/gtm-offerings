@@ -1,4 +1,4 @@
-import { LightningElement } from 'lwc';
+import { LightningElement, api } from 'lwc';
 import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 
@@ -8,6 +8,13 @@ export default class MaSavedLinksBar extends LightningElement {
     groups = [];
 
     connectedCallback() {
+        this.loadConfigurations();
+    }
+
+    /** Called by a parent (e.g. maConfigurator, after a save) so a new or
+     * edited link shows up here without the rep navigating away and back. */
+    @api
+    refresh() {
         this.loadConfigurations();
     }
 

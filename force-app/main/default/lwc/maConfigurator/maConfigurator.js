@@ -372,6 +372,13 @@ export default class MaConfigurator extends LightningElement {
         this.customizeOpen = false;
     }
 
+    /** So a save shows up in the Saved bar immediately -- without this,
+     * the only way to see it was navigating away and back. */
+    handleConfigSaved() {
+        const bar = this.refs.savedLinksBar;
+        if (bar) bar.refresh();
+    }
+
     handleFieldChange(event) {
         const { key, value } = event.detail;
         this.tokenState = { ...this.tokenState, [key]: value };

@@ -7,7 +7,7 @@
           <a class="backlink" href={offeringsUrl}>← Offerings</a>
           <a class="backlink" href={industryUrl}>← Industry</a>
         </template>
-        <c-ma-saved-links-bar></c-ma-saved-links-bar>
+        <c-ma-saved-links-bar lwc:ref="savedLinksBar"></c-ma-saved-links-bar>
         <button class="cta" onclick={handleOpenBooking}>
           <span class="cta-long">Book an&nbsp;</span>environment assessment →
         </button>
@@ -457,6 +457,7 @@
       onaccentchange={handleAccentChange}
       onloadexample={handleLoadExample}
       onclearall={handleClearAll}
+      onconfigsaved={handleConfigSaved}
     ></c-ma-config-customize>
 
     <c-ma-config-booking

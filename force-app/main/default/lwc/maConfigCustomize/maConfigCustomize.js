@@ -25,9 +25,13 @@ export default class MaConfigCustomize extends LightningElement {
     @api savedRecordId = '';
 
     @track expires = '';
-    @track copyLabel = 'Save & copy';
+    @track copyFeedback = 'Copy link';
     @track links = [];
     @track editingId = null;
+
+    get saveLabel() {
+        return this.canSaveAsNew ? 'Update this link' : 'Save link';
+    }
 
     _state = {};
 
@@ -47,7 +51,16 @@ export default class MaConfigCustomize extends LightningElement {
     }));
 
     connectedCallback() {
-        this.links = this.readLinks();
+        // Drop local entries with no serverId: they predate server-side
+        // tracking (or hit a save that silently failed before error
+        // logging existed) and can never be resolved to a real record --
+        // editing one always created a duplicate instead of updating,
+        // which is the exact bug this one-time cleanup removes.
+        const all = this.readLinks();
+        this.links = all.filter((l) => !!l.serverId);
+        if (this.links.length !== all.length) {
+            this.writeLinks();
+        }
     }
 
     // ---------------------------------------------------------------- display
@@ -170,7 +183,6 @@ export default class MaConfigCustomize extends LightningElement {
     handleCancelEdit(event) {
         event.preventDefault();
         this.editingId = null;
-        this.copyLabel = 'Save & copy';
     }
 
     handleEditLink(event) {
@@ -179,7 +191,6 @@ export default class MaConfigCustomize extends LightningElement {
         if (!entry) return;
 
         this.editingId = id;
-        this.copyLabel = 'Save changes';
         this.expires = entry.exp
             ? new Date(entry.exp).toISOString().slice(0, 10)
             : '';
@@ -195,7 +206,6 @@ export default class MaConfigCustomize extends LightningElement {
         this.writeLinks();
         if (this.editingId === id) {
             this.editingId = null;
-            this.copyLabel = 'Save & copy';
         }
         if (entry && entry.serverId) {
             deleteConfiguration({ recordId: entry.serverId }).catch(() => {
@@ -205,7 +215,7 @@ export default class MaConfigCustomize extends LightningElement {
         }
     }
 
-    handleCopy() {
+    handleSave() {
         this.saveInternal({ asNew: false });
     }
 
@@ -214,6 +224,13 @@ export default class MaConfigCustomize extends LightningElement {
      * config into a second version without touching the original. */
     handleSaveAsNew() {
         this.saveInternal({ asNew: true });
+    }
+
+    /** Pure clipboard copy of the current link -- independent of whether
+     * it's been saved. Saving and copying used to be one action, which
+     * made it unclear whether a click had actually written anything. */
+    handleCopyLink() {
+        this.copyToClipboard(this.buildUrl());
     }
 
     get canSaveAsNew() {
@@ -253,7 +270,6 @@ export default class MaConfigCustomize extends LightningElement {
         this.writeLinks();
         this.editingId = null;
 
-        this.copyToClipboard(url);
         this.persistToServer(entry);
     }
 
@@ -280,6 +296,10 @@ export default class MaConfigCustomize extends LightningElement {
             entry.serverId = recordId;
             this.links = this.links.map((l) => (l.id === entry.id ? entry : l));
             this.writeLinks();
+            // Lets maConfigurator refresh its embedded Saved bar without a
+            // page reload -- otherwise a rep has no way to see a new/edited
+            // link show up except by navigating away and back.
+            this.emit('configsaved', {});
         } catch (e) {
             const message = e?.body?.message || '';
             const isAccessError = /do not have access|insufficient/i.test(message);
@@ -326,10 +346,10 @@ export default class MaConfigCustomize extends LightningElement {
 
     copyToClipboard(url) {
         const done = (ok) => {
-            this.copyLabel = ok ? 'Copied' : 'Press ⌘/Ctrl-C';
+            this.copyFeedback = ok ? 'Copied' : 'Press ⌘/Ctrl-C';
             // eslint-disable-next-line @lwc/lwc/no-async-operation
             window.setTimeout(() => {
-                this.copyLabel = 'Save & copy';
+                this.copyFeedback = 'Copy link';
             }, 1600);
         };
         try {
