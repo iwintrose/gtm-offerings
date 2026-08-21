@@ -56,6 +56,30 @@ private class MaHomeSnapshotControllerTest {
     }
 
     @IsTest
+    static void returnsRecentNewRequestsOnlyNewestFirst() {
+        insert new MA_Assessment_Request__c(
+            Requester_Name__c = 'Alex Rivera',
+            Requester_Email__c = 'alex@example.com',
+            Company__c = 'Acme Bank',
+            Status__c = 'New'
+        );
+        insert new MA_Assessment_Request__c(
+            Requester_Name__c = 'Already Handled',
+            Requester_Email__c = 'handled@example.com',
+            Status__c = 'Contacted'
+        );
+
+        Test.startTest();
+        List<MaHomeSnapshotController.RequestSummary> results =
+            MaHomeSnapshotController.getRecentNewAssessmentRequests();
+        Test.stopTest();
+
+        Assert.areEqual(1, results.size(), 'Only Status = New should be returned');
+        Assert.areEqual('Alex Rivera', results[0].requesterName);
+        Assert.areEqual('Acme Bank', results[0].company);
+    }
+
+    @IsTest
     static void returnsZeroesWhenNothingExists() {
         Test.startTest();
         MaHomeSnapshotController.Snapshot snap = MaHomeSnapshotController.getSnapshot();

@@ -9,6 +9,12 @@
                 <identifier>c_gtmOfferingsSnapshot1</identifier>
             </componentInstance>
         </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:gtmOfferingsNeedsAttention</componentName>
+                <identifier>c_gtmOfferingsNeedsAttention1</identifier>
+            </componentInstance>
+        </itemInstances>
     </flexiPageRegions>
     <masterLabel>GTM Offerings Overview</masterLabel>
     <template>

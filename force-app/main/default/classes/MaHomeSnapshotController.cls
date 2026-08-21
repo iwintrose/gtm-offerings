@@ -49,4 +49,41 @@ public with sharing class MaHomeSnapshotController {
 
         return snap;
     }
+
+    public class RequestSummary {
+        @AuraEnabled
+        public Id recordId { get; set; }
+        @AuraEnabled
+        public String name { get; set; }
+        @AuraEnabled
+        public String requesterName { get; set; }
+        @AuraEnabled
+        public String company { get; set; }
+        @AuraEnabled
+        public Datetime createdDate { get; set; }
+    }
+
+    /** The 5 newest requests still sitting at Status = New -- what a rep
+     * should look at first when they open the app, not something they'd
+     * otherwise notice without navigating to the tab and filtering. */
+    @AuraEnabled(cacheable=true)
+    public static List<RequestSummary> getRecentNewAssessmentRequests() {
+        List<RequestSummary> results = new List<RequestSummary>();
+        for (MA_Assessment_Request__c req : [
+            SELECT Id, Name, Requester_Name__c, Company__c, CreatedDate
+            FROM MA_Assessment_Request__c
+            WHERE Status__c = 'New'
+            ORDER BY CreatedDate DESC
+            LIMIT 5
+        ]) {
+            RequestSummary summary = new RequestSummary();
+            summary.recordId = req.Id;
+            summary.name = req.Name;
+            summary.requesterName = req.Requester_Name__c;
+            summary.company = req.Company__c;
+            summary.createdDate = req.CreatedDate;
+            results.add(summary);
+        }
+        return results;
+    }
 }
