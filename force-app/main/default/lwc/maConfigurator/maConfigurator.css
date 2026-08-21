@@ -179,6 +179,30 @@
   color: var(--ink);
   border-color: var(--coral);
 }
+.backlink {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  line-height: 1;
+}
+.backlink:hover {
+  color: var(--ink);
+  border-color: var(--coral);
+}
+@media (max-width: 780px) {
+  .backlink {
+    display: none;
+  }
+}
 @media (max-width: 620px) {
   .cta .cta-long {
     display: none;
