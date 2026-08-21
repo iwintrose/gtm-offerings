@@ -82,21 +82,37 @@ fi
 
 echo ""
 echo "==> Pass 2/2: custom metadata records (MA_Offering__mdt seed data)"
-echo "    This specific step has been observed failing intermittently with a"
-echo "    generic UNKNOWN_EXCEPTION even on unchanged, previously-successful"
-echo "    content -- retry it 2-3 times before assuming something's actually"
-echo "    wrong. If it keeps failing, it's one record with 3 fields -- just"
-echo "    create it by hand: Setup -> Custom Metadata Types -> MA Offering ->"
-echo "    Manage Records -> New, DeveloperName 'Migration_Accelerator',"
-echo "    Offering_Key__c 'migration-accelerator', Label__c 'Migration"
-echo "    Accelerator', and whatever Monthly/Annual targets are real."
-if ! sf project deploy start \
-  --source-dir force-app/main/default/customMetadata \
-  --target-org "$TARGET_ORG" \
-  --wait 30; then
+
+# This specific step has been observed failing intermittently with a
+# generic UNKNOWN_EXCEPTION even on unchanged, previously-successful
+# content -- every time it happened tonight, a bare retry cleared it within
+# a couple of attempts. So: retry automatically instead of making a human
+# notice a failure and re-run the command by hand. Only surface this as a
+# real problem once retries are actually exhausted.
+CMDT_ATTEMPTS=4
+CMDT_OK=0
+for i in $(seq 1 "$CMDT_ATTEMPTS"); do
+  echo "    attempt $i/$CMDT_ATTEMPTS..."
+  if sf project deploy start \
+    --source-dir force-app/main/default/customMetadata \
+    --target-org "$TARGET_ORG" \
+    --wait 30; then
+    CMDT_OK=1
+    break
+  fi
+  sleep 10
+done
+
+if [ "$CMDT_OK" -ne 1 ]; then
   echo ""
-  echo "Pass 2 failed -- see the note above. Pass 1 (everything else) already"
-  echo "succeeded, so this is the only piece left to land, one way or another."
+  echo "Pass 2 failed after $CMDT_ATTEMPTS attempts. Pass 1 (everything else)"
+  echo "already succeeded -- this is the only piece left, and it's one record"
+  echo "with three fields, faster to create by hand than to keep retrying:"
+  echo "  Setup -> Custom Metadata Types -> MA Offering -> Manage Records -> New"
+  echo "    DeveloperName:    Migration_Accelerator"
+  echo "    Offering_Key__c:  migration-accelerator"
+  echo "    Label__c:         Migration Accelerator"
+  echo "    Monthly/Annual Target__c: whatever the real targets are"
   exit 1
 fi
 

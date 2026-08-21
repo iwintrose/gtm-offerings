@@ -28,11 +28,15 @@ The script deploys in two passes (everything, then the custom metadata
 seed record in one transaction proved unreliable in testing -- and even
 deployed on its own, that one record intermittently failed with a generic
 `UNKNOWN_EXCEPTION` against identical content that had deployed cleanly
-minutes earlier. Retrying it 2-3 times cleared it every time it happened;
-if it doesn't, it's a single record with three fields and is faster to
-create by hand in Setup than to keep debugging (the script tells you how
-when it fails). Everything else deployed reliably throughout tonight's
-build with no such flakiness.
+minutes earlier. Every time that happened tonight, a bare retry cleared it
+within a couple of attempts, so pass 2 retries itself automatically (up to
+4 attempts, 10s apart) rather than making you notice a failure and re-run
+a command by hand -- you'll only see it surface as a real problem if all
+of those fail, at which point it prints the exact 3 fields to punch into
+Setup by hand (Custom Metadata Types → MA Offering → Manage Records → New),
+which is faster than continuing to fight a flaky deploy for one record.
+Everything else deployed reliably throughout tonight's build with no such
+flakiness.
 
 ## What a deploy can't do for you
 
