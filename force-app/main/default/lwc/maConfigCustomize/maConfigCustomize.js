@@ -1,4 +1,6 @@
 import { LightningElement, api, track } from 'lwc';
+import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
+import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import {
     FIELDS,
     INDUSTRIES,
@@ -8,6 +10,8 @@ import {
     initials,
     isHex6
 } from 'c/maConfigData';
+
+const OFFERING = 'migration-accelerator';
 
 export default class MaConfigCustomize extends LightningElement {
     @api isOpen = false;
@@ -181,18 +185,29 @@ export default class MaConfigCustomize extends LightningElement {
 
     handleDeleteLink(event) {
         const id = event.currentTarget.dataset.id;
+        const entry = this.links.find((l) => l.id === id);
         this.links = this.links.filter((l) => l.id !== id);
         this.writeLinks();
         if (this.editingId === id) {
             this.editingId = null;
             this.copyLabel = 'Save & copy';
         }
+        if (entry && entry.serverId) {
+            deleteConfiguration({ recordId: entry.serverId }).catch(() => {
+                // No access, or already gone — the local list is already
+                // updated, which is what the rep sees.
+            });
+        }
     }
 
     handleCopy() {
         const url = this.buildUrl();
+        const existing = this.editingId
+            ? this.links.find((l) => l.id === this.editingId)
+            : null;
         const entry = {
             id: this.editingId || `l${Date.now()}`,
+            serverId: existing ? existing.serverId : null,
             url,
             company: (this.company || '').trim(),
             industry: this.industry || '',
@@ -212,6 +227,36 @@ export default class MaConfigCustomize extends LightningElement {
         this.editingId = null;
 
         this.copyToClipboard(url);
+        this.persistToServer(entry);
+    }
+
+    /**
+     * Best-effort save to MA_Saved_Configuration__c so a rep can find this
+     * link again later (localStorage above is per-browser only). Guests —
+     * and anyone without the MA Config Manager permission set — have no
+     * access to this class at all, so this fails silently for them and the
+     * localStorage-backed recent-links list above is all they get.
+     */
+    async persistToServer(entry) {
+        try {
+            const recordId = await saveConfiguration({
+                input: {
+                    recordId: entry.serverId,
+                    offering: OFFERING,
+                    industry: entry.industry,
+                    company: entry.company,
+                    generatedUrl: entry.url,
+                    configPayload: JSON.stringify(this._state)
+                }
+            });
+            entry.serverId = recordId;
+            this.links = this.links.map((l) => (l.id === entry.id ? entry : l));
+            this.writeLinks();
+        } catch (e) {
+            // No access (guest, or missing MA Config Manager permission
+            // set) — the link still works, it just won't show up in the
+            // My Saved Links bar.
+        }
     }
 
     // ---------------------------------------------------------------- helpers

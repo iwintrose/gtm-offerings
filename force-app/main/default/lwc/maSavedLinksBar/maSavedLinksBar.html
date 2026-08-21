@@ -1,0 +1,34 @@
+<template>
+    <template if:true={hasAccess}>
+        <div class="sl-root">
+            <button class="sl-toggle" onclick={handleToggle}>{toggleLabel}</button>
+            <div class={panelClass}>
+                <template if:false={hasGroups}>
+                    <p class="sl-empty">No saved links yet — build one in Customize and hit Save &amp; copy.</p>
+                </template>
+                <template for:each={groups} for:item="offering">
+                    <div key={offering.key} class="sl-offering">
+                        <div class="sl-offering-name">{offering.name}</div>
+                        <template for:each={offering.industries} for:item="industry">
+                            <div key={industry.key} class="sl-industry">
+                                <div class="sl-industry-name">{industry.name}</div>
+                                <template for:each={industry.links} for:item="link">
+                                    <div key={link.id} class="sl-link">
+                                        <a href={link.url} target="_blank" rel="noopener">{link.label}</a>
+                                        <span class="sl-date">{link.date}</span>
+                                        <button
+                                            class="sl-delete"
+                                            title="Delete"
+                                            data-id={link.id}
+                                            onclick={handleDelete}
+                                        >✕</button>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+</template>

@@ -1,0 +1,116 @@
+.sl-root {
+  position: relative;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.4rem 1rem;
+}
+
+.sl-toggle {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.sl-panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 1rem;
+  z-index: 100;
+  min-width: 320px;
+  max-width: 420px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  padding: 0.75rem;
+}
+
+.sl-panel.open {
+  display: block;
+}
+
+.sl-empty {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin: 0.25rem;
+}
+
+.sl-offering {
+  margin-bottom: 0.75rem;
+}
+
+.sl-offering-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+  margin: 0.4rem 0 0.2rem;
+}
+
+.sl-industry {
+  margin: 0.2rem 0 0.2rem 0.4rem;
+}
+
+.sl-industry-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.5;
+  margin: 0.2rem 0;
+}
+
+.sl-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 6px;
+}
+
+.sl-link:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.sl-link a {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #ee3d23;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sl-link a:hover {
+  text-decoration: underline;
+}
+
+.sl-date {
+  font-size: 0.7rem;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+.sl-delete {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.4;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.3rem;
+}
+
+.sl-delete:hover {
+  opacity: 1;
+}

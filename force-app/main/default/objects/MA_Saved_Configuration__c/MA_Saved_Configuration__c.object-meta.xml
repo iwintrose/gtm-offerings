@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>MA Saved Configuration</label>
+    <pluralLabel>MA Saved Configurations</pluralLabel>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>Private</sharingModel>
+    <nameField>
+        <type>AutoNumber</type>
+        <label>Config Number</label>
+        <displayFormat>SC-{0000}</displayFormat>
+    </nameField>
+</CustomObject>
