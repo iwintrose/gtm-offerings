@@ -9,6 +9,7 @@ export default class MaSavedLinksBar extends LightningElement {
     hasAccess = false;
     isOpen = false;
     groups = [];
+    actionError = '';
     _orgBaseUrl = '';
 
     async connectedCallback() {
@@ -47,6 +48,7 @@ export default class MaSavedLinksBar extends LightningElement {
             const data = await getMyConfigurations();
             this.hasAccess = true;
             this.groups = this.groupRecords(data);
+            this.actionError = '';
         } catch (error) {
             this.hasAccess = false;
             this.groups = [];
@@ -135,12 +137,16 @@ export default class MaSavedLinksBar extends LightningElement {
         event.stopPropagation();
         const recordId = event.currentTarget.dataset.id;
         if (!recordId) return;
+        this.actionError = '';
         try {
             await deleteConfiguration({ recordId });
             await this.loadConfigurations();
         } catch (e) {
             // Deletion failing (e.g. someone else's record, no delete
-            // access) just leaves the row in place — nothing to recover.
+            // access) leaves the row in place -- that part's correct and
+            // safe. What was missing is telling the rep why nothing
+            // happened instead of leaving them to click it again.
+            this.actionError = this.readErrorMessage(e, 'delete that link');
         }
     }
 
@@ -151,13 +157,20 @@ export default class MaSavedLinksBar extends LightningElement {
         const recordId = event.currentTarget.dataset.id;
         const nextActive = event.currentTarget.dataset.active !== 'true';
         if (!recordId) return;
+        this.actionError = '';
         try {
             await setActive({ recordId, active: nextActive });
             await this.loadConfigurations();
         } catch (e) {
             // eslint-disable-next-line no-console
             console.error('maSavedLinksBar: failed to toggle active state', e);
+            this.actionError = this.readErrorMessage(e, 'update that link\'s status');
         }
+    }
+
+    readErrorMessage(error, action) {
+        const message = error?.body?.message;
+        return message || `We could not ${action}. Please try again.`;
     }
 
     groupRecords(records) {

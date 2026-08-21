@@ -299,9 +299,21 @@ export default class MaConfigCustomize extends LightningElement {
             this.editingId = null;
         }
         if (entry && entry.serverId) {
-            deleteConfiguration({ recordId: entry.serverId }).catch(() => {
-                // No access, or already gone — the local list is already
-                // updated, which is what the rep sees.
+            deleteConfiguration({ recordId: entry.serverId }).catch((e) => {
+                const message = e?.body?.message || '';
+                const isAccessError = /do not have access|insufficient/i.test(message);
+                if (isAccessError) {
+                    return;
+                }
+                // The local row is already gone at this point (optimistic
+                // removal above), but if the server delete failed for a
+                // real reason, the record still exists and will reappear
+                // in the Saved Links bar -- silently accepting that here
+                // was actively misleading, not just unhelpful.
+                // eslint-disable-next-line no-console
+                console.error('maConfigCustomize: server-side delete failed', e);
+                this.saveError =
+                    'That link may not have been deleted on the server -- check the Saved list.';
             });
         }
     }
@@ -475,10 +487,17 @@ export default class MaConfigCustomize extends LightningElement {
         } catch (e) {
             const message = e?.body?.message || '';
             const isAccessError = /do not have access|insufficient/i.test(message);
-            if (!isAccessError) {
-                // eslint-disable-next-line no-console
-                console.error('maConfigCustomize: save to MA_Saved_Configuration__c failed', e);
+            if (isAccessError) {
+                return;
             }
+            // eslint-disable-next-line no-console
+            console.error('maConfigCustomize: save to MA_Saved_Configuration__c failed', e);
+            // A failed save used to be entirely silent from here -- the
+            // local list still updated (optimistically, before this call),
+            // so the panel looked like it worked even when nothing reached
+            // the server. Surface it the same way validation errors show.
+            this.saveError =
+                message || 'That link did not save. Please try again.';
         }
     }
 

@@ -8,6 +8,9 @@
                 </svg>
             </button>
             <div class={panelClass}>
+                <template if:true={actionError}>
+                    <p class="sl-error" role="alert">{actionError}</p>
+                </template>
                 <template if:false={hasGroups}>
                     <p class="sl-empty">No saved links yet — build one in Customize and hit Save.</p>
                 </template>

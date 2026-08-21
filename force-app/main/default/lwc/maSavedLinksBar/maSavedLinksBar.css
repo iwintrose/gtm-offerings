@@ -76,6 +76,16 @@
   margin: 0.5rem;
 }
 
+.sl-error {
+  margin: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(224, 49, 49, 0.1);
+  border: 1px solid rgba(224, 49, 49, 0.35);
+  color: #b3261e;
+  font-size: 0.76rem;
+}
+
 .sl-offering {
   margin-bottom: 0.5rem;
 }

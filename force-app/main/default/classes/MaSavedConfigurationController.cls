@@ -46,11 +46,17 @@ public with sharing class MaSavedConfigurationController {
             Config_Payload__c = input.configPayload
         );
 
-        if (String.isNotBlank(input.recordId)) {
-            record.Id = input.recordId;
-            update record;
-        } else {
-            insert record;
+        try {
+            if (String.isNotBlank(input.recordId)) {
+                record.Id = input.recordId;
+                update record;
+            } else {
+                insert record;
+            }
+        } catch (DmlException e) {
+            throw new AuraHandledException(
+                'We could not save this link. Please try again, or check that the record still exists.'
+            );
         }
         return record.Id;
     }
@@ -86,7 +92,13 @@ public with sharing class MaSavedConfigurationController {
         if (String.isBlank(recordId)) {
             throw new AuraHandledException('No record specified.');
         }
-        update new MA_Saved_Configuration__c(Id = recordId, Active__c = active);
+        try {
+            update new MA_Saved_Configuration__c(Id = recordId, Active__c = active);
+        } catch (DmlException e) {
+            throw new AuraHandledException(
+                'We could not update this link\'s status. Please try again.'
+            );
+        }
     }
 
     /**
@@ -117,7 +129,13 @@ public with sharing class MaSavedConfigurationController {
         if (String.isBlank(recordId)) {
             throw new AuraHandledException('No record specified.');
         }
-        delete new MA_Saved_Configuration__c(Id = recordId);
+        try {
+            delete new MA_Saved_Configuration__c(Id = recordId);
+        } catch (DmlException e) {
+            throw new AuraHandledException(
+                'We could not delete this link. It may already be gone, or you may not have access to it.'
+            );
+        }
     }
 
     private static String trimTo(String value, Integer maxLen) {

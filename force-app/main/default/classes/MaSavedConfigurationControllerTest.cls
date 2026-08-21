@@ -117,4 +117,63 @@ private class MaSavedConfigurationControllerTest {
         System.assertEquals(false, updated.Active__c);
         System.assertEquals(1, MaSavedConfigurationController.getMyConfigurations().size());
     }
+
+    @IsTest
+    static void wrapsDmlFailureOnSaveAsFriendlyError() {
+        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
+        );
+        insert existing;
+        Id staleId = existing.Id;
+        delete existing;
+
+        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        input.recordId = staleId;
+        input.offering = 'migration-accelerator';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator';
+
+        try {
+            MaSavedConfigurationController.saveConfiguration(input);
+            System.assert(false, 'Expected an AuraHandledException, not a raw DmlException.');
+        } catch (AuraHandledException e) {
+            System.assert(true);
+        }
+    }
+
+    @IsTest
+    static void wrapsDmlFailureOnDeleteAsFriendlyError() {
+        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
+        );
+        insert existing;
+        Id staleId = existing.Id;
+        delete existing;
+
+        try {
+            MaSavedConfigurationController.deleteConfiguration(staleId);
+            System.assert(false, 'Expected an AuraHandledException, not a raw DmlException.');
+        } catch (AuraHandledException e) {
+            System.assert(true);
+        }
+    }
+
+    @IsTest
+    static void wrapsDmlFailureOnSetActiveAsFriendlyError() {
+        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
+        );
+        insert existing;
+        Id staleId = existing.Id;
+        delete existing;
+
+        try {
+            MaSavedConfigurationController.setActive(staleId, false);
+            System.assert(false, 'Expected an AuraHandledException, not a raw DmlException.');
+        } catch (AuraHandledException e) {
+            System.assert(true);
+        }
+    }
 }
