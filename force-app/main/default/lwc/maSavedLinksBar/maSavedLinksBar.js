@@ -107,7 +107,15 @@ export default class MaSavedLinksBar extends LightningElement {
     }
 
     handleDocumentClick = (event) => {
-        if (event.target !== this.template.host) {
+        // composedPath(), not event.target: on this Aura-wrapped Experience
+        // Cloud site's synthetic shadow DOM, target retargeting to the host
+        // element isn't reliable, so comparing event.target directly could
+        // (and did) treat the click that opens the panel as "outside" and
+        // close it in the same tick. composedPath lists every node the
+        // event passed through, inside the shadow tree included, in both
+        // native and synthetic shadow.
+        const path = event.composedPath ? event.composedPath() : [];
+        if (!path.includes(this.template.host)) {
             this.close();
         }
     };
