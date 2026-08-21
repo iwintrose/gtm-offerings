@@ -93,7 +93,11 @@ export default class MaConfigurator extends LightningElement {
                 el.classList.add('in');
             }
         });
-        if (this._observer) return;
+        // Always re-scan, not just on the first render: .rv elements that
+        // enter the DOM later (the custom note paragraph only exists once
+        // hasCustomNote goes true, well after this component's first
+        // render) were never being observed at all, so they stayed at
+        // opacity:0 forever -- rendered, but permanently invisible.
         this.setupReveal();
     }
 
@@ -505,18 +509,27 @@ export default class MaConfigurator extends LightningElement {
             });
             return;
         }
-        this._observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (!entry.isIntersecting) return;
-                    entry.target.classList.add('in');
-                    this._revealed.add(entry.target);
-                    this._observer.unobserve(entry.target);
-                });
-            },
-            { threshold: 0.14, rootMargin: '0px 0px -8% 0px' }
-        );
-        nodes.forEach((el) => this._observer.observe(el));
+        if (!this._observer) {
+            this._observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (!entry.isIntersecting) return;
+                        entry.target.classList.add('in');
+                        this._revealed.add(entry.target);
+                        this._observer.unobserve(entry.target);
+                    });
+                },
+                { threshold: 0.14, rootMargin: '0px 0px -8% 0px' }
+            );
+        }
+        // observe() is a no-op if already observing a given target, so
+        // it's safe to call on every render rather than tracking which
+        // nodes were already registered.
+        nodes.forEach((el) => {
+            if (!this._revealed.has(el)) {
+                this._observer.observe(el);
+            }
+        });
     }
 
     handleThemeToggle() {
