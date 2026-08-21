@@ -249,10 +249,41 @@
   cursor: pointer;
   white-space: nowrap;
 }
+.lb-error {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(224, 49, 49, 0.1);
+  border: 1px solid rgba(224, 49, 49, 0.35);
+  color: #b3261e;
+  font-size: 0.78rem;
+}
+.fld.field-invalid input {
+  border-color: #e03131;
+}
+.fld.field-invalid label {
+  color: #e03131;
+}
 .lb-save-row {
   display: flex;
   gap: 0.4rem;
   margin-top: 0.5rem;
+}
+.lb-draft {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--ink-faint, #8b857d);
+  font-size: 0.72rem;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.lb-draft:hover {
+  color: var(--ink-soft, #57534d);
 }
 .lb-save {
   flex: 1;

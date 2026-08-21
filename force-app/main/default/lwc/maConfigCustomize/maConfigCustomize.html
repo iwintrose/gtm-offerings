@@ -17,13 +17,14 @@
           Type a client name, pick their industry, the page above updates live.
         </div>
 
-        <div class="fld">
+        <div class={companyFieldClass}>
           <label for="lbCompany">Company</label>
           <input
             id="lbCompany"
             placeholder="e.g. Metrolinx"
             value={company}
             oninput={handleCompanyInput}
+            aria-invalid={companyInvalid}
           />
         </div>
 
@@ -88,6 +89,9 @@
           <input class="lb-url" readonly value={linkUrl} />
           <button class="lb-copy" onclick={handleCopyLink}>{copyFeedback}</button>
         </div>
+        <template if:true={saveError}>
+          <div class="lb-error" role="alert">{saveError}</div>
+        </template>
         <div class="lb-save-row">
           <button class="lb-save" onclick={handleSave}>{saveLabel}</button>
           <template if:true={canSaveAsNew}>
@@ -96,6 +100,9 @@
             </button>
           </template>
         </div>
+        <button class="lb-draft" onclick={handleSaveDraft}>
+          or save as draft, incomplete for now →
+        </button>
 
         <template if:true={editing}>
           <div class="lb-editbar">

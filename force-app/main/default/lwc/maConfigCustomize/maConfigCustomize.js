@@ -38,9 +38,15 @@ export default class MaConfigCustomize extends LightningElement {
     @track copyFeedback = 'Copy link';
     @track links = [];
     @track editingId = null;
+    @track companyInvalid = false;
+    @track saveError = '';
 
     get saveLabel() {
         return this.canSaveAsNew ? 'Update this link' : 'Save link';
+    }
+
+    get companyFieldClass() {
+        return this.companyInvalid ? 'fld field-invalid' : 'fld';
     }
 
     _state = {};
@@ -158,7 +164,12 @@ export default class MaConfigCustomize extends LightningElement {
     }
 
     handleCompanyInput(event) {
-        this.emit('companychange', { value: event.currentTarget.value });
+        const value = event.currentTarget.value;
+        if (this.companyInvalid && value.trim()) {
+            this.companyInvalid = false;
+            this.saveError = '';
+        }
+        this.emit('companychange', { value });
     }
 
     handleIndustryChange(event) {
@@ -227,6 +238,7 @@ export default class MaConfigCustomize extends LightningElement {
     }
 
     handleSave() {
+        if (!this.validate()) return;
         this.saveInternal({ asNew: false });
     }
 
@@ -234,7 +246,40 @@ export default class MaConfigCustomize extends LightningElement {
      * opened from an existing saved link. Lets a rep branch a client's
      * config into a second version without touching the original. */
     handleSaveAsNew() {
+        if (!this.validate()) return;
         this.saveInternal({ asNew: true });
+    }
+
+    /** Bypasses validation on purpose: a rep mid-customization who wants to
+     * step away shouldn't be blocked from persisting what they have so far
+     * just because a required field isn't filled in yet. Still a real save
+     * -- same record, same server call -- not a separate draft state. */
+    handleSaveDraft() {
+        this.companyInvalid = false;
+        this.saveError = '';
+        this.saveInternal({ asNew: false });
+    }
+
+    /**
+     * Required-field check before a real Save/Update -- catches an
+     * incomplete customization instead of silently persisting it, without
+     * discarding anything the rep already typed. Company is the only hard
+     * requirement: a client link with no client name isn't meaningfully
+     * usable. Focuses the offending field so the rep isn't left guessing
+     * what's missing.
+     */
+    validate() {
+        const companyMissing = !(this.company || '').trim();
+        this.companyInvalid = companyMissing;
+        this.saveError = companyMissing
+            ? 'Add a company name before saving — or use Save draft to hold your place.'
+            : '';
+        if (companyMissing) {
+            const field = this.template.querySelector('#lbCompany');
+            if (field) field.focus();
+            return false;
+        }
+        return true;
     }
 
     /** Pure clipboard copy of the current link -- independent of whether
