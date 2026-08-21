@@ -18,6 +18,9 @@
 }
 
 .sl-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 600;
@@ -28,12 +31,21 @@
   background: transparent;
   color: var(--ink-soft, inherit);
   cursor: pointer;
-  white-space: nowrap;
 }
 
 .sl-toggle:hover {
   color: var(--ink, inherit);
   border-color: var(--sl-accent);
+}
+
+.sl-chevron {
+  color: inherit;
+  transition: transform 0.15s ease;
+  flex: none;
+}
+
+.sl-chevron.open {
+  transform: rotate(180deg);
 }
 
 .sl-panel {
@@ -51,7 +63,7 @@
   border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
   border-radius: 10px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
-  padding: 0.75rem;
+  padding: 0.5rem;
 }
 
 .sl-panel.open {
@@ -61,11 +73,11 @@
 .sl-empty {
   font-size: 0.82rem;
   opacity: 0.7;
-  margin: 0.25rem;
+  margin: 0.5rem;
 }
 
 .sl-offering {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .sl-offering-name {
@@ -74,35 +86,54 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   opacity: 0.55;
-  margin: 0.4rem 0 0.2rem;
+  margin: 0.5rem 0.5rem 0.2rem;
 }
 
 .sl-industry {
-  margin: 0.2rem 0 0.2rem 0.4rem;
+  margin: 0.2rem 0;
 }
 
 .sl-industry-name {
   font-size: 0.7rem;
   font-weight: 600;
   opacity: 0.5;
-  margin: 0.2rem 0;
+  margin: 0.3rem 0.5rem 0.15rem;
 }
 
 .sl-link {
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.4rem;
-  border-radius: 6px;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
 }
 
 .sl-link:hover {
-  background: rgba(127, 127, 127, 0.1);
+  background: rgba(127, 127, 127, 0.08);
 }
 
-.sl-link a {
+.sl-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+  background: #1a7a3a;
+}
+
+.sl-dot.off {
+  background: #9a9a9a;
+}
+
+.sl-link-main {
   flex: 1;
-  font-size: 0.83rem;
+  min-width: 0;
+}
+
+.sl-link-name {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--sl-accent);
   text-decoration: none;
   overflow: hidden;
@@ -110,31 +141,39 @@
   white-space: nowrap;
 }
 
-.sl-link a:hover {
+.sl-link-name:hover {
   text-decoration: underline;
 }
 
-.sl-link.inactive a {
+.sl-link.inactive .sl-link-name {
   color: inherit;
+  opacity: 0.6;
+}
+
+.sl-link-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
   opacity: 0.55;
-  text-decoration: line-through;
+  margin-top: 0.1rem;
 }
 
-.sl-status {
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 0.1rem 0.35rem;
-  border-radius: 100px;
-  white-space: nowrap;
-  color: #1a7a3a;
-  background: rgba(26, 122, 58, 0.12);
+.sl-link-record {
+  color: inherit;
+  text-decoration: none;
 }
 
-.sl-link.inactive .sl-status {
-  color: #8a8a8a;
-  background: rgba(127, 127, 127, 0.15);
+.sl-link-record:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+.sl-link-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
 }
 
 .sl-toggle-active {
@@ -144,38 +183,14 @@
   cursor: pointer;
   opacity: 0.6;
   font-size: 0.65rem;
-  padding: 0.1rem 0.4rem;
+  padding: 0.2rem 0.4rem;
   color: inherit;
   white-space: nowrap;
-}
-
-.sl-sf-link {
-  display: inline-block;
-  border: 1px solid var(--line, rgba(127, 127, 127, 0.3));
-  border-radius: 6px;
-  opacity: 0.6;
-  font-size: 0.6rem;
-  font-weight: 700;
-  padding: 0.1rem 0.35rem;
-  color: inherit;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.sl-sf-link:hover {
-  opacity: 1;
-  border-color: var(--sl-accent);
 }
 
 .sl-toggle-active:hover {
   opacity: 1;
   border-color: var(--sl-accent);
-}
-
-.sl-date {
-  font-size: 0.68rem;
-  opacity: 0.5;
-  white-space: nowrap;
 }
 
 .sl-delete {
@@ -184,7 +199,7 @@
   cursor: pointer;
   opacity: 0.4;
   font-size: 0.72rem;
-  padding: 0.1rem 0.3rem;
+  padding: 0.2rem 0.3rem;
   color: inherit;
 }
 

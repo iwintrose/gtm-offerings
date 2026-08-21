@@ -30,7 +30,13 @@
   font-family: 'Söhne', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* overflow-x alone silently computes overflow-y to auto too (CSS
+     Overflow spec's "if one axis is non-visible, the other becomes
+     auto" rule) -- that turned this into its own scroll container,
+     which changes what position: sticky on .psbar sticks relative to.
+     Explicit overflow-y: visible keeps real page-level scroll intact. */
   overflow-x: hidden;
+  overflow-y: visible;
   min-height: 100vh;
 }
 

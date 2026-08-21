@@ -71,17 +71,52 @@ export default class MaSavedLinksBar extends LightningElement {
         return this.groups.length > 0;
     }
 
-    get toggleLabel() {
-        return this.isOpen ? 'Saved ▲' : 'Saved ▾';
-    }
-
     get panelClass() {
         return this.isOpen ? 'sl-panel open' : 'sl-panel';
     }
 
-    handleToggle() {
-        this.isOpen = !this.isOpen;
+    get chevronClass() {
+        return this.isOpen ? 'sl-chevron open' : 'sl-chevron';
     }
+
+    handleToggle() {
+        this.isOpen ? this.close() : this.open();
+    }
+
+    open() {
+        this.isOpen = true;
+        // Standard dropdown convention: a click anywhere outside, or
+        // Escape, closes it. Listening on document (not this.template)
+        // is what makes "outside" work -- and shadow DOM retargets any
+        // click that originated inside this component so its
+        // event.target here is always this.template.host, letting the
+        // handler tell "inside" from "outside" without walking the tree.
+        document.addEventListener('click', this.handleDocumentClick);
+        document.addEventListener('keydown', this.handleDocumentKeydown);
+    }
+
+    close() {
+        this.isOpen = false;
+        document.removeEventListener('click', this.handleDocumentClick);
+        document.removeEventListener('keydown', this.handleDocumentKeydown);
+    }
+
+    disconnectedCallback() {
+        document.removeEventListener('click', this.handleDocumentClick);
+        document.removeEventListener('keydown', this.handleDocumentKeydown);
+    }
+
+    handleDocumentClick = (event) => {
+        if (event.target !== this.template.host) {
+            this.close();
+        }
+    };
+
+    handleDocumentKeydown = (event) => {
+        if (event.key === 'Escape') {
+            this.close();
+        }
+    };
 
     async handleDelete(event) {
         event.stopPropagation();
@@ -129,6 +164,7 @@ export default class MaSavedLinksBar extends LightningElement {
             byIndustry.get(industryKey).push({
                 id: rec.Id,
                 label: rec.Company__c || rec.Name,
+                recordNumber: rec.Name,
                 url: appendCfgId(rec.Generated_URL__c, rec.Id),
                 owner: rec.Owner ? rec.Owner.Name : '',
                 date: rec.CreatedDate
@@ -137,6 +173,7 @@ export default class MaSavedLinksBar extends LightningElement {
                 active,
                 activeAttr: String(active),
                 rowClass: active ? 'sl-link' : 'sl-link inactive',
+                statusDotClass: active ? 'sl-dot' : 'sl-dot off',
                 statusLabel: active ? 'Active' : 'Inactive',
                 toggleLabel: active ? 'Disable' : 'Enable',
                 toggleTitle: active

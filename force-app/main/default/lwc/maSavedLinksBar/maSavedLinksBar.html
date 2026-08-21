@@ -1,10 +1,15 @@
 <template>
     <template if:true={hasAccess}>
         <div class="sl-root">
-            <button class="sl-toggle" onclick={handleToggle}>{toggleLabel}</button>
+            <button class="sl-toggle" onclick={handleToggle}>
+                Saved
+                <svg class={chevronClass} viewBox="0 0 12 8" width="10" height="7" aria-hidden="true">
+                    <path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </button>
             <div class={panelClass}>
                 <template if:false={hasGroups}>
-                    <p class="sl-empty">No saved links yet — build one in Customize and hit Save &amp; copy.</p>
+                    <p class="sl-empty">No saved links yet — build one in Customize and hit Save.</p>
                 </template>
                 <template for:each={groups} for:item="offering">
                     <div key={offering.key} class="sl-offering">
@@ -14,29 +19,30 @@
                                 <div class="sl-industry-name">{industry.name}</div>
                                 <template for:each={industry.links} for:item="link">
                                     <div key={link.id} class={link.rowClass}>
-                                        <span class="sl-status">{link.statusLabel}</span>
-                                        <a href={link.url} target="_blank" rel="noopener">{link.label}</a>
-                                        <span class="sl-date">{link.date}</span>
-                                        <a
-                                            class="sl-sf-link"
-                                            href={link.recordUrl}
-                                            target="_blank"
-                                            rel="noopener"
-                                            title="View in Salesforce"
-                                        >SF</a>
-                                        <button
-                                            class="sl-toggle-active"
-                                            title={link.toggleTitle}
-                                            data-id={link.id}
-                                            data-active={link.activeAttr}
-                                            onclick={handleToggleActive}
-                                        >{link.toggleLabel}</button>
-                                        <button
-                                            class="sl-delete"
-                                            title="Delete"
-                                            data-id={link.id}
-                                            onclick={handleDelete}
-                                        >✕</button>
+                                        <span class={link.statusDotClass} title={link.statusLabel}></span>
+                                        <div class="sl-link-main">
+                                            <a class="sl-link-name" href={link.url} target="_blank" rel="noopener">{link.label}</a>
+                                            <div class="sl-link-meta">
+                                                <a class="sl-link-record" href={link.recordUrl} target="_blank" rel="noopener">{link.recordNumber}</a>
+                                                <span>·</span>
+                                                <span>{link.date}</span>
+                                            </div>
+                                        </div>
+                                        <div class="sl-link-actions">
+                                            <button
+                                                class="sl-toggle-active"
+                                                title={link.toggleTitle}
+                                                data-id={link.id}
+                                                data-active={link.activeAttr}
+                                                onclick={handleToggleActive}
+                                            >{link.toggleLabel}</button>
+                                            <button
+                                                class="sl-delete"
+                                                title="Delete"
+                                                data-id={link.id}
+                                                onclick={handleDelete}
+                                            >✕</button>
+                                        </div>
                                     </div>
                                 </template>
                             </div>
