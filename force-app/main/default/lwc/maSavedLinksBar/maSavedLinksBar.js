@@ -85,39 +85,44 @@ export default class MaSavedLinksBar extends LightningElement {
 
     open() {
         this.isOpen = true;
-        // Standard dropdown convention: a click anywhere outside, or
-        // Escape, closes it. Listening on document (not this.template)
-        // is what makes "outside" work -- and shadow DOM retargets any
-        // click that originated inside this component so its
-        // event.target here is always this.template.host, letting the
-        // handler tell "inside" from "outside" without walking the tree.
-        document.addEventListener('click', this.handleDocumentClick);
+        // Deferred, not attached synchronously: attaching right here would
+        // let the very click that opened the panel -- still bubbling up
+        // toward document -- reach this same listener and close the panel
+        // back in the same tick. Two earlier attempts tried to solve that
+        // by comparing event.target / composedPath() against
+        // this.template.host, but under Lightning Web Security the DOM is
+        // membrane-wrapped, so the "same" element can surface as different
+        // wrapper objects on either side of that comparison and the check
+        // silently always fails. Queuing the listener for the next tick
+        // sidesteps identity comparison entirely: nothing is listening yet
+        // while the opening click is still in flight.
+        this._outsideClickTimer = setTimeout(() => {
+            document.addEventListener('click', this.handleDocumentClick);
+        }, 0);
         document.addEventListener('keydown', this.handleDocumentKeydown);
     }
 
     close() {
         this.isOpen = false;
+        clearTimeout(this._outsideClickTimer);
         document.removeEventListener('click', this.handleDocumentClick);
         document.removeEventListener('keydown', this.handleDocumentKeydown);
     }
 
     disconnectedCallback() {
+        clearTimeout(this._outsideClickTimer);
         document.removeEventListener('click', this.handleDocumentClick);
         document.removeEventListener('keydown', this.handleDocumentKeydown);
     }
 
-    handleDocumentClick = (event) => {
-        // composedPath(), not event.target: on this Aura-wrapped Experience
-        // Cloud site's synthetic shadow DOM, target retargeting to the host
-        // element isn't reliable, so comparing event.target directly could
-        // (and did) treat the click that opens the panel as "outside" and
-        // close it in the same tick. composedPath lists every node the
-        // event passed through, inside the shadow tree included, in both
-        // native and synthetic shadow.
-        const path = event.composedPath ? event.composedPath() : [];
-        if (!path.includes(this.template.host)) {
-            this.close();
-        }
+    // No inside/outside identity check needed: by the time this can fire,
+    // the opening click is long finished (see open()). Row actions
+    // (Disable/Delete) call stopPropagation() so they never reach here and
+    // the panel stays open through them; any other click reaching
+    // document -- inside the panel or out -- closes it, same as a normal
+    // dropdown.
+    handleDocumentClick = () => {
+        this.close();
     };
 
     handleDocumentKeydown = (event) => {
