@@ -7,4 +7,22 @@
         <target>lightningCommunity__Page</target>
         <target>lightningCommunity__Default</target>
     </targets>
+    <targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property
+                name="offeringsUrl"
+                type="String"
+                label="Offerings page URL"
+                default="/"
+                description="Back link target, shown only in the internal flow."
+            />
+            <property
+                name="industryUrl"
+                type="String"
+                label="Industry page URL"
+                default="/choose-industry"
+                description="Back link target, shown only in the internal flow."
+            />
+        </targetConfig>
+    </targetConfigs>
 </LightningComponentBundle>
