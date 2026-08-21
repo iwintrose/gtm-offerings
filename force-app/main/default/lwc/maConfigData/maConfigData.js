@@ -254,6 +254,12 @@ export const FIELDS = [
         k: 'BOOKING_URL',
         label: 'Microsoft Bookings link (optional)',
         ph: 'https://outlook.office365.com/owa/calendar/…/bookings/'
+    },
+    {
+        k: 'CUSTOM_NOTE',
+        label: 'A note for this client (replaces the default intro line on the page)',
+        ph: 'e.g. We know Northwind’s Q3 renewal timeline — here’s how we’d de-risk it.',
+        textarea: true
     }
 ];
 

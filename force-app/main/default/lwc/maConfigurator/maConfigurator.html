@@ -43,7 +43,10 @@
           how we get you there as your delivery partner, not just a tool, and
           what the first step looks like.
         </p>
-        <template if:true={hasIndustry}>
+        <template if:true={hasCustomNote}>
+          <p class="lede rv d2 ind-slot custom-note">{customNoteDisplay}</p>
+        </template>
+        <template if:true={showIndustryDefault}>
           <p class="lede rv d2 ind-slot">{coverSub}</p>
         </template>
         <template if:true={hasCompany}>

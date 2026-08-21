@@ -151,6 +151,9 @@ export default class MaConfigurator extends LightningElement {
         if (deps) next.DEPENDENCY_COUNT = deps;
         if (health) next.HEALTH_SCORE = health;
 
+        const note = get('note');
+        if (note) next.CUSTOM_NOTE = note;
+
         this.tokenState = next;
 
         const companyParam = get('company');
@@ -295,6 +298,21 @@ export default class MaConfigurator extends LightningElement {
 
     get coverSub() {
         return this.industry ? this.industry.coverSub : '';
+    }
+
+    /** A rep-written note takes over the cover's intro line in place of the
+     * generic industry blurb -- this is the live-edit-in-Customize ask:
+     * the rep's own words replace the default copy on the page itself. */
+    get hasCustomNote() {
+        return !!this.tokenValue('CUSTOM_NOTE');
+    }
+
+    get customNoteDisplay() {
+        return this.tokenValue('CUSTOM_NOTE');
+    }
+
+    get showIndustryDefault() {
+        return this.hasIndustry && !this.hasCustomNote;
     }
 
     get challengeExtra() {

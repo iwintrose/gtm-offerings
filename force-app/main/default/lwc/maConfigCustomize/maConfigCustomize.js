@@ -103,7 +103,8 @@ export default class MaConfigCustomize extends LightningElement {
             label: f.label,
             ph: f.ph,
             inputId: `fld_${f.k}`,
-            value: this._state[f.k] || ''
+            value: this._state[f.k] || '',
+            isTextarea: !!f.textarea
         }));
     }
 
@@ -415,6 +416,10 @@ export default class MaConfigCustomize extends LightningElement {
         push('assets', this._state.ASSET_COUNT);
         push('deps', this._state.DEPENDENCY_COUNT);
         push('health', this._state.HEALTH_SCORE);
+        // The client's page has no DB round trip to read from -- everything
+        // it renders comes from this URL, custom note included, same as
+        // src/tgt/assets/deps/health above.
+        push('note', this._state.CUSTOM_NOTE);
         if (!excludeId && this.knownRecordId) {
             push('cfgId', this.knownRecordId);
         }

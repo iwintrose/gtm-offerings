@@ -88,6 +88,21 @@
   outline: none;
   border-color: var(--coral, #ee3d23);
 }
+.fld textarea {
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink, #17140f);
+  background: var(--ground, #f7f4f0);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  resize: vertical;
+  min-height: 4.4rem;
+}
+.fld textarea:focus {
+  outline: none;
+  border-color: var(--coral, #ee3d23);
+}
 .lb-select {
   font-family: inherit;
   font-size: 0.92rem;

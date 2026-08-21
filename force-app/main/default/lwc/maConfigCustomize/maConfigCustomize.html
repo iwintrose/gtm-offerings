@@ -143,13 +143,25 @@
         <template for:each={fields} for:item="fld">
           <div key={fld.k} class="fld">
             <label for={fld.inputId}>{fld.label}</label>
-            <input
-              id={fld.inputId}
-              value={fld.value}
-              placeholder={fld.ph}
-              data-key={fld.k}
-              oninput={handleFieldInput}
-            />
+            <template if:true={fld.isTextarea}>
+              <textarea
+                id={fld.inputId}
+                value={fld.value}
+                placeholder={fld.ph}
+                data-key={fld.k}
+                oninput={handleFieldInput}
+                rows="3"
+              ></textarea>
+            </template>
+            <template if:false={fld.isTextarea}>
+              <input
+                id={fld.inputId}
+                value={fld.value}
+                placeholder={fld.ph}
+                data-key={fld.k}
+                oninput={handleFieldInput}
+              />
+            </template>
           </div>
         </template>
       </div>
