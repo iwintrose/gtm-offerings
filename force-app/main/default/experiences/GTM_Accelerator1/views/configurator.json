@@ -26,6 +26,13 @@
       "id" : "28ea3f0a-5d58-48f9-9f22-d137b4f95c89",
       "regions" : [ {
         "components" : [ {
+          "componentAttributes" : { },
+          "componentName" : "c:maSavedLinksBar",
+          "id" : "8877203c-8f56-48a7-af02-90f552df1d9a",
+          "renderPriority" : "NEUTRAL",
+          "renditionMap" : { },
+          "type" : "component"
+        }, {
           "componentAttributes" : {
             "industryUrl" : "/gtmaccelerator/s/choose-industry",
             "offeringsUrl" : "/gtmaccelerator/s/"

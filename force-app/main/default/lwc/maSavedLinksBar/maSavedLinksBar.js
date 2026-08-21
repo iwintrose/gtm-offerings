@@ -18,12 +18,22 @@ export default class MaSavedLinksBar extends LightningElement {
             this.hasAccess = true;
             this.groups = this.groupRecords(data);
         } else if (error) {
-            // Guest users (and anyone else without the MA Config Manager
-            // permission set) hit this path — no class/object access. The
-            // bar simply doesn't render for them; this is not a real error
-            // to surface.
             this.hasAccess = false;
             this.groups = [];
+            // Guests (and anyone else without the MA Config Manager
+            // permission set) hit this path as INSUFFICIENT_ACCESS -- that
+            // one is expected and the bar just stays hidden. Anything else
+            // is a real bug, not an access check, so it's worth a console
+            // trace: a permission-shaped failure looks identical to a
+            // genuine one from the UI alone.
+            const code = error?.body?.exceptionType || error?.body?.message || '';
+            const isAccessError = /insufficient|no such column|not invocable/i.test(
+                String(code)
+            );
+            if (!isAccessError) {
+                // eslint-disable-next-line no-console
+                console.error('maSavedLinksBar: unexpected error loading configurations', error);
+            }
         }
     }
 

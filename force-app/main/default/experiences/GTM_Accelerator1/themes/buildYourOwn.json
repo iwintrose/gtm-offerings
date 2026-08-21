@@ -114,12 +114,6 @@
         "id" : "ebcaf55c-ce47-412c-a1c1-d22169fce455",
         "renditionMap" : { },
         "type" : "component"
-      }, {
-        "componentAttributes" : { },
-        "componentName" : "c:maSavedLinksBar",
-        "id" : "b6f2e1a4-7c3d-4e12-9a4f-2d5e8c1f9a30",
-        "renditionMap" : { },
-        "type" : "component"
       } ],
       "id" : "7a237979-1f0f-4f01-919a-0a09f3f357fd",
       "regionName" : "navBar",

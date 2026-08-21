@@ -26,6 +26,13 @@
       "id" : "90d67dcf-c7ef-4e58-a945-efdf96f35d26",
       "regions" : [ {
         "components" : [ {
+          "componentAttributes" : { },
+          "componentName" : "c:maSavedLinksBar",
+          "id" : "b1b1e8de-bed8-4c8e-a0f8-a49fb36ef580",
+          "renderPriority" : "NEUTRAL",
+          "renditionMap" : { },
+          "type" : "component"
+        }, {
           "componentAttributes" : {
             "configuratorUrl" : "/gtmaccelerator/s/configurator",
             "offeringsUrl" : "/gtmaccelerator/s/"
