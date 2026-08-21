@@ -231,4 +231,92 @@ private class MaAssessmentRequestControllerTest {
 
         Assert.isTrue(result.success, 'Deployed config should be readable');
     }
+
+    @isTest
+    static void createsAssessmentRequestRecord() {
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(sampleInput());
+        Test.stopTest();
+
+        Assert.isNotNull(
+            result.assessmentRequestId,
+            'A structured assessment request record should always be filed'
+        );
+        MA_Assessment_Request__c req = [
+            SELECT Requester_Name__c, Requester_Email__c, Company__c, Status__c,
+                   Lead__c, Opportunity__c, Saved_Configuration__c
+            FROM MA_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual('Alex Rivera', req.Requester_Name__c);
+        Assert.areEqual('alex.rivera@example.com', req.Requester_Email__c);
+        Assert.areEqual('New', req.Status__c);
+        Assert.areEqual(result.leadId, req.Lead__c);
+        Assert.isNull(req.Opportunity__c, 'No client link was supplied');
+        Assert.isNull(req.Saved_Configuration__c);
+    }
+
+    @isTest
+    static void linksToOpportunityAndAttributesLeadViaSavedConfig() {
+        Opportunity opp = new Opportunity(
+            Name = 'Northwind Retail Migration',
+            StageName = 'Qualification',
+            CloseDate = Date.today().addMonths(2)
+        );
+        insert opp;
+
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Industry__c = 'Financial Services',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Opportunity__c = opp.Id,
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.areEqual(opp.Id, result.opportunityId, 'Opportunity should carry through to the result');
+
+        MA_Assessment_Request__c req = [
+            SELECT Opportunity__c, Saved_Configuration__c, Lead__c
+            FROM MA_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(opp.Id, req.Opportunity__c);
+        Assert.areEqual(savedConfig.Id, req.Saved_Configuration__c);
+
+        Lead created = [SELECT OwnerId FROM Lead WHERE Id = :result.leadId];
+        Assert.areEqual(
+            UserInfo.getUserId(),
+            created.OwnerId,
+            'A new Lead should be owned by the rep who owns the client link, not left unassigned'
+        );
+    }
+
+    @isTest
+    static void failsOpenOnMalformedSavedRecordId() {
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = 'not-a-real-id';
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'A bad savedRecordId should not block the submission');
+        Assert.isNull(result.opportunityId);
+    }
 }

@@ -32,6 +32,7 @@ export default class MaConfigBooking extends LightningElement {
     @api bookingUrl = '';
     @api prospect = '';
     @api industryLabel = '';
+    @api savedRecordId = '';
 
     @track form = {
         name: '',
@@ -154,7 +155,8 @@ export default class MaConfigBooking extends LightningElement {
             timeline: this.form.timeline,
             context: this.form.context,
             prospect: this.prospect,
-            industry: this.industryLabel
+            industry: this.industryLabel,
+            savedRecordId: this.savedRecordId
         };
 
         try {

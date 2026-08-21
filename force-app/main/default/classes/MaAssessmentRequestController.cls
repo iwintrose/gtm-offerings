@@ -42,6 +42,18 @@ public without sharing class MaAssessmentRequestController {
         public String prospect { get; set; }
         @AuraEnabled
         public String industry { get; set; }
+        /** cfgId of the MA_Saved_Configuration__c the requester was viewing,
+         * when the booking happened from a client's configured link. Used
+         * to attribute the Lead to the right rep and to file the request
+         * under the right Opportunity -- see resolveConfigContext(). */
+        @AuraEnabled
+        public String savedRecordId { get; set; }
+    }
+
+    /** What we know about the client link the request came from. */
+    private class ConfigContext {
+        Id ownerId;
+        Id opportunityId;
     }
 
     public class RequestResult {
@@ -55,6 +67,10 @@ public without sharing class MaAssessmentRequestController {
         public Boolean emailSent { get; set; }
         @AuraEnabled
         public String message { get; set; }
+        @AuraEnabled
+        public String assessmentRequestId { get; set; }
+        @AuraEnabled
+        public String opportunityId { get; set; }
 
         public RequestResult() {
             this.success = false;
@@ -88,6 +104,7 @@ public without sharing class MaAssessmentRequestController {
         }
 
         MA_Assessment_Config__mdt cfg = loadConfig();
+        ConfigContext ctx = resolveConfigContext(input.savedRecordId);
 
         try {
             Boolean createLead = (Boolean) cfg.get('Create_Lead__c');
@@ -95,11 +112,12 @@ public without sharing class MaAssessmentRequestController {
             String notifyEmail = (String) cfg.get('Notify_Email__c');
 
             if (createLead == true) {
-                applyLead(input, cleanName, cleanEmail, cfg, result);
+                applyLead(input, cleanName, cleanEmail, cfg, ctx, result);
             }
             if (sendEmail == true && String.isNotBlank(notifyEmail)) {
                 result.emailSent = notify(input, cleanName, cleanEmail, cfg);
             }
+            recordAssessmentRequest(input, cleanName, cleanEmail, ctx, result);
             result.success = true;
             result.message = 'Request received.';
         } catch (DmlException e) {
@@ -108,6 +126,120 @@ public without sharing class MaAssessmentRequestController {
             );
         }
         return result;
+    }
+
+    // --------------------------------------------------------- client link
+
+    /**
+     * Best-effort lookup of the client link the requester was viewing, so
+     * the request can be attributed to the right rep and filed under the
+     * right Opportunity -- the two things the assessment request had no
+     * connection to before. `without sharing` mirrors the rest of this
+     * class: the guest user has no read access to MA_Saved_Configuration__c
+     * or Opportunity on its own. Fails open (returns an empty context)
+     * rather than blocking the submission on a bad/missing id -- a request
+     * with no linkage is still far better than a dropped one.
+     */
+    private static ConfigContext resolveConfigContext(String savedRecordId) {
+        ConfigContext ctx = new ConfigContext();
+        if (String.isBlank(savedRecordId)) {
+            return ctx;
+        }
+        try {
+            Id configId = Id.valueOf(savedRecordId);
+            List<MA_Saved_Configuration__c> rows = [
+                SELECT OwnerId, Opportunity__c
+                FROM MA_Saved_Configuration__c
+                WHERE Id = :configId
+                LIMIT 1
+            ];
+            if (!rows.isEmpty()) {
+                ctx.ownerId = rows[0].OwnerId;
+                ctx.opportunityId = rows[0].Opportunity__c;
+            }
+        } catch (Exception e) {
+            // Malformed id, or no read access -- proceed unlinked.
+        }
+        return ctx;
+    }
+
+    /**
+     * Files a real, queryable record of the request -- linked to the
+     * client's link, the Lead, and the Opportunity when known -- instead of
+     * the request only existing as free text buried in a Task description.
+     * Best-effort: a failure here must never take down the Lead/Task path
+     * that already succeeded above.
+     */
+    private static void recordAssessmentRequest(
+        RequestInput input,
+        String cleanName,
+        String cleanEmail,
+        ConfigContext ctx,
+        RequestResult result
+    ) {
+        try {
+            MA_Assessment_Request__c req = new MA_Assessment_Request__c(
+                Saved_Configuration__c = isId(input.savedRecordId)
+                    ? (Id) Id.valueOf(input.savedRecordId)
+                    : null,
+                Opportunity__c = ctx.opportunityId,
+                Lead__c = String.isNotBlank(result.leadId)
+                    ? (Id) Id.valueOf(result.leadId)
+                    : null,
+                Requester_Name__c = cleanName,
+                Requester_Email__c = cleanEmail,
+                Company__c = trimTo(input.company, MAX_SHORT),
+                Role__c = trimTo(input.role, MAX_SHORT),
+                Current_Platform__c = trimTo(input.currentPlatform, MAX_SHORT),
+                Environment_Size__c = trimTo(input.environmentSize, MAX_SHORT),
+                Timeline__c = trimTo(input.timeline, MAX_SHORT),
+                Context__c = trimTo(input.context, MAX_LONG),
+                Status__c = 'New',
+                Source__c = 'Migration Accelerator'
+            );
+            if (ctx.ownerId != null) {
+                req.OwnerId = ctx.ownerId;
+            }
+            insert req;
+            result.assessmentRequestId = req.Id;
+            result.opportunityId = ctx.opportunityId;
+
+            if (ctx.opportunityId != null) {
+                postOpportunityFeed(ctx.opportunityId, cleanName, input);
+            }
+        } catch (Exception e) {
+            // Lead/Task/email already succeeded above -- don't fail the
+            // whole submission over the (nice-to-have) structured record.
+        }
+    }
+
+    /** Best-effort Chatter note on the Opportunity -- visible without
+     * silently changing Stage, which is a call for the rep, not this
+     * form. */
+    private static void postOpportunityFeed(Id opportunityId, String cleanName, RequestInput input) {
+        try {
+            FeedItem post = new FeedItem(
+                ParentId = opportunityId,
+                Body = 'New assessment request from ' + cleanName +
+                    (String.isNotBlank(input.company) ? ' (' + trimTo(input.company, 80) + ')' : '') +
+                    ' via the Migration Accelerator configured link.'
+            );
+            insert post;
+        } catch (Exception e) {
+            // Feed tracking may not be enabled on Opportunity -- skip.
+        }
+    }
+
+    private static Boolean isId(String value) {
+        if (String.isBlank(value)) {
+            return false;
+        }
+        try {
+            Id.valueOf(value);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // ----------------------------------------------------------------- config
@@ -142,6 +274,7 @@ public without sharing class MaAssessmentRequestController {
         String cleanName,
         String cleanEmail,
         MA_Assessment_Config__mdt cfg,
+        ConfigContext ctx,
         RequestResult result
     ) {
         String leadSourceCfg = (String) cfg.get('Lead_Source__c');
@@ -167,6 +300,14 @@ public without sharing class MaAssessmentRequestController {
                 Title = trimTo(input.role, MAX_SHORT),
                 LeadSource = leadSource
             );
+            // Attribute to the rep who owns the client link the requester
+            // was viewing, rather than leaving it to fall to the guest
+            // user or a generic assignment rule -- this is the entire
+            // point of threading savedRecordId through: the rep who built
+            // the link is the one who should see the Lead land on them.
+            if (ctx.ownerId != null) {
+                target.OwnerId = ctx.ownerId;
+            }
             insert target;
             result.leadCreated = true;
         } else {
