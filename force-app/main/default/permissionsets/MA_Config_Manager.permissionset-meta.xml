@@ -2,6 +2,10 @@
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <description>Internal reps: save and list their own configurator links (MA Saved Configuration). Not granted to the guest user.</description>
     <label>MA Config Manager</label>
+    <applicationVisibilities>
+        <application>GTM_Offerings</application>
+        <visible>true</visible>
+    </applicationVisibilities>
     <classAccesses>
         <apexClass>MaSavedConfigurationController</apexClass>
         <enabled>true</enabled>

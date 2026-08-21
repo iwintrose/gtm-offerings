@@ -430,6 +430,19 @@ export default class MaConfigurator extends LightningElement {
         this.tokenState = cleared;
     }
 
+    // ------------------------------------------------------------- scroll nav
+
+    /** The "read on" cue at the bottom of each chapter was purely decorative
+     * -- no click handler at all -- despite looking like a scroll-to-next
+     * affordance. This makes it one. */
+    handleScrollNext(event) {
+        const current = event.currentTarget.closest('.chap');
+        const next = current && current.nextElementSibling;
+        if (next && typeof next.scrollIntoView === 'function') {
+            next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
     // -------------------------------------------------------- booking events
 
     handleOpenBooking() {

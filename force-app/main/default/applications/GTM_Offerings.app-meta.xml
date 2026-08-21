@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <brand>
+        <headerColor>#EE3D23</headerColor>
+    </brand>
+    <formFactors>Large</formFactors>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <label>GTM Offerings</label>
+    <navType>Standard</navType>
+    <tabs>standard-home</tabs>
+    <tabs>MA_Saved_Configuration__c</tabs>
+    <tabs>MA_Assessment_Request__c</tabs>
+    <tabs>standard-Lead</tabs>
+    <tabs>standard-Opportunity</tabs>
+    <tabs>standard-Account</tabs>
+    <tabs>standard-Contact</tabs>
+    <tabs>standard-report</tabs>
+    <tabs>standard-Dashboard</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>
