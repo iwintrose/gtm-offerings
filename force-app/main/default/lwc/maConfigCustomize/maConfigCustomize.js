@@ -228,13 +228,20 @@ export default class MaConfigCustomize extends LightningElement {
     /**
      * Looks up a company's real brand color instead of the generic swatch
      * list -- entirely client-side, no server callout: fetches the
-     * company's public logo (Clearbit's logo endpoint, no API key) as an
-     * image, samples it on an offscreen canvas, and sets the accent to the
-     * most common non-neutral color found. Requires
-     * https://logo.clearbit.com on this org's CSP Trusted Sites
-     * (img-src + connect-src) -- see the Clearbit_Logo_API CspTrustedSite.
-     * The picker and swatches stay available regardless -- this only ever
-     * pre-fills them, it never replaces manual control.
+     * company's logo/favicon as an image, samples it on an offscreen
+     * canvas, and sets the accent to the most common non-neutral color
+     * found. The picker and swatches stay available regardless -- this
+     * only ever pre-fills them, it never replaces manual control.
+     *
+     * Tries two independent, no-API-key logo sources in order (Google's
+     * favicon service, then DuckDuckGo's) rather than one -- the original
+     * version used Clearbit's public logo API, which stopped returning
+     * results after Clearbit's Dec-2023 acquisition by HubSpot ("fails to
+     * find anything" was that, not a bug in the lookup code itself). Two
+     * independent vendors is cheap insurance against exactly that failure
+     * mode recurring. Requires both hosts on this org's CSP Trusted Sites
+     * (img-src + connect-src) -- see the Brand_Logo_Lookup_* CspTrustedSite
+     * records.
      */
     handleBrandLookup() {
         const domain = normalizeDomain(this.brandDomain);
@@ -245,6 +252,21 @@ export default class MaConfigCustomize extends LightningElement {
         this.brandLookupBusy = true;
         this.brandLookupError = '';
 
+        const sources = [
+            `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`,
+            `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`
+        ];
+        this.tryLogoSources(sources, 0);
+    }
+
+    tryLogoSources(sources, index) {
+        if (index >= sources.length) {
+            this.brandLookupBusy = false;
+            this.brandLookupError =
+                "Couldn't find a logo for that domain — check it's right, or set the color manually below.";
+            return;
+        }
+
         const img = new Image();
         img.crossOrigin = 'anonymous';
 
@@ -252,20 +274,24 @@ export default class MaConfigCustomize extends LightningElement {
         const timeout = setTimeout(() => {
             if (settled) return;
             settled = true;
-            this.brandLookupBusy = false;
-            this.brandLookupError =
-                "That's taking too long — try again, or set the color manually below.";
-        }, 8000);
+            this.tryLogoSources(sources, index + 1);
+        }, 5000);
 
         img.onload = () => {
             if (settled) return;
             settled = true;
             clearTimeout(timeout);
-            this.brandLookupBusy = false;
             const hex = dominantColorFromImage(img);
             if (hex) {
+                this.brandLookupBusy = false;
                 this.emit('accentchange', { value: hex });
+            } else if (index + 1 < sources.length) {
+                // Loaded, but nothing usable to sample (e.g. a blank/
+                // generic fallback icon) -- worth trying the next source
+                // rather than giving up on a technically-successful load.
+                this.tryLogoSources(sources, index + 1);
             } else {
+                this.brandLookupBusy = false;
                 this.brandLookupError =
                     "Couldn't find a usable color in that logo — try setting it manually below.";
             }
@@ -274,12 +300,10 @@ export default class MaConfigCustomize extends LightningElement {
             if (settled) return;
             settled = true;
             clearTimeout(timeout);
-            this.brandLookupBusy = false;
-            this.brandLookupError =
-                "Couldn't find a logo for that domain — check it's right, or set the color manually below.";
+            this.tryLogoSources(sources, index + 1);
         };
 
-        img.src = `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=128`;
+        img.src = sources[index];
     }
 
     handleExpires(event) {
