@@ -133,7 +133,7 @@ export default class MaConfigurator extends LightningElement {
         this.company = companyParam || '';
         this.industryKey = INDUSTRIES[industryParam] ? industryParam : '';
         if (accentParam) this.accent = accentParam;
-        this.isProspectLink = !!(companyParam || industryParam);
+        this.isProspectLink = !!companyParam;
 
         const exp = get('exp');
         if (exp) {
