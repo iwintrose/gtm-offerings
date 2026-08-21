@@ -1,0 +1,70 @@
+{
+  "appPageId" : "8a38f8a2-ecf6-40bb-bc18-d20c8619aae8",
+  "componentName" : "siteforce:dynamicLayout",
+  "dataProviders" : [ ],
+  "id" : "8073fd69-0238-4544-9845-29e2316987e1",
+  "label" : "GTM Offerings",
+  "regions" : [ {
+    "components" : [ {
+      "componentAttributes" : {
+        "background" : "background: rgba(0,0,0,0)",
+        "backgroundOverlay" : "rgba(0,0,0,0.5)",
+        "contentAreaWidth" : 100,
+        "sectionConfig" : {
+          "UUID" : "9df745a8-90c6-473e-8281-6e670502cd23",
+          "columns" : [ {
+            "UUID" : "427b6076-ea8e-42ba-8ebf-970e5a219846",
+            "columnKey" : "1",
+            "columnName" : "Column 1",
+            "columnWidth" : "12",
+            "seedComponents" : [ ]
+          } ]
+        },
+        "sectionHeight" : 300
+      },
+      "componentName" : "forceCommunity:section",
+      "id" : "9df745a8-90c6-473e-8281-6e670502cd23",
+      "regions" : [ {
+        "components" : [ {
+          "componentAttributes" : {
+            "industryUrl" : "choose-industry"
+          },
+          "componentName" : "c:offeringChooser",
+          "id" : "f2c8a8d0-c220-4c29-9275-edcdd887baf4",
+          "renderPriority" : "NEUTRAL",
+          "renditionMap" : { },
+          "type" : "component"
+        } ],
+        "id" : "427b6076-ea8e-42ba-8ebf-970e5a219846",
+        "regionLabel" : "Column 1",
+        "regionName" : "1",
+        "renditionMap" : { },
+        "type" : "region"
+      } ],
+      "renderPriority" : "NEUTRAL",
+      "renditionMap" : { },
+      "type" : "component"
+    } ],
+    "id" : "faecfa13-b0f0-4bf4-b713-c9474802981f",
+    "regionName" : "content",
+    "type" : "region"
+  }, {
+    "components" : [ {
+      "componentAttributes" : {
+        "customHeadTags" : "",
+        "description" : "",
+        "title" : "GTM Offerings"
+      },
+      "componentName" : "forceCommunity:seoAssistant",
+      "id" : "2a5c5777-7210-4b49-a9b8-14d6b94873f4",
+      "renditionMap" : { },
+      "type" : "component"
+    } ],
+    "id" : "a619f27a-d37c-407a-9a6b-6f0126f73537",
+    "regionName" : "sfdcHiddenRegion",
+    "type" : "region"
+  } ],
+  "themeLayoutType" : "Inner",
+  "type" : "view",
+  "viewType" : "home"
+}
