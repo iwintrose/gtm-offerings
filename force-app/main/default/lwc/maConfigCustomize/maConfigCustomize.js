@@ -1,6 +1,7 @@
 import { LightningElement, api, track } from 'lwc';
 import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
+import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
 import {
     FIELDS,
     INDUSTRIES,
@@ -233,17 +234,17 @@ export default class MaConfigCustomize extends LightningElement {
      * found. The picker and swatches stay available regardless -- this
      * only ever pre-fills them, it never replaces manual control.
      *
-     * Tries two independent, no-API-key logo sources in order (Google's
-     * favicon service, then DuckDuckGo's) rather than one -- the original
-     * version used Clearbit's public logo API, which stopped returning
-     * results after Clearbit's Dec-2023 acquisition by HubSpot ("fails to
-     * find anything" was that, not a bug in the lookup code itself). Two
-     * independent vendors is cheap insurance against exactly that failure
-     * mode recurring. Requires both hosts on this org's CSP Trusted Sites
-     * (img-src + connect-src) -- see the Brand_Logo_Lookup_* CspTrustedSite
-     * records.
+     * The actual fetch happens server-side (MaBrandLookupController), not
+     * from the browser: reading pixel data from a cross-origin image
+     * requires that image's server to send an Access-Control-Allow-Origin
+     * header, and none of the free logo sources tried do -- confirmed
+     * directly (unavatar.io loads and displays fine in a browser tab, but
+     * still fails a canvas pixel read). Apex callouts aren't subject to
+     * CORS at all, so fetching there and handing back the bytes as a
+     * data: URI sidesteps the problem structurally instead of hoping a
+     * vendor adds the header.
      */
-    handleBrandLookup() {
+    async handleBrandLookup() {
         const domain = normalizeDomain(this.brandDomain);
         if (!domain) {
             this.brandLookupError = 'Enter a domain, e.g. acme.com.';
@@ -252,96 +253,44 @@ export default class MaConfigCustomize extends LightningElement {
         this.brandLookupBusy = true;
         this.brandLookupError = '';
 
-        // unavatar.io first: it's specifically built as a CORS-friendly
-        // proxy for cross-origin logo fetching (the exact use case here),
-        // unlike the two favicon services after it, which exist for plain
-        // <img> display, not canvas pixel reads -- if this org's specific
-        // CDN edge doesn't send CORS headers for those two, the image
-        // still loads, it just can't be sampled (see tryLogoSources).
-        const sources = [
-            `https://unavatar.io/${encodeURIComponent(domain)}`,
-            `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`,
-            `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`
-        ];
-        // eslint-disable-next-line no-console
-        console.log('maConfigCustomize: brand lookup sources to try, in order:', sources);
-        this.tryLogoSources(sources, 0, []);
-    }
-
-    /** attempts accumulates {url, outcome} across the whole chain so the
-     * final failure message (and the console log) can show exactly what
-     * was tried and how each one failed -- open any of the URLs directly
-     * in a browser tab to see what that source actually returned. */
-    tryLogoSources(sources, index, attempts) {
-        if (index >= sources.length) {
+        let dataUri;
+        try {
+            dataUri = await fetchLogoDataUri({ domain });
+        } catch (e) {
             this.brandLookupBusy = false;
-            this.brandLookupError =
-                "Couldn't find a usable logo. Tried:\n" +
-                attempts.map((a) => `${a.url} — ${a.outcome}`).join('\n') +
-                '\nOpen one of those links directly to see what it actually returns, or set the color manually below.';
-            // eslint-disable-next-line no-console
-            console.log('maConfigCustomize: brand lookup exhausted all sources', attempts);
+            const message = e?.body?.message;
+            this.brandLookupError = message || 'That lookup failed. Please try again.';
             return;
         }
 
-        const url = sources[index];
+        if (!dataUri) {
+            this.brandLookupBusy = false;
+            this.brandLookupError =
+                "Couldn't find a logo for that domain — check it's right, or set the color manually below.";
+            return;
+        }
 
-        // Deliberately NOT setting img.crossOrigin: doing so forces a
-        // CORS-mode request, and neither Google's nor DuckDuckGo's favicon
-        // endpoints send an Access-Control-Allow-Origin header -- with
-        // crossOrigin set, the browser aborts the load outright before it
-        // ever renders, which is why this failed for every single domain,
-        // not just some. Loading normally lets the image actually load;
-        // the tradeoff is the canvas below is "tainted" (no CORS = no
-        // pixel access), handled explicitly as its own outcome, not
-        // lumped in with "no logo found" -- those are different problems
-        // with different fixes for the rep reading the error.
         const img = new Image();
-
-        let settled = false;
-        const timeout = setTimeout(() => {
-            if (settled) return;
-            settled = true;
-            this.tryLogoSources(sources, index + 1, [
-                ...attempts,
-                { url, outcome: 'timed out (5s)' }
-            ]);
-        }, 5000);
-
         img.onload = () => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timeout);
+            this.brandLookupBusy = false;
+            // A data: URI is same-origin by definition -- no CORS
+            // question applies, so this should always succeed now. The
+            // try/catch in dominantColorFromImage stays as a defensive
+            // backstop, not because tainting is expected here.
             const outcome = dominantColorFromImage(img);
             if (outcome.hex) {
-                this.brandLookupBusy = false;
-                // eslint-disable-next-line no-console
-                console.log('maConfigCustomize: brand color found', {
-                    url,
-                    hex: outcome.hex
-                });
                 this.emit('accentchange', { value: outcome.hex });
             } else {
-                const reason = outcome.tainted
-                    ? 'loaded, but no CORS header so its color could not be read'
-                    : 'loaded, but had no usable (non-neutral) color to sample';
-                this.tryLogoSources(sources, index + 1, [
-                    ...attempts,
-                    { url, outcome: reason }
-                ]);
+                this.brandLookupError =
+                    "Found a logo, but couldn't find a usable color in it — try setting it manually below.";
             }
         };
         img.onerror = () => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timeout);
-            this.tryLogoSources(sources, index + 1, [
-                ...attempts,
-                { url, outcome: 'failed to load (404, network error, or blocked)' }
-            ]);
+            this.brandLookupBusy = false;
+            this.brandLookupError =
+                'Found a logo but could not display it. Please try again, or set the color manually below.';
         };
-
-        img.src = url;
+        img.src = dataUri;
     }
 
     handleExpires(event) {
