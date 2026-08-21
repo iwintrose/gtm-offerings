@@ -252,7 +252,14 @@ export default class MaConfigCustomize extends LightningElement {
         this.brandLookupBusy = true;
         this.brandLookupError = '';
 
+        // unavatar.io first: it's specifically built as a CORS-friendly
+        // proxy for cross-origin logo fetching (the exact use case here),
+        // unlike the two favicon services after it, which exist for plain
+        // <img> display, not canvas pixel reads -- if this org's specific
+        // CDN edge doesn't send CORS headers for those two, the image
+        // still loads, it just can't be sampled (see tryLogoSources).
         const sources = [
+            `https://unavatar.io/${encodeURIComponent(domain)}`,
             `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`,
             `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`
         ];
@@ -267,8 +274,17 @@ export default class MaConfigCustomize extends LightningElement {
             return;
         }
 
+        // Deliberately NOT setting img.crossOrigin: doing so forces a
+        // CORS-mode request, and neither Google's nor DuckDuckGo's favicon
+        // endpoints send an Access-Control-Allow-Origin header -- with
+        // crossOrigin set, the browser aborts the load outright before it
+        // ever renders, which is why this failed for every single domain,
+        // not just some. Loading normally lets the image actually load;
+        // the tradeoff is the canvas below is "tainted" (no CORS = no
+        // pixel access), handled explicitly as its own outcome, not
+        // lumped in with "no logo found" -- those are different problems
+        // with different fixes for the rep reading the error.
         const img = new Image();
-        img.crossOrigin = 'anonymous';
 
         let settled = false;
         const timeout = setTimeout(() => {
@@ -281,19 +297,20 @@ export default class MaConfigCustomize extends LightningElement {
             if (settled) return;
             settled = true;
             clearTimeout(timeout);
-            const hex = dominantColorFromImage(img);
-            if (hex) {
+            const outcome = dominantColorFromImage(img);
+            if (outcome.hex) {
                 this.brandLookupBusy = false;
-                this.emit('accentchange', { value: hex });
+                this.emit('accentchange', { value: outcome.hex });
             } else if (index + 1 < sources.length) {
-                // Loaded, but nothing usable to sample (e.g. a blank/
-                // generic fallback icon) -- worth trying the next source
-                // rather than giving up on a technically-successful load.
+                // Loaded, but nothing usable to sample (a blank/generic
+                // fallback icon, or a tainted canvas) -- worth trying the
+                // next source rather than giving up on this one.
                 this.tryLogoSources(sources, index + 1);
             } else {
                 this.brandLookupBusy = false;
-                this.brandLookupError =
-                    "Couldn't find a usable color in that logo — try setting it manually below.";
+                this.brandLookupError = outcome.tainted
+                    ? "Found a logo, but this source doesn't allow reading its color automatically — set it manually below."
+                    : "Couldn't find a usable color in that logo — try setting it manually below.";
             }
         };
         img.onerror = () => {
@@ -687,6 +704,11 @@ function dominantColorFromImage(img) {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, size, size);
+        // Throws SecurityError here (not before) if the image loaded but
+        // came from a source with no CORS support -- a "tainted" canvas
+        // can be drawn to and displayed, just never read back pixel by
+        // pixel. That's a different, later failure point than the image
+        // never loading at all, and worth telling the rep apart.
         const { data } = ctx.getImageData(0, 0, size, size);
 
         const buckets = new Map();
@@ -717,19 +739,23 @@ function dominantColorFromImage(img) {
         buckets.forEach((bucket) => {
             if (!winner || bucket.n > winner.n) winner = bucket;
         });
-        if (!winner) return null;
+        if (!winner) return { hex: null, tainted: false };
 
         const toHex = (v) =>
             Math.max(0, Math.min(255, Math.round(v)))
                 .toString(16)
                 .padStart(2, '0');
-        return (
-            toHex(winner.r / winner.n) +
-            toHex(winner.g / winner.n) +
-            toHex(winner.b / winner.n)
-        );
+        return {
+            hex:
+                toHex(winner.r / winner.n) +
+                toHex(winner.g / winner.n) +
+                toHex(winner.b / winner.n),
+            tainted: false
+        };
     } catch (e) {
-        // Canvas read blocked (no CORS on the response) or unsupported.
-        return null;
+        // SecurityError: canvas read blocked because the image source
+        // sent no CORS headers. The image itself loaded fine -- only the
+        // pixel read failed.
+        return { hex: null, tainted: true };
     }
 }
