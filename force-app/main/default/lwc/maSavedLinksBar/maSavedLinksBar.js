@@ -81,13 +81,31 @@ export default class MaSavedLinksBar extends LightningElement {
         });
 
         const groups = [];
-        byOffering.forEach((byIndustry, offeringName) => {
+        byOffering.forEach((byIndustry, offeringKey) => {
             const industries = [];
-            byIndustry.forEach((links, industryName) => {
-                industries.push({ key: `${offeringName}-${industryName}`, name: industryName, links });
+            byIndustry.forEach((links, industryKey) => {
+                industries.push({
+                    key: `${offeringKey}-${industryKey}`,
+                    name: formatLabel(industryKey),
+                    links
+                });
             });
-            groups.push({ key: offeringName, name: offeringName, industries });
+            groups.push({
+                key: offeringKey,
+                name: formatLabel(offeringKey),
+                industries
+            });
         });
         return groups;
     }
+}
+
+/** "migration-accelerator" -> "Migration Accelerator". Works for any
+ * future offering/industry slug without a lookup table to maintain. */
+function formatLabel(slug) {
+    if (!slug) return slug;
+    return slug
+        .split(/[-_]/)
+        .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+        .join(' ');
 }

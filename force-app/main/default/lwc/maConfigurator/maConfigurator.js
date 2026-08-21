@@ -12,6 +12,7 @@ import {
 } from 'c/maConfigData';
 
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
+const OFFERING_LABEL = 'Migration Accelerator';
 
 export default class MaConfigurator extends LightningElement {
     /** Back links, shown only for the internal/self-serve flow — hidden on
@@ -47,6 +48,7 @@ export default class MaConfigurator extends LightningElement {
     connectedCallback() {
         this.tokenState = this.loadState();
         this.readUrlParams();
+        this.setPageTitle();
 
         this._scrollHandler = this.handleScroll.bind(this);
         this._keyHandler = this.handleKeydown.bind(this);
@@ -145,6 +147,19 @@ export default class MaConfigurator extends LightningElement {
         if (exp) {
             const t = /^\d+$/.test(exp) ? parseInt(exp, 10) : Date.parse(exp);
             if (t && Date.now() > t) this.expired = true;
+        }
+    }
+
+    /** Browser tab title, e.g. "Acme Bank - Migration Accelerator" once a
+     * company is known, so a rep's open tabs / bookmarks are legible. */
+    setPageTitle() {
+        try {
+            document.title = this.hasCompany
+                ? `${this.company} - ${OFFERING_LABEL}`
+                : OFFERING_LABEL;
+        } catch (e) {
+            // document.title is always writable in practice; nothing to
+            // recover from if this somehow throws.
         }
     }
 
