@@ -26,7 +26,10 @@
       "id" : "28ea3f0a-5d58-48f9-9f22-d137b4f95c89",
       "regions" : [ {
         "components" : [ {
-          "componentAttributes" : { },
+          "componentAttributes" : {
+            "industryUrl" : "/gtmaccelerator/s/choose-industry",
+            "offeringsUrl" : "/gtmaccelerator/s/"
+          },
           "componentName" : "c:maConfigurator",
           "id" : "2bb63a49-9356-4953-b343-245d35d487c4",
           "renderPriority" : "NEUTRAL",

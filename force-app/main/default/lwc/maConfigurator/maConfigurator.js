@@ -1,4 +1,4 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import {
     INDUSTRIES,
     FIELDS,
@@ -14,6 +14,12 @@ import {
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
 
 export default class MaConfigurator extends LightningElement {
+    /** Back links, shown only for the internal/self-serve flow — hidden on
+     * a shared prospect link (see showCustomizeButton). Set in Experience
+     * Builder to match wherever Home and Choose Industry actually live. */
+    @api offeringsUrl = '/';
+    @api industryUrl = '/choose-industry';
+
     @track tokenState = {};
     @track company = '';
     @track industryKey = '';
