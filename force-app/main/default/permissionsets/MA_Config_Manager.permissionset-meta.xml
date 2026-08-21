@@ -95,6 +95,11 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>Lead.GTM_Account__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Account__c</field>
         <readable>true</readable>
         <editable>false</editable>

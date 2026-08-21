@@ -421,7 +421,7 @@ public without sharing class MaAssessmentRequestController {
             : leadSourceCfg;
 
         List<Lead> existing = [
-            SELECT Id, Company, Title, LeadSource
+            SELECT Id, Company, Title, LeadSource, GTM_Account__c
             FROM Lead
             WHERE Email = :cleanEmail AND IsConverted = FALSE
             ORDER BY CreatedDate DESC
@@ -436,7 +436,13 @@ public without sharing class MaAssessmentRequestController {
                 Email = cleanEmail,
                 Company = companyOrFallback(input),
                 Title = trimTo(input.role, MAX_SHORT),
-                LeadSource = leadSource
+                LeadSource = leadSource,
+                // Standard Lead.Company never links to Account until the
+                // Lead is converted -- this is a same-feature convenience
+                // pointing at the Account already resolved for this
+                // submission, so a rep can jump there without converting
+                // first. See GTM_Account__c's own field description.
+                GTM_Account__c = ctx.accountId
             );
             // Attribute to the rep who owns the client link the requester
             // was viewing, rather than leaving it to fall to the guest
@@ -464,6 +470,10 @@ public without sharing class MaAssessmentRequestController {
             }
             if (String.isBlank(target.LeadSource)) {
                 target.LeadSource = leadSource;
+                dirty = true;
+            }
+            if (target.GTM_Account__c == null && ctx.accountId != null) {
+                target.GTM_Account__c = ctx.accountId;
                 dirty = true;
             }
             if (dirty) {

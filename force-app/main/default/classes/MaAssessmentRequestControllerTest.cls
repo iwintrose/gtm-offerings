@@ -407,6 +407,55 @@ private class MaAssessmentRequestControllerTest {
     }
 
     @isTest
+    static void newLeadCarriesTheResolvedAccountEvenBeforeConversion() {
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = null;
+        input.company = 'Northwind Retail';
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Lead created = [SELECT GTM_Account__c FROM Lead WHERE Id = :result.leadId];
+        Assert.isNotNull(
+            created.GTM_Account__c,
+            'A new Lead should carry the resolved Account even though standard Lead.Company never links to one pre-conversion'
+        );
+    }
+
+    @isTest
+    static void existingLeadFillsBlankAccountButNeverOverwritesOne() {
+        Account original = new Account(Name = 'Original Account');
+        insert original;
+
+        Lead seeded = new Lead(
+            LastName = 'Rivera',
+            Company = 'Northwind Retail',
+            Email = 'alex.rivera@example.com',
+            GTM_Account__c = original.Id
+        );
+        insert seeded;
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = null;
+        input.company = 'A Totally Different Company';
+
+        Test.startTest();
+        MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Lead after = [SELECT GTM_Account__c FROM Lead WHERE Id = :seeded.Id];
+        Assert.areEqual(
+            original.Id,
+            after.GTM_Account__c,
+            'An existing Lead\'s own GTM_Account__c must never be overwritten'
+        );
+    }
+
+    @isTest
     static void directBookingWithNoEngagementLinkStillResolvesAccount() {
         // No savedRecordId at all -- e.g. a booking from the Story page's
         // own CTA, with no client link in the picture. The company name
