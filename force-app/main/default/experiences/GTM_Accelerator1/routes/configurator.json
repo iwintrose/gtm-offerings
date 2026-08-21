@@ -1,12 +1,12 @@
 {
-  "activeViewId" : "af470e1d-90a2-422b-a4d7-dd0a070f320d",
-  "appPageId" : "3a5978e6-8dfe-46a6-b30f-eef8843d31f9",
+  "activeViewId" : "b4305c67-2eeb-4be7-ac25-d6afa7151f65",
+  "appPageId" : "8a38f8a2-ecf6-40bb-bc18-d20c8619aae8",
   "configurationTags" : [ ],
-  "devName" : "Configurator",
-  "id" : "e42a1a81-f0f6-434e-8b3f-3005299c4d1f",
+  "devName" : "Configurator__c",
+  "id" : "8a2253ee-f2a3-4f35-8f79-d2922fec8cce",
   "label" : "Configurator",
   "pageAccess" : "UseParent",
-  "routeType" : "generic",
+  "routeType" : "custom-configurator",
   "type" : "route",
   "urlPrefix" : "configurator"
 }
