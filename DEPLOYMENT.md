@@ -60,6 +60,26 @@ the actual target org:
 - **My Domain** -- if the target org doesn't have My Domain enabled yet,
   enable it before deploying the Experience Cloud site (Salesforce
   requires it for Digital Experiences).
+- **Experience Cloud site membership** -- separate from every permission
+  above, and easy to miss: a profile also needs to be an explicit *member*
+  of the site (Setup → Digital Experiences → your site → Administration →
+  Members) before a user on that profile can log into it as an
+  authenticated member at all. Object/tab/Apex/app access alone isn't
+  enough -- without site membership they'll hit the site as if logged out,
+  no matter what else is granted. This bit us directly: `Standard` and
+  `Standard Platform User` had full object/Apex access before being added
+  as site members, and users on those profiles still saw the guest
+  experience until the membership itself was added. It's a **data**
+  record (`NetworkMemberGroup`), not metadata, so it does NOT travel with
+  `scripts/deploy.sh` or show up in `git diff` -- it has to be set on
+  every target org separately. Quick check/fix via the CLI once you know
+  the site's Network Id and the profile's Id:
+  ```bash
+  sf data query --query "SELECT Id, Name, UrlPathPrefix FROM Network" --target-org my-new-org
+  sf data query --query "SELECT ParentId FROM NetworkMemberGroup WHERE NetworkId='<network id>'" --target-org my-new-org
+  sf data create record --sobject NetworkMemberGroup \
+    --values "NetworkId='<network id>' ParentId='<profile id>'" --target-org my-new-org
+  ```
 
 None of these are things a script should guess at on your behalf --
 wrong values here are org-specific judgment calls, not defaults to bake in.
