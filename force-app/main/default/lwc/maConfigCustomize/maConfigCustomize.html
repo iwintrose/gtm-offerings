@@ -40,6 +40,28 @@
         </div>
 
         <div class="fld spaced">
+          <label for="lbBrandDomain">Look up their brand colour</label>
+          <div class="accent-row">
+            <input
+              id="lbBrandDomain"
+              class="accent-text"
+              placeholder="e.g. acme.com"
+              value={brandDomain}
+              oninput={handleBrandDomainInput}
+            />
+            <button
+              type="button"
+              class="lb-lookup"
+              onclick={handleBrandLookup}
+              disabled={brandLookupBusy}
+            >{brandLookupLabel}</button>
+          </div>
+          <template if:true={brandLookupError}>
+            <div class="lb-error" role="alert">{brandLookupError}</div>
+          </template>
+        </div>
+
+        <div class="fld spaced">
           <label for="lbAccent">Brand accent colour</label>
           <div class="accent-row">
             <input
@@ -72,10 +94,10 @@
             </template>
           </div>
           <div class="lb-note">
-            These are generic starting colours, not verified brand colours —
-            this preview can’t reach outside services to look up a real
-            company’s actual brand. Paste the client’s real hex from their brand
-            guide if you have it.
+            The lookup above pulls a color from the client's public logo —
+            it's a starting point, not a verified brand color. Always check
+            it against their real brand guide, and set the exact hex here if
+            you have it.
           </div>
         </div>
 

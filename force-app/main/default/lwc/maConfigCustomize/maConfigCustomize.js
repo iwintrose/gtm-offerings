@@ -40,6 +40,9 @@ export default class MaConfigCustomize extends LightningElement {
     @track editingId = null;
     @track companyInvalid = false;
     @track saveError = '';
+    @track brandDomain = '';
+    @track brandLookupBusy = false;
+    @track brandLookupError = '';
 
     get saveLabel() {
         return this.canSaveAsNew ? 'Update this link' : 'Save link';
@@ -47,6 +50,10 @@ export default class MaConfigCustomize extends LightningElement {
 
     get companyFieldClass() {
         return this.companyInvalid ? 'fld field-invalid' : 'fld';
+    }
+
+    get brandLookupLabel() {
+        return this.brandLookupBusy ? 'Looking up…' : 'Look up →';
     }
 
     _state = {};
@@ -188,6 +195,68 @@ export default class MaConfigCustomize extends LightningElement {
 
     handleSwatch(event) {
         this.emit('accentchange', { value: event.currentTarget.dataset.hex });
+    }
+
+    handleBrandDomainInput(event) {
+        this.brandDomain = event.currentTarget.value;
+        this.brandLookupError = '';
+    }
+
+    /**
+     * Looks up a company's real brand color instead of the generic swatch
+     * list -- entirely client-side, no server callout: fetches the
+     * company's public logo (Clearbit's logo endpoint, no API key) as an
+     * image, samples it on an offscreen canvas, and sets the accent to the
+     * most common non-neutral color found. Requires
+     * https://logo.clearbit.com on this org's CSP Trusted Sites
+     * (img-src + connect-src) -- see the Clearbit_Logo_API CspTrustedSite.
+     * The picker and swatches stay available regardless -- this only ever
+     * pre-fills them, it never replaces manual control.
+     */
+    handleBrandLookup() {
+        const domain = normalizeDomain(this.brandDomain);
+        if (!domain) {
+            this.brandLookupError = 'Enter a domain, e.g. acme.com.';
+            return;
+        }
+        this.brandLookupBusy = true;
+        this.brandLookupError = '';
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        let settled = false;
+        const timeout = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            this.brandLookupBusy = false;
+            this.brandLookupError =
+                "That's taking too long — try again, or set the color manually below.";
+        }, 8000);
+
+        img.onload = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            this.brandLookupBusy = false;
+            const hex = dominantColorFromImage(img);
+            if (hex) {
+                this.emit('accentchange', { value: hex });
+            } else {
+                this.brandLookupError =
+                    "Couldn't find a usable color in that logo — try setting it manually below.";
+            }
+        };
+        img.onerror = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            this.brandLookupBusy = false;
+            this.brandLookupError =
+                "Couldn't find a logo for that domain — check it's right, or set the color manually below.";
+        };
+
+        img.src = `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=128`;
     }
 
     handleExpires(event) {
@@ -517,5 +586,81 @@ export default class MaConfigCustomize extends LightningElement {
         } catch (e) {
             // Private browsing / storage disabled — links just aren't remembered.
         }
+    }
+}
+
+/** "https://www.acme.com/about" -> "acme.com". Lets a rep paste whatever
+ * they have (a full URL, www-prefixed, with a path) instead of requiring
+ * an exact bare domain. */
+function normalizeDomain(value) {
+    let v = String(value || '').trim().toLowerCase();
+    if (!v) return '';
+    v = v.replace(/^https?:\/\//, '');
+    v = v.replace(/^www\./, '');
+    v = v.split('/')[0];
+    v = v.split('?')[0];
+    return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(v) ? v : '';
+}
+
+/**
+ * Samples a loaded, same-canvas-drawable image and returns the most common
+ * non-neutral color as a 6-char hex string (no #), or null if nothing
+ * usable was found (e.g. a logo that's entirely black/white/gray, or a
+ * canvas read blocked by CORS). Deliberately simple -- a mode over a
+ * coarse color bucket, not a proper clustering algorithm -- this only
+ * needs to beat "generic default swatch," not be exact.
+ */
+function dominantColorFromImage(img) {
+    try {
+        const canvas = document.createElement('canvas');
+        const size = 48;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+
+        const buckets = new Map();
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            if (a < 128) continue; // transparent background
+
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const isNeutral = max < 30 || min > 225 || max - min < 18;
+            if (isNeutral) continue; // near-black, near-white, or gray
+
+            // Coarse-bucket to 16 levels per channel so near-identical
+            // anti-aliased pixels count as the same color.
+            const key = [r, g, b].map((c) => Math.round(c / 16) * 16).join(',');
+            const bucket = buckets.get(key) || { r: 0, g: 0, b: 0, n: 0 };
+            bucket.r += r;
+            bucket.g += g;
+            bucket.b += b;
+            bucket.n += 1;
+            buckets.set(key, bucket);
+        }
+
+        let winner = null;
+        buckets.forEach((bucket) => {
+            if (!winner || bucket.n > winner.n) winner = bucket;
+        });
+        if (!winner) return null;
+
+        const toHex = (v) =>
+            Math.max(0, Math.min(255, Math.round(v)))
+                .toString(16)
+                .padStart(2, '0');
+        return (
+            toHex(winner.r / winner.n) +
+            toHex(winner.g / winner.n) +
+            toHex(winner.b / winner.n)
+        );
+    } catch (e) {
+        // Canvas read blocked (no CORS on the response) or unsupported.
+        return null;
     }
 }

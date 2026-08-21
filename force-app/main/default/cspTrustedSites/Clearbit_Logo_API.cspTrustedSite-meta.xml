@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CspTrustedSite xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isActive>true</isActive>
+    <endpointUrl>https://logo.clearbit.com</endpointUrl>
+    <context>All</context>
+    <description>Public logo endpoint used by the Customize panel's brand-color lookup (maConfigCustomize) -- fetches a company's logo client-side to sample a dominant color. No API key, no server-side callout.</description>
+    <isApplicableToConnectSrc>true</isApplicableToConnectSrc>
+    <isApplicableToImgSrc>true</isApplicableToImgSrc>
+</CspTrustedSite>

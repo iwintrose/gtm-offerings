@@ -249,6 +249,25 @@
   cursor: pointer;
   white-space: nowrap;
 }
+.lb-lookup {
+  border: 1px solid var(--line, #e7e2db);
+  background: transparent;
+  color: var(--ink-soft, #57534d);
+  border-radius: 8px;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lb-lookup:hover:not(:disabled) {
+  color: var(--ink, #17140f);
+  border-color: var(--coral, #ee3d23);
+}
+.lb-lookup:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 .lb-error {
   margin-top: 0.6rem;
   padding: 0.5rem 0.7rem;
