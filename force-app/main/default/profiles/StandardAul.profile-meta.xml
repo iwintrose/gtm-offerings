@@ -11,12 +11,20 @@
         <apexClass>MaSavedConfigurationController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>MaHomeSnapshotController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <tabVisibilities>
         <tab>MA_Saved_Configuration__c</tab>
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
     <tabVisibilities>
         <tab>MA_Assessment_Request__c</tab>
+        <visibility>DefaultOn</visibility>
+    </tabVisibilities>
+    <tabVisibilities>
+        <tab>GTM_Offerings_Overview</tab>
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
     <objectPermissions>

@@ -1,0 +1,17 @@
+<template>
+    <div class="gs-root">
+        <template if:true={hasError}>
+            <div class="gs-error">Couldn't load the snapshot right now.</div>
+        </template>
+        <template if:false={hasError}>
+            <div class="gs-row">
+                <template for:each={tiles} for:item="tile">
+                    <div key={tile.key} class="gs-tile">
+                        <div class="gs-value">{tile.value}</div>
+                        <div class="gs-label">{tile.label}</div>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</template>

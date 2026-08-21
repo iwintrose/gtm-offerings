@@ -10,6 +10,10 @@
         <apexClass>MaSavedConfigurationController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>MaHomeSnapshotController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>true</allowDelete>
@@ -171,6 +175,10 @@
     </tabSettings>
     <tabSettings>
         <tab>MA_Assessment_Request__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GTM_Offerings_Overview</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
