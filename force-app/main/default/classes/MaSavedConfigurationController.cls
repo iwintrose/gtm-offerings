@@ -27,6 +27,12 @@ public with sharing class MaSavedConfigurationController {
         public String generatedUrl { get; set; }
         @AuraEnabled
         public String configPayload { get; set; }
+        @AuraEnabled
+        public String clientContactName { get; set; }
+        @AuraEnabled
+        public String clientContactEmail { get; set; }
+        @AuraEnabled
+        public String estimatedValue { get; set; }
     }
 
     @AuraEnabled
@@ -38,12 +44,23 @@ public with sharing class MaSavedConfigurationController {
             throw new AuraHandledException('An offering is required to save a configuration.');
         }
 
+        // Found-or-created here, not looked up by the rep: the Company
+        // field they already type is enough to stand up the Account (and
+        // client-contact name/email, when given, the Contact) the first
+        // time this link is saved, so Sales Cloud has something to attach
+        // an Opportunity to later without a separate setup step.
+        Id accountId = resolveAccount(trimTo(input.company, MAX_COMPANY));
+        Id contactId = resolveContact(input.clientContactName, input.clientContactEmail, accountId);
+
         MA_Saved_Configuration__c record = new MA_Saved_Configuration__c(
             Offering__c = trimTo(input.offering, MAX_OFFERING),
             Industry__c = trimTo(input.industry, MAX_INDUSTRY),
             Company__c = trimTo(input.company, MAX_COMPANY),
             Generated_URL__c = input.generatedUrl,
-            Config_Payload__c = input.configPayload
+            Config_Payload__c = input.configPayload,
+            Account__c = accountId,
+            Contact__c = contactId,
+            Estimated_Value__c = parseDecimal(input.estimatedValue)
         );
 
         try {
@@ -142,5 +159,80 @@ public with sharing class MaSavedConfigurationController {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.length() > maxLen ? trimmed.substring(0, maxLen) : trimmed;
+    }
+
+    /**
+     * Exact-name match, not fuzzy: good enough to stop the same rep from
+     * creating a second Account every time they resave the same client's
+     * link, without guessing at a dedupe strategy more sophisticated than
+     * this feature actually needs. A rep who wants to attach to an
+     * existing Account under a different name can still just retype the
+     * Company field to match it exactly, or fix the link later in Sales
+     * Cloud.
+     */
+    private static Id resolveAccount(String company) {
+        if (String.isBlank(company)) {
+            return null;
+        }
+        List<Account> existing = [
+            SELECT Id FROM Account WHERE Name = :company LIMIT 1
+        ];
+        if (!existing.isEmpty()) {
+            return existing[0].Id;
+        }
+        Account acc = new Account(Name = company);
+        insert acc;
+        return acc.Id;
+    }
+
+    /** Matches by email (Salesforce doesn't enforce Contact email
+     * uniqueness, so this takes the first match) rather than by name --
+     * more reliable as a dedupe key, and it's the field the rep is most
+     * likely to have typed correctly. No email, no Contact: a name alone
+     * isn't enough to safely dedupe or usefully route to. */
+    private static Id resolveContact(String name, String email, Id accountId) {
+        String cleanEmail = String.isNotBlank(email) ? email.trim() : null;
+        if (String.isBlank(cleanEmail)) {
+            return null;
+        }
+        List<Contact> existing = [
+            SELECT Id FROM Contact WHERE Email = :cleanEmail LIMIT 1
+        ];
+        if (!existing.isEmpty()) {
+            return existing[0].Id;
+        }
+
+        String cleanName = String.isNotBlank(name) ? name.trim() : '';
+        List<String> parts = String.isBlank(cleanName) ? new List<String>() : cleanName.split('\\s+');
+        String lastName = parts.isEmpty() ? cleanEmail : parts[parts.size() - 1];
+        String firstName = null;
+        if (parts.size() > 1) {
+            List<String> firstParts = new List<String>();
+            for (Integer i = 0; i < parts.size() - 1; i++) {
+                firstParts.add(parts[i]);
+            }
+            firstName = String.join(firstParts, ' ');
+        }
+
+        Contact c = new Contact(
+            FirstName = trimTo(firstName, 40),
+            LastName = trimTo(lastName, 80),
+            Email = cleanEmail,
+            AccountId = accountId
+        );
+        insert c;
+        return c.Id;
+    }
+
+    private static Decimal parseDecimal(String value) {
+        if (String.isBlank(value)) {
+            return null;
+        }
+        try {
+            String cleaned = value.replaceAll('[^0-9.\\-]', '');
+            return String.isBlank(cleaned) ? null : Decimal.valueOf(cleaned);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

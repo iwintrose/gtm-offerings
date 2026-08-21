@@ -7,6 +7,10 @@
         <value xsi:type="xsd:string">migration-accelerator</value>
     </values>
     <values>
+        <field>Label__c</field>
+        <value xsi:type="xsd:string">Migration Accelerator</value>
+    </values>
+    <values>
         <field>Monthly_Target__c</field>
         <value xsi:type="xsd:double">20000</value>
     </values>

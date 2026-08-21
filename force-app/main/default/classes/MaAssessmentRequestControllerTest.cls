@@ -306,6 +306,107 @@ private class MaAssessmentRequestControllerTest {
     }
 
     @isTest
+    static void autoCreatesOpportunityWhenLinkHasNone() {
+        Account acc = new Account(Name = 'Northwind Retail');
+        insert acc;
+
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Industry__c = 'Financial Services',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Account__c = acc.Id,
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isNotNull(result.opportunityId, 'An Opportunity should be auto-created');
+
+        Opportunity opp = [
+            SELECT Name, AccountId, Amount, StageName
+            FROM Opportunity
+            WHERE Id = :result.opportunityId
+        ];
+        Assert.areEqual(acc.Id, opp.AccountId);
+        Assert.isTrue(opp.Name.contains('Northwind Retail'));
+        Assert.isTrue(opp.Name.contains('Migration Accelerator'));
+        Assert.areEqual(250000, opp.Amount, 'Should fall back to the CMDT annual target');
+
+        MA_Saved_Configuration__c updated = [
+            SELECT Opportunity__c FROM MA_Saved_Configuration__c WHERE Id = :savedConfig.Id
+        ];
+        Assert.areEqual(
+            result.opportunityId,
+            updated.Opportunity__c,
+            'The link should be written back so future submissions reuse this Opportunity'
+        );
+    }
+
+    @isTest
+    static void usesEstimatedValueOverOfferingTargetForNewOpportunity() {
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Estimated_Value__c = 75000,
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Opportunity opp = [SELECT Amount FROM Opportunity WHERE Id = :result.opportunityId];
+        Assert.areEqual(75000, opp.Amount);
+    }
+
+    @isTest
+    static void reusesExistingOpportunityInsteadOfCreatingAnother() {
+        Opportunity existingOpp = new Opportunity(
+            Name = 'Northwind Retail Migration',
+            StageName = 'Negotiation/Review',
+            CloseDate = Date.today().addMonths(1)
+        );
+        insert existingOpp;
+
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Opportunity__c = existingOpp.Id,
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.areEqual(existingOpp.Id, result.opportunityId);
+        Assert.areEqual(1, [SELECT COUNT() FROM Opportunity]);
+    }
+
+    @isTest
     static void failsOpenOnMalformedSavedRecordId() {
         MaAssessmentRequestController.configOverride = config(true, false, 'Task');
         MaAssessmentRequestController.RequestInput input = sampleInput();

@@ -54,6 +54,11 @@ public without sharing class MaAssessmentRequestController {
     private class ConfigContext {
         Id ownerId;
         Id opportunityId;
+        Id accountId;
+        Id contactId;
+        String company;
+        String offering;
+        Decimal estimatedValue;
     }
 
     public class RequestResult {
@@ -105,6 +110,7 @@ public without sharing class MaAssessmentRequestController {
 
         MA_Assessment_Config__mdt cfg = loadConfig();
         ConfigContext ctx = resolveConfigContext(input.savedRecordId);
+        ensureOpportunity(input.savedRecordId, ctx);
 
         try {
             Boolean createLead = (Boolean) cfg.get('Create_Lead__c');
@@ -148,7 +154,8 @@ public without sharing class MaAssessmentRequestController {
         try {
             Id configId = Id.valueOf(savedRecordId);
             List<MA_Saved_Configuration__c> rows = [
-                SELECT OwnerId, Opportunity__c
+                SELECT OwnerId, Opportunity__c, Account__c, Contact__c,
+                       Company__c, Offering__c, Estimated_Value__c
                 FROM MA_Saved_Configuration__c
                 WHERE Id = :configId
                 LIMIT 1
@@ -156,11 +163,99 @@ public without sharing class MaAssessmentRequestController {
             if (!rows.isEmpty()) {
                 ctx.ownerId = rows[0].OwnerId;
                 ctx.opportunityId = rows[0].Opportunity__c;
+                ctx.accountId = rows[0].Account__c;
+                ctx.contactId = rows[0].Contact__c;
+                ctx.company = rows[0].Company__c;
+                ctx.offering = rows[0].Offering__c;
+                ctx.estimatedValue = rows[0].Estimated_Value__c;
             }
         } catch (Exception e) {
             // Malformed id, or no read access -- proceed unlinked.
         }
         return ctx;
+    }
+
+    /**
+     * The whole point of the Account/Contact/Estimated Value fields on the
+     * client link: an assessment booked from that link is real buying
+     * intent, so it should land as a real Opportunity in the pipeline, not
+     * wait for a rep to notice and create one by hand. Only creates one
+     * when the client link doesn't already have one -- never overwrites or
+     * duplicates. Best-effort, like the rest of this file's linkage: an
+     * Opportunity that fails to create should never block the submission
+     * that's already otherwise succeeded.
+     */
+    private static void ensureOpportunity(String savedRecordId, ConfigContext ctx) {
+        if (ctx.opportunityId != null || !isId(savedRecordId)) {
+            return;
+        }
+        try {
+            String offeringLabel = offeringLabel(ctx.offering);
+            String company = String.isNotBlank(ctx.company) ? ctx.company : 'New Prospect';
+
+            Opportunity opp = new Opportunity(
+                Name = company + ' - ' + offeringLabel,
+                AccountId = ctx.accountId,
+                StageName = 'Qualification',
+                CloseDate = Date.today().addDays(90),
+                Amount = ctx.estimatedValue != null
+                    ? ctx.estimatedValue
+                    : offeringAnnualTarget(ctx.offering)
+            );
+            if (ctx.ownerId != null) {
+                opp.OwnerId = ctx.ownerId;
+            }
+            insert opp;
+            ctx.opportunityId = opp.Id;
+
+            // Write back so the next assessment on this same link reuses
+            // this Opportunity instead of creating another one, and so the
+            // rep sees it from the Engagement Link record too.
+            update new MA_Saved_Configuration__c(
+                Id = (Id) Id.valueOf(savedRecordId),
+                Opportunity__c = opp.Id
+            );
+        } catch (Exception e) {
+            // No Opportunity this time -- the Lead/Task/assessment record
+            // path already succeeded and isn't affected.
+        }
+    }
+
+    private static String offeringLabel(String offeringKey) {
+        if (String.isBlank(offeringKey)) {
+            return 'Assessment Follow-up';
+        }
+        try {
+            List<MA_Offering__mdt> rows = [
+                SELECT Label__c
+                FROM MA_Offering__mdt
+                WHERE Offering_Key__c = :offeringKey
+                LIMIT 1
+            ];
+            if (!rows.isEmpty() && String.isNotBlank(rows[0].Label__c)) {
+                return rows[0].Label__c;
+            }
+        } catch (Exception e) {
+            // Fall through to the raw key below.
+        }
+        return offeringKey;
+    }
+
+    private static Decimal offeringAnnualTarget(String offeringKey) {
+        if (String.isBlank(offeringKey)) {
+            return null;
+        }
+        try {
+            List<MA_Offering__mdt> rows = [
+                SELECT Annual_Target__c
+                FROM MA_Offering__mdt
+                WHERE Offering_Key__c = :offeringKey
+                LIMIT 1
+            ];
+            return rows.isEmpty() ? null : rows[0].Annual_Target__c;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -183,6 +278,8 @@ public without sharing class MaAssessmentRequestController {
                     ? (Id) Id.valueOf(input.savedRecordId)
                     : null,
                 Opportunity__c = ctx.opportunityId,
+                Account__c = ctx.accountId,
+                Contact__c = ctx.contactId,
                 Lead__c = String.isNotBlank(result.leadId)
                     ? (Id) Id.valueOf(result.leadId)
                     : null,

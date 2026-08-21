@@ -119,6 +119,74 @@ private class MaSavedConfigurationControllerTest {
     }
 
     @IsTest
+    static void savingResolvesAccountAndContactAutomatically() {
+        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        input.offering = 'migration-accelerator';
+        input.industry = 'fintech';
+        input.company = 'Acme Bank';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+        input.clientContactName = 'Jordan Lee';
+        input.clientContactEmail = 'jordan.lee@acmebank.example.com';
+        input.estimatedValue = '$120,000';
+
+        Test.startTest();
+        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Test.stopTest();
+
+        MA_Saved_Configuration__c saved = [
+            SELECT Account__c, Contact__c, Estimated_Value__c,
+                   Account__r.Name, Contact__r.FirstName, Contact__r.LastName, Contact__r.Email
+            FROM MA_Saved_Configuration__c
+            WHERE Id = :recordId
+        ];
+        Assert.isNotNull(saved.Account__c, 'An Account should be created from the company name');
+        Assert.areEqual('Acme Bank', saved.Account__r.Name);
+        Assert.isNotNull(saved.Contact__c, 'A Contact should be created from the client contact fields');
+        Assert.areEqual('Jordan', saved.Contact__r.FirstName);
+        Assert.areEqual('Lee', saved.Contact__r.LastName);
+        Assert.areEqual('jordan.lee@acmebank.example.com', saved.Contact__r.Email);
+        Assert.areEqual(120000, saved.Estimated_Value__c);
+    }
+
+    @IsTest
+    static void savingReusesExistingAccountByExactNameMatch() {
+        Account existing = new Account(Name = 'Acme Bank');
+        insert existing;
+
+        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        input.offering = 'migration-accelerator';
+        input.company = 'Acme Bank';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+
+        Test.startTest();
+        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Test.stopTest();
+
+        MA_Saved_Configuration__c saved = [
+            SELECT Account__c FROM MA_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.areEqual(existing.Id, saved.Account__c, 'Should reuse the existing Account, not duplicate it');
+        Assert.areEqual(1, [SELECT COUNT() FROM Account WHERE Name = 'Acme Bank']);
+    }
+
+    @IsTest
+    static void savingWithoutClientContactEmailLeavesContactBlank() {
+        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        input.offering = 'migration-accelerator';
+        input.company = 'Acme Bank';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+
+        Test.startTest();
+        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Test.stopTest();
+
+        MA_Saved_Configuration__c saved = [
+            SELECT Contact__c FROM MA_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.isNull(saved.Contact__c, 'No email means no Contact should be guessed at');
+    }
+
+    @IsTest
     static void wrapsDmlFailureOnSaveAsFriendlyError() {
         MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
