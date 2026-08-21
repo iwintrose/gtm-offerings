@@ -1,6 +1,6 @@
 {
   "activeBrandingSetId" : "a66f371d-dc86-4ad1-8077-06ee49f7108a",
-  "customCSS" : "",
+  "customCSS" : ".cCenterPanel {\n    padding: 0px !important;\n    margin: 0px !important;\n}\n.contentRegion {\n    padding: 0 !important;\n}\n.forceCommunitySection {\n    padding: 0px !important;\n    margin: 0 !important;\n    border: none !important;\n}\n.forceCommunitySection .cb-section_column:only-child {\n    padding: 0px !important;\n}",
   "developerName" : "starter",
   "id" : "a349a5ed-d5e3-40d2-a279-0e82a5cb91e5",
   "label" : "Build Your Own",
@@ -91,6 +91,13 @@
         },
         "componentName" : "forceCommunity:globalNavigation",
         "id" : "1d662313-a3ce-40c0-8f85-7db35257d553",
+        "renditionMap" : { },
+        "type" : "component"
+      }, {
+        "componentAttributes" : { },
+        "componentName" : "c:maSavedLinksBar",
+        "id" : "b6f2e1a4-7c3d-4e12-9a4f-2d5e8c1f9a30",
+        "renderPriority" : "NEUTRAL",
         "renditionMap" : { },
         "type" : "component"
       } ],
