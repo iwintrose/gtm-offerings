@@ -240,7 +240,9 @@ export default class MaConfigCustomize extends LightningElement {
      * it's been saved. Saving and copying used to be one action, which
      * made it unclear whether a click had actually written anything. */
     handleCopyLink() {
-        this.copyToClipboard(this.buildUrl());
+        // Same reasoning as saveInternal: this is the link handed to the
+        // client, so it must never carry cfgId.
+        this.copyToClipboard(this.buildUrl(true));
     }
 
     get canSaveAsNew() {
@@ -253,7 +255,14 @@ export default class MaConfigCustomize extends LightningElement {
     }
 
     saveInternal({ asNew }) {
-        const url = this.buildUrl(asNew);
+        // Always excludeId: this URL is what gets persisted as
+        // Generated_URL__c and handed to the client -- it must never carry
+        // cfgId, which is only meaningful for the rep's own "reopen this
+        // for editing" round trip. Passing asNew through here used to let
+        // "Update this link" bake cfgId into the record's own stored URL
+        // whenever knownRecordId was already set, silently leaking an
+        // internal record id into the link shared with the client.
+        const url = this.buildUrl(true);
         const existing = this.editingId
             ? this.links.find((l) => l.id === this.editingId)
             : null;
