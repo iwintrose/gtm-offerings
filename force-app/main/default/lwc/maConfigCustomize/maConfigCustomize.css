@@ -234,6 +234,24 @@
   cursor: pointer;
   white-space: nowrap;
 }
+.lb-saveas {
+  display: block;
+  margin-top: 0.4rem;
+  border: 1px solid var(--line, #e7e2db);
+  background: transparent;
+  color: var(--ink-soft, #57534d);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+.lb-saveas:hover {
+  color: var(--ink, #17140f);
+  border-color: var(--coral, #ee3d23);
+}
 .lb-editbar {
   margin-top: 0.5rem;
   font-size: 0.74rem;

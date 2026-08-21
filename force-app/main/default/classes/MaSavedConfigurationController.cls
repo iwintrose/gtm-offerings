@@ -66,6 +66,18 @@ public with sharing class MaSavedConfigurationController {
         ];
     }
 
+    /**
+     * Lets a component gate rep-only UI (the Customize panel, the saved
+     * links bar) on real authentication rather than guessing from URL
+     * params. Guests -- and anyone without this permission -- can't even
+     * call it, since the guest permission set is never granted class
+     * access here; that failure is what a caller should treat as "false".
+     */
+    @AuraEnabled(cacheable=true)
+    public static Boolean isConfigManager() {
+        return true;
+    }
+
     @AuraEnabled
     public static void deleteConfiguration(String recordId) {
         if (String.isBlank(recordId)) {

@@ -1,4 +1,5 @@
-import { LightningElement, api, track } from 'lwc';
+import { LightningElement, api, track, wire } from 'lwc';
+import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isConfigManager';
 import {
     INDUSTRIES,
     FIELDS,
@@ -31,6 +32,8 @@ export default class MaConfigurator extends LightningElement {
 
     @track customizeOpen = false;
     @track bookingOpen = false;
+    @track isConfigManager = false;
+    @track savedRecordId = '';
 
     @track proofOn = false;
     @track objectsText = '0';
@@ -42,6 +45,18 @@ export default class MaConfigurator extends LightningElement {
     _revealed = new Set();
     _scrollHandler;
     _keyHandler;
+
+    /** Real, server-verified signal for rep-only UI (Customize, saved
+     * links). Guests can't call this at all -- no class access -- so the
+     * wire errors and this stays false. Whether the URL happens to carry
+     * a company/industry param is irrelevant to who's allowed to edit. */
+    @wire(isConfigManager)
+    wiredIsConfigManager({ data, error }) {
+        this.isConfigManager = !!data;
+        if (error) {
+            this.isConfigManager = false;
+        }
+    }
 
     // -------------------------------------------------------------- lifecycle
 
@@ -137,11 +152,13 @@ export default class MaConfigurator extends LightningElement {
         const companyParam = get('company');
         const industryParam = get('industry');
         const accentParam = get('accent');
+        const cfgIdParam = get('cfgId');
 
         this.company = companyParam || '';
         this.industryKey = INDUSTRIES[industryParam] ? industryParam : '';
         if (accentParam) this.accent = accentParam;
         this.isProspectLink = !!companyParam;
+        this.savedRecordId = cfgIdParam || '';
 
         const exp = get('exp');
         if (exp) {
@@ -182,7 +199,7 @@ export default class MaConfigurator extends LightningElement {
     }
 
     get showCustomizeButton() {
-        return !this.isProspectLink;
+        return this.isConfigManager;
     }
 
     get hasCompany() {

@@ -1,51 +1,48 @@
 :host {
   /* No box of its own when the template renders nothing (guest/no
-     access) -- this custom element sits inside the same content
-     column as the page's main component, so without this it can leave
-     an empty strip from Salesforce's own component-slot wrapper even
-     when our template is empty. */
+     access) -- avoids leaving an empty gap in whichever top bar this
+     is embedded in. */
   display: contents;
 }
 
 .sl-root {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 9999;
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  position: relative;
+  display: inline-flex;
+  font-family: inherit;
 }
 
 .sl-toggle {
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 600;
-  background: rgba(20, 20, 24, 0.75);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 100px;
-  padding: 0.45rem 0.9rem;
+  height: 32px;
+  padding: 0 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--line, rgba(127, 127, 127, 0.3));
+  background: transparent;
+  color: var(--ink-soft, inherit);
   cursor: pointer;
-  color: #f5f5f5;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
 }
 
 .sl-toggle:hover {
-  border-color: #ee3d23;
+  color: var(--ink, inherit);
+  border-color: var(--coral, #ee3d23);
 }
 
 .sl-panel {
   display: none;
   position: absolute;
-  top: calc(100% + 0.5rem);
+  top: calc(100% + 0.4rem);
   right: 0;
   z-index: 100;
-  min-width: 320px;
-  max-width: 420px;
+  min-width: 300px;
+  max-width: 400px;
   max-height: 60vh;
   overflow-y: auto;
-  background: #fff;
-  color: #1a1a1a;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--paper, #fff);
+  color: var(--ink, #1a1a1a);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
   border-radius: 10px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   padding: 0.75rem;
@@ -56,7 +53,7 @@
 }
 
 .sl-empty {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   opacity: 0.7;
   margin: 0.25rem;
 }
@@ -66,11 +63,11 @@
 }
 
 .sl-offering-name {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.6;
+  opacity: 0.55;
   margin: 0.4rem 0 0.2rem;
 }
 
@@ -79,7 +76,7 @@
 }
 
 .sl-industry-name {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
   opacity: 0.5;
   margin: 0.2rem 0;
@@ -94,13 +91,13 @@
 }
 
 .sl-link:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(127, 127, 127, 0.1);
 }
 
 .sl-link a {
   flex: 1;
-  font-size: 0.85rem;
-  color: #ee3d23;
+  font-size: 0.83rem;
+  color: var(--coral, #ee3d23);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -112,7 +109,7 @@
 }
 
 .sl-date {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   opacity: 0.5;
   white-space: nowrap;
 }
@@ -122,8 +119,9 @@
   border: none;
   cursor: pointer;
   opacity: 0.4;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   padding: 0.1rem 0.3rem;
+  color: inherit;
 }
 
 .sl-delete:hover {

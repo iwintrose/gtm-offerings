@@ -18,6 +18,11 @@ export default class MaConfigCustomize extends LightningElement {
     @api company = '';
     @api industry = '';
     @api accent = '';
+    /** Record Id of the saved config this page was opened from (via the
+     * ?cfgId= param a saved-links click adds). When set, "Save & copy"
+     * updates that same record — and its already-shared URL — in place
+     * instead of creating a duplicate. */
+    @api savedRecordId = '';
 
     @track expires = '';
     @track copyLabel = 'Save & copy';
@@ -201,13 +206,34 @@ export default class MaConfigCustomize extends LightningElement {
     }
 
     handleCopy() {
+        this.saveInternal({ asNew: false });
+    }
+
+    /** Always inserts a new record + fresh URL, even if this page was
+     * opened from an existing saved link. Lets a rep branch a client's
+     * config into a second version without touching the original. */
+    handleSaveAsNew() {
+        this.saveInternal({ asNew: true });
+    }
+
+    get canSaveAsNew() {
+        return !!(this.savedRecordId || (this.editingId && this.findServerId(this.editingId)));
+    }
+
+    findServerId(id) {
+        const entry = this.links.find((l) => l.id === id);
+        return entry ? entry.serverId : null;
+    }
+
+    saveInternal({ asNew }) {
         const url = this.buildUrl();
         const existing = this.editingId
             ? this.links.find((l) => l.id === this.editingId)
             : null;
+        const knownServerId = existing ? existing.serverId : this.savedRecordId || null;
         const entry = {
             id: this.editingId || `l${Date.now()}`,
-            serverId: existing ? existing.serverId : null,
+            serverId: asNew ? null : knownServerId,
             url,
             company: (this.company || '').trim(),
             industry: this.industry || '',
@@ -218,9 +244,10 @@ export default class MaConfigCustomize extends LightningElement {
             ts: Date.now()
         };
 
-        if (this.editingId) {
+        if (this.editingId && !asNew) {
             this.links = this.links.map((l) => (l.id === entry.id ? entry : l));
         } else {
+            entry.id = `l${Date.now()}`;
             this.links = [entry, ...this.links].slice(0, 20);
         }
         this.writeLinks();
@@ -234,8 +261,9 @@ export default class MaConfigCustomize extends LightningElement {
      * Best-effort save to MA_Saved_Configuration__c so a rep can find this
      * link again later (localStorage above is per-browser only). Guests —
      * and anyone without the MA Config Manager permission set — have no
-     * access to this class at all, so this fails silently for them and the
-     * localStorage-backed recent-links list above is all they get.
+     * access to this class at all, so this fails for them; that specific
+     * failure is expected and silent. Anything else is a real bug, worth
+     * a console trace since the UI gives no other sign a save failed.
      */
     async persistToServer(entry) {
         try {
@@ -253,9 +281,12 @@ export default class MaConfigCustomize extends LightningElement {
             this.links = this.links.map((l) => (l.id === entry.id ? entry : l));
             this.writeLinks();
         } catch (e) {
-            // No access (guest, or missing MA Config Manager permission
-            // set) — the link still works, it just won't show up in the
-            // My Saved Links bar.
+            const message = e?.body?.message || '';
+            const isAccessError = /do not have access|insufficient/i.test(message);
+            if (!isAccessError) {
+                // eslint-disable-next-line no-console
+                console.error('maConfigCustomize: save to MA_Saved_Configuration__c failed', e);
+            }
         }
     }
 

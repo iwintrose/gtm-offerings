@@ -94,6 +94,11 @@
   font-weight: 700;
   font-size: 0.92rem;
 }
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .bar-wm .tick {
   width: 10px;
   height: 10px;

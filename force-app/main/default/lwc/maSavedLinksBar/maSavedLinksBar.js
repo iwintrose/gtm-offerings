@@ -42,7 +42,7 @@ export default class MaSavedLinksBar extends LightningElement {
     }
 
     get toggleLabel() {
-        return this.isOpen ? 'My Saved Links ▲' : 'My Saved Links ▾';
+        return this.isOpen ? 'Saved ▲' : 'Saved ▾';
     }
 
     get panelClass() {
@@ -82,7 +82,7 @@ export default class MaSavedLinksBar extends LightningElement {
             byIndustry.get(industryKey).push({
                 id: rec.Id,
                 label: rec.Company__c || rec.Name,
-                url: rec.Generated_URL__c,
+                url: appendCfgId(rec.Generated_URL__c, rec.Id),
                 owner: rec.Owner ? rec.Owner.Name : '',
                 date: rec.CreatedDate
                     ? new Date(rec.CreatedDate).toLocaleDateString()
@@ -108,6 +108,17 @@ export default class MaSavedLinksBar extends LightningElement {
         });
         return groups;
     }
+}
+
+/** Tags a saved link with its record Id so opening it (as its owning rep)
+ * lands back in an editable state tied to that same record, instead of
+ * creating a duplicate on next save. The shared, client-facing copy of
+ * this URL never carries this param -- it's only added here, for the
+ * rep's own click from this bar. */
+function appendCfgId(url, id) {
+    if (!url) return url;
+    const joiner = url.indexOf('?') === -1 ? '?' : '&';
+    return `${url}${joiner}cfgId=${encodeURIComponent(id)}`;
 }
 
 /** "migration-accelerator" -> "Migration Accelerator". Works for any

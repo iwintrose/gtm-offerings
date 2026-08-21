@@ -88,6 +88,11 @@
           <input class="lb-url" readonly value={linkUrl} />
           <button class="lb-copy" onclick={handleCopy}>{copyLabel}</button>
         </div>
+        <template if:true={canSaveAsNew}>
+          <button class="lb-saveas" onclick={handleSaveAsNew}>
+            Save as new version →
+          </button>
+        </template>
 
         <template if:true={editing}>
           <div class="lb-editbar">
