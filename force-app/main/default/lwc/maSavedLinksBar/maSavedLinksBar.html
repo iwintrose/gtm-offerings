@@ -17,6 +17,13 @@
                                         <span class="sl-status">{link.statusLabel}</span>
                                         <a href={link.url} target="_blank" rel="noopener">{link.label}</a>
                                         <span class="sl-date">{link.date}</span>
+                                        <a
+                                            class="sl-sf-link"
+                                            href={link.recordUrl}
+                                            target="_blank"
+                                            rel="noopener"
+                                            title="View in Salesforce"
+                                        >SF</a>
                                         <button
                                             class="sl-toggle-active"
                                             title={link.toggleTitle}

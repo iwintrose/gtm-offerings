@@ -2,15 +2,29 @@ import { LightningElement, api } from 'lwc';
 import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import setActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
+import getOrgBaseUrl from '@salesforce/apex/MaSavedConfigurationController.getOrgBaseUrl';
 import { INDUSTRIES } from 'c/maConfigData';
 
 export default class MaSavedLinksBar extends LightningElement {
     hasAccess = false;
     isOpen = false;
     groups = [];
+    _orgBaseUrl = '';
 
-    connectedCallback() {
+    async connectedCallback() {
+        try {
+            this._orgBaseUrl = await getOrgBaseUrl();
+        } catch (e) {
+            // No "View in Salesforce" links for this session -- the
+            // config link itself still works fine without it.
+        }
         this.loadConfigurations();
+    }
+
+    recordUrl(id) {
+        return this._orgBaseUrl
+            ? `${this._orgBaseUrl}/lightning/r/MA_Saved_Configuration__c/${id}/view`
+            : '';
     }
 
     /** Called by a parent (e.g. maConfigurator, after a save) so a new or
@@ -127,7 +141,8 @@ export default class MaSavedLinksBar extends LightningElement {
                 toggleLabel: active ? 'Disable' : 'Enable',
                 toggleTitle: active
                     ? 'Disable this link for the client'
-                    : 'Re-enable this link for the client'
+                    : 'Re-enable this link for the client',
+                recordUrl: this.recordUrl(rec.Id)
             });
         });
 

@@ -4,6 +4,7 @@
     <pluralLabel>MA Saved Configurations</pluralLabel>
     <deploymentStatus>Deployed</deploymentStatus>
     <sharingModel>Private</sharingModel>
+    <enableFeeds>true</enableFeeds>
     <nameField>
         <type>AutoNumber</type>
         <label>Config Number</label>

@@ -90,6 +90,17 @@ public with sharing class MaSavedConfigurationController {
     }
 
     /**
+     * Lets the Saved Links bar (running inside an Experience Cloud site,
+     * a different domain from Salesforce's own Lightning UI) build a
+     * "View in Salesforce" link. There's no reliable client-side way to
+     * know the org's internal My Domain from inside a site page.
+     */
+    @AuraEnabled(cacheable=true)
+    public static String getOrgBaseUrl() {
+        return URL.getOrgDomainUrl().toExternalForm();
+    }
+
+    /**
      * Lets a component gate rep-only UI (the Customize panel, the saved
      * links bar) on real authentication rather than guessing from URL
      * params. Guests -- and anyone without this permission -- can't even

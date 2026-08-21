@@ -30,4 +30,13 @@
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Opportunity__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <tabSettings>
+        <tab>MA_Saved_Configuration__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
 </PermissionSet>
