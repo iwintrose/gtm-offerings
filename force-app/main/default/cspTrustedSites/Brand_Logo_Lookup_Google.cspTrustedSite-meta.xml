@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CspTrustedSite xmlns="http://soap.sforce.com/2006/04/metadata">
-    <isActive>true</isActive>
-    <endpointUrl>https://www.google.com</endpointUrl>
-    <context>All</context>
-    <description>Primary source for the Customize panel's brand-color lookup -- Google's favicon service, sampled client-side. No API key. Replaces logo.clearbit.com, dead since Clearbit's Dec-2023 HubSpot acquisition.</description>
-    <isApplicableToConnectSrc>true</isApplicableToConnectSrc>
-    <isApplicableToImgSrc>true</isApplicableToImgSrc>
-</CspTrustedSite>

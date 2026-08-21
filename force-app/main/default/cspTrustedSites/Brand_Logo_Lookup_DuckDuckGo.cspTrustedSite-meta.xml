@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CspTrustedSite xmlns="http://soap.sforce.com/2006/04/metadata">
-    <isActive>true</isActive>
-    <endpointUrl>https://icons.duckduckgo.com</endpointUrl>
-    <context>All</context>
-    <description>Fallback source for the Customize panel's brand-color lookup (maConfigCustomize), tried when Google's favicon service doesn't return a usable image. No API key, no server-side callout.</description>
-    <isApplicableToConnectSrc>true</isApplicableToConnectSrc>
-    <isApplicableToImgSrc>true</isApplicableToImgSrc>
-</CspTrustedSite>

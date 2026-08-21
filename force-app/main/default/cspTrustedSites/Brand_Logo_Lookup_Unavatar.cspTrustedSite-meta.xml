@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CspTrustedSite xmlns="http://soap.sforce.com/2006/04/metadata">
-    <isActive>true</isActive>
-    <endpointUrl>https://unavatar.io</endpointUrl>
-    <context>All</context>
-    <description>Primary source for the Customize panel's brand-color lookup -- built specifically as a CORS-friendly proxy for cross-origin logo fetching, unlike the Google/DuckDuckGo favicon fallbacks after it.</description>
-    <isApplicableToConnectSrc>true</isApplicableToConnectSrc>
-    <isApplicableToImgSrc>true</isApplicableToImgSrc>
-</CspTrustedSite>
