@@ -1,0 +1,307 @@
+/* Customize panel + link builder — ported from configurator.html (.cust*, .lb*) */
+
+.cust {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 88vw);
+  z-index: 80;
+  background: var(--paper, #fff);
+  border-left: 1px solid var(--line, #e7e2db);
+  box-shadow: -20px 0 50px -24px rgba(0, 0, 0, 0.4);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.6, 0.02, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  color: var(--ink, #17140f);
+  font-family: 'Söhne', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+.cust.open {
+  transform: none;
+}
+.cust-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--line, #e7e2db);
+}
+.cust-h .ct {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.cust-h .ct small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.76rem;
+  color: var(--ink-faint, #8b857d);
+  margin-top: 0.15rem;
+}
+.cust-x {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--ink-faint, #8b857d);
+  cursor: pointer;
+  line-height: 1;
+}
+.cust-x:hover {
+  color: var(--ink, #17140f);
+}
+.cust-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.1rem 1.2rem;
+}
+.cust-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.fld.spaced {
+  margin-top: 0.6rem;
+}
+.fld label {
+  font-size: 0.74rem;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint, #8b857d);
+}
+.fld input {
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink, #17140f);
+  background: var(--ground, #f7f4f0);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+}
+.fld input:focus {
+  outline: none;
+  border-color: var(--coral, #ee3d23);
+}
+.lb-select {
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink, #17140f);
+  background: var(--paper, #fff);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+}
+.cust-foot {
+  padding: 1rem 1.2rem;
+  border-top: 1px solid var(--line, #e7e2db);
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.cust-foot button {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--line, #e7e2db);
+  background: transparent;
+  color: var(--ink-soft, #57534d);
+}
+.cust-foot button.primary {
+  background: var(--coral, #ee3d23);
+  border-color: var(--coral, #ee3d23);
+  color: var(--on-coral, #fff);
+}
+.cust-foot button:hover {
+  border-color: var(--coral, #ee3d23);
+}
+.cust-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  background: rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.cust-scrim.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---------- link builder ---------- */
+.lb {
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  background: var(--ground, #f7f4f0);
+  margin-bottom: 1.1rem;
+}
+.lb .lb-t {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 0.15rem;
+}
+.lb .lb-t.spaced-top {
+  margin-top: 1rem;
+}
+.lb .lb-s {
+  font-size: 0.76rem;
+  color: var(--ink-faint, #8b857d);
+  margin-bottom: 0.7rem;
+}
+.accent-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.lb-picker {
+  width: 38px;
+  height: 38px;
+  padding: 2px;
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  background: var(--paper, #fff);
+  cursor: pointer;
+  flex: none;
+}
+.accent-text {
+  flex: 1;
+  min-width: 0;
+}
+.lb-mono {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #fff;
+  background: var(--coral, #ee3d23);
+  flex: none;
+}
+.swatches {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.lb-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--line, #e7e2db);
+  cursor: pointer;
+  padding: 0;
+}
+.lb-swatch:hover {
+  box-shadow: 0 0 0 2px var(--paper, #fff), 0 0 0 3px var(--coral, #ee3d23);
+}
+.lb .lb-out {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+.lb .lb-out input {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.74rem;
+  color: var(--ink, #17140f);
+  background: var(--paper, #fff);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+}
+.lb .lb-copy {
+  border: 1px solid var(--coral, #ee3d23);
+  background: var(--coral, #ee3d23);
+  color: var(--on-coral, #fff);
+  border-radius: 8px;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lb-editbar {
+  margin-top: 0.5rem;
+  font-size: 0.74rem;
+}
+.lb-editing {
+  color: var(--coral, #ee3d23);
+  font-weight: 600;
+}
+.lb-editbar a {
+  color: var(--ink-faint, #8b857d);
+}
+.lb .lb-recent {
+  margin-top: 0.8rem;
+}
+.lb .lb-recent .rl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  padding: 0.35rem 0.3rem;
+  border-top: 1px solid var(--line, #e7e2db);
+  border-radius: 6px;
+}
+.lb .lb-recent .rl.editing {
+  background: var(--coral-soft, rgba(238, 61, 35, 0.09));
+}
+.lb .lb-recent .rl a {
+  color: var(--coral, #ee3d23);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.rl-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+.rl-date {
+  color: var(--ink-faint, #8b857d);
+}
+.lb .lb-recent .rl-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex: none;
+}
+.lb .lb-recent .rl-actions button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  line-height: 1;
+  padding: 0.25rem 0.35rem;
+  color: var(--ink-faint, #8b857d);
+  border-radius: 5px;
+}
+.lb .lb-recent .rl-actions button:hover {
+  color: var(--coral, #ee3d23);
+  background: var(--coral-soft, rgba(238, 61, 35, 0.09));
+}
+.lb-note {
+  font-size: 0.72rem;
+  color: var(--ink-faint, #8b857d);
+  margin-top: 0.7rem;
+  line-height: 1.4;
+}

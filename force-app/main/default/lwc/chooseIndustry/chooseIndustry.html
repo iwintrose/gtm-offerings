@@ -1,0 +1,54 @@
+<template>
+  <div class={rootClass}>
+    <div class="bar">
+      <div class="bar-wm">
+        <span class="tick"></span> Migration Accelerator
+        <span class="bar-tag mono">/ choose your industry</span>
+      </div>
+      <div class="bar-right">
+        <a class="bar-back mono" href={offeringsUrl}>← offerings</a>
+        <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="eyebrow"><span class="bead"></span> Step 2 of 2</div>
+      <h1>Choose your industry.</h1>
+      <p class="sub">
+        Migrations look different in every sector. Pick one and the
+        client-facing page reframes around what actually matters for that
+        business, not a generic pitch.
+      </p>
+
+      <div class="grid">
+        <template for:each={industries} for:item="ind">
+          <a key={ind.key} class="tile" href={ind.href}>
+            <div class="tile-name">{ind.label}</div>
+            <div class="tile-desc">{ind.desc}</div>
+            <div class="tile-go">Configure for this industry →</div>
+          </a>
+        </template>
+
+        <a class="tile skip" href={configuratorUrl}>
+          <div class="tile-name">Skip for now</div>
+          <div class="tile-desc">
+            Start from the generic version and pick an industry later in the
+            Customize panel.
+          </div>
+          <div class="tile-go">Continue without one →</div>
+        </a>
+      </div>
+
+      <div class="footnote">
+        This picks a starting point for the configurator, not a locked-in
+        choice. Company name, industry, and branding all stay editable on the
+        next page through the Customize panel.
+      </div>
+    </div>
+
+    <footer class="pf">
+      <span>migration-accelerator — offering-scoped</span>
+      <span>Publicis Sapient · internal</span>
+    </footer>
+  </div>
+</template>

@@ -1,0 +1,156 @@
+<template>
+  <div class={scrimClass} onclick={handleClose}></div>
+
+  <aside class={panelClass} aria-label="Customize deck">
+    <div class="cust-h">
+      <div class="ct">
+        Customize this page
+        <small>Fill in the blanks — saves automatically</small>
+      </div>
+      <button class="cust-x" aria-label="Close" onclick={handleClose}>×</button>
+    </div>
+
+    <div class="cust-scroll">
+      <div class="lb">
+        <div class="lb-t">Personalize this page</div>
+        <div class="lb-s">
+          Type a client name, pick their industry, the page above updates live.
+        </div>
+
+        <div class="fld">
+          <label for="lbCompany">Company</label>
+          <input
+            id="lbCompany"
+            placeholder="e.g. Metrolinx"
+            value={company}
+            oninput={handleCompanyInput}
+          />
+        </div>
+
+        <div class="fld spaced">
+          <label for="lbIndustry">Industry</label>
+          <select id="lbIndustry" class="lb-select" onchange={handleIndustryChange}>
+            <template for:each={industryOptions} for:item="opt">
+              <option key={opt.value} value={opt.value} selected={opt.selected}>
+                {opt.label}
+              </option>
+            </template>
+          </select>
+        </div>
+
+        <div class="fld spaced">
+          <label for="lbAccent">Brand accent colour</label>
+          <div class="accent-row">
+            <input
+              type="color"
+              id="lbAccentPicker"
+              class="lb-picker"
+              value={accentHex}
+              oninput={handleAccentPicker}
+            />
+            <input
+              id="lbAccent"
+              class="accent-text"
+              placeholder="#EE3D23"
+              value={accent}
+              oninput={handleAccentInput}
+            />
+            <span class="lb-mono" title="Live monogram preview">{monogram}</span>
+          </div>
+          <div class="swatches">
+            <template for:each={swatches} for:item="sw">
+              <button
+                key={sw.hex}
+                type="button"
+                class="lb-swatch"
+                data-hex={sw.hex}
+                title={sw.name}
+                style={sw.style}
+                onclick={handleSwatch}
+              ></button>
+            </template>
+          </div>
+          <div class="lb-note">
+            These are generic starting colours, not verified brand colours —
+            this preview can’t reach outside services to look up a real
+            company’s actual brand. Paste the client’s real hex from their brand
+            guide if you have it.
+          </div>
+        </div>
+
+        <div class="fld spaced">
+          <label for="lbExp">Expires (only affects a hosted link)</label>
+          <input id="lbExp" type="date" value={expires} oninput={handleExpires} />
+        </div>
+
+        <div class="lb-t spaced-top">Link for the hosted version</div>
+        <div class="lb-out">
+          <input class="lb-url" readonly value={linkUrl} />
+          <button class="lb-copy" onclick={handleCopy}>{copyLabel}</button>
+        </div>
+
+        <template if:true={editing}>
+          <div class="lb-editbar">
+            <span class="lb-editing">Editing a saved link</span> ·
+            <a href="#" onclick={handleCancelEdit}>cancel</a>
+          </div>
+        </template>
+
+        <div class="lb-recent">
+          <template for:each={recentLinks} for:item="link">
+            <div key={link.id} class={link.rowClass}>
+              <a href={link.url} target="_blank" rel="noopener">{link.label}</a>
+              <span class="rl-meta">
+                <span class="rl-date">{link.date}</span>
+                <span class="rl-actions">
+                  <button
+                    type="button"
+                    title="Edit this link"
+                    data-id={link.id}
+                    onclick={handleEditLink}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    title="Delete this link"
+                    data-id={link.id}
+                    onclick={handleDeleteLink}
+                  >
+                    🗑
+                  </button>
+                </span>
+              </span>
+            </div>
+          </template>
+        </div>
+
+        <div class="lb-note">
+          <b>The preview above is live — that’s the personalization working.</b>
+          The link below carries the same settings to anyone you send it to.
+        </div>
+      </div>
+
+      <div class="cust-body">
+        <template for:each={fields} for:item="fld">
+          <div key={fld.k} class="fld">
+            <label for={fld.inputId}>{fld.label}</label>
+            <input
+              id={fld.inputId}
+              value={fld.value}
+              placeholder={fld.ph}
+              data-key={fld.k}
+              oninput={handleFieldInput}
+            />
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div class="cust-foot">
+      <button class="primary" onclick={handleClose}>Done</button>
+      <button onclick={handleLoadExample}>Load example</button>
+      <button onclick={handleClearAll}>Clear all</button>
+    </div>
+  </aside>
+</template>

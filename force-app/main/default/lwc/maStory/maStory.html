@@ -1,0 +1,312 @@
+<template>
+  <div class={rootClass}>
+    <div class="bar">
+      <div class="bar-wm">
+        <span class="tick"></span> Migration Accelerator
+        <span class="bar-tag mono">/ the story</span>
+      </div>
+      <div class="bar-right">
+        <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
+      </div>
+    </div>
+    <div class="progress" style={progressStyle}></div>
+
+    <section class="hero wrap">
+      <div class="eyebrow rv">
+        <span class="bead"></span> Internal positioning · GTM buy-in
+      </div>
+      <h1 class="hero-h rv d1">
+        Every migration starts with a decade nobody documented.<br />We read it
+        in <span class="accent">an afternoon.</span>
+      </h1>
+      <p class="hero-sub rv d2">
+        How Migration Accelerator turns an untrusted platform and a go-live date
+        that won't move into a plan, and increasingly, a finished migration.
+      </p>
+      <div class="scroll-cue rv d3">
+        <span>scroll</span><span class="ln"></span>
+      </div>
+    </section>
+
+    <section class="beat wrap">
+      <p class="lede rv">Every enterprise migration starts the same way.</p>
+      <div class="chip-row rv d1">
+        <span class="chip"><b>—</b>A platform nobody fully trusts</span>
+        <span class="chip"><b>—</b>A decade of undocumented campaigns</span>
+        <span class="chip"><b>—</b>A go-live date that won't move</span>
+      </div>
+      <p class="close-line rv d2">
+        Migration Accelerator starts working before the rebuild, before the
+        plan, at the part everyone dreads: finding out what's actually there.
+      </p>
+    </section>
+
+    <section class="beat wrap wide">
+      <div class="eyebrow rv"><span class="bead"></span> The mechanism</div>
+      <h2 class="beat-h rv d1">
+        Point it at the platform.<br />Get a plan you can act on.
+      </h2>
+      <p class="lede rv d1">
+        Eloqua or Salesforce Marketing Cloud, in, a build-ready plan out, and
+        for the pieces it's confident about, a finished migration.
+      </p>
+
+      <div class="route rv d2">
+        <div class="route-node">
+          <div class="route-line"></div>
+          <div class="rdot"></div>
+          <div class="rt">Ingest</div>
+          <div class="rd">Every asset, read directly</div>
+        </div>
+        <div class="route-node">
+          <div class="route-line"></div>
+          <div class="rdot"></div>
+          <div class="rt">Audit</div>
+          <div class="rd">A live health score</div>
+        </div>
+        <div class="route-node">
+          <div class="route-line"></div>
+          <div class="rdot"></div>
+          <div class="rt">Decide</div>
+          <div class="rd">Port, rework, retire, logged</div>
+        </div>
+        <div class="route-node">
+          <div class="route-line"></div>
+          <div class="rdot"></div>
+          <div class="rt">Plan</div>
+          <div class="rd">Dependencies pulled automatically</div>
+        </div>
+        <div class="route-node">
+          <div class="route-line"></div>
+          <div class="rdot"></div>
+          <div class="rt">Execute</div>
+          <div class="rd">Dry run, then live, rollback ready</div>
+        </div>
+      </div>
+
+      <div class={proofClass}>
+        <div class="proof-bar">
+          <span class="pd"></span><span class="pd"></span><span class="pd"></span>
+          <span class="pt">migration-accelerator · live preview</span>
+        </div>
+        <div class="proof-body">
+          <div class="proof-cta">
+            <p>
+              A snapshot of what the platform reads from an environment,
+              automatically, on day one.
+            </p>
+            <button class="btn" onclick={handleReveal}>See it work →</button>
+          </div>
+          <div class="proof-result">
+            <div class="proof-grid">
+              <div class="p-stat">
+                <div class="ps-n">{objectsText}</div>
+                <div class="ps-l">objects mapped</div>
+              </div>
+              <div class="p-stat row">
+                <div class="gauge-mini" style={gaugeStyle}>
+                  <span>{gaugeValue}</span>
+                </div>
+                <div>
+                  <div class="ps-l flush">health score</div>
+                </div>
+              </div>
+              <div class="p-stat">
+                <div class="ps-n">{depsText}</div>
+                <div class="ps-l">dependencies traced</div>
+              </div>
+            </div>
+            <div class="p-dep">
+              <span class="p-node root">APAC Onboarding</span>
+              <span class="p-node">Welcome email</span>
+              <span class="p-node">Shared data extension</span>
+              <span class="p-node">Brand header</span>
+            </div>
+            <div class="p-status-wrap">
+              <span class="p-status">
+                <span class="lv"></span> dry run complete · rollback armed
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="beat wrap">
+      <div class="eyebrow rv"><span class="bead"></span> The capabilities</div>
+      <h2 class="beat-h rv d1">What's actually built.</h2>
+      <div class="cap-grid rv d2">
+        <div class="cap-card">
+          <div class="cc-ic">In</div>
+          <div class="cc-t">Ingestion &amp; inventory</div>
+          <div class="cc-d">
+            Automatic, for Eloqua and Salesforce Marketing Cloud (Content
+            Builder).
+          </div>
+        </div>
+        <div class="cap-card new">
+          <div class="cc-ic">Au</div>
+          <div class="cc-t">Automated audit</div>
+          <div class="cc-d">
+            A health score plus an exportable report, generated on demand.
+          </div>
+        </div>
+        <div class="cap-card">
+          <div class="cc-ic">De</div>
+          <div class="cc-t">Disposition &amp; audit trail</div>
+          <div class="cc-d">
+            Port, rework, or retire, on every object, with full history.
+          </div>
+        </div>
+        <div class="cap-card">
+          <div class="cc-ic">Pl</div>
+          <div class="cc-t">Dependency-aware planning</div>
+          <div class="cc-d">
+            Assigning one object pulls in everything it needs, automatically.
+          </div>
+        </div>
+        <div class="cap-card">
+          <div class="cc-ic">Sp</div>
+          <div class="cc-t">AI-drafted build specs</div>
+          <div class="cc-d">
+            Human-reviewed requirements per object, down to Journey Builder
+            specs.
+          </div>
+        </div>
+        <div class="cap-card new">
+          <div class="cc-ic">Ex</div>
+          <div class="cc-t">Live execution &amp; rollback</div>
+          <div class="cc-d">
+            Dry run, then live, with a verification pass once it finishes.
+          </div>
+        </div>
+      </div>
+      <div class="bonus-card rv d3">
+        <strong>Also in the toolkit:</strong> a design-to-email pipeline. An
+        approved Figma layout becomes a built, publishable email, no separate
+        rebuild.
+      </div>
+    </section>
+
+    <section class="beat wrap">
+      <div class="eyebrow rv"><span class="bead"></span> The client profile</div>
+      <h2 class="beat-h rv d1">Who this fits.</h2>
+      <div class="stat-block rv d2">
+        <span class="stat-big">500–2,000+</span>
+        <span class="stat-desc">
+          objects is where this offering's advantage is largest, enterprise
+          accounts migrating between major marketing automation platforms,
+          carrying a sizable, under-documented environment.
+        </span>
+      </div>
+      <p class="note-line rv d3">
+        Today, this runs through us, in working sessions, not a self-serve
+        portal, and that's exactly how it should work for now.
+      </p>
+    </section>
+
+    <section class="beat wrap wide">
+      <div class="eyebrow rv">
+        <span class="bead"></span> For Business Development and Industry Leaders
+      </div>
+      <h2 class="beat-h rv d1">One story. Here's how to run it.</h2>
+      <p class="lede rv d1">
+        This is the pitch, the same one a client hears. The job is fluency in
+        it, plus the tools to make it specific to whoever's in the room.
+      </p>
+
+      <div class="use-grid rv d2">
+        <div class="use-card">
+          <div class="uc-t">Presales</div>
+          <div class="uc-d">
+            Run a prospect's export before the SOW. Walk in with a real health
+            score, not a guess.
+          </div>
+        </div>
+        <div class="use-card">
+          <div class="uc-t">Delivery</div>
+          <div class="uc-d">
+            Run the full engagement through it, start to finish, and
+            increasingly, the cutover itself.
+          </div>
+        </div>
+        <div class="use-card">
+          <div class="uc-t">The pitch</div>
+          <div class="uc-d">
+            A real environment becoming a real plan, live, in the room, not
+            described afterward.
+          </div>
+        </div>
+      </div>
+
+      <div class="pitch-shift rv d3">
+        <div class="ps-col old">
+          <span class="ps-label">The old pitch</span>
+          <span class="ps-chip">
+            A promise to figure out scope after signature
+          </span>
+          <span class="ps-chip">An estimate built on intuition</span>
+          <span class="ps-chip">A plan that ends in a manual handoff</span>
+        </div>
+        <div class="ps-arrow">→</div>
+        <div class="ps-col new">
+          <span class="ps-label">This pitch</span>
+          <span class="ps-chip">
+            A real health score, produced live, in the room
+          </span>
+          <span class="ps-chip">Scope set from the actual environment</span>
+          <span class="ps-chip">
+            A dry run, and where it applies, a finished cutover
+          </span>
+        </div>
+      </div>
+
+      <p class="note-line rv d3 spaced">
+        The customizer turns this story into something specific, a client's
+        name, their industry, their stakes, before it ever reaches an inbox.
+        More on that next.
+      </p>
+    </section>
+
+    <section class="beat wrap">
+      <div class="eyebrow rv"><span class="bead"></span> FAQ</div>
+      <h2 class="beat-h rv d1">The questions this needs to survive.</h2>
+      <div class="faq rv d2">
+        <template for:each={faqs} for:item="faq">
+          <div key={faq.id} class={faq.itemClass}>
+            <button class="faq-q" data-id={faq.id} onclick={handleFaqToggle}>
+              {faq.question}
+              <span>
+                <span class={faq.verdictClass}>{faq.verdict}</span>
+                <span class="fq-plus">+</span>
+              </span>
+            </button>
+            <div class="faq-a">
+              <div class="faq-a-in">{faq.answer}</div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <section class="closing wrap">
+      <h2 class="rv">
+        This is Migration Accelerator today: an offering built on evidence,
+        moving toward a finished migration instead of a plan for one.
+      </h2>
+      <p class="rv d1">
+        The next step is putting a name and an industry behind it.
+      </p>
+      <p class="rv d1 cta-line">
+        <a class="btn" href={acceleratorUrl}>
+          Build a client-specific version →
+        </a>
+      </p>
+    </section>
+
+    <footer class="pf">
+      <span>Migration Accelerator — positioning working draft</span>
+      <span>Grounded against ma-migrator + project-conduit, August 18, 2026</span>
+    </footer>
+  </div>
+</template>
