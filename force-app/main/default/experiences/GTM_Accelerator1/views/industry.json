@@ -27,8 +27,8 @@
       "regions" : [ {
         "components" : [ {
           "componentAttributes" : {
-            "configuratorUrl" : "/configurator",
-            "offeringsUrl" : "/"
+            "configuratorUrl" : "/gtmaccelerator/s/configurator",
+            "offeringsUrl" : "/gtmaccelerator/s/"
           },
           "componentName" : "c:chooseIndustry",
           "id" : "e1a2386a-9033-419b-948b-d314de916dfd",

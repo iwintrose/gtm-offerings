@@ -27,7 +27,7 @@
       "regions" : [ {
         "components" : [ {
           "componentAttributes" : {
-            "industryUrl" : "choose-industry"
+            "industryUrl" : "/gtmaccelerator/s/choose-industry"
           },
           "componentName" : "c:offeringChooser",
           "id" : "f2c8a8d0-c220-4c29-9275-edcdd887baf4",
