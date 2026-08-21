@@ -18,12 +18,22 @@ export default class MaConfigCustomize extends LightningElement {
     @api company = '';
     @api industry = '';
     @api accent = '';
-    /** Record Id of the saved config this page was opened from (via the
-     * ?cfgId= param a saved-links click adds). When set, "Save & copy"
-     * updates that same record — and its already-shared URL — in place
-     * instead of creating a duplicate. */
-    @api savedRecordId = '';
 
+    _savedRecordId = '';
+    /** Record Id of the saved config this page was opened from (via the
+     * ?cfgId= param a saved-links click adds). Seeds knownRecordId below,
+     * which also then evolves independently once a fresh save gets back
+     * its own new id -- see saveInternal/persistToServer. */
+    @api
+    get savedRecordId() {
+        return this._savedRecordId;
+    }
+    set savedRecordId(value) {
+        this._savedRecordId = value || '';
+        if (value) this.knownRecordId = value;
+    }
+
+    @track knownRecordId = '';
     @track expires = '';
     @track copyFeedback = 'Copy link';
     @track links = [];
@@ -234,7 +244,7 @@ export default class MaConfigCustomize extends LightningElement {
     }
 
     get canSaveAsNew() {
-        return !!(this.savedRecordId || (this.editingId && this.findServerId(this.editingId)));
+        return !!(this.knownRecordId || (this.editingId && this.findServerId(this.editingId)));
     }
 
     findServerId(id) {
@@ -243,11 +253,11 @@ export default class MaConfigCustomize extends LightningElement {
     }
 
     saveInternal({ asNew }) {
-        const url = this.buildUrl();
+        const url = this.buildUrl(asNew);
         const existing = this.editingId
             ? this.links.find((l) => l.id === this.editingId)
             : null;
-        const knownServerId = existing ? existing.serverId : this.savedRecordId || null;
+        const knownServerId = existing ? existing.serverId : this.knownRecordId || null;
         const entry = {
             id: this.editingId || `l${Date.now()}`,
             serverId: asNew ? null : knownServerId,
@@ -283,6 +293,7 @@ export default class MaConfigCustomize extends LightningElement {
      */
     async persistToServer(entry) {
         try {
+            const wasNewRecord = !entry.serverId;
             const recordId = await saveConfiguration({
                 input: {
                     recordId: entry.serverId,
@@ -294,6 +305,29 @@ export default class MaConfigCustomize extends LightningElement {
                 }
             });
             entry.serverId = recordId;
+            this.knownRecordId = recordId;
+
+            if (wasNewRecord) {
+                // The url sent above couldn't include this record's own id
+                // -- it didn't exist yet. Rebuild it now that it does, and
+                // correct the stored copy to match what's actually shared,
+                // so the active/inactive gate has something to key off.
+                const correctedUrl = this.buildUrl();
+                if (correctedUrl !== entry.url) {
+                    entry.url = correctedUrl;
+                    await saveConfiguration({
+                        input: {
+                            recordId,
+                            offering: OFFERING,
+                            industry: entry.industry,
+                            company: entry.company,
+                            generatedUrl: correctedUrl,
+                            configPayload: JSON.stringify(this._state)
+                        }
+                    });
+                }
+            }
+
             this.links = this.links.map((l) => (l.id === entry.id ? entry : l));
             this.writeLinks();
             // Lets maConfigurator refresh its embedded Saved bar without a
@@ -316,7 +350,13 @@ export default class MaConfigCustomize extends LightningElement {
         this.dispatchEvent(new CustomEvent(name, { detail }));
     }
 
-    buildUrl() {
+    /** excludeId forces a clean, un-tagged link (used for "Save as new
+     * version") even when a record is already known. Otherwise, once a
+     * record exists, its id rides along as ?cfgId= -- this is what lets
+     * MaConfigurationStatusController gate the link if it's later switched
+     * to inactive, and what lets a resave find the same record instead of
+     * creating a duplicate. */
+    buildUrl(excludeId) {
         let base = '';
         try {
             base = window.location.origin + window.location.pathname;
@@ -340,6 +380,9 @@ export default class MaConfigCustomize extends LightningElement {
         push('rep', this._state.CONTACT_EMAIL);
         push('repname', this._state.CONTACT_NAME);
         push('book', this._state.BOOKING_URL);
+        if (!excludeId && this.knownRecordId) {
+            push('cfgId', this.knownRecordId);
+        }
 
         return params.length ? `${base}?${params.join('&')}` : base;
     }

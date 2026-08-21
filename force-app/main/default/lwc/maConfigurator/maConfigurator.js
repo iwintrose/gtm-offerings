@@ -1,5 +1,6 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isConfigManager';
+import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
 import {
     INDUSTRIES,
     FIELDS,
@@ -28,6 +29,7 @@ export default class MaConfigurator extends LightningElement {
     @track accent = '';
     @track theme = null;
     @track expired = false;
+    @track inactive = false;
     @track isProspectLink = false;
 
     @track customizeOpen = false;
@@ -159,11 +161,28 @@ export default class MaConfigurator extends LightningElement {
         if (accentParam) this.accent = accentParam;
         this.isProspectLink = !!companyParam;
         this.savedRecordId = cfgIdParam || '';
+        this.checkActiveStatus();
 
         const exp = get('exp');
         if (exp) {
             const t = /^\d+$/.test(exp) ? parseInt(exp, 10) : Date.parse(exp);
             if (t && Date.now() > t) this.expired = true;
+        }
+    }
+
+    /** A rep can flip a saved config to inactive without deleting or
+     * hiding it from their own list -- this is what actually stops a
+     * client's already-shared link from working. Guest-safe, tiny,
+     * separate class (MaConfigurationStatusController) -- see that file
+     * for why this isn't just another method on MaSavedConfigurationController. */
+    async checkActiveStatus() {
+        if (!this.savedRecordId) return;
+        try {
+            const active = await isActive({ recordId: this.savedRecordId });
+            this.inactive = !active;
+        } catch (e) {
+            // Fails open: a status-check error should never itself block a
+            // client from seeing an otherwise-working link.
         }
     }
 

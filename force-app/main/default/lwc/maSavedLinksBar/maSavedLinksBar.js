@@ -1,6 +1,7 @@
 import { LightningElement, api } from 'lwc';
 import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
+import setActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
 
 export default class MaSavedLinksBar extends LightningElement {
     hasAccess = false;
@@ -80,6 +81,22 @@ export default class MaSavedLinksBar extends LightningElement {
         }
     }
 
+    /** Does not delete or hide the record -- only gates what the client
+     * sees when they open the shared link (MaConfigurationStatusController). */
+    async handleToggleActive(event) {
+        event.stopPropagation();
+        const recordId = event.currentTarget.dataset.id;
+        const nextActive = event.currentTarget.dataset.active !== 'true';
+        if (!recordId) return;
+        try {
+            await setActive({ recordId, active: nextActive });
+            await this.loadConfigurations();
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('maSavedLinksBar: failed to toggle active state', e);
+        }
+    }
+
     groupRecords(records) {
         const byOffering = new Map();
 
@@ -93,6 +110,7 @@ export default class MaSavedLinksBar extends LightningElement {
             if (!byIndustry.has(industryKey)) {
                 byIndustry.set(industryKey, []);
             }
+            const active = rec.Active__c !== false;
             byIndustry.get(industryKey).push({
                 id: rec.Id,
                 label: rec.Company__c || rec.Name,
@@ -100,7 +118,15 @@ export default class MaSavedLinksBar extends LightningElement {
                 owner: rec.Owner ? rec.Owner.Name : '',
                 date: rec.CreatedDate
                     ? new Date(rec.CreatedDate).toLocaleDateString()
-                    : ''
+                    : '',
+                active,
+                activeAttr: String(active),
+                rowClass: active ? 'sl-link' : 'sl-link inactive',
+                statusLabel: active ? 'Active' : 'Inactive',
+                toggleLabel: active ? 'Disable' : 'Enable',
+                toggleTitle: active
+                    ? 'Disable this link for the client'
+                    : 'Re-enable this link for the client'
             });
         });
 

@@ -59,11 +59,25 @@ public with sharing class MaSavedConfigurationController {
     public static List<MA_Saved_Configuration__c> getMyConfigurations() {
         return [
             SELECT Id, Name, Offering__c, Industry__c, Company__c,
-                   Generated_URL__c, CreatedDate, OwnerId, Owner.Name
+                   Generated_URL__c, Active__c, CreatedDate, OwnerId, Owner.Name
             FROM MA_Saved_Configuration__c
             ORDER BY CreatedDate DESC
             LIMIT 200
         ];
+    }
+
+    /**
+     * Toggling this does not delete or hide the record from the rep's own
+     * Saved Links list -- it only gates what a client sees when visiting
+     * the shared link (see MaConfigurationStatusController, the small
+     * guest-safe class that reads this one field).
+     */
+    @AuraEnabled
+    public static void setActive(String recordId, Boolean active) {
+        if (String.isBlank(recordId)) {
+            throw new AuraHandledException('No record specified.');
+        }
+        update new MA_Saved_Configuration__c(Id = recordId, Active__c = active);
     }
 
     /**

@@ -108,6 +108,46 @@
   text-decoration: underline;
 }
 
+.sl-link.inactive a {
+  color: inherit;
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.sl-status {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 100px;
+  white-space: nowrap;
+  color: #1a7a3a;
+  background: rgba(26, 122, 58, 0.12);
+}
+
+.sl-link.inactive .sl-status {
+  color: #8a8a8a;
+  background: rgba(127, 127, 127, 0.15);
+}
+
+.sl-toggle-active {
+  background: transparent;
+  border: 1px solid var(--line, rgba(127, 127, 127, 0.3));
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.sl-toggle-active:hover {
+  opacity: 1;
+  border-color: var(--coral, #ee3d23);
+}
+
 .sl-date {
   font-size: 0.68rem;
   opacity: 0.5;

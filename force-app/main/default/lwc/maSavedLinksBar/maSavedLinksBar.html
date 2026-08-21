@@ -13,9 +13,17 @@
                             <div key={industry.key} class="sl-industry">
                                 <div class="sl-industry-name">{industry.name}</div>
                                 <template for:each={industry.links} for:item="link">
-                                    <div key={link.id} class="sl-link">
+                                    <div key={link.id} class={link.rowClass}>
+                                        <span class="sl-status">{link.statusLabel}</span>
                                         <a href={link.url} target="_blank" rel="noopener">{link.label}</a>
                                         <span class="sl-date">{link.date}</span>
+                                        <button
+                                            class="sl-toggle-active"
+                                            title={link.toggleTitle}
+                                            data-id={link.id}
+                                            data-active={link.activeAttr}
+                                            onclick={handleToggleActive}
+                                        >{link.toggleLabel}</button>
                                         <button
                                             class="sl-delete"
                                             title="Delete"

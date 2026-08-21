@@ -98,4 +98,23 @@ private class MaSavedConfigurationControllerTest {
             [SELECT COUNT() FROM MA_Saved_Configuration__c WHERE Id = :existing.Id]
         );
     }
+
+    @IsTest
+    static void togglesActiveWithoutDeletingOrHiding() {
+        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
+        );
+        insert existing;
+
+        Test.startTest();
+        MaSavedConfigurationController.setActive(existing.Id, false);
+        Test.stopTest();
+
+        MA_Saved_Configuration__c updated = [
+            SELECT Active__c FROM MA_Saved_Configuration__c WHERE Id = :existing.Id
+        ];
+        System.assertEquals(false, updated.Active__c);
+        System.assertEquals(1, MaSavedConfigurationController.getMyConfigurations().size());
+    }
 }
