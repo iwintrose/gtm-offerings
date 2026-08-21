@@ -263,16 +263,28 @@ export default class MaConfigCustomize extends LightningElement {
             `https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`,
             `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`
         ];
-        this.tryLogoSources(sources, 0);
+        // eslint-disable-next-line no-console
+        console.log('maConfigCustomize: brand lookup sources to try, in order:', sources);
+        this.tryLogoSources(sources, 0, []);
     }
 
-    tryLogoSources(sources, index) {
+    /** attempts accumulates {url, outcome} across the whole chain so the
+     * final failure message (and the console log) can show exactly what
+     * was tried and how each one failed -- open any of the URLs directly
+     * in a browser tab to see what that source actually returned. */
+    tryLogoSources(sources, index, attempts) {
         if (index >= sources.length) {
             this.brandLookupBusy = false;
             this.brandLookupError =
-                "Couldn't find a logo for that domain — check it's right, or set the color manually below.";
+                "Couldn't find a usable logo. Tried:\n" +
+                attempts.map((a) => `${a.url} — ${a.outcome}`).join('\n') +
+                '\nOpen one of those links directly to see what it actually returns, or set the color manually below.';
+            // eslint-disable-next-line no-console
+            console.log('maConfigCustomize: brand lookup exhausted all sources', attempts);
             return;
         }
+
+        const url = sources[index];
 
         // Deliberately NOT setting img.crossOrigin: doing so forces a
         // CORS-mode request, and neither Google's nor DuckDuckGo's favicon
@@ -290,7 +302,10 @@ export default class MaConfigCustomize extends LightningElement {
         const timeout = setTimeout(() => {
             if (settled) return;
             settled = true;
-            this.tryLogoSources(sources, index + 1);
+            this.tryLogoSources(sources, index + 1, [
+                ...attempts,
+                { url, outcome: 'timed out (5s)' }
+            ]);
         }, 5000);
 
         img.onload = () => {
@@ -300,27 +315,33 @@ export default class MaConfigCustomize extends LightningElement {
             const outcome = dominantColorFromImage(img);
             if (outcome.hex) {
                 this.brandLookupBusy = false;
+                // eslint-disable-next-line no-console
+                console.log('maConfigCustomize: brand color found', {
+                    url,
+                    hex: outcome.hex
+                });
                 this.emit('accentchange', { value: outcome.hex });
-            } else if (index + 1 < sources.length) {
-                // Loaded, but nothing usable to sample (a blank/generic
-                // fallback icon, or a tainted canvas) -- worth trying the
-                // next source rather than giving up on this one.
-                this.tryLogoSources(sources, index + 1);
             } else {
-                this.brandLookupBusy = false;
-                this.brandLookupError = outcome.tainted
-                    ? "Found a logo, but this source doesn't allow reading its color automatically — set it manually below."
-                    : "Couldn't find a usable color in that logo — try setting it manually below.";
+                const reason = outcome.tainted
+                    ? 'loaded, but no CORS header so its color could not be read'
+                    : 'loaded, but had no usable (non-neutral) color to sample';
+                this.tryLogoSources(sources, index + 1, [
+                    ...attempts,
+                    { url, outcome: reason }
+                ]);
             }
         };
         img.onerror = () => {
             if (settled) return;
             settled = true;
             clearTimeout(timeout);
-            this.tryLogoSources(sources, index + 1);
+            this.tryLogoSources(sources, index + 1, [
+                ...attempts,
+                { url, outcome: 'failed to load (404, network error, or blocked)' }
+            ]);
         };
 
-        img.src = sources[index];
+        img.src = url;
     }
 
     handleExpires(event) {

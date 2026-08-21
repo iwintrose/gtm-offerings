@@ -88,6 +88,15 @@
   outline: none;
   border-color: var(--coral, #ee3d23);
 }
+/* Without this, placeholder examples ("e.g. Alex Rivera") can render at
+   near-full opacity on some browsers/devices -- indistinguishable from a
+   real saved value, so the whole panel reads as already filled in when
+   it's actually blank. This makes "just an example" unmistakable. */
+.fld input::placeholder,
+.fld textarea::placeholder {
+  color: var(--ink-faint, #8b857d);
+  opacity: 0.65;
+}
 .fld textarea {
   font-family: inherit;
   font-size: 0.92rem;
@@ -276,6 +285,11 @@
   border: 1px solid rgba(224, 49, 49, 0.35);
   color: #b3261e;
   font-size: 0.78rem;
+  /* The brand-lookup failure message lists every source URL tried, one
+     per line -- preserve those line breaks and let long URLs wrap
+     instead of overflowing the panel. */
+  white-space: pre-line;
+  word-break: break-word;
 }
 .fld.field-invalid input {
   border-color: #e03131;

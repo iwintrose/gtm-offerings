@@ -207,6 +207,11 @@
       </div>
 
       <div class="cust-body">
+        <div class="lb-t">Page content &amp; proof numbers</div>
+        <div class="lb-s">
+          What shows up on the page itself — separate from the Sales Cloud
+          fields above, which never appear to the client.
+        </div>
         <template for:each={fields} for:item="fld">
           <div key={fld.k} class="fld">
             <label for={fld.inputId}>{fld.label}</label>
