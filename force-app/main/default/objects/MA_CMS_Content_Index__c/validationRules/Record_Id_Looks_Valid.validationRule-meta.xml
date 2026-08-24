@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Record_Id_Looks_Valid</fullName>
+    <active>true</active>
+    <errorConditionFormula>NOT(REGEX(CMS_Record_Id__c, &quot;[a-zA-Z0-9]{15}|[a-zA-Z0-9]{18}&quot;))</errorConditionFormula>
+    <errorDisplayField>CMS_Record_Id__c</errorDisplayField>
+    <errorMessage>Doesn&apos;t look like a full record Id (should be 15 or 18 characters). Check the paste from the browser URL is complete.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Active__c</fullName>
+    <label>Active</label>
+    <description>Uncheck to pull this content off the live page immediately without touching the CMS record itself (unpublishing/deleting there is a separate, slower action).</description>
+    <type>Checkbox</type>
+    <defaultValue>true</defaultValue>
+</CustomField>

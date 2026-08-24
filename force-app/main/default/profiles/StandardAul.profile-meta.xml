@@ -28,6 +28,10 @@
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
     <tabVisibilities>
+        <tab>MA_CMS_Content_Index__c</tab>
+        <visibility>DefaultOn</visibility>
+    </tabVisibilities>
+    <tabVisibilities>
         <tab>GTM_Offerings_Overview</tab>
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
@@ -38,6 +42,15 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>MA_Saved_Configuration__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>MA_CMS_Content_Index__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <objectPermissions>
@@ -163,6 +176,16 @@
         <field>MA_Assessment_Request__c.Source__c</field>
         <readable>true</readable>
         <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_CMS_Content_Index__c.Display_Order__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_CMS_Content_Index__c.Active__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
     </fieldPermissions>
     <userPermissions>
         <enabled>true</enabled>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All_Content_Index</fullName>
+    <filterScope>Everything</filterScope>
+    <label>All Content Index</label>
+    <columns>NAME</columns>
+    <columns>Content_Type__c</columns>
+    <columns>Offering_Key__c</columns>
+    <columns>CMS_Record_Id__c</columns>
+    <columns>Display_Order__c</columns>
+    <columns>Active__c</columns>
+    <columns>CREATED_DATE</columns>
+</ListView>

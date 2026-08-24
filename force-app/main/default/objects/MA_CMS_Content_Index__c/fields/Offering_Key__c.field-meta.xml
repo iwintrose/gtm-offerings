@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Offering_Key__c</fullName>
+    <label>Offering Key</label>
+    <description>Matches MA_Offering__mdt.Offering_Key__c, e.g. migration-accelerator. Must match the offeringKey node value inside the CMS content record itself.</description>
+    <type>Text</type>
+    <length>80</length>
+    <required>true</required>
+    <defaultValue>&quot;migration-accelerator&quot;</defaultValue>
+</CustomField>
