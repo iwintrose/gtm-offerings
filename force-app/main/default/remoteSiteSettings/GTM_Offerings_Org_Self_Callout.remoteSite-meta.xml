@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RemoteSiteSetting xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isActive>true</isActive>
+    <disableProtocolSecurity>false</disableProtocolSecurity>
+    <url>https://orgfarm-5c323065da-dev-ed.develop.my.salesforce.com</url>
+    <description>MaStoryContentController's self-callout to this org's own CMS delivery API (UserInfo.getSessionId() as the bearer token). Org-specific URL -- update on org move, see DEPLOYMENT.md.</description>
+</RemoteSiteSetting>
