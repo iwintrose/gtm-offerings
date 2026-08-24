@@ -60,6 +60,21 @@ the actual target org:
 - **My Domain** -- if the target org doesn't have My Domain enabled yet,
   enable it before deploying the Experience Cloud site (Salesforce
   requires it for Digital Experiences).
+- **The GTM Offerings CMS Workspace** -- `force-app/main/default/managedContentTypes/`
+  defines the *schema* for the offering's editorial content (industry story
+  blocks, FAQ, site defaults), but a CMS **Workspace** to actually author
+  content into (`ManagedContentSpace`) has no Metadata API representation at
+  all, so it can never travel with `scripts/deploy.sh`. Run
+  `./scripts/setup-cms-workspace.sh <org-alias>` after deploying -- it's
+  idempotent (safe to re-run, does nothing if the Workspace already exists)
+  and uses the Connect REST API directly since there's no metadata type to
+  deploy. Once it exists, the 3 content types are immediately usable in it --
+  there's no separate "enable this content type for this workspace" step.
+  Still manual either way: granting CMS Workspace access (Contributor/
+  Publisher) to whoever authors this content -- that's its own permission
+  system, separate from every Profile/PermissionSet grant elsewhere in this
+  doc, and needs setting per person in Setup > Digital Experiences > CMS
+  Workspaces > GTM Offerings > Access.
 - **Experience Cloud site membership** -- separate from every permission
   above, and easy to miss: a profile also needs to be an explicit *member*
   of the site (Setup → Digital Experiences → your site → Administration →

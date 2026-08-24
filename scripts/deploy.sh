@@ -56,6 +56,7 @@ if [ "$RUN_TESTS" = "--run-tests" ]; then
     --source-dir force-app/main/default/experiences \
     --source-dir force-app/main/default/layouts \
     --source-dir force-app/main/default/lwc \
+    --source-dir force-app/main/default/managedContentTypes \
     --source-dir force-app/main/default/objects \
     --source-dir force-app/main/default/permissionsets \
     --source-dir force-app/main/default/tabs \
@@ -70,6 +71,7 @@ else
     --source-dir force-app/main/default/experiences \
     --source-dir force-app/main/default/layouts \
     --source-dir force-app/main/default/lwc \
+    --source-dir force-app/main/default/managedContentTypes \
     --source-dir force-app/main/default/objects \
     --source-dir force-app/main/default/permissionsets \
     --source-dir force-app/main/default/tabs \
@@ -123,3 +125,6 @@ echo "    - Assign MA_Assessment_Guest to the target Experience Cloud site's Gue
 echo "    - Activate + publish the Experience Cloud site in Setup > Digital Experiences"
 echo "    - Edit the MA_Offering__mdt 'Migration Accelerator' record's target"
 echo "      values (Setup > Custom Metadata Types) -- the seeded numbers are placeholders"
+echo "    - Run ./scripts/setup-cms-workspace.sh $TARGET_ORG to create the CMS"
+echo "      Workspace the ManagedContentType schema just deployed needs before"
+echo "      any content can be authored against it"
