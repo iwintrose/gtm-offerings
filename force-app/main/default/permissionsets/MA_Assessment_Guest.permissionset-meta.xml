@@ -14,6 +14,10 @@
         <apexClass>MaConfigurationStatusController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>MaStoryContentController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <customMetadataTypeAccesses>
         <enabled>true</enabled>
         <name>MA_Assessment_Config__mdt</name>
