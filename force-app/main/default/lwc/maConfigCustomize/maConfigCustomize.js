@@ -1,16 +1,9 @@
-import { LightningElement, api, track } from 'lwc';
+import { LightningElement, api, track, wire } from 'lwc';
 import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
-import {
-    FIELDS,
-    INDUSTRIES,
-    IND_ORDER,
-    SWATCHES,
-    LINKS_KEY,
-    initials,
-    isHex6
-} from 'c/maConfigData';
+import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import { FIELDS, LINKS_KEY, initials, isHex6 } from 'c/maConfigData';
 
 const OFFERING = 'migration-accelerator';
 
@@ -79,11 +72,21 @@ export default class MaConfigCustomize extends LightningElement {
         this._state = value || {};
     }
 
-    swatches = SWATCHES.map((s) => ({
-        name: s.name,
-        hex: s.hex,
-        style: `background:#${s.hex}`
-    }));
+    @track swatches = [];
+    @track _industries = [];
+
+    @wire(getStoryContent, { offeringKey: OFFERING })
+    wiredStoryContent({ data }) {
+        if (!data) return;
+        this.swatches = data.setting
+            ? data.setting.swatches.map((s) => ({
+                  name: s.name,
+                  hex: s.hex,
+                  style: `background:#${s.hex}`
+              }))
+            : [];
+        this._industries = data.industries;
+    }
 
     connectedCallback() {
         // Drop local entries with no serverId: they predate server-side
@@ -141,25 +144,25 @@ export default class MaConfigCustomize extends LightningElement {
                 selected: !this.industry
             }
         ];
-        IND_ORDER.forEach((key) => {
+        this._industries.forEach((ind) => {
             options.push({
-                value: key,
-                label: INDUSTRIES[key].label,
-                selected: this.industry === key
+                value: ind.industryKey,
+                label: ind.industryLabel,
+                selected: this.industry === ind.industryKey
             });
         });
         return options;
     }
 
     get recentLinks() {
+        const labelFor = (key) => {
+            const match = this._industries.find((ind) => ind.industryKey === key);
+            return match ? match.industryLabel : key || 'generic';
+        };
         return this.links.slice(0, 8).map((l) => ({
             id: l.id,
             url: l.url,
-            label: `${l.company || '(no company)'} · ${
-                INDUSTRIES[l.industry]
-                    ? INDUSTRIES[l.industry].label
-                    : l.industry || 'generic'
-            }`,
+            label: `${l.company || '(no company)'} · ${labelFor(l.industry)}`,
             date: new Date(l.ts).toLocaleDateString(),
             rowClass: this.editingId === l.id ? 'rl editing' : 'rl'
         }));

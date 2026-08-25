@@ -96,14 +96,14 @@ private class MaStoryContentControllerTest {
         System.assertEquals(1, result.industries.size(), 'Expected one industry story');
         MaStoryContentController.IndustryStory industry = result.industries[0];
         System.assertEquals('fintech', industry.industryKey);
-        System.assertEquals('<p>Banks & insurers</p>', industry.coverSub, 'HTML entities should be unescaped');
+        System.assertEquals('Banks & insurers', industry.coverSub, 'Entities unescaped and the outer <p> wrapper stripped');
         System.assertEquals(3, industry.uniquePoints.size());
         System.assertEquals('Point & two', industry.uniquePoints[1], 'Entity unescaping applies to MTEXT lines too');
         System.assertEquals(2, industry.demoDeps.size());
 
         System.assertEquals(1, result.faqs.size(), 'Expected one FAQ item');
         System.assertEquals('Does it work?', result.faqs[0].question);
-        System.assertEquals('<p>Yes it does</p>', result.faqs[0].answer);
+        System.assertEquals('Yes it does', result.faqs[0].answer, 'A single wrapping <p> should be unwrapped');
 
         System.assertNotEquals(null, result.setting, 'Expected a story setting');
         System.assertEquals('Eloqua', result.setting.defaultSourcePlatform);

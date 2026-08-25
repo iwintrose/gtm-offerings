@@ -1,19 +1,12 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isConfigManager';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
-import {
-    INDUSTRIES,
-    FIELDS,
-    DEFAULTS,
-    EXAMPLE,
-    GENERIC_DEMO,
-    GENERIC_CHIPS,
-    initials,
-    isHex6
-} from 'c/maConfigData';
+import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/maConfigData';
 
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
 const OFFERING_LABEL = 'Migration Accelerator';
+const OFFERING_KEY = 'migration-accelerator';
 
 export default class MaConfigurator extends LightningElement {
     /** Back links, shown only for the internal/self-serve flow — hidden on
@@ -58,6 +51,39 @@ export default class MaConfigurator extends LightningElement {
             this.isConfigManager = false;
         }
     }
+
+    /** Industries, and the generic/no-industry fallback content (proof-
+     * number defaults, generic demo, generic chips), from CMS. Empty/null
+     * until this resolves -- every getter below that reads from it already
+     * has a safe "nothing selected" fallback, so the page just renders the
+     * generic view for a beat rather than erroring while this loads. */
+    @track _industries = [];
+    @track _storySetting = null;
+
+    @wire(getStoryContent, { offeringKey: OFFERING_KEY })
+    wiredStoryContent({ data }) {
+        if (!data) return;
+        this._industries = data.industries;
+        this._storySetting = data.setting;
+
+        if (data.setting) {
+            const cmsDefaults = {
+                SOURCE_PLATFORM: data.setting.defaultSourcePlatform,
+                TARGET_PLATFORM: data.setting.defaultTargetPlatform,
+                ASSET_COUNT: data.setting.defaultAssetCount,
+                DEPENDENCY_COUNT: data.setting.defaultDependencyCount,
+                HEALTH_SCORE: data.setting.defaultHealthScore
+            };
+            this._cmsDefaults = cmsDefaults;
+            // Whatever's already in tokenState (from a URL param, parsed
+            // in readUrlParams before this wire necessarily resolves) wins
+            // over a CMS default for the same key -- this only fills in
+            // what's still unset, regardless of which one landed first.
+            this.tokenState = { ...cmsDefaults, ...this.tokenState };
+        }
+    }
+
+    _cmsDefaults = {};
 
     // -------------------------------------------------------------- lifecycle
 
@@ -114,7 +140,11 @@ export default class MaConfigurator extends LightningElement {
      * saved link's own values, from the link itself, not from storage.
      */
     loadState() {
-        return { ...DEFAULTS };
+        // CMS defaults aren't loaded yet at this point (connectedCallback
+        // runs before the getStoryContent wire can resolve) -- the wire
+        // callback above merges them in once they arrive, without
+        // clobbering anything a URL param sets in the meantime.
+        return {};
     }
 
     readUrlParams() {
@@ -166,7 +196,12 @@ export default class MaConfigurator extends LightningElement {
         const cfgIdParam = get('cfgId');
 
         this.company = companyParam || '';
-        this.industryKey = INDUSTRIES[industryParam] ? industryParam : '';
+        // Not validated against the loaded industries list here -- that
+        // list may not have arrived from the wire yet. An unrecognized (or
+        // not-yet-loaded) key just falls through the `industry` getter's
+        // lookup below as "no match", which already renders the generic
+        // fallback content correctly.
+        this.industryKey = industryParam || '';
         if (accentParam) this.accent = accentParam;
         this.isProspectLink = !!companyParam;
         this.savedRecordId = cfgIdParam || '';
@@ -285,7 +320,12 @@ export default class MaConfigurator extends LightningElement {
     // ------------------------------------------------------- industry engine
 
     get industry() {
-        return INDUSTRIES[this.industryKey] || null;
+        if (!this.industryKey) return null;
+        return (
+            this._industries.find(
+                (ind) => ind.industryKey === this.industryKey
+            ) || null
+        );
     }
 
     get hasIndustry() {
@@ -293,11 +333,11 @@ export default class MaConfigurator extends LightningElement {
     }
 
     get industryLabel() {
-        return this.industry ? this.industry.label : '';
+        return this.industry ? this.industry.industryLabel : '';
     }
 
     get industryTag() {
-        return this.industry ? this.industry.label : 'Marketing Automation';
+        return this.industry ? this.industry.industryLabel : 'Marketing Automation';
     }
 
     get coverSub() {
@@ -344,15 +384,18 @@ export default class MaConfigurator extends LightningElement {
     }
 
     get chips() {
-        return this.industry ? this.industry.unique : GENERIC_CHIPS;
+        if (this.industry) return this.industry.uniquePoints;
+        return this._storySetting ? this._storySetting.genericChips : [];
     }
 
     get demoRoot() {
-        return this.industry ? this.industry.demo.root : GENERIC_DEMO.root;
+        if (this.industry) return this.industry.demoRoot;
+        return this._storySetting ? this._storySetting.genericDemoRoot : '';
     }
 
     get demoDeps() {
-        return this.industry ? this.industry.demo.deps : GENERIC_DEMO.deps;
+        if (this.industry) return this.industry.demoDeps;
+        return this._storySetting ? this._storySetting.genericDemoDeps : [];
     }
 
     // ------------------------------------------------------------ proof panel
@@ -432,8 +475,7 @@ export default class MaConfigurator extends LightningElement {
     }
 
     handleIndustryChange(event) {
-        const key = event.detail.value;
-        this.industryKey = INDUSTRIES[key] ? key : '';
+        this.industryKey = event.detail.value || '';
     }
 
     handleAccentChange(event) {
@@ -447,7 +489,9 @@ export default class MaConfigurator extends LightningElement {
     handleClearAll() {
         const cleared = {};
         FIELDS.forEach((f) => {
-            if (DEFAULTS[f.k] !== undefined) cleared[f.k] = DEFAULTS[f.k];
+            if (this._cmsDefaults[f.k] !== undefined) {
+                cleared[f.k] = this._cmsDefaults[f.k];
+            }
         });
         this.tokenState = cleared;
     }

@@ -282,7 +282,9 @@
               </span>
             </button>
             <div class="faq-a">
-              <div class="faq-a-in">{faq.answer}</div>
+              <div class="faq-a-in">
+                <lightning-formatted-rich-text value={faq.answer}></lightning-formatted-rich-text>
+              </div>
             </div>
           </div>
         </template>

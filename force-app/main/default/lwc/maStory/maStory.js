@@ -1,4 +1,5 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, track, wire } from 'lwc';
+import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
@@ -6,57 +7,7 @@ const ACCELERATOR_URL =
 const FONTS_HREF =
     'https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap';
 
-const FAQ_DATA = [
-    {
-        id: 'q1',
-        question: 'Does it let us run a migration with fewer people?',
-        verdict: 'Yes',
-        qualified: false,
-        answer:
-            'The platform drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.'
-    },
-    {
-        id: 'q2',
-        question: 'Does it let us do it faster?',
-        verdict: 'Yes',
-        qualified: false,
-        answer:
-            'Assessment runs in about an hour instead of weeks. A full plan for a mid-size environment fits inside a single sprint.'
-    },
-    {
-        id: 'q3',
-        question: 'Can it actually execute the migration, or just plan it?',
-        verdict: 'Yes',
-        qualified: false,
-        answer:
-            "For supported objects, the platform previews the change with a dry run, executes it live, and keeps rollback ready if anything doesn't land clean."
-    },
-    {
-        id: 'q4',
-        question: 'Does it mean fewer defects?',
-        verdict: 'Yes',
-        qualified: false,
-        answer:
-            "Dependency-aware planning won't let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely."
-    },
-    {
-        id: 'q5',
-        question: 'Does it give us better scoping, less risk?',
-        verdict: 'Yes',
-        qualified: false,
-        answer:
-            'The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.'
-    },
-    {
-        id: 'q6',
-        question:
-            'Does it let us scale without deep platform specialists on every deal?',
-        verdict: 'Qualified yes',
-        qualified: true,
-        answer:
-            'Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve.'
-    }
-];
+const OFFERING_KEY = 'migration-accelerator';
 
 export default class MaStory extends LightningElement {
     acceleratorUrl = ACCELERATOR_URL;
@@ -93,17 +44,29 @@ export default class MaStory extends LightningElement {
         return `width: ${this.scrollPct}%;`;
     }
 
+    @track _faqData = [];
+
+    @wire(getStoryContent, { offeringKey: OFFERING_KEY })
+    wiredStoryContent({ data }) {
+        if (!data) return;
+        this._faqData = data.faqs;
+    }
+
     get faqs() {
-        return FAQ_DATA.map((f) => ({
-            id: f.id,
-            question: f.question,
-            verdict: f.verdict,
-            answer: f.answer,
-            itemClass: this.openFaqId === f.id ? 'faq-item open' : 'faq-item',
-            verdictClass: f.qualified
-                ? 'faq-verdict qualified'
-                : 'faq-verdict yes'
-        }));
+        return this._faqData.map((f, index) => {
+            const id = `q${index + 1}`;
+            const qualified = f.verdict !== 'Yes';
+            return {
+                id,
+                question: f.question,
+                verdict: f.verdict,
+                answer: f.answer,
+                itemClass: this.openFaqId === id ? 'faq-item open' : 'faq-item',
+                verdictClass: qualified
+                    ? 'faq-verdict qualified'
+                    : 'faq-verdict yes'
+            };
+        });
     }
 
     // ---------- lifecycle ----------

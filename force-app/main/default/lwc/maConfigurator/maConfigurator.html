@@ -47,7 +47,9 @@
           <p class="lede rv d2 ind-slot custom-note">{customNoteDisplay}</p>
         </template>
         <template if:true={showIndustryDefault}>
-          <p class="lede rv d2 ind-slot">{coverSub}</p>
+          <p class="lede rv d2 ind-slot">
+            <lightning-formatted-rich-text value={coverSub}></lightning-formatted-rich-text>
+          </p>
         </template>
         <template if:true={hasCompany}>
           <div class="prepared rv d3">
@@ -118,7 +120,9 @@
           </p>
         </template>
         <template if:true={hasIndustry}>
-          <p class="lede rv d2 challenge-extra">{challengeExtra}</p>
+          <p class="lede rv d2 challenge-extra">
+            <lightning-formatted-rich-text value={challengeExtra}></lightning-formatted-rich-text>
+          </p>
         </template>
         <div class="chips rv d3">
           <template for:each={chips} for:item="chip">
@@ -168,8 +172,12 @@
         <template if:true={hasIndustry}>
           <div class="indbox rv d3">
             <div class="ib-k">For {industryTag}</div>
-            <p class="ib-uc">{useCase}</p>
-            <p class="ib-sol">{solution}</p>
+            <p class="ib-uc">
+              <lightning-formatted-rich-text value={useCase}></lightning-formatted-rich-text>
+            </p>
+            <p class="ib-sol">
+              <lightning-formatted-rich-text value={solution}></lightning-formatted-rich-text>
+            </p>
           </div>
         </template>
       </div>

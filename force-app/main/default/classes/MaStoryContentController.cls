@@ -197,7 +197,33 @@ public with sharing class MaStoryContentController {
         if (value == null) {
             return null;
         }
-        return String.valueOf(value).unescapeHtml4();
+        return unwrapOuterParagraph(String.valueOf(value).unescapeHtml4());
+    }
+
+    /**
+     * RTE node values come back as a single wrapping <p>...</p> for a
+     * plain-paragraph field (the CMS authoring editor's default block).
+     * Every template consuming these already supplies its own block-level
+     * wrapper with its own CSS classes, so stripping just the one
+     * outermost pair here avoids double-nested <p> tags once rendered --
+     * invalid HTML that would otherwise silently break layout. Any inline
+     * markup a BA adds inside (bold, a link) is untouched; this only
+     * unwraps a single leading/trailing paragraph tag, not markup generally.
+     * A no-op for TEXT/MTEXT field values, which were never <p>-wrapped.
+     */
+    private static String unwrapOuterParagraph(String html) {
+        if (String.isBlank(html)) {
+            return html;
+        }
+        String trimmed = html.trim();
+        Boolean wrapped =
+            trimmed.toLowerCase().startsWith('<p>') &&
+            trimmed.toLowerCase().endsWith('</p>') &&
+            trimmed.toLowerCase().indexOf('<p>', 3) == -1;
+        if (!wrapped) {
+            return html;
+        }
+        return trimmed.substring(3, trimmed.length() - 4).trim();
     }
 
     private static List<String> lines(Map<String, Object> body, String key) {
