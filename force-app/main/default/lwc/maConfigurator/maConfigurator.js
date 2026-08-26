@@ -348,28 +348,34 @@ export default class MaConfigurator extends LightningElement {
         return 'tok';
     }
 
+    /* Returns the rep-facing {{TOKEN}} placeholder only for reps; guests
+       get an empty string so half-filled links don't expose raw tokens. */
+    tokFallback(name) {
+        return this.isConfigManager ? `{{${name}}}` : '';
+    }
+
     get sourceDisplay() {
-        return this.tokenValue('SOURCE_PLATFORM') || '{{SOURCE_PLATFORM}}';
+        return this.tokenValue('SOURCE_PLATFORM') || this.tokFallback('SOURCE_PLATFORM');
     }
 
     get sourceTokClass() {
-        return this.tokenValue('SOURCE_PLATFORM') ? 'tok' : 'tok empty';
+        return this.tokenValue('SOURCE_PLATFORM') || !this.isConfigManager ? 'tok' : 'tok empty';
     }
 
     get contactNameDisplay() {
-        return this.tokenValue('CONTACT_NAME') || '{{CONTACT_NAME}}';
+        return this.tokenValue('CONTACT_NAME') || this.tokFallback('CONTACT_NAME');
     }
 
     get contactNameTokClass() {
-        return this.tokenValue('CONTACT_NAME') ? 'tok' : 'tok empty';
+        return this.tokenValue('CONTACT_NAME') || !this.isConfigManager ? 'tok' : 'tok empty';
     }
 
     get contactEmailDisplay() {
-        return this.tokenValue('CONTACT_EMAIL') || '{{CONTACT_EMAIL}}';
+        return this.tokenValue('CONTACT_EMAIL') || this.tokFallback('CONTACT_EMAIL');
     }
 
     get contactEmailTokClass() {
-        return this.tokenValue('CONTACT_EMAIL') ? 'tok' : 'tok empty';
+        return this.tokenValue('CONTACT_EMAIL') || !this.isConfigManager ? 'tok' : 'tok empty';
     }
 
     get mailtoHref() {
