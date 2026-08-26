@@ -61,20 +61,52 @@ the actual target org:
   enable it before deploying the Experience Cloud site (Salesforce
   requires it for Digital Experiences).
 - **The GTM Offerings CMS Workspace** -- `force-app/main/default/managedContentTypes/`
-  defines the *schema* for the offering's editorial content (industry story
-  blocks, FAQ, site defaults), but a CMS **Workspace** to actually author
-  content into (`ManagedContentSpace`) has no Metadata API representation at
-  all, so it can never travel with `scripts/deploy.sh`. Run
+  defines the *schema* for the offering's editorial content (five types:
+  `ma_industry_story`, `ma_faq_item`, `ma_story_setting`, `ma_story_page`,
+  `ma_story_body`), but a CMS **Workspace** to actually author content into
+  (`ManagedContentSpace`) has no Metadata API representation at all, so it
+  can never travel with `scripts/deploy.sh`. Run
   `./scripts/setup-cms-workspace.sh <org-alias>` after deploying -- it's
   idempotent (safe to re-run, does nothing if the Workspace already exists)
   and uses the Connect REST API directly since there's no metadata type to
-  deploy. Once it exists, the 3 content types are immediately usable in it --
-  there's no separate "enable this content type for this workspace" step.
+  deploy. Once it exists, the 5 content types are immediately usable in it.
   Still manual either way: granting CMS Workspace access (Contributor/
   Publisher) to whoever authors this content -- that's its own permission
   system, separate from every Profile/PermissionSet grant elsewhere in this
   doc, and needs setting per person in Setup > Digital Experiences > CMS
   Workspaces > GTM Offerings > Access.
+
+- **CMS content records + `MA_CMS_Content_Index__c` rows** -- the LWC story
+  page reads editorial copy entirely from CMS. Deploying the schema and
+  Workspace isn't enough: someone has to create the actual content records,
+  **publish** each to the GTM Offerings Channel, and then insert one
+  `MA_CMS_Content_Index__c` row per record so the Apex controller can find
+  them (the CMS delivery API has no "list by type" query, so the index object
+  is the bridge). A blank org gets the hardcoded DEFAULTS fallbacks in
+  `maStory.js` until those records exist and are indexed. The seeding process:
+
+  1. In Setup → Digital Experiences → CMS Workspaces → GTM Offerings → Content,
+     create records for each type using the Salesforce UI or the Connect REST
+     authoring API (`POST /services/data/v66.0/connect/cms/contents`).
+     The body must include both a top-level `title` field and `title` inside
+     `contentBody` (the NAMEFIELD), plus `contentSpaceOrFolderId`.
+  2. Publish each record to the **GTM Offerings Channel** (the delivery API
+     only serves published content -- draft records return 404).
+  3. For each published record, insert one `MA_CMS_Content_Index__c` row:
+     ```bash
+     sf data create record --target-org <alias> --sobject MA_CMS_Content_Index__c \
+       --values "CMS_Record_Id__c=<managedContentId> Content_Type__c=<type> \
+                 Offering_Key__c=migration-accelerator Display_Order__c=1 Active__c=true"
+     ```
+  4. Set `MA_Offering__mdt.CMS_Channel_Id__c` to the channel's ID (find it via
+     `GET /services/data/v66.0/connect/cms/delivery/channels` or the Workspace
+     API -- it's an 18-character ID starting with `0ap`). Without this the
+     Apex controller throws before ever touching the index.
+
+  The PATCH endpoint for updating a published CMS record's `contentBody` is
+  not exposed (`GET, HEAD` only) -- to update an existing record, create a new
+  one with the corrected content, publish it, and point the index row at the
+  new `managedContentId`.
 - **Experience Cloud site membership** -- separate from every permission
   above, and easy to miss: a profile also needs to be an explicit *member*
   of the site (Setup → Digital Experiences → your site → Administration →
