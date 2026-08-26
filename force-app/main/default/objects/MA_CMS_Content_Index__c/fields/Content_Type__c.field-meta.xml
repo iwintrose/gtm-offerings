@@ -29,6 +29,11 @@
                 <default>false</default>
                 <label>MA Story Page</label>
             </value>
+            <value>
+                <fullName>ma_story_body</fullName>
+                <default>false</default>
+                <label>MA Story Body</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

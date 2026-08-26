@@ -27,12 +27,14 @@ public with sharing class MaStoryContentController {
     private static final String FAQ_TYPE = 'ma_faq_item';
     private static final String SETTING_TYPE = 'ma_story_setting';
     private static final String PAGE_TYPE = 'ma_story_page';
+    private static final String BODY_TYPE = 'ma_story_body';
 
     public class StoryContent {
         @AuraEnabled public List<IndustryStory> industries = new List<IndustryStory>();
         @AuraEnabled public List<FaqItem> faqs = new List<FaqItem>();
         @AuraEnabled public StorySetting setting;
         @AuraEnabled public StoryPage page;
+        @AuraEnabled public StoryBody body;
     }
 
     public class IndustryStory {
@@ -76,11 +78,53 @@ public with sharing class MaStoryContentController {
     }
 
     public class StoryPage {
+        @AuraEnabled public String heroEyebrow;
         @AuraEnabled public String heroHeadline;
         @AuraEnabled public String heroSubhead;
         @AuraEnabled public String proofObjectsCount;
         @AuraEnabled public String proofDepsCount;
         @AuraEnabled public String proofHealthScore;
+        @AuraEnabled public String problemLede;
+        @AuraEnabled public List<String> problemChips = new List<String>();
+        @AuraEnabled public String problemClose;
+        @AuraEnabled public String mechanismHead;
+        @AuraEnabled public String mechanismSub;
+        @AuraEnabled public String closingHead;
+        @AuraEnabled public String closingSub;
+    }
+
+    public class RouteStep {
+        @AuraEnabled public String stepLabel;
+        @AuraEnabled public String stepDesc;
+    }
+
+    public class CapabilityCard {
+        @AuraEnabled public String icon;
+        @AuraEnabled public String cardTitle;
+        @AuraEnabled public String cardDesc;
+        @AuraEnabled public Boolean isNew;
+    }
+
+    public class UseCase {
+        @AuraEnabled public String caseTitle;
+        @AuraEnabled public String caseDesc;
+    }
+
+    public class StoryBody {
+        @AuraEnabled public List<RouteStep> routeSteps = new List<RouteStep>();
+        @AuraEnabled public String proofCtaText;
+        @AuraEnabled public String proofDemoRoot;
+        @AuraEnabled public List<String> proofDemoDeps = new List<String>();
+        @AuraEnabled public List<CapabilityCard> capabilities = new List<CapabilityCard>();
+        @AuraEnabled public String bonusCard;
+        @AuraEnabled public String clientStatBig;
+        @AuraEnabled public String clientStatDesc;
+        @AuraEnabled public String clientNote;
+        @AuraEnabled public String bdHead;
+        @AuraEnabled public String bdLede;
+        @AuraEnabled public List<UseCase> bdUseCases = new List<UseCase>();
+        @AuraEnabled public List<String> pitchOldChips = new List<String>();
+        @AuraEnabled public List<String> pitchNewChips = new List<String>();
     }
 
     @AuraEnabled(cacheable=true)
@@ -127,6 +171,8 @@ public with sharing class MaStoryContentController {
                 result.setting = toStorySetting(contentBody);
             } else if (row.Content_Type__c == PAGE_TYPE && result.page == null) {
                 result.page = toStoryPage(contentBody);
+            } else if (row.Content_Type__c == BODY_TYPE && result.body == null) {
+                result.body = toStoryBody(contentBody);
             }
         }
         return result;
@@ -210,12 +256,70 @@ public with sharing class MaStoryContentController {
 
     private static StoryPage toStoryPage(Map<String, Object> body) {
         StoryPage p = new StoryPage();
+        p.heroEyebrow = str(body, 'heroEyebrow');
         p.heroHeadline = str(body, 'heroHeadline');
         p.heroSubhead = str(body, 'heroSubhead');
         p.proofObjectsCount = str(body, 'proofObjectsCount');
         p.proofDepsCount = str(body, 'proofDepsCount');
         p.proofHealthScore = str(body, 'proofHealthScore');
+        p.problemLede = str(body, 'problemLede');
+        p.problemChips = lines(body, 'problemChips');
+        p.problemClose = str(body, 'problemClose');
+        p.mechanismHead = str(body, 'mechanismHead');
+        p.mechanismSub = str(body, 'mechanismSub');
+        p.closingHead = str(body, 'closingHead');
+        p.closingSub = str(body, 'closingSub');
         return p;
+    }
+
+    private static StoryBody toStoryBody(Map<String, Object> body) {
+        StoryBody b = new StoryBody();
+        for (String line : lines(body, 'routeSteps')) {
+            List<String> parts = line.split('\\|', 2);
+            if (parts.size() == 2) {
+                RouteStep rs = new RouteStep();
+                rs.stepLabel = parts[0].trim();
+                rs.stepDesc = parts[1].trim();
+                b.routeSteps.add(rs);
+            }
+        }
+        b.proofCtaText = str(body, 'proofCtaText');
+        List<String> demoNodes = lines(body, 'proofDemoNodes');
+        if (!demoNodes.isEmpty()) {
+            b.proofDemoRoot = demoNodes[0];
+            for (Integer i = 1; i < demoNodes.size(); i++) {
+                b.proofDemoDeps.add(demoNodes[i]);
+            }
+        }
+        for (String line : lines(body, 'capabilities')) {
+            List<String> parts = line.split('\\|', 4);
+            if (parts.size() >= 3) {
+                CapabilityCard c = new CapabilityCard();
+                c.icon = parts[0].trim();
+                c.cardTitle = parts[1].trim();
+                c.cardDesc = parts[2].trim();
+                c.isNew = parts.size() == 4 && parts[3].trim().equalsIgnoreCase('true');
+                b.capabilities.add(c);
+            }
+        }
+        b.bonusCard = str(body, 'bonusCard');
+        b.clientStatBig = str(body, 'clientStatBig');
+        b.clientStatDesc = str(body, 'clientStatDesc');
+        b.clientNote = str(body, 'clientNote');
+        b.bdHead = str(body, 'bdHead');
+        b.bdLede = str(body, 'bdLede');
+        for (String line : lines(body, 'bdUseCases')) {
+            List<String> parts = line.split('\\|', 2);
+            if (parts.size() == 2) {
+                UseCase uc = new UseCase();
+                uc.caseTitle = parts[0].trim();
+                uc.caseDesc = parts[1].trim();
+                b.bdUseCases.add(uc);
+            }
+        }
+        b.pitchOldChips = lines(body, 'pitchOldChips');
+        b.pitchNewChips = lines(body, 'pitchNewChips');
+        return b;
     }
 
     private static String str(Map<String, Object> body, String key) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ManagedContentType xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>The hero headline/subhead and proof-panel numbers on a GTM Offering&apos;s internal "story" pitch page (maStory). One record per offering.</description>
+    <description>Hero, proof numbers, and narrative beat copy for a GTM Offering&apos;s story pitch page (maStory). One record per offering. 15-field max — mid-page structural sections live in ma_story_body.</description>
     <developerName>ma_story_page</developerName>
     <managedContentNodeTypes>
         <isLocalizable>true</isLocalizable>
@@ -18,7 +18,15 @@
         <nodeType>TEXT</nodeType>
     </managedContentNodeTypes>
     <managedContentNodeTypes>
-        <helpText>The page's main headline. Note: any custom color-accent styling on part of the old hardcoded headline does not carry over here -- bold/italic/links are supported, a custom highlight color is not.</helpText>
+        <helpText>Small tag line above the hero headline, e.g. "Internal positioning · GTM buy-in"</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Hero Eyebrow</nodeLabel>
+        <nodeName>heroEyebrow</nodeName>
+        <nodeType>TEXT</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
+        <helpText>The page&apos;s main headline. Bold/italic/links supported.</helpText>
         <isLocalizable>true</isLocalizable>
         <isRequired>false</isRequired>
         <nodeLabel>Hero Headline</nodeLabel>
@@ -55,6 +63,62 @@
         <nodeLabel>Proof: Health Score</nodeLabel>
         <nodeName>proofHealthScore</nodeName>
         <nodeType>TEXT</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
+        <helpText>Opening line of the "problem" beat, e.g. "Every enterprise migration starts the same way."</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Problem Beat: Lede</nodeLabel>
+        <nodeName>problemLede</nodeName>
+        <nodeType>RTE</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
+        <helpText>One pain-point chip per line, e.g. "A platform nobody fully trusts". Shown as a row of dashes.</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Problem Beat: Chips (one per line)</nodeLabel>
+        <nodeName>problemChips</nodeName>
+        <nodeType>MTEXT</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
+        <helpText>Closing line of the problem beat, e.g. "Migration Accelerator starts working before the rebuild..."</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Problem Beat: Close Line</nodeLabel>
+        <nodeName>problemClose</nodeName>
+        <nodeType>RTE</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
+        <helpText>H2 for the mechanism section, e.g. "Point it at the platform. Get a plan you can act on."</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Mechanism: Headline</nodeLabel>
+        <nodeName>mechanismHead</nodeName>
+        <nodeType>RTE</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
+        <helpText>Sub-paragraph for the mechanism section, e.g. "Eloqua or Salesforce Marketing Cloud, in, a build-ready plan out..."</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Mechanism: Sub-paragraph</nodeLabel>
+        <nodeName>mechanismSub</nodeName>
+        <nodeType>RTE</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
+        <helpText>The closing section headline, e.g. "This is Migration Accelerator today: an offering built on evidence..."</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Closing: Headline</nodeLabel>
+        <nodeName>closingHead</nodeName>
+        <nodeType>RTE</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
+        <helpText>Closing sub-line below the headline, e.g. "The next step is putting a name and an industry behind it."</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Closing: Sub-line</nodeLabel>
+        <nodeName>closingSub</nodeName>
+        <nodeType>RTE</nodeType>
     </managedContentNodeTypes>
     <masterLabel>MA Story Page</masterLabel>
 </ManagedContentType>

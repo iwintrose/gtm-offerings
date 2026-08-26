@@ -11,9 +11,10 @@
     </div>
     <div class="progress" style={progressStyle}></div>
 
+    <!-- HERO -->
     <section class="hero wrap">
       <div class="eyebrow rv">
-        <span class="bead"></span> Internal positioning · GTM buy-in
+        <span class="bead"></span> {heroEyebrow}
       </div>
       <h1 class="hero-h rv d1">
         <lightning-formatted-rich-text value={heroHeadline}></lightning-formatted-rich-text>
@@ -26,60 +27,40 @@
       </div>
     </section>
 
+    <!-- PROBLEM BEAT -->
     <section class="beat wrap">
-      <p class="lede rv">Every enterprise migration starts the same way.</p>
+      <p class="lede rv">
+        <lightning-formatted-rich-text value={problemLede}></lightning-formatted-rich-text>
+      </p>
       <div class="chip-row rv d1">
-        <span class="chip"><b>—</b>A platform nobody fully trusts</span>
-        <span class="chip"><b>—</b>A decade of undocumented campaigns</span>
-        <span class="chip"><b>—</b>A go-live date that won't move</span>
+        <template for:each={problemChips} for:item="chip">
+          <span key={chip} class="chip"><b>—</b>{chip}</span>
+        </template>
       </div>
       <p class="close-line rv d2">
-        Migration Accelerator starts working before the rebuild, before the
-        plan, at the part everyone dreads: finding out what's actually there.
+        <lightning-formatted-rich-text value={problemClose}></lightning-formatted-rich-text>
       </p>
     </section>
 
+    <!-- MECHANISM -->
     <section class="beat wrap wide">
       <div class="eyebrow rv"><span class="bead"></span> The mechanism</div>
       <h2 class="beat-h rv d1">
-        Point it at the platform.<br />Get a plan you can act on.
+        <lightning-formatted-rich-text value={mechanismHead}></lightning-formatted-rich-text>
       </h2>
       <p class="lede rv d1">
-        Eloqua or Salesforce Marketing Cloud, in, a build-ready plan out, and
-        for the pieces it's confident about, a finished migration.
+        <lightning-formatted-rich-text value={mechanismSub}></lightning-formatted-rich-text>
       </p>
 
       <div class="route rv d2">
-        <div class="route-node">
-          <div class="route-line"></div>
-          <div class="rdot"></div>
-          <div class="rt">Ingest</div>
-          <div class="rd">Every asset, read directly</div>
-        </div>
-        <div class="route-node">
-          <div class="route-line"></div>
-          <div class="rdot"></div>
-          <div class="rt">Audit</div>
-          <div class="rd">A live health score</div>
-        </div>
-        <div class="route-node">
-          <div class="route-line"></div>
-          <div class="rdot"></div>
-          <div class="rt">Decide</div>
-          <div class="rd">Port, rework, retire, logged</div>
-        </div>
-        <div class="route-node">
-          <div class="route-line"></div>
-          <div class="rdot"></div>
-          <div class="rt">Plan</div>
-          <div class="rd">Dependencies pulled automatically</div>
-        </div>
-        <div class="route-node">
-          <div class="route-line"></div>
-          <div class="rdot"></div>
-          <div class="rt">Execute</div>
-          <div class="rd">Dry run, then live, rollback ready</div>
-        </div>
+        <template for:each={routeSteps} for:item="step">
+          <div key={step.stepLabel} class="route-node">
+            <div class="route-line"></div>
+            <div class="rdot"></div>
+            <div class="rt">{step.stepLabel}</div>
+            <div class="rd">{step.stepDesc}</div>
+          </div>
+        </template>
       </div>
 
       <div class={proofClass}>
@@ -90,8 +71,7 @@
         <div class="proof-body">
           <div class="proof-cta">
             <p>
-              A snapshot of what the platform reads from an environment,
-              automatically, on day one.
+              <lightning-formatted-rich-text value={proofCtaText}></lightning-formatted-rich-text>
             </p>
             <button class="btn" onclick={handleReveal}>See it work →</button>
           </div>
@@ -115,10 +95,10 @@
               </div>
             </div>
             <div class="p-dep">
-              <span class="p-node root">APAC Onboarding</span>
-              <span class="p-node">Welcome email</span>
-              <span class="p-node">Shared data extension</span>
-              <span class="p-node">Brand header</span>
+              <span class="p-node root">{proofDemoRoot}</span>
+              <template for:each={proofDemoDeps} for:item="dep">
+                <span key={dep} class="p-node">{dep}</span>
+              </template>
             </div>
             <div class="p-status-wrap">
               <span class="p-status">
@@ -130,142 +110,76 @@
       </div>
     </section>
 
+    <!-- CAPABILITIES -->
     <section class="beat wrap">
       <div class="eyebrow rv"><span class="bead"></span> The capabilities</div>
       <h2 class="beat-h rv d1">What's actually built.</h2>
       <div class="cap-grid rv d2">
-        <div class="cap-card">
-          <div class="cc-ic">In</div>
-          <div class="cc-t">Ingestion &amp; inventory</div>
-          <div class="cc-d">
-            Automatic, for Eloqua and Salesforce Marketing Cloud (Content
-            Builder).
+        <template for:each={capabilities} for:item="cap">
+          <div key={cap.cardTitle} class={cap.cardClass}>
+            <div class="cc-ic">{cap.icon}</div>
+            <div class="cc-t">{cap.cardTitle}</div>
+            <div class="cc-d">{cap.cardDesc}</div>
           </div>
-        </div>
-        <div class="cap-card new">
-          <div class="cc-ic">Au</div>
-          <div class="cc-t">Automated audit</div>
-          <div class="cc-d">
-            A health score plus an exportable report, generated on demand.
-          </div>
-        </div>
-        <div class="cap-card">
-          <div class="cc-ic">De</div>
-          <div class="cc-t">Disposition &amp; audit trail</div>
-          <div class="cc-d">
-            Port, rework, or retire, on every object, with full history.
-          </div>
-        </div>
-        <div class="cap-card">
-          <div class="cc-ic">Pl</div>
-          <div class="cc-t">Dependency-aware planning</div>
-          <div class="cc-d">
-            Assigning one object pulls in everything it needs, automatically.
-          </div>
-        </div>
-        <div class="cap-card">
-          <div class="cc-ic">Sp</div>
-          <div class="cc-t">AI-drafted build specs</div>
-          <div class="cc-d">
-            Human-reviewed requirements per object, down to Journey Builder
-            specs.
-          </div>
-        </div>
-        <div class="cap-card new">
-          <div class="cc-ic">Ex</div>
-          <div class="cc-t">Live execution &amp; rollback</div>
-          <div class="cc-d">
-            Dry run, then live, with a verification pass once it finishes.
-          </div>
-        </div>
+        </template>
       </div>
       <div class="bonus-card rv d3">
-        <strong>Also in the toolkit:</strong> a design-to-email pipeline. An
-        approved Figma layout becomes a built, publishable email, no separate
-        rebuild.
+        <lightning-formatted-rich-text value={bonusCard}></lightning-formatted-rich-text>
       </div>
     </section>
 
+    <!-- CLIENT PROFILE -->
     <section class="beat wrap">
       <div class="eyebrow rv"><span class="bead"></span> The client profile</div>
       <h2 class="beat-h rv d1">Who this fits.</h2>
       <div class="stat-block rv d2">
-        <span class="stat-big">500–2,000+</span>
+        <span class="stat-big">{clientStatBig}</span>
         <span class="stat-desc">
-          objects is where this offering's advantage is largest, enterprise
-          accounts migrating between major marketing automation platforms,
-          carrying a sizable, under-documented environment.
+          <lightning-formatted-rich-text value={clientStatDesc}></lightning-formatted-rich-text>
         </span>
       </div>
       <p class="note-line rv d3">
-        Today, this runs through us, in working sessions, not a self-serve
-        portal, and that's exactly how it should work for now.
+        <lightning-formatted-rich-text value={clientNote}></lightning-formatted-rich-text>
       </p>
     </section>
 
+    <!-- BD / HOW TO RUN IT -->
     <section class="beat wrap wide">
       <div class="eyebrow rv">
         <span class="bead"></span> For Business Development and Industry Leaders
       </div>
-      <h2 class="beat-h rv d1">One story. Here's how to run it.</h2>
+      <h2 class="beat-h rv d1">{bdHead}</h2>
       <p class="lede rv d1">
-        This is the pitch, the same one a client hears. The job is fluency in
-        it, plus the tools to make it specific to whoever's in the room.
+        <lightning-formatted-rich-text value={bdLede}></lightning-formatted-rich-text>
       </p>
 
       <div class="use-grid rv d2">
-        <div class="use-card">
-          <div class="uc-t">Presales</div>
-          <div class="uc-d">
-            Run a prospect's export before the SOW. Walk in with a real health
-            score, not a guess.
+        <template for:each={bdUseCases} for:item="uc">
+          <div key={uc.caseTitle} class="use-card">
+            <div class="uc-t">{uc.caseTitle}</div>
+            <div class="uc-d">{uc.caseDesc}</div>
           </div>
-        </div>
-        <div class="use-card">
-          <div class="uc-t">Delivery</div>
-          <div class="uc-d">
-            Run the full engagement through it, start to finish, and
-            increasingly, the cutover itself.
-          </div>
-        </div>
-        <div class="use-card">
-          <div class="uc-t">The pitch</div>
-          <div class="uc-d">
-            A real environment becoming a real plan, live, in the room, not
-            described afterward.
-          </div>
-        </div>
+        </template>
       </div>
 
       <div class="pitch-shift rv d3">
         <div class="ps-col old">
           <span class="ps-label">The old pitch</span>
-          <span class="ps-chip">
-            A promise to figure out scope after signature
-          </span>
-          <span class="ps-chip">An estimate built on intuition</span>
-          <span class="ps-chip">A plan that ends in a manual handoff</span>
+          <template for:each={pitchOldChips} for:item="chip">
+            <span key={chip} class="ps-chip">{chip}</span>
+          </template>
         </div>
         <div class="ps-arrow">→</div>
         <div class="ps-col new">
           <span class="ps-label">This pitch</span>
-          <span class="ps-chip">
-            A real health score, produced live, in the room
-          </span>
-          <span class="ps-chip">Scope set from the actual environment</span>
-          <span class="ps-chip">
-            A dry run, and where it applies, a finished cutover
-          </span>
+          <template for:each={pitchNewChips} for:item="chip">
+            <span key={chip} class="ps-chip">{chip}</span>
+          </template>
         </div>
       </div>
-
-      <p class="note-line rv d3 spaced">
-        The customizer turns this story into something specific, a client's
-        name, their industry, their stakes, before it ever reaches an inbox.
-        More on that next.
-      </p>
     </section>
 
+    <!-- FAQ -->
     <section class="beat wrap">
       <div class="eyebrow rv"><span class="bead"></span> FAQ</div>
       <h2 class="beat-h rv d1">The questions this needs to survive.</h2>
@@ -289,13 +203,13 @@
       </div>
     </section>
 
+    <!-- CLOSING -->
     <section class="closing wrap">
       <h2 class="rv">
-        This is Migration Accelerator today: an offering built on evidence,
-        moving toward a finished migration instead of a plan for one.
+        <lightning-formatted-rich-text value={closingHead}></lightning-formatted-rich-text>
       </h2>
       <p class="rv d1">
-        The next step is putting a name and an industry behind it.
+        <lightning-formatted-rich-text value={closingSub}></lightning-formatted-rich-text>
       </p>
       <p class="rv d1 cta-line">
         <a class="btn" href={acceleratorUrl} target="_blank" rel="noopener">
@@ -306,7 +220,7 @@
 
     <footer class="pf">
       <span>Migration Accelerator — positioning working draft</span>
-      <span>Grounded against ma-migrator + project-conduit, August 18, 2026</span>
+      <span>Grounded against ma-migrator + project-conduit, August 2026</span>
     </footer>
   </div>
 </template>
