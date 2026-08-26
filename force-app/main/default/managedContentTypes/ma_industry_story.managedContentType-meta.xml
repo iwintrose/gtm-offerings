@@ -34,6 +34,14 @@
         <nodeType>TEXT</nodeType>
     </managedContentNodeTypes>
     <managedContentNodeTypes>
+        <helpText>Short one-liner shown on the industry-picker page's tile for this industry, e.g. "Consent, disclosures, and audit trails, under the regulator's eye."</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Picker Tile Blurb</nodeLabel>
+        <nodeName>pickerBlurb</nodeName>
+        <nodeType>TEXT</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
         <helpText>Sub-headline under the cover, sets up the industry-specific angle.</helpText>
         <isLocalizable>true</isLocalizable>
         <isRequired>false</isRequired>

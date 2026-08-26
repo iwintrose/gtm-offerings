@@ -45,11 +45,33 @@ export default class MaStory extends LightningElement {
     }
 
     @track _faqData = [];
+    @track _heroHeadline = null;
+    @track _heroSubhead = null;
+    @track _proofObjectsCount = null;
+    @track _proofDepsCount = null;
+    @track _proofHealthScore = null;
 
     @wire(getStoryContent, { offeringKey: OFFERING_KEY })
     wiredStoryContent({ data }) {
         if (!data) return;
-        this._faqData = data.faqs;
+        this._faqData = data.faqs || [];
+        if (data.page) {
+            this._heroHeadline = data.page.heroHeadline;
+            this._heroSubhead = data.page.heroSubhead;
+            this._proofObjectsCount = data.page.proofObjectsCount;
+            this._proofDepsCount = data.page.proofDepsCount;
+            this._proofHealthScore = data.page.proofHealthScore;
+        }
+    }
+
+    get heroHeadline() {
+        return this._heroHeadline ||
+            'Every migration starts with a decade nobody documented. We read it in an afternoon.';
+    }
+
+    get heroSubhead() {
+        return this._heroSubhead ||
+            'How Migration Accelerator turns an untrusted platform and a go-live date that won\'t move into a plan, and increasingly, a finished migration.';
     }
 
     get faqs() {
@@ -186,20 +208,24 @@ export default class MaStory extends LightningElement {
         if (this.proofOn) return;
         this.proofOn = true;
 
+        const objects = parseInt(this._proofObjectsCount, 10) || 1284;
+        const deps = parseInt(this._proofDepsCount, 10) || 3140;
+        const health = parseInt(this._proofHealthScore, 10) || 84;
+
         if (this.reducedMotion) {
-            this.objectsText = (1284).toLocaleString();
-            this.depsText = (3140).toLocaleString();
-            this.gaugeValue = 84;
+            this.objectsText = objects.toLocaleString();
+            this.depsText = deps.toLocaleString();
+            this.gaugeValue = health;
             return;
         }
 
-        this.countTo(1284, 900, (v) => {
+        this.countTo(objects, 900, (v) => {
             this.objectsText = v.toLocaleString();
         });
-        this.countTo(3140, 1100, (v) => {
+        this.countTo(deps, 1100, (v) => {
             this.depsText = v.toLocaleString();
         });
-        this.countTo(84, 1000, (v) => {
+        this.countTo(health, 1000, (v) => {
             this.gaugeValue = v;
         });
     }

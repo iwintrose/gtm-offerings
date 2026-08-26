@@ -1,18 +1,33 @@
-import { LightningElement, api, track } from 'lwc';
+import { LightningElement, api, track, wire } from 'lwc';
+import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 
 const FONTS_HREF =
     'https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap';
+
+const OFFERING_KEY = 'migration-accelerator';
 
 export default class OfferingChooser extends LightningElement {
     /** Where the Migration Accelerator tile points. Set in Experience Builder. */
     @api industryUrl = '/choose-industry';
 
-    @track theme = null; // null = follow system
+    @track theme = null;
+    @track _tileDescription = null;
+
+    @wire(getStoryContent, { offeringKey: OFFERING_KEY })
+    wiredContent({ data }) {
+        if (!data || !data.setting) return;
+        this._tileDescription = data.setting.offeringTileDescription;
+    }
 
     get rootClass() {
         if (this.theme === 'dark') return 'oc-root dark';
         if (this.theme === 'light') return 'oc-root light';
         return 'oc-root';
+    }
+
+    get tileDescription() {
+        return this._tileDescription ||
+            'Reads a client\'s marketing platform directly, turns it into an audited plan, and where it applies, a finished migration.';
     }
 
     connectedCallback() {

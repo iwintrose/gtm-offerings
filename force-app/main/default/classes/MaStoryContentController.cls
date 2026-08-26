@@ -26,16 +26,19 @@ public with sharing class MaStoryContentController {
     private static final String INDUSTRY_TYPE = 'ma_industry_story';
     private static final String FAQ_TYPE = 'ma_faq_item';
     private static final String SETTING_TYPE = 'ma_story_setting';
+    private static final String PAGE_TYPE = 'ma_story_page';
 
     public class StoryContent {
         @AuraEnabled public List<IndustryStory> industries = new List<IndustryStory>();
         @AuraEnabled public List<FaqItem> faqs = new List<FaqItem>();
         @AuraEnabled public StorySetting setting;
+        @AuraEnabled public StoryPage page;
     }
 
     public class IndustryStory {
         @AuraEnabled public String industryKey;
         @AuraEnabled public String industryLabel;
+        @AuraEnabled public String pickerBlurb;
         @AuraEnabled public String coverSub;
         @AuraEnabled public String problem;
         @AuraEnabled public String useCase;
@@ -69,6 +72,15 @@ public with sharing class MaStoryContentController {
         @AuraEnabled public List<String> genericDemoDeps = new List<String>();
         @AuraEnabled public List<String> genericChips = new List<String>();
         @AuraEnabled public List<Swatch> swatches = new List<Swatch>();
+        @AuraEnabled public String offeringTileDescription;
+    }
+
+    public class StoryPage {
+        @AuraEnabled public String heroHeadline;
+        @AuraEnabled public String heroSubhead;
+        @AuraEnabled public String proofObjectsCount;
+        @AuraEnabled public String proofDepsCount;
+        @AuraEnabled public String proofHealthScore;
     }
 
     @AuraEnabled(cacheable=true)
@@ -113,6 +125,8 @@ public with sharing class MaStoryContentController {
                 result.faqs.add(toFaqItem(contentBody));
             } else if (row.Content_Type__c == SETTING_TYPE && result.setting == null) {
                 result.setting = toStorySetting(contentBody);
+            } else if (row.Content_Type__c == PAGE_TYPE && result.page == null) {
+                result.page = toStoryPage(contentBody);
             }
         }
         return result;
@@ -149,6 +163,7 @@ public with sharing class MaStoryContentController {
         IndustryStory s = new IndustryStory();
         s.industryKey = str(body, 'industryKey');
         s.industryLabel = str(body, 'industryLabel');
+        s.pickerBlurb = str(body, 'pickerBlurb');
         s.coverSub = str(body, 'coverSub');
         s.problem = str(body, 'problem');
         s.useCase = str(body, 'useCase');
@@ -172,6 +187,7 @@ public with sharing class MaStoryContentController {
 
     private static StorySetting toStorySetting(Map<String, Object> body) {
         StorySetting s = new StorySetting();
+        s.offeringTileDescription = str(body, 'offeringTileDescription');
         s.defaultSourcePlatform = str(body, 'defaultSourcePlatform');
         s.defaultTargetPlatform = str(body, 'defaultTargetPlatform');
         s.defaultAssetCount = str(body, 'defaultAssetCount');
@@ -190,6 +206,16 @@ public with sharing class MaStoryContentController {
             }
         }
         return s;
+    }
+
+    private static StoryPage toStoryPage(Map<String, Object> body) {
+        StoryPage p = new StoryPage();
+        p.heroHeadline = str(body, 'heroHeadline');
+        p.heroSubhead = str(body, 'heroSubhead');
+        p.proofObjectsCount = str(body, 'proofObjectsCount');
+        p.proofDepsCount = str(body, 'proofDepsCount');
+        p.proofHealthScore = str(body, 'proofHealthScore');
+        return p;
     }
 
     private static String str(Map<String, Object> body, String key) {

@@ -3,6 +3,7 @@ private class MaStoryContentControllerTest {
     private static final String INDUSTRY_ID = '020000000000001AAA';
     private static final String FAQ_ID = '020000000000002AAA';
     private static final String SETTING_ID = '020000000000003AAA';
+    private static final String PAGE_ID = '020000000000004AAA';
 
     @TestSetup
     static void setup() {
@@ -27,6 +28,13 @@ private class MaStoryContentControllerTest {
                 Offering_Key__c = 'migration-accelerator',
                 Display_Order__c = 1,
                 Active__c = true
+            ),
+            new MA_CMS_Content_Index__c(
+                CMS_Record_Id__c = PAGE_ID,
+                Content_Type__c = 'ma_story_page',
+                Offering_Key__c = 'migration-accelerator',
+                Display_Order__c = 1,
+                Active__c = true
             )
         };
     }
@@ -43,6 +51,7 @@ private class MaStoryContentControllerTest {
                 contentBody = new Map<String, Object>{
                     'industryKey' => 'fintech',
                     'industryLabel' => 'Financial Services',
+                    'pickerBlurb' => 'Consent and audit trails under the regulator\'s eye.',
                     'coverSub' => '&lt;p&gt;Banks &amp; insurers&lt;/p&gt;',
                     'problem' => '&lt;p&gt;The problem&lt;/p&gt;',
                     'useCase' => '&lt;p&gt;The use case&lt;/p&gt;',
@@ -62,6 +71,7 @@ private class MaStoryContentControllerTest {
                 };
             } else if (endpoint.endsWith(SETTING_ID)) {
                 contentBody = new Map<String, Object>{
+                    'offeringTileDescription' => '&lt;p&gt;Reads a client\'s platform directly.&lt;/p&gt;',
                     'defaultSourcePlatform' => 'Eloqua',
                     'defaultTargetPlatform' => 'Salesforce Marketing Cloud',
                     'defaultAssetCount' => '4,128',
@@ -71,6 +81,14 @@ private class MaStoryContentControllerTest {
                     'genericDemoDeps' => 'Welcome email 1\nWelcome email 2',
                     'genericChips' => 'Chip one\nChip &amp; two',
                     'swatches' => 'PS Coral (default)|EE3D23\nCorporate blue|0B5FFF'
+                };
+            } else if (endpoint.endsWith(PAGE_ID)) {
+                contentBody = new Map<String, Object>{
+                    'heroHeadline' => '&lt;p&gt;Every migration starts with a decade nobody documented.&lt;/p&gt;',
+                    'heroSubhead' => '&lt;p&gt;How Migration Accelerator turns an untrusted platform into a plan.&lt;/p&gt;',
+                    'proofObjectsCount' => '1284',
+                    'proofDepsCount' => '3140',
+                    'proofHealthScore' => '84'
                 };
             } else {
                 res.setStatusCode(404);
@@ -85,7 +103,7 @@ private class MaStoryContentControllerTest {
     }
 
     @IsTest
-    static void returnsMappedContentForAllThreeTypes() {
+    static void returnsMappedContentForAllFourTypes() {
         Test.setMock(HttpCalloutMock.class, new MockResponse());
 
         Test.startTest();
@@ -96,6 +114,11 @@ private class MaStoryContentControllerTest {
         System.assertEquals(1, result.industries.size(), 'Expected one industry story');
         MaStoryContentController.IndustryStory industry = result.industries[0];
         System.assertEquals('fintech', industry.industryKey);
+        System.assertEquals(
+            'Consent and audit trails under the regulator\'s eye.',
+            industry.pickerBlurb,
+            'pickerBlurb should be mapped from CMS'
+        );
         System.assertEquals('Banks & insurers', industry.coverSub, 'Entities unescaped and the outer <p> wrapper stripped');
         System.assertEquals(3, industry.uniquePoints.size());
         System.assertEquals('Point & two', industry.uniquePoints[1], 'Entity unescaping applies to MTEXT lines too');
@@ -106,11 +129,26 @@ private class MaStoryContentControllerTest {
         System.assertEquals('Yes it does', result.faqs[0].answer, 'A single wrapping <p> should be unwrapped');
 
         System.assertNotEquals(null, result.setting, 'Expected a story setting');
+        System.assertEquals(
+            'Reads a client\'s platform directly.',
+            result.setting.offeringTileDescription,
+            'offeringTileDescription should be mapped and <p>-unwrapped'
+        );
         System.assertEquals('Eloqua', result.setting.defaultSourcePlatform);
         System.assertEquals(2, result.setting.genericDemoDeps.size());
         System.assertEquals(2, result.setting.swatches.size());
         System.assertEquals('PS Coral (default)', result.setting.swatches[0].name);
         System.assertEquals('EE3D23', result.setting.swatches[0].hex);
+
+        System.assertNotEquals(null, result.page, 'Expected a story page');
+        System.assertEquals(
+            'Every migration starts with a decade nobody documented.',
+            result.page.heroHeadline,
+            'heroHeadline should be mapped and <p>-unwrapped'
+        );
+        System.assertEquals('1284', result.page.proofObjectsCount);
+        System.assertEquals('3140', result.page.proofDepsCount);
+        System.assertEquals('84', result.page.proofHealthScore);
     }
 
     @IsTest
@@ -157,5 +195,6 @@ private class MaStoryContentControllerTest {
         System.assertEquals(0, result.industries.size(), 'A failed callout should be skipped, not thrown');
         System.assertEquals(0, result.faqs.size());
         System.assertEquals(null, result.setting);
+        System.assertEquals(null, result.page);
     }
 }

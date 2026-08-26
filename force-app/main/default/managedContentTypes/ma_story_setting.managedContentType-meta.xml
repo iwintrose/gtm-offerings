@@ -18,6 +18,14 @@
         <nodeType>TEXT</nodeType>
     </managedContentNodeTypes>
     <managedContentNodeTypes>
+        <helpText>Shown on the "Choose your offering" tile for this offering, e.g. "Reads a client's marketing platform directly, turns it into an audited plan..."</helpText>
+        <isLocalizable>true</isLocalizable>
+        <isRequired>false</isRequired>
+        <nodeLabel>Offering Tile Description</nodeLabel>
+        <nodeName>offeringTileDescription</nodeName>
+        <nodeType>RTE</nodeType>
+    </managedContentNodeTypes>
+    <managedContentNodeTypes>
         <helpText>Prefilled in the Customizer&apos;s &quot;Current platform&quot; field until a rep overrides it.</helpText>
         <isLocalizable>false</isLocalizable>
         <isRequired>false</isRequired>
