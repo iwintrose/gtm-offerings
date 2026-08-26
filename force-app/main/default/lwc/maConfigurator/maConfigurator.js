@@ -3,6 +3,10 @@ import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isC
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/maConfigData';
+import USER_ID from '@salesforce/user/Id';
+import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
+import USER_NAME_FIELD from '@salesforce/schema/User.Name';
+import USER_EMAIL_FIELD from '@salesforce/schema/User.Email';
 
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
 const OFFERING_LABEL = 'Migration Accelerator';
@@ -49,6 +53,51 @@ export default class MaConfigurator extends LightningElement {
         this.isConfigManager = !!data;
         if (error) {
             this.isConfigManager = false;
+        }
+        this.maybePrefillContact();
+    }
+
+    /** So a rep starting a brand-new link doesn't have to type their own
+     * name/email -- prefilled from their own user record, still editable
+     * in Customize like any other token. */
+    _currentUser = null;
+
+    @wire(getRecord, { recordId: USER_ID, fields: [USER_NAME_FIELD, USER_EMAIL_FIELD] })
+    wiredUser({ data }) {
+        if (!data) return;
+        this._currentUser = {
+            name: getFieldValue(data, USER_NAME_FIELD),
+            email: getFieldValue(data, USER_EMAIL_FIELD)
+        };
+        this.maybePrefillContact();
+    }
+
+    /** Deliberately narrow: only for a rep's own blank, not-yet-shared
+     * session. Never fires for a guest (isConfigManager is only ever true
+     * for a server-verified rep) and never touches a link that's already
+     * been personalized and shared (isProspectLink) -- a colleague
+     * previewing someone else's shared link should see the link's own
+     * contact info stay put, not get silently swapped to their own. Only
+     * fills whichever of CONTACT_NAME/CONTACT_EMAIL is still blank, so a
+     * rep/repname URL param (or a value already typed in Customize) always
+     * wins regardless of which of this and the URL-param parsing resolves
+     * first. */
+    maybePrefillContact() {
+        if (!this.isConfigManager || this.isProspectLink || !this._currentUser) {
+            return;
+        }
+        const next = { ...this.tokenState };
+        let changed = false;
+        if (!next.CONTACT_NAME && this._currentUser.name) {
+            next.CONTACT_NAME = this._currentUser.name;
+            changed = true;
+        }
+        if (!next.CONTACT_EMAIL && this._currentUser.email) {
+            next.CONTACT_EMAIL = this._currentUser.email;
+            changed = true;
+        }
+        if (changed) {
+            this.tokenState = next;
         }
     }
 
@@ -212,6 +261,12 @@ export default class MaConfigurator extends LightningElement {
             const t = /^\d+$/.test(exp) ? parseInt(exp, 10) : Date.parse(exp);
             if (t && Date.now() > t) this.expired = true;
         }
+
+        // isProspectLink is only just now known -- catches the case where
+        // the isConfigManager/getRecord wires already resolved before this
+        // ran (a warm cache can deliver a wired value synchronously during
+        // init, ahead of this method's own place in connectedCallback).
+        this.maybePrefillContact();
     }
 
     /** A rep can flip a saved config to inactive without deleting or
