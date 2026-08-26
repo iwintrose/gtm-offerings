@@ -182,6 +182,17 @@
               ></button>
             </template>
           </div>
+          <template if:true={accentWarning}>
+            <div class="accent-warn" role="alert">
+              <span>This colour is too light to be visible on a white page — buttons and text accents will blend in.</span>
+              <button
+                type="button"
+                class="accent-warn-use"
+                data-hex={accentWarning.altHex}
+                onclick={handleUseAltAccent}
+              >Use {accentWarning.altLabel} instead</button>
+            </div>
+          </template>
           <div class="lb-note">
             The lookup above pulls a color from the client's public logo —
             it's a starting point, not a verified brand color. Always check

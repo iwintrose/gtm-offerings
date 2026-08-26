@@ -489,6 +489,33 @@
   color: var(--coral, #ee3d23);
   background: var(--coral-soft, rgba(238, 61, 35, 0.09));
 }
+.accent-warn {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(202, 138, 4, 0.1);
+  border: 1px solid rgba(202, 138, 4, 0.35);
+  color: #7c5a00;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.accent-warn-use {
+  align-self: flex-start;
+  background: rgba(202, 138, 4, 0.15);
+  border: 1px solid rgba(202, 138, 4, 0.5);
+  color: #5c4200;
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: ui-monospace, monospace;
+}
+.accent-warn-use:hover {
+  background: rgba(202, 138, 4, 0.25);
+}
 .lb-note {
   font-size: 0.72rem;
   color: var(--ink-faint, #8b857d);

@@ -140,6 +140,34 @@ export default class MaConfigCustomize extends LightningElement {
             : '#EE3D23';
     }
 
+    /* Warn when the chosen brand colour is too light to be legible on a
+       white page background. Contrast ratio against white < 2.5 : 1 means
+       buttons and text accents will be near-invisible. Returns null when
+       the colour is fine, or { altHex, altLabel } with a suggested fix. */
+    get accentWarning() {
+        if (!isHex6(this.accent)) return null;
+        const hex = String(this.accent).trim().replace(/^#/, '');
+        const rv = parseInt(hex.slice(0, 2), 16);
+        const gv = parseInt(hex.slice(2, 4), 16);
+        const bv = parseInt(hex.slice(4, 6), 16);
+        const lin = (c) => { const s = c / 255; return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); };
+        const lum = 0.2126 * lin(rv) + 0.7152 * lin(gv) + 0.0722 * lin(bv);
+        // Contrast ratio against white = (1 + 0.05) / (lum + 0.05)
+        const contrastVsWhite = 1.05 / (lum + 0.05);
+        if (contrastVsWhite >= 2.5) return null;
+        // Darken each channel by halving until contrast >= 3 : 1 or 8 iterations
+        let dr = rv, dg = gv, db = bv;
+        for (let i = 0; i < 8; i++) {
+            dr = Math.round(dr * 0.7);
+            dg = Math.round(dg * 0.7);
+            db = Math.round(db * 0.7);
+            const dl = 0.2126 * lin(dr) + 0.7152 * lin(dg) + 0.0722 * lin(db);
+            if (1.05 / (dl + 0.05) >= 3) break;
+        }
+        const altHex = [dr, dg, db].map((c) => c.toString(16).padStart(2, '0')).join('').toUpperCase();
+        return { altHex, altLabel: `#${altHex}` };
+    }
+
     get fields() {
         return FIELDS.map((f) => ({
             k: f.k,
@@ -358,6 +386,10 @@ export default class MaConfigCustomize extends LightningElement {
     }
 
     handleSwatch(event) {
+        this.emit('accentchange', { value: event.currentTarget.dataset.hex });
+    }
+
+    handleUseAltAccent(event) {
         this.emit('accentchange', { value: event.currentTarget.dataset.hex });
     }
 
