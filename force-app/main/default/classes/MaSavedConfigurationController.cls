@@ -84,8 +84,12 @@ public with sharing class MaSavedConfigurationController {
                 insert record;
             }
         } catch (DmlException e) {
+            // The generic message this used to always throw (regardless of
+            // cause) is exactly what hid a real STRING_TOO_LONG on
+            // Generated_URL__c for weeks -- surfacing the actual DML
+            // message is what made that root cause findable at all.
             throw new AuraHandledException(
-                'We could not save this link. Please try again, or check that the record still exists.'
+                'We could not save this link: ' + e.getDmlMessage(0)
             );
         }
         return record.Id;

@@ -684,7 +684,30 @@ function dominantColorFromImage(img) {
         // never loading at all, and worth telling the rep apart.
         const { data } = ctx.getImageData(0, 0, size, size);
 
-        const buckets = new Map();
+        // Two passes over the same pixels, not one: many real logos are
+        // mostly or entirely black/white/gray (a wordmark, a monochrome
+        // icon), and rejecting every neutral pixel outright used to mean
+        // those logos found nothing at all -- a hard dead end for a
+        // meaningfully common case, not a rare edge case. Pass 1 looks
+        // for a real, non-neutral brand color first (unchanged from
+        // before); pass 2 only runs if that came up empty, and falls
+        // back to the most common color overall, neutral or not, so a
+        // rep always gets *something* to start from rather than being
+        // sent to the manual picker for something as ordinary as a
+        // black-on-white logo.
+        const colorBuckets = new Map();
+        const anyBuckets = new Map();
+        const bucketKey = (r, g, b) =>
+            [r, g, b].map((c) => Math.round(c / 16) * 16).join(',');
+        const addTo = (map, key, r, g, b) => {
+            const bucket = map.get(key) || { r: 0, g: 0, b: 0, n: 0 };
+            bucket.r += r;
+            bucket.g += g;
+            bucket.b += b;
+            bucket.n += 1;
+            map.set(key, bucket);
+        };
+
         for (let i = 0; i < data.length; i += 4) {
             const r = data[i];
             const g = data[i + 1];
@@ -692,26 +715,25 @@ function dominantColorFromImage(img) {
             const a = data[i + 3];
             if (a < 128) continue; // transparent background
 
+            const key = bucketKey(r, g, b);
+            addTo(anyBuckets, key, r, g, b);
+
             const max = Math.max(r, g, b);
             const min = Math.min(r, g, b);
             const isNeutral = max < 30 || min > 225 || max - min < 18;
             if (isNeutral) continue; // near-black, near-white, or gray
 
-            // Coarse-bucket to 16 levels per channel so near-identical
-            // anti-aliased pixels count as the same color.
-            const key = [r, g, b].map((c) => Math.round(c / 16) * 16).join(',');
-            const bucket = buckets.get(key) || { r: 0, g: 0, b: 0, n: 0 };
-            bucket.r += r;
-            bucket.g += g;
-            bucket.b += b;
-            bucket.n += 1;
-            buckets.set(key, bucket);
+            addTo(colorBuckets, key, r, g, b);
         }
 
-        let winner = null;
-        buckets.forEach((bucket) => {
-            if (!winner || bucket.n > winner.n) winner = bucket;
-        });
+        const pickWinner = (map) => {
+            let best = null;
+            map.forEach((bucket) => {
+                if (!best || bucket.n > best.n) best = bucket;
+            });
+            return best;
+        };
+        const winner = pickWinner(colorBuckets) || pickWinner(anyBuckets);
         if (!winner) return { hex: null, tainted: false };
 
         const toHex = (v) =>

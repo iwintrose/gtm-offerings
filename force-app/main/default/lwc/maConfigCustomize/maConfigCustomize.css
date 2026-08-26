@@ -1,5 +1,19 @@
 /* Customize panel + link builder — ported from configurator.html (.cust*, .lb*) */
 
+/* --coral/--coral-soft are set on the page root by maConfigurator's
+ * rootStyle whenever a rep sets/looks up a brand accent color for the
+ * CLIENT-facing page -- and being CSS custom properties, they cross the
+ * shadow boundary into this component too. This panel is a rep tool, not
+ * part of what a client sees, so its own buttons/borders/highlights need
+ * to stay on the app's own fixed color regardless of whatever accent is
+ * being set for someone else's page. Re-declaring both here on :host
+ * pins them for everything inside this component's shadow tree, taking
+ * precedence over the cascaded-in value from the ancestor. */
+:host {
+  --coral: #ee3d23;
+  --coral-soft: rgba(238, 61, 35, 0.09);
+}
+
 .cust {
   position: fixed;
   top: 0;
