@@ -1,102 +1,107 @@
 # Claude Code Handover — Salesforce GTM Story & Accelerator Deployment
 
-**Session Date:** 2026-08-20  
-**Status:** Apex deployed successfully. One link fix remaining.
+**Session Date:** 2026-08-26
+**Status:** Active — day/night theme bug fixed, Salesforce CLI auth configured.
+
+---
+
+## Salesforce CLI Auth (CRITICAL — do this first every session)
+
+The org auth URL is stored as environment variable `SFDX_AUTH_URL` in the CCR environment.
+Run this at the start of every session before any `sf` commands:
+
+```bash
+echo "$SFDX_AUTH_URL" | sf org login sfdx-url --sfdx-url-stdin --set-default
+```
+
+Then deploy with:
+```bash
+git clone --depth 1 https://github.com/ps-salesforce/gtm-offerings /home/user/gtm-offerings  # if not already cloned
+cd /home/user/gtm-offerings
+git fetch origin lwc-scaffold-import
+git checkout lwc-scaffold-import
+sf project deploy start --source-dir force-app/main/default/lwc/<component>
+```
+
+**Org:** `isiah.wint-rose.befef12c6b6c@agentforce.com`
+**Site URL:** `https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator`
+
+---
+
+## Repos & Branches
+
+| Repo | Branch | Contains |
+|---|---|---|
+| `ps-salesforce/gtm-offerings` | `main` | Static HTML (index, story, configurator) |
+| `ps-salesforce/gtm-offerings` | `lwc-scaffold-import` | Salesforce LWC source (`force-app/`) |
+| `ps-salesforce/ma-migrator` | `claude/ma-migrator-prd-sqca8j` | Backend platform |
+
+**LWC local path (user's Mac):** `/Users/isiwintr/Documents/Workbench/GTM_Ogfferings/MA_Migrator/ebikes-lwc-scaffold/`
+Remote: `gtm-offerings` → `lwc-scaffold-import`
+
+To pull latest from cloud and deploy locally:
+```bash
+cd /Users/isiwintr/Documents/Workbench/GTM_Ogfferings/MA_Migrator/ebikes-lwc-scaffold
+git pull gtm-offerings lwc-scaffold-import
+sf project deploy start --source-dir force-app/main/default/lwc/<component>
+```
 
 ---
 
 ## What's Done
 
 1. ✅ **Apex Backend** — MaAssessmentRequestController deployed
-   - CMDT fields created and fixed (were named wrong initially: `Activity_Type_c_c` → `Activity_Type__c`)
+   - CMDT fields: Activity_Type__c, Create_Lead__c, Lead_Source__c, Notify_Email__c, Send_Email__c
    - Controller uses dynamic field access via `.get()` to work around compiler caching
-   - Test class compiles
-   - All permission sets configured for guest user
+   - Permission Set: MA_Assessment_Guest (guest user access for booking form)
 
-2. ✅ **LWC Components** — All 7 bundled built
+2. ✅ **LWC Components** — All 7 built and committed to `lwc-scaffold-import`
    - maStory, offeringChooser, chooseIndustry
    - maConfigBooking, maConfigCustomize, maConfigurator, maConfigData
-   - Ready to deploy
 
-3. ✅ **Cloud Workflow Established**
-   - gtm-offerings repo cloned to `/home/user/gtm-offerings`
-   - Ready to make edits in cloud and push
+3. ✅ **Day/Night theme persistence** (2026-08-26)
+   - Static HTML pages (index, story, configurator) now read/write `ps_theme` to localStorage
+   - Theme survives page navigation; inline script sets it before CSS renders (no flash)
+   - `configurator.html` dark media query fixed to use `:root:not([data-theme="light"])`
+   - PR: https://github.com/ps-salesforce/gtm-offerings/pull/3
+
+4. ✅ **Light brand color contrast fix** (2026-08-26)
+   - `maConfigurator.js` `rootStyle` getter now computes WCAG luminance
+   - Sets `--on-coral` (dark ink for light brands, white for dark), `--coral-soft` via rgba(),
+     `--coral-ink` (darkened hover shade), `--coral-ring` (visible outline for near-white brands)
+   - `.cobrand .cb-mono` uses `var(--on-coral)` + `var(--coral-ring)` — no more hardcoded `#fff`
+   - LA Metro (`accent=ffffff`) now renders buttons/monogram/eyebrow visibly in day mode
+   - Deployed to `lwc-scaffold-import`; user must `git pull` + `sf project deploy start`
 
 ---
 
-## What's Left
+## What's Still Outstanding
 
-### 1. Fix maStory CTA Link (BLOCKER)
-**Issue:** maStory component has a CTA at the bottom that links to `/gtmstory/s/` but should link to `/gtmaccelerator`
+### 1. Deploy maConfigurator contrast fix to org
+User ran `git pull gtm-offerings lwc-scaffold-import` and needs to deploy:
+```bash
+sf project deploy start --source-dir force-app/main/default/lwc/maConfigurator
+```
 
-**Location:** Find in user's local `/Users/isiwintr/Documents/Workbench/GTM_Ogfferings/MA_Migrator/ebikes-lwc-scaffold/force-app/main/default/lwc/maStory/`
-
-**Action Required:**
-- Have user search: `grep -r "gtmstory\|/s/" force-app/main/default/lwc/maStory/`
-- Update the URL from `/gtmstory/s/` to `/gtmaccelerator`
-- Redeploy LWC components
-
-### 2. Deploy LWC Components
-After link fix, deploy all LWCs to the org
+### 2. Fix maStory CTA Link
+**Issue:** Links to `/gtmstory/s/` — should be `/gtmaccelerator`
+```bash
+grep -r "gtmstory\|/s/" force-app/main/default/lwc/maStory/
+```
+Update the URL, commit to `lwc-scaffold-import`, push, deploy.
 
 ### 3. Verify Public Access on maStory
-- Activate site: Setup → Digital Experiences → All Sites → gtm-story → Activate
-- Enable public: Experience Builder → Settings → General → "Public can access the site" ✓
+- Setup → Digital Experiences → All Sites → Activate
+- Experience Builder → Settings → General → "Public can access the site" ✓
 - Publish site
 
 ---
 
-## Key Working Agreement (CRITICAL)
+## Key Working Agreement
 
-**File:** `/home/user/gtm-offerings/.claude-memory.md`
-
-**Most Important Rules:**
-1. **Read every detail in screenshots** — Don't gloss over field names, API names, or values
-2. **Verify before claiming success** — grep/cat the file after edits, not just "I fixed it"
-3. **Never brute-force retries** — Diagnose root cause first
-4. **Maintain working directory context** — User is on local Mac at `/Users/isiwintr/...`, NOT `/home/user/`
-5. **Work in the cloud repo** — Clone, edit, commit, push so user can pull locally
-
----
-
-## Repos & Branches
-
-**ps-salesforce/ma-migrator** (backend platform)
-- Branch: `claude/ma-migrator-prd-sqca8j`
-- Status: Working agreement committed
-
-**ps-salesforce/gtm-offerings** (marketing/offerings, includes Salesforce LWCs)
-- Branch: `main` (or user's preferred branch)
-- Status: Ready for ebikes-lwc-scaffold to be committed here
-
-**User's Local Salesforce Project** (NOT in GitHub yet)
-- Path: `/Users/isiwintr/Documents/Workbench/GTM_Ogfferings/MA_Migrator/ebikes-lwc-scaffold/`
-- Contents: All Salesforce LWC + Apex from this session
-- Action: Should be committed to gtm-offerings repo
-
----
-
-## Salesforce Org Info
-
-**Org:** `isiah.wint-rose.befef12c6b6c@agentforce.com`  
-**CLI Auth:** Already configured locally  
-**CMDT:** MA_Assessment_Config__mdt with 5 fields (all deployed)
-- Activity_Type__c (Text 255)
-- Create_Lead__c (Checkbox)
-- Lead_Source__c (Text 255)
-- Notify_Email__c (Email)
-- Send_Email__c (Checkbox)
-
-**Permission Set:** MA_Assessment_Guest (guest user access for booking form)
-
----
-
-## Next Agent's Tasks
-
-1. **Immediate:** Fix maStory CTA link (ask user to grep, provide exact change)
-2. **Then:** Deploy all LWC components
-3. **Then:** Test public access on maStory
-4. **Then:** Commit ebikes-lwc-scaffold to gtm-offerings repo
-5. **Stretch:** Any remaining config/customization
-
-**REMEMBER:** Use the cloud repo workflow. Edit in cloud, commit, push, user pulls locally.
+1. **Edit in cloud, commit to GitHub, deploy via `sf`** — never edit files only locally
+2. **LWC source lives on `lwc-scaffold-import`** — static HTML on `main`
+3. **Read screenshots carefully** — field names, API names, exact values matter
+4. **Verify before claiming success** — grep/cat after edits
+5. **Never brute-force retries** — diagnose root cause first
+6. **Salesforce CLI auth** — always run the `sfdx-url-stdin` command first
