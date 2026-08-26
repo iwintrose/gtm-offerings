@@ -281,6 +281,31 @@ private class MaSavedConfigurationControllerTest {
     }
 
     @IsTest
+    static void searchContactsByAccountNameReturnsEveryContactOnThatAccount() {
+        Account acme = new Account(Name = 'Acme Bank');
+        insert acme;
+        Account other = new Account(Name = 'Globex Corp');
+        insert other;
+        // Deliberately no name/email overlap with the search term -- the
+        // only way either of these should surface is via the Account
+        // name match, proving that path actually works and isn't just
+        // piggybacking on a coincidental name/email hit.
+        insert new Contact(FirstName = 'Priya', LastName = 'Natarajan', Email = 'pn@example.com', AccountId = acme.Id);
+        insert new Contact(FirstName = 'Marcus', LastName = 'Webb', Email = 'mw@example.com', AccountId = acme.Id);
+        insert new Contact(FirstName = 'Someone', LastName = 'Else', Email = 'se@example.com', AccountId = other.Id);
+
+        Test.startTest();
+        List<MaSavedConfigurationController.ContactSearchResult> results =
+            MaSavedConfigurationController.searchContacts('Acme Bank');
+        Test.stopTest();
+
+        Assert.areEqual(2, results.size(), 'Should return every Contact on the matching Account, not just a name/email hit');
+        for (MaSavedConfigurationController.ContactSearchResult r : results) {
+            Assert.areEqual('Acme Bank', r.accountName);
+        }
+    }
+
+    @IsTest
     static void savingWithSelectedContactUsesItsRealAccountDirectly() {
         Account realAccount = new Account(Name = 'Acme Holdings, the actual real Account');
         insert realAccount;

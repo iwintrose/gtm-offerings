@@ -56,10 +56,12 @@ public with sharing class MaSavedConfigurationController {
     }
 
     /** Backs the Customize panel's contact search -- typing 2+ characters
-     * matches against Name or Email so a rep can find and reuse an
-     * existing Contact (and its real Account) instead of the panel
-     * blindly creating a new one every time. `with sharing`, so results
-     * are already scoped to what the calling rep can see. */
+     * matches against Contact Name, Contact Email, OR the parent Account's
+     * Name, so a rep who thinks in terms of "which company" and not yet
+     * "which person there" can search the Account name and get every
+     * Contact under it to choose from, not just a Contact whose own name
+     * happens to match. `with sharing`, so results are already scoped to
+     * what the calling rep can see. */
     @AuraEnabled(cacheable=true)
     public static List<ContactSearchResult> searchContacts(String searchTerm) {
         String term = String.isBlank(searchTerm) ? '' : searchTerm.trim();
@@ -71,9 +73,11 @@ public with sharing class MaSavedConfigurationController {
         for (Contact c : [
             SELECT Id, Name, Email, AccountId, Account.Name
             FROM Contact
-            WHERE Name LIKE :likeTerm OR Email LIKE :likeTerm
-            ORDER BY Name
-            LIMIT 10
+            WHERE Name LIKE :likeTerm
+               OR Email LIKE :likeTerm
+               OR Account.Name LIKE :likeTerm
+            ORDER BY Account.Name NULLS LAST, Name
+            LIMIT 15
         ]) {
             ContactSearchResult r = new ContactSearchResult();
             r.contactId = c.Id;
