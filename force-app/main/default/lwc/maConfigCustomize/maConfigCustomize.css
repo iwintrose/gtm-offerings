@@ -288,9 +288,10 @@
   justify-content: center;
   font-weight: 700;
   font-size: 0.78rem;
-  color: #fff;
+  color: var(--on-coral, #FFFFFF);
   background: var(--coral, #ee3d23);
   flex: none;
+  box-shadow: 0 0 0 1.5px var(--coral-ring, transparent);
 }
 .swatches {
   display: flex;

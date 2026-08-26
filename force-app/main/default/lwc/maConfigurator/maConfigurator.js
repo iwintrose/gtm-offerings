@@ -18,6 +18,7 @@ export default class MaConfigurator extends LightningElement {
      * Builder to match wherever Home and Choose Industry actually live. */
     @api offeringsUrl = '/';
     @api industryUrl = '/choose-industry';
+    @api accentColor = ''; // deprecated — colour is set via saved links / Customize panel
 
     @track tokenState = {};
     @track company = '';
@@ -308,8 +309,19 @@ export default class MaConfigurator extends LightningElement {
 
     get rootStyle() {
         if (!isHex6(this.accent)) return '';
-        const hex = `#${String(this.accent).trim().replace(/^#/, '')}`;
-        return `--coral: ${hex}; --coral-soft: ${hex}1a;`;
+        const hex = String(this.accent).trim().replace(/^#/, '');
+        const rv = parseInt(hex.slice(0, 2), 16);
+        const gv = parseInt(hex.slice(2, 4), 16);
+        const bv = parseInt(hex.slice(4, 6), 16);
+        const lin = (c) => { const s = c / 255; return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); };
+        const lum = 0.2126 * lin(rv) + 0.7152 * lin(gv) + 0.0722 * lin(bv);
+        const isLight = lum > 0.35;
+        const softAlpha = isLight ? '0.12' : '0.18';
+        const onCoral = isLight ? '#17140F' : '#FFFFFF';
+        const inkFactor = isLight ? 0.55 : 0.82;
+        const inkHex = [rv, gv, bv].map((c) => Math.round(c * inkFactor).toString(16).padStart(2, '0')).join('');
+        const ring = lum > 0.7 ? 'var(--line)' : 'transparent';
+        return `--coral: #${hex}; --coral-soft: rgba(${rv},${gv},${bv},${softAlpha}); --on-coral: ${onCoral}; --coral-ink: #${inkHex}; --coral-ring: ${ring};`;
     }
 
     get progressStyle() {

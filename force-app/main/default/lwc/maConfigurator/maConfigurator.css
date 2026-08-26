@@ -443,9 +443,10 @@ b {
   justify-content: center;
   font-weight: 700;
   font-size: 0.85rem;
-  color: #fff;
+  color: var(--on-coral);
   background: var(--coral);
   flex: none;
+  box-shadow: 0 0 0 1.5px var(--coral-ring, transparent);
 }
 .cobrand .cn {
   font-weight: 650;

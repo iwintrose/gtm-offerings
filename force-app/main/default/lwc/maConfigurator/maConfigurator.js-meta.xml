@@ -9,20 +9,9 @@
     </targets>
     <targetConfigs>
         <targetConfig targets="lightningCommunity__Default">
-            <property
-                name="offeringsUrl"
-                type="String"
-                label="Offerings page URL"
-                default="/"
-                description="Back link target, shown only in the internal flow."
-            />
-            <property
-                name="industryUrl"
-                type="String"
-                label="Industry page URL"
-                default="/choose-industry"
-                description="Back link target, shown only in the internal flow."
-            />
+            <property name="accentColor" type="Color" label="Brand accent colour" description="Client brand colour (leave blank — accent is set via URL parameter)."/>
+            <property name="offeringsUrl" type="String" label="Offerings URL" description="URL for the offerings page (leave blank — set via URL parameter)."/>
+            <property name="industryUrl" type="String" label="Industry URL" description="URL for the industry page (leave blank — set via URL parameter)."/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
