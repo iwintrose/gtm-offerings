@@ -48,25 +48,76 @@
           yet.
         </div>
 
-        <div class="fld spaced">
-          <label for="lbContactName">Client contact name</label>
-          <input
-            id="lbContactName"
-            placeholder="e.g. Jordan Lee"
-            value={clientContactName}
-            oninput={handleClientContactNameInput}
-          />
-        </div>
-        <div class="fld spaced">
-          <label for="lbContactEmail">Client contact email</label>
-          <input
-            id="lbContactEmail"
-            type="email"
-            placeholder="jordan.lee@client.com"
-            value={clientContactEmail}
-            oninput={handleClientContactEmailInput}
-          />
-        </div>
+        <template if:true={showContactSearch}>
+          <div class="fld spaced contact-search">
+            <label for="lbContactSearch">Client contact</label>
+            <input
+              id="lbContactSearch"
+              placeholder="Search existing contacts by name or email…"
+              value={_contactSearchTerm}
+              oninput={handleContactSearchInput}
+            />
+            <template if:true={hasContactResults}>
+              <ul class="contact-results">
+                <template for:each={contactResults} for:item="c">
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      class="contact-result"
+                      data-id={c.id}
+                      onclick={handleSelectContact}
+                    >{c.summary}</button>
+                  </li>
+                </template>
+              </ul>
+            </template>
+            <template if:true={showNoContactResults}>
+              <div class="lb-s">No matching contact found.</div>
+            </template>
+            <button
+              type="button"
+              class="contact-create-new"
+              onclick={handleCreateNewContact}
+            >+ Add as a new contact</button>
+          </div>
+        </template>
+
+        <template if:true={_selectedContact}>
+          <div class="fld spaced contact-selected">
+            <label>Client contact</label>
+            <div class="contact-card">
+              <span>{selectedContactSummary}</span>
+              <button type="button" class="contact-change" onclick={handleChangeContact}>Change</button>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={_showManualContact}>
+          <div class="fld spaced">
+            <label for="lbContactName">New contact name</label>
+            <input
+              id="lbContactName"
+              placeholder="e.g. Jordan Lee"
+              value={clientContactName}
+              oninput={handleClientContactNameInput}
+            />
+          </div>
+          <div class="fld spaced">
+            <label for="lbContactEmail">New contact email</label>
+            <input
+              id="lbContactEmail"
+              type="email"
+              placeholder="jordan.lee@client.com"
+              value={clientContactEmail}
+              oninput={handleClientContactEmailInput}
+            />
+          </div>
+          <button
+            type="button"
+            class="contact-create-new"
+            onclick={handleBackToContactSearch}
+          >← Search for an existing contact instead</button>
+        </template>
         <div class="fld spaced">
           <label for="lbEstValue">Estimated deal value</label>
           <input

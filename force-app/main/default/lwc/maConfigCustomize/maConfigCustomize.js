@@ -1,6 +1,7 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
+import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
 import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import { FIELDS, LINKS_KEY, initials, isHex6 } from 'c/maConfigData';
@@ -23,6 +24,20 @@ export default class MaConfigCustomize extends LightningElement {
     @track clientContactName = '';
     @track clientContactEmail = '';
     @track estimatedValue = '';
+
+    /** Set once a rep picks a result from searchContacts() -- carries the
+     * real Contact/Account Ids straight through to save, instead of
+     * saveConfiguration having to fuzzy-match freehand text back to a
+     * record. Cleared (and manual entry shown instead) whenever there's
+     * no selection, whether because the rep hasn't searched yet, is
+     * mid-search, or explicitly chose "Add as a new contact". */
+    @track _selectedContact = null;
+    @track _contactSearchTerm = '';
+    @track _contactResults = [];
+    @track _contactSearchBusy = false;
+    @track _showManualContact = false;
+    _contactSearchToken = 0;
+    _contactSearchTimer = null;
 
     _savedRecordId = '';
     /** Record Id of the saved config this page was opened from (via the
@@ -204,6 +219,128 @@ export default class MaConfigCustomize extends LightningElement {
 
     handleClientContactEmailInput(event) {
         this.clientContactEmail = event.currentTarget.value;
+    }
+
+    // ------------------------------------------------------- contact search
+
+    get showContactSearch() {
+        return !this._selectedContact && !this._showManualContact;
+    }
+
+    get hasContactResults() {
+        return this._contactResults.length > 0;
+    }
+
+    get contactResults() {
+        return this._contactResults.map((c) => ({
+            id: c.contactId,
+            name: c.name,
+            email: c.email,
+            accountName: c.accountName,
+            summary: c.accountName ? `${c.name} · ${c.accountName}` : c.name
+        }));
+    }
+
+    get showNoContactResults() {
+        return (
+            this.showContactSearch &&
+            !this._contactSearchBusy &&
+            this._contactSearchTerm.trim().length >= 2 &&
+            !this.hasContactResults
+        );
+    }
+
+    get selectedContactSummary() {
+        if (!this._selectedContact) return '';
+        return this._selectedContact.accountName
+            ? `${this._selectedContact.name} · ${this._selectedContact.accountName}`
+            : this._selectedContact.name;
+    }
+
+    /** Debounced -- searching on every keystroke would fire a server call
+     * per character typed. 300ms is long enough to skip mid-word calls,
+     * short enough that the results still feel live. */
+    handleContactSearchInput(event) {
+        this._contactSearchTerm = event.currentTarget.value;
+        if (this._contactSearchTimer) {
+            window.clearTimeout(this._contactSearchTimer);
+        }
+        const term = this._contactSearchTerm.trim();
+        if (term.length < 2) {
+            this._contactResults = [];
+            this._contactSearchBusy = false;
+            return;
+        }
+        this._contactSearchBusy = true;
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._contactSearchTimer = window.setTimeout(() => {
+            this.runContactSearch(term);
+        }, 300);
+    }
+
+    /** Guards against an earlier, slower search response landing after a
+     * newer one and overwriting fresher results with stale ones -- each
+     * call gets its own token, and only the most recently issued token's
+     * response is allowed to update state. */
+    async runContactSearch(term) {
+        const token = ++this._contactSearchToken;
+        try {
+            const results = await searchContacts({ searchTerm: term });
+            if (token !== this._contactSearchToken) return;
+            this._contactResults = results;
+        } catch (e) {
+            if (token !== this._contactSearchToken) return;
+            this._contactResults = [];
+        } finally {
+            if (token === this._contactSearchToken) {
+                this._contactSearchBusy = false;
+            }
+        }
+    }
+
+    handleSelectContact(event) {
+        const id = event.currentTarget.dataset.id;
+        const match = this._contactResults.find((c) => c.contactId === id);
+        if (!match) return;
+
+        this._selectedContact = {
+            id: match.contactId,
+            name: match.name,
+            email: match.email,
+            accountId: match.accountId,
+            accountName: match.accountName
+        };
+        this.clientContactName = match.name || '';
+        this.clientContactEmail = match.email || '';
+        this._contactSearchTerm = '';
+        this._contactResults = [];
+
+        // The Company field is owned by the parent (maConfigurator) --
+        // this mirrors how handleEditLink already updates it, so picking a
+        // contact that already has an Account shows that real Account,
+        // not whatever (possibly different, possibly not-yet-typed) text
+        // happens to be sitting in Company right now.
+        if (match.accountName) {
+            this.emit('companychange', { value: match.accountName });
+        }
+    }
+
+    handleChangeContact() {
+        this._selectedContact = null;
+        this.clientContactName = '';
+        this.clientContactEmail = '';
+    }
+
+    handleCreateNewContact() {
+        this._showManualContact = true;
+        this._contactSearchTerm = '';
+        this._contactResults = [];
+    }
+
+    handleBackToContactSearch() {
+        this._showManualContact = false;
+        this.clientContactName = '';
+        this.clientContactEmail = '';
     }
 
     handleEstimatedValueInput(event) {
@@ -491,7 +628,9 @@ export default class MaConfigCustomize extends LightningElement {
                     configPayload: JSON.stringify(this._state),
                     clientContactName: this.clientContactName,
                     clientContactEmail: this.clientContactEmail,
-                    estimatedValue: this.estimatedValue
+                    estimatedValue: this.estimatedValue,
+                    contactId: this._selectedContact?.id || null,
+                    accountId: this._selectedContact?.accountId || null
                 }
             });
             entry.serverId = recordId;

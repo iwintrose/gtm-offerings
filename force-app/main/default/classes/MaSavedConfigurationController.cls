@@ -33,6 +33,57 @@ public with sharing class MaSavedConfigurationController {
         public String clientContactEmail { get; set; }
         @AuraEnabled
         public String estimatedValue { get; set; }
+        /** Set when the rep picked an existing Contact from searchContacts()
+         * rather than typing a name/email freehand -- takes priority over
+         * resolveContact's fuzzy by-email match below, since this is exact. */
+        @AuraEnabled
+        public String contactId { get; set; }
+        /** The selected Contact's own Account, when it has one -- takes
+         * priority over resolveAccount's by-name match against the typed
+         * Company field, so the Contact is attached to the Account it
+         * already actually belongs to rather than whatever Account the
+         * Company text happens to resolve/create. */
+        @AuraEnabled
+        public String accountId { get; set; }
+    }
+
+    public class ContactSearchResult {
+        @AuraEnabled public Id contactId;
+        @AuraEnabled public String name;
+        @AuraEnabled public String email;
+        @AuraEnabled public Id accountId;
+        @AuraEnabled public String accountName;
+    }
+
+    /** Backs the Customize panel's contact search -- typing 2+ characters
+     * matches against Name or Email so a rep can find and reuse an
+     * existing Contact (and its real Account) instead of the panel
+     * blindly creating a new one every time. `with sharing`, so results
+     * are already scoped to what the calling rep can see. */
+    @AuraEnabled(cacheable=true)
+    public static List<ContactSearchResult> searchContacts(String searchTerm) {
+        String term = String.isBlank(searchTerm) ? '' : searchTerm.trim();
+        if (term.length() < 2) {
+            return new List<ContactSearchResult>();
+        }
+        String likeTerm = '%' + term + '%';
+        List<ContactSearchResult> results = new List<ContactSearchResult>();
+        for (Contact c : [
+            SELECT Id, Name, Email, AccountId, Account.Name
+            FROM Contact
+            WHERE Name LIKE :likeTerm OR Email LIKE :likeTerm
+            ORDER BY Name
+            LIMIT 10
+        ]) {
+            ContactSearchResult r = new ContactSearchResult();
+            r.contactId = c.Id;
+            r.name = c.Name;
+            r.email = c.Email;
+            r.accountId = c.AccountId;
+            r.accountName = c.Account != null ? c.Account.Name : null;
+            results.add(r);
+        }
+        return results;
     }
 
     @AuraEnabled
@@ -44,13 +95,18 @@ public with sharing class MaSavedConfigurationController {
             throw new AuraHandledException('An offering is required to save a configuration.');
         }
 
-        // Found-or-created here, not looked up by the rep: the Company
-        // field they already type is enough to stand up the Account (and
-        // client-contact name/email, when given, the Contact) the first
-        // time this link is saved, so Sales Cloud has something to attach
-        // an Opportunity to later without a separate setup step.
-        Id accountId = resolveAccount(trimTo(input.company, MAX_COMPANY));
-        Id contactId = resolveContact(input.clientContactName, input.clientContactEmail, accountId);
+        // A rep who searched and picked an existing Contact/Account in the
+        // panel already gave us the exact real record -- use it directly
+        // rather than re-deriving one by fuzzy-matching typed text, which
+        // is only the fallback for a rep who typed a brand-new contact by
+        // hand (the same found-or-created-from-what-was-typed behavior
+        // this always had).
+        Id accountId = isValidId(input.accountId, Account.SObjectType)
+            ? (Id) input.accountId
+            : resolveAccount(trimTo(input.company, MAX_COMPANY));
+        Id contactId = isValidId(input.contactId, Contact.SObjectType)
+            ? (Id) input.contactId
+            : resolveContact(input.clientContactName, input.clientContactEmail, accountId);
 
         MA_Saved_Configuration__c record = new MA_Saved_Configuration__c(
             Offering__c = trimTo(input.offering, MAX_OFFERING),
@@ -169,6 +225,22 @@ public with sharing class MaSavedConfigurationController {
             throw new AuraHandledException(
                 'We could not delete this link. It may already be gone, or you may not have access to it.'
             );
+        }
+    }
+
+    /** Client-supplied Ids get validated, not trusted blind: a bad cast on
+     * garbage input throws an opaque system error rather than a message a
+     * rep could act on, and checking the SObjectType also stops an Id for
+     * the wrong object type from ever reaching the DML below. */
+    private static Boolean isValidId(String value, SObjectType expectedType) {
+        if (String.isBlank(value)) {
+            return false;
+        }
+        try {
+            Id candidate = (Id) value;
+            return candidate.getSObjectType() == expectedType;
+        } catch (Exception e) {
+            return false;
         }
     }
 

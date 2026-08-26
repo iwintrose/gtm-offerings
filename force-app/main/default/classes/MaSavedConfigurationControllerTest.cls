@@ -259,6 +259,88 @@ private class MaSavedConfigurationControllerTest {
     }
 
     @IsTest
+    static void searchContactsMatchesByNameOrEmail() {
+        Account acc = new Account(Name = 'Acme Bank');
+        insert acc;
+        insert new Contact(FirstName = 'Jordan', LastName = 'Lee', Email = 'jordan.lee@acmebank.example.com', AccountId = acc.Id);
+        insert new Contact(FirstName = 'Alex', LastName = 'Rivera', Email = 'alex.rivera@other.example.com');
+
+        Test.startTest();
+        List<MaSavedConfigurationController.ContactSearchResult> byName =
+            MaSavedConfigurationController.searchContacts('Jordan');
+        List<MaSavedConfigurationController.ContactSearchResult> byEmail =
+            MaSavedConfigurationController.searchContacts('alex.rivera@');
+        List<MaSavedConfigurationController.ContactSearchResult> tooShort =
+            MaSavedConfigurationController.searchContacts('j');
+        Test.stopTest();
+
+        Assert.areEqual(1, byName.size(), 'Should match by name');
+        Assert.areEqual('Acme Bank', byName[0].accountName, 'Should carry the Contact\'s own Account');
+        Assert.areEqual(1, byEmail.size(), 'Should match by email');
+        Assert.areEqual(0, tooShort.size(), 'A 1-character term should not search at all');
+    }
+
+    @IsTest
+    static void savingWithSelectedContactUsesItsRealAccountDirectly() {
+        Account realAccount = new Account(Name = 'Acme Holdings, the actual real Account');
+        insert realAccount;
+        Contact realContact = new Contact(
+            FirstName = 'Jordan',
+            LastName = 'Lee',
+            Email = 'jordan.lee@acmebank.example.com',
+            AccountId = realAccount.Id
+        );
+        insert realContact;
+
+        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        input.offering = 'migration-accelerator';
+        // Deliberately mismatched from the selected Contact's real Account
+        // name -- proves the selection wins over Company-text resolution,
+        // not just that it works when they happen to agree.
+        input.company = 'Acme Bank';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+        input.contactId = realContact.Id;
+        input.accountId = realAccount.Id;
+
+        Test.startTest();
+        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Test.stopTest();
+
+        MA_Saved_Configuration__c saved = [
+            SELECT Account__c, Contact__c FROM MA_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.areEqual(realAccount.Id, saved.Account__c, 'Should use the selected Contact\'s own Account, not one resolved from Company text');
+        Assert.areEqual(realContact.Id, saved.Contact__c, 'Should use the exact selected Contact, not a fuzzy match');
+        Assert.areEqual(0, [SELECT COUNT() FROM Account WHERE Name = 'Acme Bank'], 'The Company-text resolve path should never have run at all, so no Account by that name should exist');
+    }
+
+    @IsTest
+    static void savingFallsBackToFuzzyResolveWhenContactIdIsGarbage() {
+        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        input.offering = 'migration-accelerator';
+        input.company = 'Acme Bank';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+        input.clientContactName = 'Jordan Lee';
+        input.clientContactEmail = 'jordan.lee@acmebank.example.com';
+        input.contactId = 'not-a-real-id';
+        input.accountId = 'also-not-a-real-id';
+
+        Test.startTest();
+        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Test.stopTest();
+
+        MA_Saved_Configuration__c saved = [
+            SELECT Account__c, Contact__c, Account__r.Name, Contact__r.Email
+            FROM MA_Saved_Configuration__c
+            WHERE Id = :recordId
+        ];
+        Assert.isNotNull(saved.Account__c, 'A garbage accountId should fall back to resolving from Company text');
+        Assert.areEqual('Acme Bank', saved.Account__r.Name);
+        Assert.isNotNull(saved.Contact__c, 'A garbage contactId should fall back to the fuzzy name/email resolve');
+        Assert.areEqual('jordan.lee@acmebank.example.com', saved.Contact__r.Email);
+    }
+
+    @IsTest
     static void wrapsDmlFailureOnSetActiveAsFriendlyError() {
         MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
