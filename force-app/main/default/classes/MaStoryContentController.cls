@@ -20,7 +20,7 @@
  * SOQL-queryable list of record Ids to fetch by key. See that object's
  * description and DEPLOYMENT.md.
  */
-public with sharing class MaStoryContentController {
+public without sharing class MaStoryContentController {
     private static final Integer TIMEOUT_MS = 8000;
     private static final String API_VERSION = 'v66.0';
     private static final String INDUSTRY_TYPE = 'ma_industry_story';
@@ -127,7 +127,7 @@ public with sharing class MaStoryContentController {
         @AuraEnabled public List<String> pitchNewChips = new List<String>();
     }
 
-    @AuraEnabled(cacheable=false)
+    @AuraEnabled(cacheable=true)
     public static StoryContent getStoryContent(String offeringKey) {
         if (String.isBlank(offeringKey)) {
             throw new AuraHandledException('No offering key given.');
