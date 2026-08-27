@@ -6,6 +6,23 @@ const FONTS_HREF =
 
 const OFFERING_KEY = 'migration-accelerator';
 
+const PICKER_BLURBS = {
+    fintech:
+        'For banks and insurers, a migration is a compliance event as much as a technology one. The configurator pre-loads the consent, audit, and data-residency guardrails your team will need.',
+    medtech:
+        'Device-adjacent messaging means PHI boundaries and regulatory review cycles shape every campaign decision. Start here to scope what "migration-ready" actually means for your stack.',
+    lifesci:
+        'Regulated promotional content, HCP segmentation, and multi-step approval workflows define what a clean migration looks like in life sciences.',
+    media:
+        'Subscriber churn, real-time triggers, and IP-level segmentation are the metrics that matter most when moving a media and entertainment marketing stack.',
+    transport:
+        'Operational messaging blends with marketing in logistics. Route alerts, delivery triggers, and loyalty programs all need clean separation before any data moves.',
+    government:
+        'Citizen communication programs run on accessibility, consent, and multi-channel reach. Migration here is governance work as much as technical work.',
+    municipal:
+        'Service notifications, public engagement campaigns, and resident segmentation each carry their own compliance posture — the configurator maps it before the work begins.'
+};
+
 export default class ChooseIndustry extends LightningElement {
     /** Back link target. Set in Experience Builder. */
     @api offeringsUrl = '/';
@@ -27,7 +44,7 @@ export default class ChooseIndustry extends LightningElement {
         return this._industries.map((ind) => ({
             key: ind.industryKey,
             label: ind.industryLabel,
-            desc: ind.pickerBlurb,
+            desc: ind.pickerBlurb || PICKER_BLURBS[ind.industryKey] || '',
             href: `${base}${joiner}industry=${encodeURIComponent(ind.industryKey)}`
         }));
     }
