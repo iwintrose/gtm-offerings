@@ -2,11 +2,11 @@
  * Reads the GTM Offerings story page's editorial content (industry blocks,
  * FAQ, site defaults) from Salesforce CMS via HTTP self-callout.
  *
- * When called from an LWC in Lightning context (including Experience Cloud),
- * UserInfo.getSessionId() returns null per Salesforce security policy, so an
- * org-domain callout with Bearer auth always gets a 401. In that case we fall
- * back to Site.getBaseRequestUrl(), which is the Experience Cloud site's public
- * base URL and serves published CMS content without a session token.
+ * Must be cacheable=false: the LDS wire cache blocks HTTP callouts in
+ * cacheable=true methods and silently returns empty results.
+ *
+ * Must be without sharing: CMS index rows are owned by the admin user;
+ * with sharing returns zero rows for Experience Cloud community members.
  *
  * MA_CMS_Content_Index__c is the bridge: one row per CMS record, giving this
  * controller a SOQL-queryable list of managed content IDs to fetch.
@@ -167,38 +167,13 @@ public without sharing class MaStoryContentController {
         return result;
     }
 
-    /**
-     * Makes the CMS delivery callout and returns the contentBody map.
-     *
-     * When UserInfo.getSessionId() is non-null (admin/anonymous Apex context) we
-     * call the org domain with a Bearer token. When it is null (LWC Lightning
-     * context, Salesforce security restriction) we call the Experience Cloud
-     * site's public delivery endpoint via Site.getBaseRequestUrl(), which serves
-     * published content to unauthenticated callers without a session token.
-     */
     private static Map<String, Object> fetchContentBody(String channelId, String recordId) {
         try {
             String sid = UserInfo.getSessionId();
-            String baseUrl;
-            if (sid != null) {
-                baseUrl = URL.getOrgDomainUrl().toExternalForm();
-            } else {
-                // LWC Lightning context: getSessionId() returns null.
-                // Site.getBaseRequestUrl() gives the Experience Cloud site URL
-                // including any path prefix (e.g. /gtmaccelerator). Strip the
-                // path -- the CMS delivery endpoint lives at the domain root, not
-                // under the site prefix -- so we call scheme://host only.
-                String siteUrl = Site.getBaseRequestUrl();
-                if (String.isBlank(siteUrl)) {
-                    System.debug('[MaStoryContentController] No session ID and no site URL for ' + recordId + ' -- skipping');
-                    return null;
-                }
-                Integer schemeEnd = siteUrl.indexOf('://');
-                Integer pathStart = schemeEnd != -1 ? siteUrl.indexOf('/', schemeEnd + 3) : -1;
-                baseUrl = pathStart == -1 ? siteUrl : siteUrl.substring(0, pathStart);
+            if (sid == null) {
+                return null;
             }
-
-            String endpoint = baseUrl
+            String endpoint = URL.getOrgDomainUrl().toExternalForm()
                 + '/services/data/' + API_VERSION
                 + '/connect/cms/delivery/channels/' + channelId
                 + '/contents/' + recordId;
@@ -207,9 +182,7 @@ public without sharing class MaStoryContentController {
             req.setEndpoint(endpoint);
             req.setMethod('GET');
             req.setTimeout(TIMEOUT_MS);
-            if (sid != null) {
-                req.setHeader('Authorization', 'Bearer ' + sid);
-            }
+            req.setHeader('Authorization', 'Bearer ' + sid);
 
             HttpResponse res = new Http().send(req);
             if (res.getStatusCode() != 200) {
