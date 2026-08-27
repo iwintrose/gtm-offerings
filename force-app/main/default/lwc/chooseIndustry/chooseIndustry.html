@@ -14,6 +14,11 @@
 
     <div class="wrap">
       <div class="eyebrow"><span class="bead"></span> Step 2 of 2</div>
+      <template if:true={_editMode}>
+        <a href={builderUrl} target="_blank" rel="noopener" class="hd-edit-chip">
+          Edit page layout in Experience Builder ↗
+        </a>
+      </template>
       <h1>Choose your industry.</h1>
       <p class="sub">
         Migrations look different in every sector. Pick one and the
@@ -23,11 +28,33 @@
 
       <div class="grid">
         <template for:each={industries} for:item="ind">
-          <a key={ind.key} class="tile" href={ind.href}>
-            <div class="tile-name">{ind.label}</div>
-            <div class="tile-desc">{ind.desc}</div>
-            <div class="tile-go">Configure for this industry →</div>
-          </a>
+          <div key={ind.key} class={ind.wrapClass}>
+            <a class="tile" href={ind.href}>
+              <div class="tile-name">{ind.label}</div>
+              <div class="tile-desc">{ind.desc}</div>
+              <div class="tile-go">Configure for this industry →</div>
+            </a>
+            <template if:true={_editMode}>
+              <button class="cedit-btn" data-id={ind.key} onclick={handleChipClick}>✎ Edit</button>
+              <div class={ind.popClass} onclick={handlePopClick}>
+                <div class="pop-hd">
+                  <div class="pop-name">{ind.label}</div>
+                  <div class="pop-id">{ind.indexRecordId}</div>
+                </div>
+                <div class="pop-acts">
+                  <a href={ind.cmsUrl} target="_blank" rel="noopener" class="pop-act pop-act--cms">
+                    <span class="picon"></span>Edit CMS content ↗
+                  </a>
+                  <a href={ind.builderUrl} target="_blank" rel="noopener" class="pop-act pop-act--bld">
+                    <span class="picon"></span>Edit page layout ↗
+                  </a>
+                  <a href={ind.indexUrl} target="_blank" rel="noopener" class="pop-act pop-act--rec">
+                    <span class="picon"></span>View index record ↗
+                  </a>
+                </div>
+              </div>
+            </template>
+          </div>
         </template>
 
         <a class="tile skip" href={configuratorUrl}>

@@ -26,6 +26,8 @@ public without sharing class MaStoryContentController {
         @AuraEnabled public StorySetting setting;
         @AuraEnabled public StoryPage page;
         @AuraEnabled public StoryBody body;
+        @AuraEnabled public String orgUrl;
+        @AuraEnabled public String cmsChannelId;
     }
 
     public class IndustryStory {
@@ -42,6 +44,8 @@ public without sharing class MaStoryContentController {
         @AuraEnabled public String whyHead;
         @AuraEnabled public String demoRoot;
         @AuraEnabled public List<String> demoDeps = new List<String>();
+        @AuraEnabled public String contentId;
+        @AuraEnabled public String indexRecordId;
     }
 
     public class FaqItem {
@@ -136,7 +140,7 @@ public without sharing class MaStoryContentController {
         String channelId = offerings[0].CMS_Channel_Id__c;
 
         List<MA_CMS_Content_Index__c> indexRows = [
-            SELECT CMS_Record_Id__c, Content_Type__c
+            SELECT Id, CMS_Record_Id__c, Content_Type__c
             FROM MA_CMS_Content_Index__c
             WHERE Offering_Key__c = :offeringKey AND Active__c = true
             ORDER BY Content_Type__c, Display_Order__c NULLS LAST, CMS_Record_Id__c
@@ -147,13 +151,15 @@ public without sharing class MaStoryContentController {
         }
 
         StoryContent result = new StoryContent();
+        result.orgUrl = URL.getOrgDomainUrl().toExternalForm();
+        result.cmsChannelId = channelId;
         for (MA_CMS_Content_Index__c row : indexRows) {
             Map<String, Object> body = fetchContentBody(channelId, row.CMS_Record_Id__c);
             if (body == null) {
                 continue;
             }
             if (row.Content_Type__c == INDUSTRY_TYPE) {
-                result.industries.add(toIndustryStory(body));
+                result.industries.add(toIndustryStory(body, row));
             } else if (row.Content_Type__c == FAQ_TYPE) {
                 result.faqs.add(toFaqItem(body));
             } else if (row.Content_Type__c == SETTING_TYPE && result.setting == null) {
@@ -203,7 +209,7 @@ public without sharing class MaStoryContentController {
 
     // -------------------------------------------------------------- mapping
 
-    private static IndustryStory toIndustryStory(Map<String, Object> body) {
+    private static IndustryStory toIndustryStory(Map<String, Object> body, MA_CMS_Content_Index__c row) {
         IndustryStory s = new IndustryStory();
         s.industryKey = str(body, 'industryKey');
         s.industryLabel = str(body, 'industryLabel');
@@ -218,6 +224,8 @@ public without sharing class MaStoryContentController {
         s.whyHead = str(body, 'whyHead');
         s.demoRoot = str(body, 'demoRoot');
         s.demoDeps = lines(body, 'demoDeps');
+        s.contentId = row.CMS_Record_Id__c;
+        s.indexRecordId = String.valueOf(row.Id);
         return s;
     }
 

@@ -45,6 +45,10 @@ export default class ChooseIndustry extends LightningElement {
 
     @track theme = null;
     @track _industries = [];
+    @track _editMode = false;
+    @track _openEditId = null;
+    @track _orgUrl = '';
+    @track _cmsChannelId = '';
 
     get rootClass() {
         if (this.theme === 'dark') return 'ci-root dark';
@@ -55,16 +59,50 @@ export default class ChooseIndustry extends LightningElement {
     get industries() {
         const base = this.configuratorUrl || '/configurator';
         const joiner = base.indexOf('?') === -1 ? '?' : '&';
-        return this._industries.map((ind) => ({
-            key: ind.industryKey,
-            label: ind.industryLabel,
-            desc: ind.pickerBlurb || PICKER_BLURBS[ind.industryKey] || '',
-            href: `${base}${joiner}industry=${encodeURIComponent(ind.industryKey)}`
-        }));
+        const orgUrl = this._orgUrl;
+        const channelId = this._cmsChannelId;
+        return this._industries.map((ind) => {
+            const key = ind.industryKey;
+            const href = `${base}${joiner}industry=${encodeURIComponent(key)}`;
+            const cmsUrl = (orgUrl && channelId && ind.contentId)
+                ? `${orgUrl}/lightning/cms/delivery/channels/${channelId}/contents/${ind.contentId}`
+                : orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
+            const indexUrl = (orgUrl && ind.indexRecordId)
+                ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${ind.indexRecordId}/view`
+                : '#';
+            const builderUrl = orgUrl
+                ? `${orgUrl}/lightning/setup/SetupNetworks/home`
+                : '#';
+            const isOpen = this._openEditId === key;
+            return {
+                key,
+                label: ind.industryLabel,
+                desc: ind.pickerBlurb || PICKER_BLURBS[key] || '',
+                href,
+                contentId: ind.contentId || '',
+                indexRecordId: ind.indexRecordId || '',
+                cmsUrl,
+                indexUrl,
+                builderUrl,
+                wrapClass: 'tile-wrap' + (this._editMode ? ' tile-wrap--edit' : ''),
+                popClass: 'tile-pop' + (isOpen ? ' open' : '')
+            };
+        });
+    }
+
+    get builderUrl() {
+        return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#';
     }
 
     connectedCallback() {
         this.loadFonts();
+        this._editModeHandler = (evt) => {
+            this._editMode = evt.detail.active;
+            this._openEditId = null;
+        };
+        this._winClickHandler = () => { this._openEditId = null; };
+        window.addEventListener('maadminedit', this._editModeHandler);
+        window.addEventListener('click', this._winClickHandler);
         getStoryContent({ offeringKey: OFFERING_KEY })
             .then((data) => {
                 const industries = (data && data.industries) || [];
@@ -72,12 +110,35 @@ export default class ChooseIndustry extends LightningElement {
                 // (guest users on orgs where unauthenticated CMS API calls aren't
                 // yet enabled, or a transient CMS delivery error).
                 this._industries = industries.length > 0 ? industries : HARDCODED_INDUSTRIES;
+                if (data) {
+                    this._orgUrl = data.orgUrl || '';
+                    this._cmsChannelId = data.cmsChannelId || '';
+                }
             })
             .catch((err) => {
                 // eslint-disable-next-line no-console
                 console.error('[chooseIndustry] getStoryContent:', JSON.stringify(err));
                 this._industries = HARDCODED_INDUSTRIES;
             });
+    }
+
+    disconnectedCallback() {
+        if (this._editModeHandler) {
+            window.removeEventListener('maadminedit', this._editModeHandler);
+        }
+        if (this._winClickHandler) {
+            window.removeEventListener('click', this._winClickHandler);
+        }
+    }
+
+    handleChipClick(event) {
+        event.stopPropagation();
+        const id = event.currentTarget.dataset.id;
+        this._openEditId = this._openEditId === id ? null : id;
+    }
+
+    handlePopClick(event) {
+        event.stopPropagation();
     }
 
     loadFonts() {
