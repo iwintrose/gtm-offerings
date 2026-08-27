@@ -5,7 +5,7 @@
     <div class="cust-h">
       <div class="ct">
         Customize this page
-        <small>Fill in the blanks — saves automatically</small>
+        <small>{saveStatusText}</small>
       </div>
       <button class="cust-x" aria-label="Close" onclick={handleClose}>×</button>
     </div>
@@ -302,7 +302,7 @@
     </div>
 
     <div class="cust-foot">
-      <button class="primary" onclick={handleClose}>Done</button>
+      <button class="primary" onclick={handleClose}>Close</button>
       <button onclick={handleLoadExample}>Load example</button>
       <button onclick={handleClearAll}>Clear all</button>
     </div>

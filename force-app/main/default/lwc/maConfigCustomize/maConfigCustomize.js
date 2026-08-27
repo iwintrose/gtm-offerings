@@ -63,9 +63,38 @@ export default class MaConfigCustomize extends LightningElement {
     @track brandDomain = '';
     @track brandLookupBusy = false;
     @track brandLookupError = '';
+    @track _saveStatus = ''; // '' | 'saving' | 'saved'
+    _autoSaveTimer = null;
 
     get saveLabel() {
         return this.canSaveAsNew ? 'Update this link' : 'Save link';
+    }
+
+    get saveStatusText() {
+        if (this._saveStatus === 'saving') return 'Saving…';
+        if (this._saveStatus === 'saved') return 'Saved ✓';
+        return 'Changes save automatically';
+    }
+
+    scheduleAutoSave() {
+        if (!(this.company || '').trim()) return;
+        if (this._autoSaveTimer) window.clearTimeout(this._autoSaveTimer);
+        this._saveStatus = '';
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._autoSaveTimer = window.setTimeout(() => {
+            this._autoSaveTimer = null;
+            this._saveStatus = 'saving';
+            this.companyInvalid = false;
+            this.saveError = '';
+            this.saveInternal({ asNew: false });
+        }, 1500);
+    }
+
+    cancelAutoSave() {
+        if (this._autoSaveTimer) {
+            window.clearTimeout(this._autoSaveTimer);
+            this._autoSaveTimer = null;
+        }
     }
 
     get companyFieldClass() {
@@ -223,6 +252,7 @@ export default class MaConfigCustomize extends LightningElement {
             key: event.currentTarget.dataset.key,
             value: event.currentTarget.value
         });
+        this.scheduleAutoSave();
     }
 
     handleCompanyInput(event) {
@@ -232,10 +262,12 @@ export default class MaConfigCustomize extends LightningElement {
             this.saveError = '';
         }
         this.emit('companychange', { value });
+        this.scheduleAutoSave();
     }
 
     handleIndustryChange(event) {
         this.emit('industrychange', { value: event.currentTarget.value });
+        this.scheduleAutoSave();
     }
 
     handleClientContactNameInput(event) {
@@ -374,20 +406,24 @@ export default class MaConfigCustomize extends LightningElement {
 
     handleAccentInput(event) {
         this.emit('accentchange', { value: event.currentTarget.value });
+        this.scheduleAutoSave();
     }
 
     handleAccentPicker(event) {
         this.emit('accentchange', {
             value: event.currentTarget.value.replace('#', '')
         });
+        this.scheduleAutoSave();
     }
 
     handleSwatch(event) {
         this.emit('accentchange', { value: event.currentTarget.dataset.hex });
+        this.scheduleAutoSave();
     }
 
     handleUseAltAccent(event) {
         this.emit('accentchange', { value: event.currentTarget.dataset.hex });
+        this.scheduleAutoSave();
     }
 
     handleBrandDomainInput(event) {
@@ -464,6 +500,7 @@ export default class MaConfigCustomize extends LightningElement {
 
     handleExpires(event) {
         this.expires = event.currentTarget.value;
+        this.scheduleAutoSave();
     }
 
     handleLoadExample() {
@@ -491,6 +528,14 @@ export default class MaConfigCustomize extends LightningElement {
         this.emit('companychange', { value: entry.company || '' });
         this.emit('industrychange', { value: entry.industry || '' });
         this.emit('accentchange', { value: entry.accent || '' });
+        // Restore the full token state (contact fields, proof numbers, etc.)
+        // stored at save time, so the panel shows the exact values the rep
+        // last saved — not a blank form over a link that was already filled.
+        if (entry.state && typeof entry.state === 'object') {
+            Object.keys(entry.state).forEach((key) => {
+                this.emit('fieldchange', { key, value: entry.state[key] || '' });
+            });
+        }
     }
 
     handleDeleteLink(event) {
@@ -523,6 +568,8 @@ export default class MaConfigCustomize extends LightningElement {
 
     handleSave() {
         if (!this.validate()) return;
+        this.cancelAutoSave();
+        this._saveStatus = 'saving';
         this.saveInternal({ asNew: false });
     }
 
@@ -531,6 +578,8 @@ export default class MaConfigCustomize extends LightningElement {
      * config into a second version without touching the original. */
     handleSaveAsNew() {
         if (!this.validate()) return;
+        this.cancelAutoSave();
+        this._saveStatus = 'saving';
         this.saveInternal({ asNew: true });
     }
 
@@ -541,6 +590,8 @@ export default class MaConfigCustomize extends LightningElement {
     handleSaveDraft() {
         this.companyInvalid = false;
         this.saveError = '';
+        this.cancelAutoSave();
+        this._saveStatus = 'saving';
         this.saveInternal({ asNew: false });
     }
 
@@ -622,7 +673,8 @@ export default class MaConfigCustomize extends LightningElement {
                 ? String(this.accent).trim().replace(/^#/, '')
                 : '',
             exp: this.expires ? Date.parse(`${this.expires}T23:59:59`) : null,
-            ts: Date.now()
+            ts: Date.now(),
+            state: this._state ? JSON.parse(JSON.stringify(this._state)) : {}
         };
 
         if (targetLocalId) {
@@ -688,6 +740,9 @@ export default class MaConfigCustomize extends LightningElement {
 
             this.links = this.links.map((l) => (l.id === entry.id ? entry : l));
             this.writeLinks();
+            this._saveStatus = 'saved';
+            // eslint-disable-next-line @lwc/lwc/no-async-operation
+            window.setTimeout(() => { this._saveStatus = ''; }, 3000);
             // Lets maConfigurator refresh its embedded Saved bar without a
             // page reload -- otherwise a rep has no way to see a new/edited
             // link show up except by navigating away and back.
@@ -696,10 +751,12 @@ export default class MaConfigCustomize extends LightningElement {
             const message = e?.body?.message || '';
             const isAccessError = /do not have access|insufficient/i.test(message);
             if (isAccessError) {
+                this._saveStatus = '';
                 return;
             }
             // eslint-disable-next-line no-console
             console.error('maConfigCustomize: save to MA_Saved_Configuration__c failed', e);
+            this._saveStatus = '';
             // A failed save used to be entirely silent from here -- the
             // local list still updated (optimistically, before this call),
             // so the panel looked like it worked even when nothing reached
