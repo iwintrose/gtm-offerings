@@ -56,15 +56,6 @@
     </objectPermissions>
     <objectPermissions>
         <allowCreate>true</allowCreate>
-        <allowDelete>false</allowDelete>
-        <allowEdit>true</allowEdit>
-        <allowRead>true</allowRead>
-        <modifyAllRecords>false</modifyAllRecords>
-        <object>Opportunity</object>
-        <viewAllRecords>false</viewAllRecords>
-    </objectPermissions>
-    <objectPermissions>
-        <allowCreate>true</allowCreate>
         <allowDelete>true</allowDelete>
         <allowEdit>true</allowEdit>
         <allowRead>true</allowRead>
@@ -84,11 +75,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <field>MA_Saved_Configuration__c.Config_Payload__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Opportunity__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
@@ -129,11 +115,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <field>MA_Assessment_Request__c.Saved_Configuration__c</field>
-        <readable>true</readable>
-        <editable>false</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Assessment_Request__c.Opportunity__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
