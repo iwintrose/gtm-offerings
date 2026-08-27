@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RemoteSiteSetting xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isActive>true</isActive>
+    <disableProtocolSecurity>false</disableProtocolSecurity>
+    <url>https://orgfarm-5c323065da-dev-ed.develop.my.site.com</url>
+    <description>Fallback for MaStoryContentController when getSessionId() is null in LWC context. Site-domain CMS delivery serves published content without auth. Org-specific URL -- update on org move.</description>
+</RemoteSiteSetting>

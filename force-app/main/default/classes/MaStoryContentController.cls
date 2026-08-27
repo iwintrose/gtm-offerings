@@ -1,33 +1,24 @@
 /**
  * Reads the GTM Offerings story page's editorial content (industry blocks,
- * FAQ, site defaults) from Salesforce CMS, replacing what used to be
- * hardcoded JS constants in maConfigData.js/maStory.js so a non-engineer can
- * edit it directly in the CMS Workspace.
+ * FAQ, site defaults) from Salesforce CMS via HTTP self-callout.
  *
- * Uses Http/HttpRequest self-callouts to this org's own Connect REST
- * delivery API, authenticated with UserInfo.getSessionId(), rather than
- * ConnectApi.ManagedContent -- that class's exact method signatures for
- * querying content by space/type couldn't be verified against live docs,
- * and these are the same REST calls already proven working (create, get-
- * by-key, publish, channel delivery) while building and seeding this
- * content. Requires a synchronous session context (an LWC page load), which
- * is the only context this is ever called from.
+ * When called from an LWC in Lightning context (including Experience Cloud),
+ * UserInfo.getSessionId() returns null per Salesforce security policy, so an
+ * org-domain callout with Bearer auth always gets a 401. In that case we fall
+ * back to Site.getBaseRequestUrl(), which is the Experience Cloud site's public
+ * base URL and serves published CMS content without a session token.
  *
- * The CMS delivery API here has no working "list everything of type X"
- * query (tried content-type filters, search terms, POST variants, waited
- * out possible index lag) -- MA_CMS_Content_Index__c is the bridge:  one row
- * per CMS record this page should show, giving this controller a plain
- * SOQL-queryable list of record Ids to fetch by key. See that object's
- * description and DEPLOYMENT.md.
+ * MA_CMS_Content_Index__c is the bridge: one row per CMS record, giving this
+ * controller a SOQL-queryable list of managed content IDs to fetch.
  */
 public without sharing class MaStoryContentController {
-    private static final Integer TIMEOUT_MS = 8000;
-    private static final String API_VERSION = 'v66.0';
     private static final String INDUSTRY_TYPE = 'ma_industry_story';
     private static final String FAQ_TYPE = 'ma_faq_item';
     private static final String SETTING_TYPE = 'ma_story_setting';
     private static final String PAGE_TYPE = 'ma_story_page';
     private static final String BODY_TYPE = 'ma_story_body';
+    private static final Integer TIMEOUT_MS = 8000;
+    private static final String API_VERSION = 'v66.0';
 
     public class StoryContent {
         @AuraEnabled public List<IndustryStory> industries = new List<IndustryStory>();
@@ -142,12 +133,6 @@ public without sharing class MaStoryContentController {
         if (offerings.isEmpty()) {
             throw new AuraHandledException('No MA_Offering__mdt record found for offering key "' + offeringKey + '".');
         }
-        if (String.isBlank(offerings[0].CMS_Channel_Id__c)) {
-            throw new AuraHandledException(
-                'No CMS Channel Id set on MA_Offering__mdt for "' + offeringKey + '". ' +
-                'Set MA_Offering__mdt.CMS_Channel_Id__c (Setup > Custom Metadata Types > MA Offering).'
-            );
-        }
         String channelId = offerings[0].CMS_Channel_Id__c;
 
         List<MA_CMS_Content_Index__c> indexRows = [
@@ -157,48 +142,85 @@ public without sharing class MaStoryContentController {
             ORDER BY Content_Type__c, Display_Order__c NULLS LAST, CMS_Record_Id__c
         ];
 
+        if (indexRows.isEmpty()) {
+            return new StoryContent();
+        }
+
         StoryContent result = new StoryContent();
         for (MA_CMS_Content_Index__c row : indexRows) {
-            Map<String, Object> contentBody = fetchContentBody(channelId, row.CMS_Record_Id__c);
-            if (contentBody == null) {
+            Map<String, Object> body = fetchContentBody(channelId, row.CMS_Record_Id__c);
+            if (body == null) {
                 continue;
             }
             if (row.Content_Type__c == INDUSTRY_TYPE) {
-                result.industries.add(toIndustryStory(contentBody));
+                result.industries.add(toIndustryStory(body));
             } else if (row.Content_Type__c == FAQ_TYPE) {
-                result.faqs.add(toFaqItem(contentBody));
+                result.faqs.add(toFaqItem(body));
             } else if (row.Content_Type__c == SETTING_TYPE && result.setting == null) {
-                result.setting = toStorySetting(contentBody);
+                result.setting = toStorySetting(body);
             } else if (row.Content_Type__c == PAGE_TYPE && result.page == null) {
-                result.page = toStoryPage(contentBody);
+                result.page = toStoryPage(body);
             } else if (row.Content_Type__c == BODY_TYPE && result.body == null) {
-                result.body = toStoryBody(contentBody);
+                result.body = toStoryBody(body);
             }
         }
         return result;
     }
 
-    // ---------------------------------------------------------------- fetch
-
+    /**
+     * Makes the CMS delivery callout and returns the contentBody map.
+     *
+     * When UserInfo.getSessionId() is non-null (admin/anonymous Apex context) we
+     * call the org domain with a Bearer token. When it is null (LWC Lightning
+     * context, Salesforce security restriction) we call the Experience Cloud
+     * site's public delivery endpoint via Site.getBaseRequestUrl(), which serves
+     * published content to unauthenticated callers without a session token.
+     */
     private static Map<String, Object> fetchContentBody(String channelId, String recordId) {
         try {
-            String endpoint = URL.getOrgDomainUrl().toExternalForm()
+            String sid = UserInfo.getSessionId();
+            String baseUrl;
+            if (sid != null) {
+                baseUrl = URL.getOrgDomainUrl().toExternalForm();
+            } else {
+                // LWC Lightning context: getSessionId() returns null.
+                // Site.getBaseRequestUrl() gives the Experience Cloud site URL
+                // including any path prefix (e.g. /gtmaccelerator). Strip the
+                // path -- the CMS delivery endpoint lives at the domain root, not
+                // under the site prefix -- so we call scheme://host only.
+                String siteUrl = Site.getBaseRequestUrl();
+                if (String.isBlank(siteUrl)) {
+                    System.debug('[MaStoryContentController] No session ID and no site URL for ' + recordId + ' -- skipping');
+                    return null;
+                }
+                Integer schemeEnd = siteUrl.indexOf('://');
+                Integer pathStart = schemeEnd != -1 ? siteUrl.indexOf('/', schemeEnd + 3) : -1;
+                baseUrl = pathStart == -1 ? siteUrl : siteUrl.substring(0, pathStart);
+            }
+
+            String endpoint = baseUrl
                 + '/services/data/' + API_VERSION
-                + '/connect/cms/delivery/channels/' + channelId + '/contents/' + recordId;
+                + '/connect/cms/delivery/channels/' + channelId
+                + '/contents/' + recordId;
 
             HttpRequest req = new HttpRequest();
             req.setEndpoint(endpoint);
             req.setMethod('GET');
             req.setTimeout(TIMEOUT_MS);
-            req.setHeader('Authorization', 'Bearer ' + UserInfo.getSessionId());
+            if (sid != null) {
+                req.setHeader('Authorization', 'Bearer ' + sid);
+            }
 
             HttpResponse res = new Http().send(req);
             if (res.getStatusCode() != 200) {
+                System.debug('[MaStoryContentController] HTTP ' + res.getStatusCode()
+                    + ' for ' + recordId + ': ' + res.getBody());
                 return null;
             }
-            Map<String, Object> body = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
-            return (Map<String, Object>) body.get('contentBody');
+            Map<String, Object> envelope = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+            return (Map<String, Object>) envelope.get('contentBody');
         } catch (Exception e) {
+            System.debug('[MaStoryContentController] callout error for ' + recordId + ': ' + e.getMessage());
             return null;
         }
     }
@@ -323,11 +345,10 @@ public without sharing class MaStoryContentController {
     }
 
     private static String str(Map<String, Object> body, String key) {
-        Object value = body.get(key);
-        if (value == null) {
-            return null;
-        }
-        return unwrapOuterParagraph(String.valueOf(value).unescapeHtml4());
+        if (body == null) return null;
+        Object val = body.get(key);
+        if (val == null) return null;
+        return unwrapOuterParagraph(String.valueOf(val).unescapeHtml4());
     }
 
     /**
