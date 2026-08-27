@@ -64,6 +64,16 @@
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Active__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Generated_URL__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Saved_Configuration__c.Industry__c</field>
         <readable>true</readable>
         <editable>true</editable>
