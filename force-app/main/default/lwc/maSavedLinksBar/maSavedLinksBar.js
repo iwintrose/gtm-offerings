@@ -1,4 +1,5 @@
 import { LightningElement, api } from 'lwc';
+import isGuest from '@salesforce/user/isGuest';
 import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import setActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
@@ -17,6 +18,9 @@ export default class MaSavedLinksBar extends LightningElement {
     _orgBaseUrl = '';
 
     async connectedCallback() {
+        if (isGuest) {
+            return;
+        }
         try {
             this._orgBaseUrl = await getOrgBaseUrl();
         } catch (e) {
@@ -72,7 +76,7 @@ export default class MaSavedLinksBar extends LightningElement {
             // trace: a permission-shaped failure looks identical to a
             // genuine one from the UI alone.
             const code = error?.body?.exceptionType || error?.body?.message || '';
-            const isAccessError = /insufficient|no such column|not invocable/i.test(
+            const isAccessError = /insufficient|no such column|not invocable|do not have access/i.test(
                 String(code)
             );
             if (!isAccessError) {
