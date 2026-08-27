@@ -170,9 +170,6 @@ public without sharing class MaStoryContentController {
     private static Map<String, Object> fetchContentBody(String channelId, String recordId) {
         try {
             String sid = UserInfo.getSessionId();
-            if (sid == null) {
-                return null;
-            }
             String endpoint = URL.getOrgDomainUrl().toExternalForm()
                 + '/services/data/' + API_VERSION
                 + '/connect/cms/delivery/channels/' + channelId
@@ -182,7 +179,13 @@ public without sharing class MaStoryContentController {
             req.setEndpoint(endpoint);
             req.setMethod('GET');
             req.setTimeout(TIMEOUT_MS);
-            req.setHeader('Authorization', 'Bearer ' + sid);
+            // Guest users have no API session ID; the CMS delivery channel is
+            // configured for public access on this Experience Cloud site, so
+            // the callout works without an Authorization header for them.
+            // Authenticated reps get the header as before.
+            if (String.isNotBlank(sid)) {
+                req.setHeader('Authorization', 'Bearer ' + sid);
+            }
 
             HttpResponse res = new Http().send(req);
             if (res.getStatusCode() != 200) {

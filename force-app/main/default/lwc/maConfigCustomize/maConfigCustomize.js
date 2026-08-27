@@ -76,8 +76,12 @@ export default class MaConfigCustomize extends LightningElement {
         return 'Changes save automatically';
     }
 
-    scheduleAutoSave() {
-        if (!(this.company || '').trim()) return;
+    /** value is the just-typed text (direct from the input event) when
+     * available — the @api company prop may not have propagated back from
+     * the parent yet at the moment a field handler calls this. */
+    scheduleAutoSave(typedCompany) {
+        const company = typedCompany !== undefined ? typedCompany : this.company;
+        if (!(company || '').trim()) return;
         if (this._autoSaveTimer) window.clearTimeout(this._autoSaveTimer);
         this._saveStatus = '';
         // eslint-disable-next-line @lwc/lwc/no-async-operation
@@ -262,7 +266,9 @@ export default class MaConfigCustomize extends LightningElement {
             this.saveError = '';
         }
         this.emit('companychange', { value });
-        this.scheduleAutoSave();
+        // Pass the just-typed value directly: the @api company prop hasn't
+        // propagated back from the parent yet at this point in the event cycle.
+        this.scheduleAutoSave(value);
     }
 
     handleIndustryChange(event) {
@@ -583,18 +589,6 @@ export default class MaConfigCustomize extends LightningElement {
         this.saveInternal({ asNew: true });
     }
 
-    /** Bypasses validation on purpose: a rep mid-customization who wants to
-     * step away shouldn't be blocked from persisting what they have so far
-     * just because a required field isn't filled in yet. Still a real save
-     * -- same record, same server call -- not a separate draft state. */
-    handleSaveDraft() {
-        this.companyInvalid = false;
-        this.saveError = '';
-        this.cancelAutoSave();
-        this._saveStatus = 'saving';
-        this.saveInternal({ asNew: false });
-    }
-
     /**
      * Required-field check before a real Save/Update -- catches an
      * incomplete customization instead of silently persisting it, without
@@ -743,6 +737,21 @@ export default class MaConfigCustomize extends LightningElement {
             this._saveStatus = 'saved';
             // eslint-disable-next-line @lwc/lwc/no-async-operation
             window.setTimeout(() => { this._saveStatus = ''; }, 3000);
+
+            // Update the browser address bar so the page URL reflects the
+            // saved state. Without this, reloading or sharing the current URL
+            // loads the pre-save values. buildUrl() (no excludeId) includes
+            // the cfgId, making the URL self-contained for the rep's editing
+            // round-trip; the client copy (excludeId=true) is separate.
+            try {
+                const liveUrl = this.buildUrl();
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', liveUrl);
+                }
+            } catch (e) {
+                // replaceState unavailable (e.g. sandboxed iframe) -- non-fatal.
+            }
+
             // Lets maConfigurator refresh its embedded Saved bar without a
             // page reload -- otherwise a rep has no way to see a new/edited
             // link show up except by navigating away and back.

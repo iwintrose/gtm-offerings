@@ -23,6 +23,20 @@ const PICKER_BLURBS = {
         'Service notifications, public engagement campaigns, and resident segmentation each carry their own compliance posture — the configurator maps it before the work begins.'
 };
 
+// Fallback industry list used when the CMS callout fails (e.g. guest users
+// on an org whose public-channel configuration blocks unauthenticated API
+// calls). Keys and labels mirror the seeded CMS records exactly so the
+// ?industry= URL param still resolves correctly on the configurator page.
+const HARDCODED_INDUSTRIES = [
+    { industryKey: 'fintech',    industryLabel: 'Financial Services' },
+    { industryKey: 'medtech',    industryLabel: 'MedTech' },
+    { industryKey: 'lifesci',    industryLabel: 'Life Sciences' },
+    { industryKey: 'media',      industryLabel: 'Media & Entertainment' },
+    { industryKey: 'transport',  industryLabel: 'Transportation & Logistics' },
+    { industryKey: 'government', industryLabel: 'Government & Public Sector' },
+    { industryKey: 'municipal',  industryLabel: 'Municipal & Civic' }
+];
+
 export default class ChooseIndustry extends LightningElement {
     /** Back link target. Set in Experience Builder. */
     @api offeringsUrl = '/';
@@ -52,9 +66,18 @@ export default class ChooseIndustry extends LightningElement {
     connectedCallback() {
         this.loadFonts();
         getStoryContent({ offeringKey: OFFERING_KEY })
-            .then((data) => { this._industries = (data && data.industries) || []; })
-            // eslint-disable-next-line no-console
-            .catch((err) => { console.error('[chooseIndustry] getStoryContent:', JSON.stringify(err)); });
+            .then((data) => {
+                const industries = (data && data.industries) || [];
+                // Fall back to hardcoded data when the CMS callout returns nothing
+                // (guest users on orgs where unauthenticated CMS API calls aren't
+                // yet enabled, or a transient CMS delivery error).
+                this._industries = industries.length > 0 ? industries : HARDCODED_INDUSTRIES;
+            })
+            .catch((err) => {
+                // eslint-disable-next-line no-console
+                console.error('[chooseIndustry] getStoryContent:', JSON.stringify(err));
+                this._industries = HARDCODED_INDUSTRIES;
+            });
     }
 
     loadFonts() {
