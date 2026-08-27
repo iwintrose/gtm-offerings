@@ -16,9 +16,13 @@ export default class ChooseIndustry extends LightningElement {
     @track _industries = [];
 
     @wire(getStoryContent, { offeringKey: OFFERING_KEY })
-    wiredContent({ data }) {
-        if (!data) return;
-        this._industries = data.industries || [];
+    wiredContent({ data, error }) {
+        if (data) {
+            this._industries = data.industries || [];
+        } else if (error) {
+            // eslint-disable-next-line no-console
+            console.error('[chooseIndustry] getStoryContent wire error:', JSON.stringify(error));
+        }
     }
 
     get rootClass() {
