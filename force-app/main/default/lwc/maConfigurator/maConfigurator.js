@@ -110,29 +110,6 @@ export default class MaConfigurator extends LightningElement {
     @track _industries = [];
     @track _storySetting = null;
 
-    @wire(getStoryContent, { offeringKey: OFFERING_KEY })
-    wiredStoryContent({ data }) {
-        if (!data) return;
-        this._industries = data.industries;
-        this._storySetting = data.setting;
-
-        if (data.setting) {
-            const cmsDefaults = {
-                SOURCE_PLATFORM: data.setting.defaultSourcePlatform,
-                TARGET_PLATFORM: data.setting.defaultTargetPlatform,
-                ASSET_COUNT: data.setting.defaultAssetCount,
-                DEPENDENCY_COUNT: data.setting.defaultDependencyCount,
-                HEALTH_SCORE: data.setting.defaultHealthScore
-            };
-            this._cmsDefaults = cmsDefaults;
-            // Whatever's already in tokenState (from a URL param, parsed
-            // in readUrlParams before this wire necessarily resolves) wins
-            // over a CMS default for the same key -- this only fills in
-            // what's still unset, regardless of which one landed first.
-            this.tokenState = { ...cmsDefaults, ...this.tokenState };
-        }
-    }
-
     _cmsDefaults = {};
 
     // -------------------------------------------------------------- lifecycle
@@ -141,6 +118,25 @@ export default class MaConfigurator extends LightningElement {
         this.tokenState = this.loadState();
         this.readUrlParams();
         this.setPageTitle();
+        getStoryContent({ offeringKey: OFFERING_KEY })
+            .then((data) => {
+                if (!data) return;
+                this._industries = data.industries;
+                this._storySetting = data.setting;
+                if (data.setting) {
+                    const cmsDefaults = {
+                        SOURCE_PLATFORM: data.setting.defaultSourcePlatform,
+                        TARGET_PLATFORM: data.setting.defaultTargetPlatform,
+                        ASSET_COUNT: data.setting.defaultAssetCount,
+                        DEPENDENCY_COUNT: data.setting.defaultDependencyCount,
+                        HEALTH_SCORE: data.setting.defaultHealthScore
+                    };
+                    this._cmsDefaults = cmsDefaults;
+                    this.tokenState = { ...cmsDefaults, ...this.tokenState };
+                }
+            })
+            // eslint-disable-next-line no-console
+            .catch((err) => { console.error('[maConfigurator] getStoryContent:', JSON.stringify(err)); });
 
         this._scrollHandler = this.handleScroll.bind(this);
         this._keyHandler = this.handleKeydown.bind(this);

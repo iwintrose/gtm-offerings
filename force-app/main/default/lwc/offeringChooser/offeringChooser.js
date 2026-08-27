@@ -1,4 +1,4 @@
-import { LightningElement, api, track, wire } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 
 const FONTS_HREF =
@@ -13,12 +13,6 @@ export default class OfferingChooser extends LightningElement {
     @track theme = null;
     @track _tileDescription = null;
 
-    @wire(getStoryContent, { offeringKey: OFFERING_KEY })
-    wiredContent({ data }) {
-        if (!data || !data.setting) return;
-        this._tileDescription = data.setting.offeringTileDescription;
-    }
-
     get rootClass() {
         if (this.theme === 'dark') return 'oc-root dark';
         if (this.theme === 'light') return 'oc-root light';
@@ -32,6 +26,12 @@ export default class OfferingChooser extends LightningElement {
 
     connectedCallback() {
         this.loadFonts();
+        getStoryContent({ offeringKey: OFFERING_KEY })
+            .then((data) => {
+                if (data && data.setting) this._tileDescription = data.setting.offeringTileDescription;
+            })
+            // eslint-disable-next-line no-console
+            .catch((err) => { console.error('[offeringChooser] getStoryContent:', JSON.stringify(err)); });
     }
 
     loadFonts() {

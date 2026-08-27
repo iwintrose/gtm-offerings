@@ -1,4 +1,4 @@
-import { LightningElement, api, wire } from 'lwc';
+import { LightningElement, api } from 'lwc';
 import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import setActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
@@ -9,19 +9,6 @@ const OFFERING = 'migration-accelerator';
 
 export default class MaSavedLinksBar extends LightningElement {
     _industryLabels = {};
-
-    /** Best-effort: an industry label that hasn't loaded yet, or that
-     * doesn't exist in the offering being displayed, just falls back to
-     * formatLabel(key) below -- same as an unrecognized key always has. */
-    @wire(getStoryContent, { offeringKey: OFFERING })
-    wiredStoryContent({ data }) {
-        if (!data) return;
-        const map = {};
-        data.industries.forEach((ind) => {
-            map[ind.industryKey] = ind.industryLabel;
-        });
-        this._industryLabels = map;
-    }
 
     hasAccess = false;
     isOpen = false;
@@ -37,6 +24,15 @@ export default class MaSavedLinksBar extends LightningElement {
             // config link itself still works fine without it.
         }
         this.loadConfigurations();
+        // Best-effort: load industry labels for display; falls back to formatLabel(key).
+        getStoryContent({ offeringKey: OFFERING })
+            .then((data) => {
+                if (!data) return;
+                const map = {};
+                data.industries.forEach((ind) => { map[ind.industryKey] = ind.industryLabel; });
+                this._industryLabels = map;
+            })
+            .catch(() => { /* industry labels are display-only; safe to skip */ });
     }
 
     recordUrl(id) {

@@ -1,4 +1,4 @@
-import { LightningElement, track, wire } from 'lwc';
+import { LightningElement, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 
 const ACCELERATOR_URL =
@@ -89,21 +89,6 @@ export default class MaStory extends LightningElement {
     _revealed = new Set();
     _scrollHandler;
 
-    @wire(getStoryContent, { offeringKey: OFFERING_KEY })
-    wiredStoryContent({ data }) {
-        if (!data) return;
-        this._faqData = data.faqs || [];
-        if (data.page) {
-            this._page = data.page;
-            this._proofObjectsCount = data.page.proofObjectsCount;
-            this._proofDepsCount = data.page.proofDepsCount;
-            this._proofHealthScore = data.page.proofHealthScore;
-        }
-        if (data.body) {
-            this._body = data.body;
-        }
-    }
-
     // ---- page getters ----
 
     get heroEyebrow() { return (this._page && this._page.heroEyebrow) || DEFAULTS.heroEyebrow; }
@@ -171,6 +156,20 @@ export default class MaStory extends LightningElement {
         this.loadFonts();
         this._scrollHandler = this.handleScroll.bind(this);
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
+        getStoryContent({ offeringKey: OFFERING_KEY })
+            .then((data) => {
+                if (!data) return;
+                this._faqData = data.faqs || [];
+                if (data.page) {
+                    this._page = data.page;
+                    this._proofObjectsCount = data.page.proofObjectsCount;
+                    this._proofDepsCount = data.page.proofDepsCount;
+                    this._proofHealthScore = data.page.proofHealthScore;
+                }
+                if (data.body) this._body = data.body;
+            })
+            // eslint-disable-next-line no-console
+            .catch((err) => { console.error('[maStory] getStoryContent:', JSON.stringify(err)); });
     }
 
     disconnectedCallback() {

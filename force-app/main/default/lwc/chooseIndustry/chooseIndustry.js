@@ -1,4 +1,4 @@
-import { LightningElement, api, track, wire } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 
 const FONTS_HREF =
@@ -14,16 +14,6 @@ export default class ChooseIndustry extends LightningElement {
 
     @track theme = null;
     @track _industries = [];
-
-    @wire(getStoryContent, { offeringKey: OFFERING_KEY })
-    wiredContent({ data, error }) {
-        if (data) {
-            this._industries = data.industries || [];
-        } else if (error) {
-            // eslint-disable-next-line no-console
-            console.error('[chooseIndustry] getStoryContent wire error:', JSON.stringify(error));
-        }
-    }
 
     get rootClass() {
         if (this.theme === 'dark') return 'ci-root dark';
@@ -44,6 +34,10 @@ export default class ChooseIndustry extends LightningElement {
 
     connectedCallback() {
         this.loadFonts();
+        getStoryContent({ offeringKey: OFFERING_KEY })
+            .then((data) => { this._industries = (data && data.industries) || []; })
+            // eslint-disable-next-line no-console
+            .catch((err) => { console.error('[chooseIndustry] getStoryContent:', JSON.stringify(err)); });
     }
 
     loadFonts() {

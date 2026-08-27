@@ -127,7 +127,7 @@ public without sharing class MaStoryContentController {
         @AuraEnabled public List<String> pitchNewChips = new List<String>();
     }
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static StoryContent getStoryContent(String offeringKey) {
         if (String.isBlank(offeringKey)) {
             throw new AuraHandledException('No offering key given.');

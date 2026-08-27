@@ -1,4 +1,4 @@
-import { LightningElement, api, track, wire } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
@@ -90,20 +90,17 @@ export default class MaConfigCustomize extends LightningElement {
     @track swatches = [];
     @track _industries = [];
 
-    @wire(getStoryContent, { offeringKey: OFFERING })
-    wiredStoryContent({ data }) {
-        if (!data) return;
-        this.swatches = data.setting
-            ? data.setting.swatches.map((s) => ({
-                  name: s.name,
-                  hex: s.hex,
-                  style: `background:#${s.hex}`
-              }))
-            : [];
-        this._industries = data.industries;
-    }
-
     connectedCallback() {
+        getStoryContent({ offeringKey: OFFERING })
+            .then((data) => {
+                if (!data) return;
+                this.swatches = data.setting
+                    ? data.setting.swatches.map((s) => ({ name: s.name, hex: s.hex, style: `background:#${s.hex}` }))
+                    : [];
+                this._industries = data.industries;
+            })
+            // eslint-disable-next-line no-console
+            .catch((err) => { console.error('[maConfigCustomize] getStoryContent:', JSON.stringify(err)); });
         // Drop local entries with no serverId: they predate server-side
         // tracking (or hit a save that silently failed before error
         // logging existed) and can never be resolved to a real record --
