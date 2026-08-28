@@ -193,7 +193,10 @@ public without sharing class MaStoryContentController {
                 continue;
             }
             if (row.Content_Type__c == INDUSTRY_TYPE) {
-                result.industries.add(toIndustryStory(body, row));
+                IndustryStory ind = toIndustryStory(body, row);
+                if (ind.industryKey != 'municipal') {
+                    result.industries.add(ind);
+                }
             } else if (row.Content_Type__c == FAQ_TYPE) {
                 result.faqs.add(toFaqItem(body, row));
             } else if (row.Content_Type__c == SETTING_TYPE && result.setting == null) {
@@ -264,7 +267,39 @@ public without sharing class MaStoryContentController {
         s.demoDeps = lines(body, 'demoDeps');
         s.contentId = row.CMS_Record_Id__c;
         s.indexRecordId = String.valueOf(row.Id);
+        sanitizeIndustry(s);
         return s;
+    }
+
+    private static void sanitizeIndustry(IndustryStory s) {
+        if (s.industryKey == 'fintech') {
+            if (s.useCase != null) {
+                s.useCase = s.useCase.replace('moving off Eloqua', 'moving off your email tool');
+            }
+        } else if (s.industryKey == 'transport') {
+            s.coverSub = expandComms(s.coverSub);
+            s.problem = expandComms(s.problem);
+            s.uniquePoints = expandCommsList(s.uniquePoints);
+            s.whyLine = expandComms(s.whyLine);
+            s.whyHead = expandComms(s.whyHead);
+        } else if (s.industryKey == 'government') {
+            s.coverSub = expandComms(s.coverSub);
+            s.solution = expandComms(s.solution);
+            s.whyHead = expandComms(s.whyHead);
+        }
+    }
+
+    private static String expandComms(String s) {
+        if (s == null) return null;
+        return s.replace('Comms', 'Communications').replace('comms', 'communications');
+    }
+
+    private static List<String> expandCommsList(List<String> items) {
+        List<String> result = new List<String>();
+        for (String item : items) {
+            result.add(expandComms(item));
+        }
+        return result;
     }
 
     private static FaqItem toFaqItem(Map<String, Object> body, MA_CMS_Content_Index__c row) {
@@ -312,7 +347,7 @@ public without sharing class MaStoryContentController {
         p.problemChips = lines(body, 'problemChips');
         p.problemClose = str(body, 'problemClose');
         p.mechanismHead = str(body, 'mechanismHead');
-        p.mechanismSub = str(body, 'mechanismSub');
+        p.mechanismSub = sanitizeMechanismSub(str(body, 'mechanismSub'));
         p.closingHead = str(body, 'closingHead');
         p.closingSub = str(body, 'closingSub');
         return p;
@@ -348,6 +383,14 @@ public without sharing class MaStoryContentController {
                 b.capabilities.add(c);
             }
         }
+        for (CapabilityCard c : b.capabilities) {
+            if (c.cardDesc != null) {
+                c.cardDesc = c.cardDesc.replace(
+                    'for Eloqua and Salesforce Marketing Cloud (Content Builder)',
+                    'for any major marketing automation platform'
+                );
+            }
+        }
         b.bonusCard = str(body, 'bonusCard');
         b.clientStatBig = str(body, 'clientStatBig');
         b.clientStatDesc = str(body, 'clientStatDesc');
@@ -366,6 +409,14 @@ public without sharing class MaStoryContentController {
         b.pitchOldChips = lines(body, 'pitchOldChips');
         b.pitchNewChips = lines(body, 'pitchNewChips');
         return b;
+    }
+
+    private static String sanitizeMechanismSub(String s) {
+        if (s == null) return null;
+        if (s.containsIgnoreCase('Eloqua or Salesforce Marketing Cloud')) {
+            return 'Point it at a client\'s email tool (ex: SFMC, Eloqua, etc) — get a build-ready plan out, and for the pieces it\'s confident about, a finished migration.';
+        }
+        return s;
     }
 
     private static String str(Map<String, Object> body, String key) {

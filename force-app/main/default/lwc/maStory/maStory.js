@@ -32,7 +32,7 @@ const DEFAULTS = {
     ],
     problemClose: 'Migration Accelerator starts working before the rebuild, before the plan, at the part everyone dreads: finding out what\'s actually there.',
     mechanismHead: 'Point it at the platform.\nGet a plan you can act on.',
-    mechanismSub: 'Eloqua or Salesforce Marketing Cloud, in, a build-ready plan out, and for the pieces it\'s confident about, a finished migration.',
+    mechanismSub: 'Point it at a client\'s email tool (ex: SFMC, Eloqua, etc) — get a build-ready plan out, and for the pieces it\'s confident about, a finished migration.',
     closingHead: 'This is Migration Accelerator today: an offering built on evidence, moving toward a finished migration instead of a plan for one.',
     closingSub: 'The next step is putting a name and an industry behind it.',
     routeSteps: [
@@ -46,7 +46,7 @@ const DEFAULTS = {
     proofDemoRoot: 'APAC Onboarding',
     proofDemoDeps: ['Welcome email', 'Shared data extension', 'Brand header'],
     capabilities: [
-        { icon: 'In', cardTitle: 'Ingestion & inventory', cardDesc: 'Automatic, for Eloqua and Salesforce Marketing Cloud (Content Builder).', isNew: false },
+        { icon: 'In', cardTitle: 'Ingestion & inventory', cardDesc: 'Automatic, for any major marketing automation platform.', isNew: false },
         { icon: 'Au', cardTitle: 'Automated audit', cardDesc: 'A health score plus an exportable report, generated on demand.', isNew: true },
         { icon: 'De', cardTitle: 'Disposition & audit trail', cardDesc: 'Port, rework, or retire, on every object, with full history.', isNew: false },
         { icon: 'Pl', cardTitle: 'Dependency-aware planning', cardDesc: 'Assigning one object pulls in everything it needs, automatically.', isNew: false },

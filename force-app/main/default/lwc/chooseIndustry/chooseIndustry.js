@@ -27,9 +27,7 @@ const PICKER_BLURBS = {
     transport:
         'Operational messaging blends with marketing in logistics. Route alerts, delivery triggers, and loyalty programs all need clean separation before any data moves.',
     government:
-        'Citizen communication programs run on accessibility, consent, and multi-channel reach. Migration here is governance work as much as technical work.',
-    municipal:
-        'Service notifications, public engagement campaigns, and resident segmentation each carry their own compliance posture — the configurator maps it before the work begins.'
+        'Citizen communication programs run on accessibility, consent, and multi-channel reach. Migration here is governance work as much as technical work.'
 };
 
 // Fallback industry list used when the CMS callout fails (e.g. guest users
@@ -42,8 +40,7 @@ const HARDCODED_INDUSTRIES = [
     { industryKey: 'lifesci',    industryLabel: 'Life Sciences' },
     { industryKey: 'media',      industryLabel: 'Media & Entertainment' },
     { industryKey: 'transport',  industryLabel: 'Transportation & Logistics' },
-    { industryKey: 'government', industryLabel: 'Government & Public Sector' },
-    { industryKey: 'municipal',  industryLabel: 'Municipal & Civic' }
+    { industryKey: 'government', industryLabel: 'Government & Public Sector' }
 ];
 
 export default class ChooseIndustry extends LightningElement {

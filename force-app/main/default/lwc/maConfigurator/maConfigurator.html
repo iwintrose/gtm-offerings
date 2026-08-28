@@ -3,9 +3,9 @@
     <div class="psbar">
       <span class="wm"><span class="tick"></span> Publicis <b>Sapient</b></span>
       <div class="bar-right">
+        <a class="backlink" href={industryUrl}>← Industry</a>
         <template if:true={showCustomizeButton}>
           <a class="backlink" href={offeringsUrl}>← Offerings</a>
-          <a class="backlink" href={industryUrl}>← Industry</a>
         </template>
         <c-ma-saved-links-bar lwc:ref="savedLinksBar"></c-ma-saved-links-bar>
         <button class="cta" onclick={handleOpenBooking}>
@@ -383,8 +383,8 @@
           <div class="wcol">
             <div class="wt">Deep platform expertise</div>
             <p>
-              Years of hands-on Eloqua and Salesforce Marketing Cloud delivery
-              across global, regulated enterprises.
+              Years of hands-on marketing automation delivery across global,
+              regulated enterprises.
             </p>
           </div>
           <div class="wcol">
