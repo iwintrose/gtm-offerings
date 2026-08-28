@@ -32,6 +32,7 @@ public without sharing class MaStoryContentController {
         @AuraEnabled public StoryPage page;
         @AuraEnabled public StoryBody body;
         @AuraEnabled public String orgUrl;
+        @AuraEnabled public String lightningUrl;
         @AuraEnabled public String cmsChannelId;
         @AuraEnabled public String pageContentId;
         @AuraEnabled public String pageIndexRecordId;
@@ -163,7 +164,12 @@ public without sharing class MaStoryContentController {
         }
 
         StoryContent result = new StoryContent();
-        result.orgUrl = URL.getOrgDomainUrl().toExternalForm();
+        String orgDomainUrl = URL.getOrgDomainUrl().toExternalForm();
+        result.orgUrl = orgDomainUrl;
+        // Experience Builder runs on the Lightning domain, not the My Domain URL.
+        // Transform: https://org.develop.my.salesforce.com
+        //         -> https://org.develop.lightning.force.com
+        result.lightningUrl = orgDomainUrl.replace('.my.salesforce.com', '.lightning.force.com');
         result.cmsChannelId = channelId;
 
         // Build Experience Builder deep-link data: one entry per Experience Cloud site.

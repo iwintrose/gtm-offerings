@@ -8,12 +8,13 @@ import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import USER_NAME_FIELD from '@salesforce/schema/User.Name';
 import USER_EMAIL_FIELD from '@salesforce/schema/User.Email';
 
-function buildBuilderUrl(orgUrl, sites) {
+function buildBuilderUrl(orgUrl, lightningUrl, sites) {
     if (!orgUrl) return '#';
     const prefix = window.location.pathname.split('/').filter(Boolean)[0] || '';
     const site = sites && sites.find((s) => s.urlPathPrefix === prefix);
     if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
-    return `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
+    const base = lightningUrl || orgUrl;
+    return `${base}/apex/networkbranding?networkId=${site.networkId}`;
 }
 
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
@@ -55,6 +56,7 @@ export default class MaConfigurator extends LightningElement {
     _editModeHandler;
     _editMode = false;
     _orgUrl = '';
+    _lightningUrl = '';
     _sites = [];
 
     /** Real, server-verified signal for rep-only UI (Customize, saved
@@ -134,6 +136,7 @@ export default class MaConfigurator extends LightningElement {
             .then((data) => {
                 if (!data) return;
                 this._orgUrl = data.orgUrl || '';
+                this._lightningUrl = data.lightningUrl || '';
                 this._sites = data.sites || [];
                 this._industries = data.industries;
                 this._storySetting = data.setting;
@@ -162,7 +165,7 @@ export default class MaConfigurator extends LightningElement {
         window.addEventListener('maadminedit', this._editModeHandler);
     }
 
-    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._sites); }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._lightningUrl, this._sites); }
 
     disconnectedCallback() {
         if (this._scrollHandler) {

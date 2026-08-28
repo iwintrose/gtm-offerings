@@ -6,12 +6,13 @@ const FONTS_HREF =
 
 const OFFERING_KEY = 'migration-accelerator';
 
-function buildBuilderUrl(orgUrl, sites) {
+function buildBuilderUrl(orgUrl, lightningUrl, sites) {
     if (!orgUrl) return '#';
     const prefix = window.location.pathname.split('/').filter(Boolean)[0] || '';
     const site = sites && sites.find((s) => s.urlPathPrefix === prefix);
     if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
-    return `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
+    const base = lightningUrl || orgUrl;
+    return `${base}/apex/networkbranding?networkId=${site.networkId}`;
 }
 
 export default class OfferingChooser extends LightningElement {
@@ -22,6 +23,7 @@ export default class OfferingChooser extends LightningElement {
     @track _tileDescription = null;
     @track _editMode = false;
     _orgUrl = '';
+    _lightningUrl = '';
     _sites = [];
     _editModeHandler;
 
@@ -36,7 +38,7 @@ export default class OfferingChooser extends LightningElement {
             'Reads a client\'s marketing platform directly, turns it into an audited plan, and where it applies, a finished migration.';
     }
 
-    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._sites); }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._lightningUrl, this._sites); }
 
     connectedCallback() {
         this.loadFonts();
@@ -46,6 +48,7 @@ export default class OfferingChooser extends LightningElement {
             .then((data) => {
                 if (data && data.setting) this._tileDescription = data.setting.offeringTileDescription;
                 this._orgUrl = (data && data.orgUrl) || '';
+                this._lightningUrl = (data && data.lightningUrl) || '';
                 this._sites = (data && data.sites) || [];
             })
             // eslint-disable-next-line no-console

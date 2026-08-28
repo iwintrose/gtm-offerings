@@ -6,12 +6,13 @@ const FONTS_HREF =
 
 const OFFERING_KEY = 'migration-accelerator';
 
-function buildBuilderUrl(orgUrl, sites) {
+function buildBuilderUrl(orgUrl, lightningUrl, sites) {
     if (!orgUrl) return '#';
     const prefix = window.location.pathname.split('/').filter(Boolean)[0] || '';
     const site = sites && sites.find((s) => s.urlPathPrefix === prefix);
     if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
-    return `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
+    const base = lightningUrl || orgUrl;
+    return `${base}/apex/networkbranding?networkId=${site.networkId}`;
 }
 
 const PICKER_BLURBS = {
@@ -57,6 +58,7 @@ export default class ChooseIndustry extends LightningElement {
     @track _openEditId = null;
     @track _orgUrl = '';
     @track _cmsChannelId = '';
+    _lightningUrl = '';
     _sites = [];
 
     get rootClass() {
@@ -95,7 +97,7 @@ export default class ChooseIndustry extends LightningElement {
         });
     }
 
-    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._sites); }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._lightningUrl, this._sites); }
 
     connectedCallback() {
         this.loadFonts();
@@ -115,6 +117,7 @@ export default class ChooseIndustry extends LightningElement {
                 this._industries = industries.length > 0 ? industries : HARDCODED_INDUSTRIES;
                 if (data) {
                     this._orgUrl = data.orgUrl || '';
+                    this._lightningUrl = data.lightningUrl || '';
                     this._cmsChannelId = data.cmsChannelId || '';
                     this._sites = data.sites || [];
                 }
