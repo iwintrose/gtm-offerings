@@ -149,9 +149,9 @@ export default class MaStory extends LightningElement {
         return this._faqData.map((f, index) => {
             const id = `q${index + 1}`;
             const qualified = f.verdict !== 'Yes';
-            const cmsUrl = (orgUrl && channelId && f.contentId)
-                ? `${orgUrl}/lightning/cms/delivery/channels/${channelId}/contents/${f.contentId}`
-                : '#';
+            const cmsUrl = (orgUrl && f.indexRecordId)
+                ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${f.indexRecordId}/view`
+                : orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
             const recUrl = (orgUrl && f.indexRecordId)
                 ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${f.indexRecordId}/view`
                 : '#';
@@ -170,14 +170,14 @@ export default class MaStory extends LightningElement {
 
     get builderUrl() { return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#'; }
     get pageEditCmsUrl() {
-        return (this._orgUrl && this._cmsChannelId && this._pageContentId)
-            ? `${this._orgUrl}/lightning/cms/delivery/channels/${this._cmsChannelId}/contents/${this._pageContentId}`
-            : '#';
+        return (this._orgUrl && this._pageIndexRecordId)
+            ? `${this._orgUrl}/lightning/r/MA_CMS_Content_Index__c/${this._pageIndexRecordId}/view`
+            : this._orgUrl ? `${this._orgUrl}/lightning/cms/home` : '#';
     }
     get bodyEditCmsUrl() {
-        return (this._orgUrl && this._cmsChannelId && this._bodyContentId)
-            ? `${this._orgUrl}/lightning/cms/delivery/channels/${this._cmsChannelId}/contents/${this._bodyContentId}`
-            : '#';
+        return (this._orgUrl && this._bodyIndexRecordId)
+            ? `${this._orgUrl}/lightning/r/MA_CMS_Content_Index__c/${this._bodyIndexRecordId}/view`
+            : this._orgUrl ? `${this._orgUrl}/lightning/cms/home` : '#';
     }
 
     // ---- lifecycle ----

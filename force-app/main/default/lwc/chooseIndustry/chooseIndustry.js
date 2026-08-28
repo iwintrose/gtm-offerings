@@ -64,9 +64,7 @@ export default class ChooseIndustry extends LightningElement {
         return this._industries.map((ind) => {
             const key = ind.industryKey;
             const href = `${base}${joiner}industry=${encodeURIComponent(key)}`;
-            const cmsUrl = (orgUrl && channelId && ind.contentId)
-                ? `${orgUrl}/lightning/cms/delivery/channels/${channelId}/contents/${ind.contentId}`
-                : orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
+            const cmsUrl = orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
             const indexUrl = (orgUrl && ind.indexRecordId)
                 ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${ind.indexRecordId}/view`
                 : '#';
