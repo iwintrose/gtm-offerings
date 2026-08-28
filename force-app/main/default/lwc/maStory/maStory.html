@@ -11,6 +11,14 @@
     </div>
     <div class="progress" style={progressStyle}></div>
 
+    <template if:true={_editMode}>
+      <div class="admin-edit-strip">
+        <a href={builderUrl} target="_blank" rel="noopener" class="aes-chip aes-chip--bld">Edit page layout ↗</a>
+        <a href={pageEditCmsUrl} target="_blank" rel="noopener" class="aes-chip aes-chip--cms">Edit hero &amp; problem content ↗</a>
+        <a href={bodyEditCmsUrl} target="_blank" rel="noopener" class="aes-chip aes-chip--bdy">Edit capabilities &amp; BD content ↗</a>
+      </div>
+    </template>
+
     <!-- HERO -->
     <section class="hero wrap">
       <div class="eyebrow rv">
@@ -193,6 +201,9 @@
                 <span class="fq-plus">+</span>
               </span>
             </button>
+            <template if:true={_editMode}>
+              <a href={faq.cmsUrl} target="_blank" rel="noopener" class="faq-edit-link" title="Edit this FAQ in CMS">✎</a>
+            </template>
             <div class="faq-a">
               <div class="faq-a-in">
                 <lightning-formatted-rich-text value={faq.answer}></lightning-formatted-rich-text>

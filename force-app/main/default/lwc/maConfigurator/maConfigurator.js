@@ -44,6 +44,9 @@ export default class MaConfigurator extends LightningElement {
     _revealed = new Set();
     _scrollHandler;
     _keyHandler;
+    _editModeHandler;
+    _editMode = false;
+    _orgUrl = '';
 
     /** Real, server-verified signal for rep-only UI (Customize, saved
      * links). Guests can't call this at all -- no class access -- so the
@@ -121,6 +124,7 @@ export default class MaConfigurator extends LightningElement {
         getStoryContent({ offeringKey: OFFERING_KEY })
             .then((data) => {
                 if (!data) return;
+                this._orgUrl = data.orgUrl || '';
                 this._industries = data.industries;
                 this._storySetting = data.setting;
                 if (data.setting) {
@@ -140,11 +144,15 @@ export default class MaConfigurator extends LightningElement {
 
         this._scrollHandler = this.handleScroll.bind(this);
         this._keyHandler = this.handleKeydown.bind(this);
+        this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
         window.addEventListener('scroll', this._scrollHandler, {
             passive: true
         });
         window.addEventListener('keydown', this._keyHandler);
+        window.addEventListener('maadminedit', this._editModeHandler);
     }
+
+    get builderUrl() { return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#'; }
 
     disconnectedCallback() {
         if (this._scrollHandler) {
@@ -152,6 +160,9 @@ export default class MaConfigurator extends LightningElement {
         }
         if (this._keyHandler) {
             window.removeEventListener('keydown', this._keyHandler);
+        }
+        if (this._editModeHandler) {
+            window.removeEventListener('maadminedit', this._editModeHandler);
         }
         if (this._observer) {
             this._observer.disconnect();

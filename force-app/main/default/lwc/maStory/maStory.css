@@ -198,6 +198,62 @@
   max-width: 60rem;
 }
 
+/* ---------- admin edit mode ---------- */
+.admin-edit-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.625rem clamp(1.1rem, 4vw, 2rem);
+  background: rgba(1, 118, 211, 0.06);
+  border-bottom: 1px solid rgba(1, 118, 211, 0.18);
+}
+.aes-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5625rem;
+  border-radius: 4px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.aes-chip--bld {
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #0ea5e9;
+}
+.aes-chip--bld:hover { background: rgba(14, 165, 233, 0.22); }
+.aes-chip--cms {
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  color: #7c3aed;
+}
+.aes-chip--cms:hover { background: rgba(124, 58, 237, 0.2); }
+.aes-chip--bdy {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+}
+.aes-chip--bdy:hover { background: rgba(16, 185, 129, 0.2); }
+.faq-edit-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  color: #7c3aed;
+  font-size: 0.75rem;
+  text-decoration: none;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.faq-edit-link:hover { background: rgba(124, 58, 237, 0.22); }
+
 /* ---------- hero ---------- */
 .hero {
   min-height: 82vh;

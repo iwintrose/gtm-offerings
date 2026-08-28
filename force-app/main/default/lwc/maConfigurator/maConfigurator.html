@@ -21,6 +21,12 @@
     </div>
     <div class="progress" style={progressStyle}></div>
 
+    <template if:true={_editMode}>
+      <div class="admin-edit-strip">
+        <a href={builderUrl} target="_blank" rel="noopener" class="aes-chip aes-chip--bld">Edit page layout in Experience Builder ↗</a>
+      </div>
+    </template>
+
     <!-- 00 COVER -->
     <section class="chap cover">
       <div class="wrap">

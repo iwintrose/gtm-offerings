@@ -28,6 +28,10 @@ public without sharing class MaStoryContentController {
         @AuraEnabled public StoryBody body;
         @AuraEnabled public String orgUrl;
         @AuraEnabled public String cmsChannelId;
+        @AuraEnabled public String pageContentId;
+        @AuraEnabled public String pageIndexRecordId;
+        @AuraEnabled public String bodyContentId;
+        @AuraEnabled public String bodyIndexRecordId;
     }
 
     public class IndustryStory {
@@ -52,6 +56,8 @@ public without sharing class MaStoryContentController {
         @AuraEnabled public String question;
         @AuraEnabled public String answer;
         @AuraEnabled public String verdict;
+        @AuraEnabled public String contentId;
+        @AuraEnabled public String indexRecordId;
     }
 
     public class Swatch {
@@ -161,13 +167,17 @@ public without sharing class MaStoryContentController {
             if (row.Content_Type__c == INDUSTRY_TYPE) {
                 result.industries.add(toIndustryStory(body, row));
             } else if (row.Content_Type__c == FAQ_TYPE) {
-                result.faqs.add(toFaqItem(body));
+                result.faqs.add(toFaqItem(body, row));
             } else if (row.Content_Type__c == SETTING_TYPE && result.setting == null) {
                 result.setting = toStorySetting(body);
             } else if (row.Content_Type__c == PAGE_TYPE && result.page == null) {
                 result.page = toStoryPage(body);
+                result.pageContentId = row.CMS_Record_Id__c;
+                result.pageIndexRecordId = String.valueOf(row.Id);
             } else if (row.Content_Type__c == BODY_TYPE && result.body == null) {
                 result.body = toStoryBody(body);
+                result.bodyContentId = row.CMS_Record_Id__c;
+                result.bodyIndexRecordId = String.valueOf(row.Id);
             }
         }
         return result;
@@ -229,11 +239,13 @@ public without sharing class MaStoryContentController {
         return s;
     }
 
-    private static FaqItem toFaqItem(Map<String, Object> body) {
+    private static FaqItem toFaqItem(Map<String, Object> body, MA_CMS_Content_Index__c row) {
         FaqItem f = new FaqItem();
         f.question = str(body, 'title');
         f.answer = str(body, 'answer');
         f.verdict = str(body, 'verdict');
+        f.contentId = row.CMS_Record_Id__c;
+        f.indexRecordId = String.valueOf(row.Id);
         return f;
     }
 

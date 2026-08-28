@@ -73,6 +73,7 @@ export default class MaStory extends LightningElement {
     @track openFaqId = null;
     @track theme = null;
     @track proofOn = false;
+    @track _editMode = false;
     @track objectsText = '0';
     @track depsText = '0';
     @track gaugeValue = 0;
@@ -88,6 +89,13 @@ export default class MaStory extends LightningElement {
     _observer;
     _revealed = new Set();
     _scrollHandler;
+    _editModeHandler;
+    _orgUrl = '';
+    _cmsChannelId = '';
+    _pageContentId = null;
+    _pageIndexRecordId = null;
+    _bodyContentId = null;
+    _bodyIndexRecordId = null;
 
     // ---- page getters ----
 
@@ -136,18 +144,40 @@ export default class MaStory extends LightningElement {
     get progressStyle() { return `width: ${this.scrollPct}%;`; }
 
     get faqs() {
+        const orgUrl = this._orgUrl;
+        const channelId = this._cmsChannelId;
         return this._faqData.map((f, index) => {
             const id = `q${index + 1}`;
             const qualified = f.verdict !== 'Yes';
+            const cmsUrl = (orgUrl && channelId && f.contentId)
+                ? `${orgUrl}/lightning/cms/delivery/channels/${channelId}/contents/${f.contentId}`
+                : '#';
+            const recUrl = (orgUrl && f.indexRecordId)
+                ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${f.indexRecordId}/view`
+                : '#';
             return {
                 id,
                 question: f.question,
                 verdict: f.verdict,
                 answer: f.answer,
                 itemClass: this.openFaqId === id ? 'faq-item open' : 'faq-item',
-                verdictClass: qualified ? 'faq-verdict qualified' : 'faq-verdict yes'
+                verdictClass: qualified ? 'faq-verdict qualified' : 'faq-verdict yes',
+                cmsUrl,
+                recUrl
             };
         });
+    }
+
+    get builderUrl() { return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#'; }
+    get pageEditCmsUrl() {
+        return (this._orgUrl && this._cmsChannelId && this._pageContentId)
+            ? `${this._orgUrl}/lightning/cms/delivery/channels/${this._cmsChannelId}/contents/${this._pageContentId}`
+            : '#';
+    }
+    get bodyEditCmsUrl() {
+        return (this._orgUrl && this._cmsChannelId && this._bodyContentId)
+            ? `${this._orgUrl}/lightning/cms/delivery/channels/${this._cmsChannelId}/contents/${this._bodyContentId}`
+            : '#';
     }
 
     // ---- lifecycle ----
@@ -155,11 +185,19 @@ export default class MaStory extends LightningElement {
     connectedCallback() {
         this.loadFonts();
         this._scrollHandler = this.handleScroll.bind(this);
+        this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
+        window.addEventListener('maadminedit', this._editModeHandler);
         getStoryContent({ offeringKey: OFFERING_KEY })
             .then((data) => {
                 if (!data) return;
                 this._faqData = data.faqs || [];
+                this._orgUrl = data.orgUrl || '';
+                this._cmsChannelId = data.cmsChannelId || '';
+                this._pageContentId = data.pageContentId || null;
+                this._pageIndexRecordId = data.pageIndexRecordId || null;
+                this._bodyContentId = data.bodyContentId || null;
+                this._bodyIndexRecordId = data.bodyIndexRecordId || null;
                 if (data.page) {
                     this._page = data.page;
                     this._proofObjectsCount = data.page.proofObjectsCount;
@@ -175,6 +213,9 @@ export default class MaStory extends LightningElement {
     disconnectedCallback() {
         if (this._scrollHandler) {
             window.removeEventListener('scroll', this._scrollHandler);
+        }
+        if (this._editModeHandler) {
+            window.removeEventListener('maadminedit', this._editModeHandler);
         }
         if (this._observer) {
             this._observer.disconnect();

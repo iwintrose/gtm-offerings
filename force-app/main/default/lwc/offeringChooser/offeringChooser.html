@@ -13,6 +13,11 @@
 
     <div class="wrap">
       <div class="eyebrow"><span class="bead"></span> Step 1 of 2</div>
+      <template if:true={_editMode}>
+        <a href={builderUrl} target="_blank" rel="noopener" class="hd-edit-chip">
+          Edit page layout in Experience Builder ↗
+        </a>
+      </template>
       <h1>Choose your offering.</h1>
       <p class="sub">
         Pick the practice offering you're presenting. Next, you'll tell us who

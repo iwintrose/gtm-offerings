@@ -12,6 +12,9 @@ export default class OfferingChooser extends LightningElement {
 
     @track theme = null;
     @track _tileDescription = null;
+    @track _editMode = false;
+    _orgUrl = '';
+    _editModeHandler;
 
     get rootClass() {
         if (this.theme === 'dark') return 'oc-root dark';
@@ -24,11 +27,16 @@ export default class OfferingChooser extends LightningElement {
             'Reads a client\'s marketing platform directly, turns it into an audited plan, and where it applies, a finished migration.';
     }
 
+    get builderUrl() { return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#'; }
+
     connectedCallback() {
         this.loadFonts();
+        this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
+        window.addEventListener('maadminedit', this._editModeHandler);
         getStoryContent({ offeringKey: OFFERING_KEY })
             .then((data) => {
                 if (data && data.setting) this._tileDescription = data.setting.offeringTileDescription;
+                this._orgUrl = (data && data.orgUrl) || '';
             })
             // eslint-disable-next-line no-console
             .catch((err) => { console.error('[offeringChooser] getStoryContent:', JSON.stringify(err)); });
@@ -44,6 +52,12 @@ export default class OfferingChooser extends LightningElement {
             document.head.appendChild(link);
         } catch (e) {
             // Fonts are progressive enhancement; CSS fallback stack covers it.
+        }
+    }
+
+    disconnectedCallback() {
+        if (this._editModeHandler) {
+            window.removeEventListener('maadminedit', this._editModeHandler);
         }
     }
 

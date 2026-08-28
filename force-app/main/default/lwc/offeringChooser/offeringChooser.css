@@ -189,6 +189,24 @@ h1 {
   }
 }
 
+/* ---- admin edit mode ---- */
+.hd-edit-chip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #0ea5e9;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5625rem;
+  border-radius: 4px;
+  text-decoration: none;
+  margin-bottom: 1.5rem;
+}
+.hd-edit-chip:hover {
+  background: rgba(14, 165, 233, 0.2);
+}
+
 .tile {
   position: relative;
   display: block;
