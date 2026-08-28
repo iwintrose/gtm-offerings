@@ -8,6 +8,19 @@ import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import USER_NAME_FIELD from '@salesforce/schema/User.Name';
 import USER_EMAIL_FIELD from '@salesforce/schema/User.Email';
 
+function buildBuilderUrl(orgUrl, sites) {
+    if (!orgUrl || !sites || !sites.length) return '#';
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const site = sites.find((s) => s.urlPathPrefix === parts[0]);
+    if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
+    const segment = parts[parts.length - 1] || '';
+    const page = site.pages && site.pages.find(
+        (p) => p.developerName && p.developerName.toLowerCase().replace(/_/g, '-') === segment.toLowerCase()
+    );
+    const base = `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
+    return page ? `${base}#/edit/${page.developerName}` : base;
+}
+
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
 const OFFERING_LABEL = 'Migration Accelerator';
 const OFFERING_KEY = 'migration-accelerator';
@@ -47,6 +60,7 @@ export default class MaConfigurator extends LightningElement {
     _editModeHandler;
     _editMode = false;
     _orgUrl = '';
+    _sites = [];
 
     /** Real, server-verified signal for rep-only UI (Customize, saved
      * links). Guests can't call this at all -- no class access -- so the
@@ -125,6 +139,7 @@ export default class MaConfigurator extends LightningElement {
             .then((data) => {
                 if (!data) return;
                 this._orgUrl = data.orgUrl || '';
+                this._sites = data.sites || [];
                 this._industries = data.industries;
                 this._storySetting = data.setting;
                 if (data.setting) {
@@ -152,7 +167,7 @@ export default class MaConfigurator extends LightningElement {
         window.addEventListener('maadminedit', this._editModeHandler);
     }
 
-    get builderUrl() { return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#'; }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._sites); }
 
     disconnectedCallback() {
         if (this._scrollHandler) {

@@ -6,6 +6,19 @@ const FONTS_HREF =
 
 const OFFERING_KEY = 'migration-accelerator';
 
+function buildBuilderUrl(orgUrl, sites) {
+    if (!orgUrl || !sites || !sites.length) return '#';
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const site = sites.find((s) => s.urlPathPrefix === parts[0]);
+    if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
+    const segment = parts[parts.length - 1] || '';
+    const page = site.pages && site.pages.find(
+        (p) => p.developerName && p.developerName.toLowerCase().replace(/_/g, '-') === segment.toLowerCase()
+    );
+    const base = `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
+    return page ? `${base}#/edit/${page.developerName}` : base;
+}
+
 export default class OfferingChooser extends LightningElement {
     /** Where the Migration Accelerator tile points. Set in Experience Builder. */
     @api industryUrl = '/choose-industry';
@@ -14,6 +27,7 @@ export default class OfferingChooser extends LightningElement {
     @track _tileDescription = null;
     @track _editMode = false;
     _orgUrl = '';
+    _sites = [];
     _editModeHandler;
 
     get rootClass() {
@@ -27,7 +41,7 @@ export default class OfferingChooser extends LightningElement {
             'Reads a client\'s marketing platform directly, turns it into an audited plan, and where it applies, a finished migration.';
     }
 
-    get builderUrl() { return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#'; }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._sites); }
 
     connectedCallback() {
         this.loadFonts();
@@ -37,6 +51,7 @@ export default class OfferingChooser extends LightningElement {
             .then((data) => {
                 if (data && data.setting) this._tileDescription = data.setting.offeringTileDescription;
                 this._orgUrl = (data && data.orgUrl) || '';
+                this._sites = (data && data.sites) || [];
             })
             // eslint-disable-next-line no-console
             .catch((err) => { console.error('[offeringChooser] getStoryContent:', JSON.stringify(err)); });

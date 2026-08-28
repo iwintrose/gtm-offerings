@@ -6,6 +6,19 @@ const FONTS_HREF =
 
 const OFFERING_KEY = 'migration-accelerator';
 
+function buildBuilderUrl(orgUrl, sites) {
+    if (!orgUrl || !sites || !sites.length) return '#';
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const site = sites.find((s) => s.urlPathPrefix === parts[0]);
+    if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
+    const segment = parts[parts.length - 1] || '';
+    const page = site.pages && site.pages.find(
+        (p) => p.developerName && p.developerName.toLowerCase().replace(/_/g, '-') === segment.toLowerCase()
+    );
+    const base = `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
+    return page ? `${base}#/edit/${page.developerName}` : base;
+}
+
 const PICKER_BLURBS = {
     fintech:
         'For banks and insurers, a migration is a compliance event as much as a technology one. The configurator pre-loads the consent, audit, and data-residency guardrails your team will need.',
@@ -49,6 +62,7 @@ export default class ChooseIndustry extends LightningElement {
     @track _openEditId = null;
     @track _orgUrl = '';
     @track _cmsChannelId = '';
+    _sites = [];
 
     get rootClass() {
         if (this.theme === 'dark') return 'ci-root dark';
@@ -64,13 +78,11 @@ export default class ChooseIndustry extends LightningElement {
         return this._industries.map((ind) => {
             const key = ind.industryKey;
             const href = `${base}${joiner}industry=${encodeURIComponent(key)}`;
-            const cmsUrl = orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
-            const indexUrl = (orgUrl && ind.indexRecordId)
+            const cmsUrl = (orgUrl && ind.indexRecordId)
                 ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${ind.indexRecordId}/view`
-                : '#';
-            const builderUrl = orgUrl
-                ? `${orgUrl}/lightning/setup/SetupNetworks/home`
-                : '#';
+                : orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
+            const indexUrl = cmsUrl;
+            const builderUrl = this.builderUrl;
             const isOpen = this._openEditId === key;
             return {
                 key,
@@ -88,9 +100,7 @@ export default class ChooseIndustry extends LightningElement {
         });
     }
 
-    get builderUrl() {
-        return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#';
-    }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._sites); }
 
     connectedCallback() {
         this.loadFonts();
@@ -111,6 +121,7 @@ export default class ChooseIndustry extends LightningElement {
                 if (data) {
                     this._orgUrl = data.orgUrl || '';
                     this._cmsChannelId = data.cmsChannelId || '';
+                    this._sites = data.sites || [];
                 }
             })
             .catch((err) => {

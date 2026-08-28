@@ -9,6 +9,19 @@ const FONTS_HREF =
 
 const OFFERING_KEY = 'migration-accelerator';
 
+function buildBuilderUrl(orgUrl, sites) {
+    if (!orgUrl || !sites || !sites.length) return '#';
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const site = sites.find((s) => s.urlPathPrefix === parts[0]);
+    if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
+    const segment = parts[parts.length - 1] || '';
+    const page = site.pages && site.pages.find(
+        (p) => p.developerName && p.developerName.toLowerCase().replace(/_/g, '-') === segment.toLowerCase()
+    );
+    const base = `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
+    return page ? `${base}#/edit/${page.developerName}` : base;
+}
+
 // Hardcoded fallbacks shown until CMS data loads (keeps the page usable if a
 // CMS record hasn't been created yet or a callout fails).
 const DEFAULTS = {
@@ -91,6 +104,7 @@ export default class MaStory extends LightningElement {
     _scrollHandler;
     _editModeHandler;
     _orgUrl = '';
+    _sites = [];
     _cmsChannelId = '';
     _pageContentId = null;
     _pageIndexRecordId = null;
@@ -168,7 +182,7 @@ export default class MaStory extends LightningElement {
         });
     }
 
-    get builderUrl() { return this._orgUrl ? `${this._orgUrl}/lightning/setup/SetupNetworks/home` : '#'; }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._sites); }
     get pageEditCmsUrl() {
         return (this._orgUrl && this._pageIndexRecordId)
             ? `${this._orgUrl}/lightning/r/MA_CMS_Content_Index__c/${this._pageIndexRecordId}/view`
@@ -205,6 +219,7 @@ export default class MaStory extends LightningElement {
                     this._proofHealthScore = data.page.proofHealthScore;
                 }
                 if (data.body) this._body = data.body;
+                this._sites = data.sites || [];
             })
             // eslint-disable-next-line no-console
             .catch((err) => { console.error('[maStory] getStoryContent:', JSON.stringify(err)); });
