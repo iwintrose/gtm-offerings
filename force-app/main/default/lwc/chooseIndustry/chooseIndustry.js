@@ -7,16 +7,11 @@ const FONTS_HREF =
 const OFFERING_KEY = 'migration-accelerator';
 
 function buildBuilderUrl(orgUrl, sites) {
-    if (!orgUrl || !sites || !sites.length) return '#';
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    const site = sites.find((s) => s.urlPathPrefix === parts[0]);
+    if (!orgUrl) return '#';
+    const prefix = window.location.pathname.split('/').filter(Boolean)[0] || '';
+    const site = sites && sites.find((s) => s.urlPathPrefix === prefix);
     if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
-    const segment = parts[parts.length - 1] || '';
-    const page = site.pages && site.pages.find(
-        (p) => p.developerName && p.developerName.toLowerCase().replace(/_/g, '-') === segment.toLowerCase()
-    );
-    const base = `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
-    return page ? `${base}#/edit/${page.developerName}` : base;
+    return `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
 }
 
 const PICKER_BLURBS = {

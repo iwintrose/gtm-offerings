@@ -20,15 +20,9 @@ public without sharing class MaStoryContentController {
     private static final Integer TIMEOUT_MS = 8000;
     private static final String API_VERSION = 'v66.0';
 
-    public class NetworkPageInfo {
-        @AuraEnabled public String developerName;
-        @AuraEnabled public String label;
-    }
-
     public class SiteInfo {
         @AuraEnabled public String networkId;
         @AuraEnabled public String urlPathPrefix;
-        @AuraEnabled public List<NetworkPageInfo> pages = new List<NetworkPageInfo>();
     }
 
     public class StoryContent {
@@ -172,41 +166,19 @@ public without sharing class MaStoryContentController {
         result.orgUrl = URL.getOrgDomainUrl().toExternalForm();
         result.cmsChannelId = channelId;
 
-        // Build Experience Builder deep-link data: query all sites + their pages
+        // Build Experience Builder deep-link data: one entry per Experience Cloud site.
+        // NetworkPage is not SOQL-accessible (metadata-only), so we return networkId +
+        // urlPathPrefix only. LWC matches on urlPathPrefix to open Builder inside the
+        // correct site rather than the generic All-Sites list.
         try {
-            List<Network> networks = [SELECT Id, UrlPathPrefix FROM Network ORDER BY UrlPathPrefix];
-            if (!networks.isEmpty()) {
-                Set<Id> netIds = new Set<Id>();
-                for (Network net : networks) { netIds.add(net.Id); }
-
-                Map<Id, List<NetworkPageInfo>> pagesByNet = new Map<Id, List<NetworkPageInfo>>();
-                for (NetworkPage np : [
-                    SELECT NetworkId, DeveloperName, Name
-                    FROM NetworkPage
-                    WHERE NetworkId IN :netIds
-                    ORDER BY NetworkId, Name
-                ]) {
-                    if (!pagesByNet.containsKey(np.NetworkId)) {
-                        pagesByNet.put(np.NetworkId, new List<NetworkPageInfo>());
-                    }
-                    NetworkPageInfo pi = new NetworkPageInfo();
-                    pi.developerName = np.DeveloperName;
-                    pi.label = np.Name;
-                    pagesByNet.get(np.NetworkId).add(pi);
-                }
-
-                for (Network net : networks) {
-                    SiteInfo si = new SiteInfo();
-                    si.networkId = String.valueOf(net.Id);
-                    si.urlPathPrefix = net.UrlPathPrefix;
-                    si.pages = pagesByNet.containsKey(net.Id)
-                        ? pagesByNet.get(net.Id)
-                        : new List<NetworkPageInfo>();
-                    result.sites.add(si);
-                }
+            for (Network net : [SELECT Id, UrlPathPrefix FROM Network ORDER BY UrlPathPrefix]) {
+                SiteInfo si = new SiteInfo();
+                si.networkId = String.valueOf(net.Id);
+                si.urlPathPrefix = net.UrlPathPrefix;
+                result.sites.add(si);
             }
         } catch (Exception e) {
-            System.debug('[MaStoryContentController] NetworkPage query: ' + e.getMessage());
+            System.debug('[MaStoryContentController] Network query: ' + e.getMessage());
         }
 
         for (MA_CMS_Content_Index__c row : indexRows) {

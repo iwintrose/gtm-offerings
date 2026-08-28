@@ -9,16 +9,11 @@ import USER_NAME_FIELD from '@salesforce/schema/User.Name';
 import USER_EMAIL_FIELD from '@salesforce/schema/User.Email';
 
 function buildBuilderUrl(orgUrl, sites) {
-    if (!orgUrl || !sites || !sites.length) return '#';
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    const site = sites.find((s) => s.urlPathPrefix === parts[0]);
+    if (!orgUrl) return '#';
+    const prefix = window.location.pathname.split('/').filter(Boolean)[0] || '';
+    const site = sites && sites.find((s) => s.urlPathPrefix === prefix);
     if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
-    const segment = parts[parts.length - 1] || '';
-    const page = site.pages && site.pages.find(
-        (p) => p.developerName && p.developerName.toLowerCase().replace(/_/g, '-') === segment.toLowerCase()
-    );
-    const base = `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
-    return page ? `${base}#/edit/${page.developerName}` : base;
+    return `${orgUrl}/visualforce.com/apex/networkbranding?networkId=${site.networkId}`;
 }
 
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
