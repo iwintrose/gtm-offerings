@@ -3,7 +3,6 @@
     <fullName>Industry_Label__c</fullName>
     <label>Industry Label</label>
     <description>Human-readable industry name derived from the Industry__c key.</description>
-    <type>Formula</type>
     <formula>IF(Industry__c = 'fintech', 'Financial Services',
 IF(Industry__c = 'medtech', 'MedTech',
 IF(Industry__c = 'lifesci', 'Life Sciences',
@@ -12,6 +11,5 @@ IF(Industry__c = 'transport', 'Transportation &amp; Logistics',
 IF(Industry__c = 'government', 'Government &amp; Public Sector',
 IF(ISBLANK(Industry__c), '', Industry__c)))))))</formula>
     <formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs>
-    <returnType>Text</returnType>
-    <required>false</required>
+    <type>Text</type>
 </CustomField>

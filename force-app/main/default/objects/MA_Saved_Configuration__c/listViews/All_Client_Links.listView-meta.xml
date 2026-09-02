@@ -9,6 +9,6 @@
     <columns>Industry_Label__c</columns>
     <columns>Active__c</columns>
     <columns>Opportunity__c</columns>
-    <columns>OWNER.NAME</columns>
+    <columns>OWNER.ALIAS</columns>
     <columns>CREATED_DATE</columns>
 </ListView>

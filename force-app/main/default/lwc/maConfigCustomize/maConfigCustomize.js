@@ -422,6 +422,12 @@ export default class MaConfigCustomize extends LightningElement {
         this.clientContactEmail = '';
     }
 
+    get passwordPlaceholder() {
+        return this.hasExistingPassword
+            ? 'Enter a new password to replace…'
+            : 'Set an access password…';
+    }
+
     handleLinkPasswordInput(event) {
         this.linkPassword = event.currentTarget.value;
         this.clearLinkPassword = false;
