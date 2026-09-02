@@ -490,6 +490,10 @@
       onclose={handleCloseBooking}
     ></c-ma-config-booking>
 
+    <template if:true={showGateLoading}>
+      <div class="expired on"></div>
+    </template>
+
     <template if:true={showPasswordGate}>
       <div class="expired on pw-gate">
         <div class="pw-card">

@@ -50,6 +50,9 @@ export default class MaConfigurator extends LightningElement {
     @track passwordGateInput = '';
     @track passwordGateError = '';
     @track passwordGateChecking = false;
+    /** True while checkPasswordGate() is in flight for a prospect link;
+     * hides the page content to prevent a flash of content before the gate. */
+    @track _gateCheckPending = false;
 
     @track proofOn = false;
     @track objectsText = '0';
@@ -402,6 +405,12 @@ export default class MaConfigurator extends LightningElement {
         );
     }
 
+    /** Blanks the page while the gate check is in flight so the content
+     * never flickers in before the password overlay appears. */
+    get showGateLoading() {
+        return this._gateCheckPending && !this.passwordVerified;
+    }
+
     get passwordGateSubmitLabel() {
         return this.passwordGateChecking ? 'Checking…' : 'Access this link →';
     }
@@ -633,6 +642,9 @@ export default class MaConfigurator extends LightningElement {
 
     async checkPasswordGate() {
         if (!this.savedRecordId || this.isConfigManager) return;
+        // Blank the page immediately so there's no flash of content while
+        // we wait for the Apex check to tell us whether a gate is needed.
+        this._gateCheckPending = true;
         try {
             const sessionKey = `ma-auth-${this.savedRecordId}`;
             if (window.sessionStorage && window.sessionStorage.getItem(sessionKey) === '1') {
@@ -646,6 +658,8 @@ export default class MaConfigurator extends LightningElement {
             });
         } catch (e) {
             this.passwordRequired = false;
+        } finally {
+            this._gateCheckPending = false;
         }
     }
 
