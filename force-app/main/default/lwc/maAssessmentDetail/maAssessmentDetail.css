@@ -1,174 +1,23 @@
-/* ── Loading / error ── */
-.loading, .error-msg {
-    padding: 1rem;
-    color: #666;
-    font-size: 0.875rem;
+.record-tile {
+    padding: 0.75rem;
+    border: 1px solid #e0e5ee;
+    border-radius: 0.25rem;
+    background: #fff;
+    height: 100%;
+    box-sizing: border-box;
 }
-.error-msg { color: #c23934; }
 
-/* ── Header ── */
-.ar-header {
-    padding: 1rem 1rem 0.75rem;
-    border-bottom: 1px solid #e8e8e8;
-    margin-bottom: 0.5rem;
-}
-.ar-title-row {
+.record-tile__header {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
-    margin-bottom: 0.375rem;
-}
-.ar-name {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #181818;
-}
-.ar-submitter {
-    font-size: 0.8125rem;
-    color: #5a5a5a;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.25rem;
-}
-.submitter-email {
-    color: #1a6bbf;
-    text-decoration: none;
-}
-.submitter-email:hover { text-decoration: underline; }
-.submitter-role { color: #888; }
-.sep { color: #ccc; }
-
-/* ── Status badge ── */
-.status-badge {
-    display: inline-block;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    padding: 0.2em 0.55em;
-    border-radius: 999px;
-    background: #e8e8e8;
-    color: #444;
-}
-.status--new          { background: #dbeafe; color: #1e40af; }
-.status--in-progress  { background: #fef3c7; color: #92400e; }
-.status--scheduled    { background: #d1fae5; color: #065f46; }
-.status--completed    { background: #dcfce7; color: #166534; }
-.status--closed       { background: #f1f5f9; color: #64748b; }
-
-/* ── Panels ── */
-.panel {
-    margin: 0.75rem 1rem;
-    border: 1px solid #e6e6e6;
-    border-radius: 0.5rem;
-    overflow: hidden;
-}
-.panel-label {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: #888;
-    padding: 0.5rem 0.875rem;
-    background: #fafafa;
-    border-bottom: 1px solid #e6e6e6;
-}
-
-/* ── Chain ── */
-.chain {
-    display: flex;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    padding: 0.875rem;
-}
-.chain-node {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.3rem;
-}
-.node-label {
-    font-size: 0.6875rem;
-    color: #999;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-.chain-arrow {
-    color: #ccc;
-    font-size: 1.125rem;
-    padding: 0 0.25rem;
-    align-self: center;
-    margin-top: 1.1rem;
-}
-
-/* ── Chips ── */
-.chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.3rem 0.6rem;
-    border-radius: 0.375rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    text-decoration: none;
-    border: 1px solid transparent;
-    transition: filter 0.15s;
-    white-space: nowrap;
-}
-.chip:hover { filter: brightness(0.95); }
-
-.chip--link    { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-.chip--account { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-.chip--opp     { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-.chip--contact { background: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }
-.chip--lead    { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
-
-.chip-icon { font-size: 0.875rem; }
-.chip-text { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
-
-.prospect-url, .chip-sub-link {
-    font-size: 0.75rem;
-    color: #1a6bbf;
-    text-decoration: none;
-    padding-left: 0.1rem;
-}
-.prospect-url:hover, .chip-sub-link:hover { text-decoration: underline; }
-
-/* ── Assessment Details ── */
-.details-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 0;
-}
-.detail-item {
-    padding: 0.75rem 0.875rem;
-    border-bottom: 1px solid #f0f0f0;
-    border-right: 1px solid #f0f0f0;
-}
-.detail-item:last-child { border-right: none; }
-.detail-label {
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #999;
-    font-weight: 600;
     margin-bottom: 0.25rem;
 }
-.detail-value {
-    font-size: 0.875rem;
-    color: #222;
-    font-weight: 500;
+
+.record-tile__body {
+    font-size: 0.8125rem;
 }
-.context-block {
-    padding: 0.75rem 0.875rem;
-    border-top: 1px solid #f0f0f0;
-}
+
 .context-text {
-    font-size: 0.875rem;
-    color: #444;
-    line-height: 1.5;
     white-space: pre-wrap;
+    line-height: 1.5;
 }

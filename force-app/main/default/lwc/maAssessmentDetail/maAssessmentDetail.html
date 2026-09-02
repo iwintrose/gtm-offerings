@@ -1,149 +1,209 @@
 <template>
     <template if:true={isLoading}>
-        <div class="loading">Loading…</div>
-    </template>
-
-    <template if:true={hasError}>
-        <div class="error-msg">Could not load assessment details.</div>
+        <div class="slds-p-around_medium">
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </div>
     </template>
 
     <template if:false={isLoading}>
         <template if:false={hasError}>
 
-            <!-- ── Header ── -->
-            <div class="ar-header">
-                <div class="ar-title-row">
-                    <span class="ar-name">{arName}</span>
-                    <span class={statusClass}>{status}</span>
-                </div>
-                <div class="ar-submitter">
-                    <template if:true={reqName}>
-                        <span>{reqName}</span>
-                    </template>
-                    <template if:true={reqEmail}>
-                        <span class="sep">·</span>
-                        <a href="mailto:{reqEmail}" class="submitter-email">{reqEmail}</a>
-                    </template>
-                    <template if:true={company}>
-                        <span class="sep">·</span>
-                        <span>{company}</span>
-                    </template>
-                    <template if:true={role}>
-                        <span class="sep">·</span>
-                        <span class="submitter-role">{role}</span>
-                    </template>
-                </div>
-            </div>
-
-            <!-- ── CRM Connection Chain ── -->
+            <!-- ── Connected Records ── -->
             <template if:true={hasCrmChain}>
-                <div class="panel">
-                    <div class="panel-label">CRM Connections</div>
-                    <div class="chain">
+                <lightning-card title="Connected Records" icon-name="standard:related_list">
+                    <div class="slds-grid slds-gutters slds-wrap slds-p-around_medium">
 
-                        <!-- Engagement Link -->
+                        <!-- Engagement Link (Saved Config) -->
                         <template if:true={hasCfg}>
-                            <div class="chain-node">
-                                <div class="node-label">Engagement Link</div>
-                                <a class="chip chip--link" href={cfgRecordUrl}>
-                                    <span class="chip-icon">🔗</span>
-                                    <span class="chip-text">{cfgName}</span>
-                                </a>
-                                <template if:true={cfgProspectUrl}>
-                                    <a class="prospect-url" href={cfgProspectUrl} target="_blank" rel="noopener">
-                                        View prospect link ↗
-                                    </a>
-                                </template>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:link" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Engagement Link</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href={cfgRecordUrl} class="slds-text-link">{cfgName}</a>
+                                        <template if:true={cfgProspectUrl}>
+                                            <div class="slds-m-top_xx-small">
+                                                <a href={cfgProspectUrl} target="_blank" rel="noopener" class="slds-text-link slds-text-body_small">
+                                                    View prospect page ↗
+                                                </a>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </template>
 
                         <!-- Account -->
                         <template if:true={hasAccount}>
-                            <template if:true={hasCfg}>
-                                <div class="chain-arrow">→</div>
-                            </template>
-                            <div class="chain-node">
-                                <div class="node-label">Account</div>
-                                <a class="chip chip--account" href={accountUrl}>
-                                    <span class="chip-icon">🏢</span>
-                                    <span class="chip-text">{accountName}</span>
-                                </a>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:account" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Account</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href={accountUrl} class="slds-text-link">{accountName}</a>
+                                    </div>
+                                </div>
                             </div>
                         </template>
 
                         <!-- Opportunity -->
                         <template if:true={hasOpp}>
-                            <div class="chain-arrow">→</div>
-                            <div class="chain-node">
-                                <div class="node-label">Opportunity</div>
-                                <a class="chip chip--opp" href={oppUrl}>
-                                    <span class="chip-icon">💼</span>
-                                    <span class="chip-text">{oppName}</span>
-                                </a>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:opportunity" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Opportunity</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href={oppUrl} class="slds-text-link">{oppName}</a>
+                                    </div>
+                                </div>
                             </div>
                         </template>
 
                         <!-- Contact -->
                         <template if:true={hasContact}>
-                            <div class="chain-arrow">→</div>
-                            <div class="chain-node">
-                                <div class="node-label">Contact</div>
-                                <a class="chip chip--contact" href={contactUrl}>
-                                    <span class="chip-icon">👤</span>
-                                    <span class="chip-text">{contactName}</span>
-                                </a>
-                                <template if:true={contactEmail}>
-                                    <a class="chip-sub-link" href="mailto:{contactEmail}">{contactEmail}</a>
-                                </template>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:contact" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Contact</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href={contactUrl} class="slds-text-link">{contactName}</a>
+                                        <template if:true={contactEmail}>
+                                            <div class="slds-m-top_xx-small slds-text-body_small">
+                                                <a href="mailto:{contactEmail}" class="slds-text-link">{contactEmail}</a>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </template>
 
-                        <!-- Lead (only when no Contact) -->
+                        <!-- Lead (only when no Contact yet) -->
                         <template if:true={hasLead}>
-                            <div class="chain-arrow">→</div>
-                            <div class="chain-node">
-                                <div class="node-label">Lead</div>
-                                <a class="chip chip--lead" href={leadUrl}>
-                                    <span class="chip-icon">👤</span>
-                                    <span class="chip-text">{leadName}</span>
-                                </a>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:lead" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Lead</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href={leadUrl} class="slds-text-link">{leadName}</a>
+                                    </div>
+                                </div>
                             </div>
                         </template>
 
-                    </div><!-- .chain -->
-                </div><!-- .panel -->
+                    </div>
+                </lightning-card>
             </template>
 
             <!-- ── Assessment Details ── -->
-            <div class="panel">
-                <div class="panel-label">Assessment Details</div>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="detail-label">Platform</div>
-                        <div class="detail-value">{platform}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Environment Size</div>
-                        <div class="detail-value">{environmentSize}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Timeline</div>
-                        <div class="detail-value">{timeline}</div>
-                    </div>
-                    <template if:true={source}>
-                        <div class="detail-item">
-                            <div class="detail-label">Source</div>
-                            <div class="detail-value">{source}</div>
+            <lightning-card title="Assessment Details" icon-name="standard:survey" class="slds-m-top_small">
+                <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                    <div class="slds-form" role="list">
+                        <div class="slds-grid slds-wrap">
+
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                        <span class="slds-form-element__label">Platform</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">{platform}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                        <span class="slds-form-element__label">Environment Size</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">{environmentSize}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                        <span class="slds-form-element__label">Timeline</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">{timeline}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <template if:true={reqName}>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <div class="slds-form__item" role="listitem">
+                                        <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                            <span class="slds-form-element__label">Requester</span>
+                                            <div class="slds-form-element__control">
+                                                <div class="slds-form-element__static">
+                                                    {reqName}
+                                                    <template if:true={reqEmail}>
+                                                        <br/>
+                                                        <a href="mailto:{reqEmail}" class="slds-text-link">{reqEmail}</a>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template if:true={role}>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <div class="slds-form__item" role="listitem">
+                                        <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                            <span class="slds-form-element__label">Role</span>
+                                            <div class="slds-form-element__control">
+                                                <div class="slds-form-element__static">{role}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template if:true={source}>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <div class="slds-form__item" role="listitem">
+                                        <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                            <span class="slds-form-element__label">Source</span>
+                                            <div class="slds-form-element__control">
+                                                <div class="slds-form-element__static">{source}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
                         </div>
-                    </template>
-                </div>
-                <template if:true={hasContext}>
-                    <div class="context-block">
-                        <div class="detail-label">Additional Context</div>
-                        <div class="context-text">{context}</div>
+
+                        <template if:true={hasContext}>
+                            <div class="slds-form__item slds-m-top_small" role="listitem">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">Additional Context</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static context-text">{context}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
                     </div>
-                </template>
-            </div>
+                </div>
+            </lightning-card>
 
         </template>
     </template>
