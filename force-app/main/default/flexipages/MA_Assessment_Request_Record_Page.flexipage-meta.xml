@@ -11,6 +11,12 @@
         </itemInstances>
         <itemInstances>
             <componentInstance>
+                <componentName>c:maLinkActivity</componentName>
+                <identifier>c_maLinkActivity1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
                 <componentName>flexipage:recordDetail</componentName>
                 <identifier>flexipage_recordDetail1</identifier>
             </componentInstance>

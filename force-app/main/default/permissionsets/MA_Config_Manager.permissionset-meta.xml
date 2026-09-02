@@ -18,6 +18,10 @@
         <apexClass>MaHomeSnapshotController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>MaLinkEventController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>true</allowDelete>
@@ -62,6 +66,15 @@
         <modifyAllRecords>false</modifyAllRecords>
         <object>MA_CMS_Content_Index__c</object>
         <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>MA_Link_Event__c</object>
+        <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
     <fieldPermissions>
         <field>MA_Saved_Configuration__c.Active__c</field>
@@ -207,6 +220,26 @@
         <field>MA_CMS_Content_Index__c.Active__c</field>
         <readable>true</readable>
         <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Link_Event__c.Saved_Configuration__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Link_Event__c.Assessment_Request__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Link_Event__c.Session_Id__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Link_Event__c.Step__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
     </fieldPermissions>
     <tabSettings>
         <tab>MA_Saved_Configuration__c</tab>
