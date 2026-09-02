@@ -5,6 +5,7 @@ import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive'
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
 import verifyPassword from '@salesforce/apex/MaLinkAuthController.verifyPassword';
+import logEvent from '@salesforce/apex/MaLinkEventController.logEvent';
 import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/maConfigData';
 import USER_ID from '@salesforce/user/Id';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
@@ -67,10 +68,16 @@ export default class MaConfigurator extends LightningElement {
     _scrollHandler;
     _keyHandler;
     _editModeHandler;
+    _visibilityHandler;
     _editMode = false;
     _orgUrl = '';
     _lightningUrl = '';
     _sites = [];
+
+    // Activity tracking
+    _sessionId = null;
+    _formOpened = false;
+    _formSubmitted = false;
 
     /** Real, server-verified signal for rep-only UI (Customize, saved
      * links). Guests can't call this at all -- no class access -- so the
@@ -144,6 +151,7 @@ export default class MaConfigurator extends LightningElement {
     // -------------------------------------------------------------- lifecycle
 
     connectedCallback() {
+        this._sessionId = this._makeSessionId();
         this.tokenState = this.loadState();
         this.readUrlParams();
         this.setPageTitle();
@@ -173,11 +181,17 @@ export default class MaConfigurator extends LightningElement {
         this._scrollHandler = this.handleScroll.bind(this);
         this._keyHandler = this.handleKeydown.bind(this);
         this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
+        this._visibilityHandler = () => {
+            if (document.visibilityState === 'hidden' && this._formOpened && !this._formSubmitted) {
+                this._logEvent('Drop-off');
+            }
+        };
         window.addEventListener('scroll', this._scrollHandler, {
             passive: true
         });
         window.addEventListener('keydown', this._keyHandler);
         window.addEventListener('maadminedit', this._editModeHandler);
+        document.addEventListener('visibilitychange', this._visibilityHandler);
     }
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl, this._lightningUrl, this._sites); }
@@ -191,6 +205,9 @@ export default class MaConfigurator extends LightningElement {
         }
         if (this._editModeHandler) {
             window.removeEventListener('maadminedit', this._editModeHandler);
+        }
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
         }
         if (this._observer) {
             this._observer.disconnect();
@@ -660,6 +677,9 @@ export default class MaConfigurator extends LightningElement {
             this.passwordRequired = await checkPasswordRequired({
                 recordId: this.savedRecordId
             });
+            if (!this.passwordRequired) {
+                this._logEvent('Page View');
+            }
         } catch (e) {
             this.passwordRequired = false;
         } finally {
@@ -688,6 +708,7 @@ export default class MaConfigurator extends LightningElement {
             });
             if (ok) {
                 this.passwordVerified = true;
+                this._logEvent('Page View');
                 try {
                     window.sessionStorage.setItem(`ma-auth-${this.savedRecordId}`, '1');
                 } catch (e) { /* sessionStorage not available */ }
@@ -707,10 +728,20 @@ export default class MaConfigurator extends LightningElement {
         const modal = this.template.querySelector('c-ma-config-booking');
         if (modal) modal.reset();
         this.bookingOpen = true;
+        if (!this._formOpened) {
+            this._formOpened = true;
+            this._logEvent('Form Opened');
+        }
     }
 
     handleCloseBooking() {
         this.bookingOpen = false;
+    }
+
+    handleBookingSubmitted(event) {
+        this._formSubmitted = true;
+        const arId = event.detail ? event.detail.assessmentRequestId : null;
+        this._logEvent('Form Submitted', null, arId);
     }
 
     handleKeydown(event) {
@@ -856,5 +887,30 @@ export default class MaConfigurator extends LightningElement {
     numberFrom(key, fallback) {
         const parsed = parseFloat(this.tokenValue(key).replace(/[^0-9.]/g, ''));
         return isNaN(parsed) ? fallback : Math.round(parsed);
+    }
+
+    _logEvent(eventType, step, assessmentRequestId) {
+        // Only track prospect links (not rep previews or blank sessions).
+        if (!this.isProspectLink || !this.savedRecordId || this.isConfigManager) return;
+        logEvent({
+            configId: this.savedRecordId,
+            eventType,
+            sessionId: this._sessionId,
+            step: step || null,
+            assessmentRequestId: assessmentRequestId || null
+        }).catch(() => { /* best-effort */ });
+    }
+
+    _makeSessionId() {
+        try {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+        } catch (e) { /* ignore */ }
+        // Fallback for browsers without crypto.randomUUID
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+        });
     }
 }

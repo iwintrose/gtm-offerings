@@ -188,10 +188,15 @@ export default class MaConfigBooking extends LightningElement {
         };
 
         try {
-            await submitRequest({ input: payload });
+            const result = await submitRequest({ input: payload });
             this.showForm = false;
             this.dispatchEvent(
-                new CustomEvent('submitted', { detail: { email } })
+                new CustomEvent('submitted', {
+                    detail: {
+                        email,
+                        assessmentRequestId: result ? result.assessmentRequestId : null
+                    }
+                })
             );
         } catch (error) {
             this.errorMessage = this.readError(error);
