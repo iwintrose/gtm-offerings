@@ -3,6 +3,8 @@ import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.s
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
 import hasLinkPassword from '@salesforce/apex/MaSavedConfigurationController.hasLinkPassword';
+import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
+import getOrgBaseUrl from '@salesforce/apex/MaSavedConfigurationController.getOrgBaseUrl';
 import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import { FIELDS, LINKS_KEY, initials, isHex6 } from 'c/maConfigData';
@@ -54,6 +56,7 @@ export default class MaConfigCustomize extends LightningElement {
         if (value) {
             this.knownRecordId = value;
             this.loadPasswordStatus(value);
+            this.loadCrmData(value);
         }
     }
 
@@ -61,12 +64,56 @@ export default class MaConfigCustomize extends LightningElement {
     @track clearLinkPassword = false;
     @track hasExistingPassword = false;
 
+    /** CRM data loaded from Salesforce when opening an existing saved link. */
+    @track _crmOpportunityId = null;
+    @track _crmOpportunityName = '';
+    _orgBaseUrl = '';
+
     async loadPasswordStatus(recordId) {
         try {
             this.hasExistingPassword = await hasLinkPassword({ recordId });
         } catch (e) {
             this.hasExistingPassword = false;
         }
+    }
+
+    /** Loads Contact, EstimatedValue, and Opportunity from the saved Salesforce
+     * record so the panel reflects what's actually in Sales Cloud rather than
+     * just what's in localStorage or the URL params. */
+    async loadCrmData(recordId) {
+        try {
+            if (!this._orgBaseUrl) {
+                this._orgBaseUrl = await getOrgBaseUrl();
+            }
+            const d = await getConfigurationCrmData({ recordId });
+            if (!d) return;
+            if (d.contactId && !this._selectedContact) {
+                this._selectedContact = {
+                    id: d.contactId,
+                    name: d.contactName || '',
+                    email: d.contactEmail || '',
+                    accountId: d.accountId,
+                    accountName: d.accountName || ''
+                };
+                this.clientContactName = d.contactName || '';
+                this.clientContactEmail = d.contactEmail || '';
+                this._showManualContact = false;
+            }
+            if (d.estimatedValue && !this.estimatedValue) {
+                this.estimatedValue = d.estimatedValue;
+            }
+            if (d.opportunityId) {
+                this._crmOpportunityId = d.opportunityId;
+                this._crmOpportunityName = d.opportunityName || 'View Opportunity';
+            }
+        } catch (e) {
+            // Non-fatal — panel works without CRM data
+        }
+    }
+
+    get opportunityUrl() {
+        if (!this._crmOpportunityId || !this._orgBaseUrl) return null;
+        return `${this._orgBaseUrl}/lightning/r/Opportunity/${this._crmOpportunityId}/view`;
     }
 
     @track knownRecordId = '';
@@ -650,9 +697,12 @@ export default class MaConfigCustomize extends LightningElement {
      * it's been saved. Saving and copying used to be one action, which
      * made it unclear whether a click had actually written anything. */
     handleCopyLink() {
-        // Same reasoning as saveInternal: this is the link handed to the
-        // client, so it must never carry cfgId.
-        this.copyToClipboard(this.buildUrl(true));
+        // Include cfgId (via buildUrl with no excludeId flag) so that the
+        // active/inactive gate and password gate both work for the recipient:
+        // both gates require cfgId to look up the record in Salesforce. When
+        // the record isn't saved yet, buildUrl() still omits cfgId because
+        // knownRecordId is empty -- the rep should save first, then copy.
+        this.copyToClipboard(this.buildUrl());
     }
 
     get canSaveAsNew() {
@@ -665,14 +715,12 @@ export default class MaConfigCustomize extends LightningElement {
     }
 
     saveInternal({ asNew }) {
-        // Always excludeId: this URL is what gets persisted as
-        // Generated_URL__c and handed to the client -- it must never carry
-        // cfgId, which is only meaningful for the rep's own "reopen this
-        // for editing" round trip. Passing asNew through here used to let
-        // "Update this link" bake cfgId into the record's own stored URL
-        // whenever knownRecordId was already set, silently leaking an
-        // internal record id into the link shared with the client.
-        const url = this.buildUrl(true);
+        // Include cfgId in the URL so the active/inactive gate and password
+        // gate work for clients who receive this link -- both gates require
+        // cfgId to find the record. On first save knownRecordId is empty so
+        // cfgId is absent; persistToServer's correction step adds it after
+        // the insert returns. On resaves knownRecordId is already set.
+        const url = this.buildUrl();
         const existing = this.editingId
             ? this.links.find((l) => l.id === this.editingId)
             : null;
@@ -742,7 +790,9 @@ export default class MaConfigCustomize extends LightningElement {
                     contactId: this._selectedContact?.id || null,
                     accountId: this._selectedContact?.accountId || null,
                     linkPassword: this.linkPassword || null,
-                    clearLinkPassword: this.clearLinkPassword
+                    clearLinkPassword: this.clearLinkPassword,
+                    website: this.brandDomain || null,
+                    accountIndustry: entry.industry || null
                 }
             });
             if (this.linkPassword) {

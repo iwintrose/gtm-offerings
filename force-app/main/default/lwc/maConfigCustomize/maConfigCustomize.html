@@ -231,6 +231,13 @@
           />
         </div>
 
+        <template if:true={opportunityUrl}>
+          <div class="fld spaced">
+            <label>Salesforce Opportunity</label>
+            <a class="sf-opp-link" href={opportunityUrl} target="_blank" rel="noopener">{_crmOpportunityName} ↗</a>
+          </div>
+        </template>
+
         <div class="fld spaced">
           <label for="lbExp">Expires (only affects a hosted link)</label>
           <input id="lbExp" type="date" value={expires} oninput={handleExpires} />

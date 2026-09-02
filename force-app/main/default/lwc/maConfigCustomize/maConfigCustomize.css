@@ -546,3 +546,13 @@
   border-color: #c00;
   color: #c00;
 }
+.sf-opp-link {
+  display: inline-block;
+  font-size: 0.88rem;
+  color: #0070d2;
+  text-decoration: none;
+  padding: 0.25rem 0;
+}
+.sf-opp-link:hover {
+  text-decoration: underline;
+}

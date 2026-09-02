@@ -55,6 +55,30 @@ public with sharing class MaSavedConfigurationController {
          * the record. Ignored when linkPassword is non-blank. */
         @AuraEnabled
         public Boolean clearLinkPassword { get; set; }
+        /** Brand / marketing website for the prospect's company -- used to
+         * set Account.Website when the Account is newly created. */
+        @AuraEnabled
+        public String website { get; set; }
+        /** Engagement-link industry key (e.g. 'fintech', 'transport') mapped
+         * to the closest Salesforce standard Account.Industry picklist value
+         * and set on a newly created Account. */
+        @AuraEnabled
+        public String accountIndustry { get; set; }
+    }
+
+    /** Returned by getConfigurationCrmData -- carries the Salesforce records
+     * associated with a saved config so the Customize panel can pre-fill
+     * Contact, Estimated Value, and Opportunity without a localStorage round
+     * trip (Sales Cloud is the source of truth for this data). */
+    public class CrmData {
+        @AuraEnabled public Id contactId;
+        @AuraEnabled public String contactName;
+        @AuraEnabled public String contactEmail;
+        @AuraEnabled public Id accountId;
+        @AuraEnabled public String accountName;
+        @AuraEnabled public String estimatedValue;
+        @AuraEnabled public Id opportunityId;
+        @AuraEnabled public String opportunityName;
     }
 
     public class ContactSearchResult {
@@ -117,10 +141,19 @@ public with sharing class MaSavedConfigurationController {
         // this always had).
         Id accountId = isValidId(input.accountId, Account.SObjectType)
             ? (Id) input.accountId
-            : resolveAccount(trimTo(input.company, MAX_COMPANY));
+            : resolveAccount(
+                trimTo(input.company, MAX_COMPANY),
+                trimTo(input.website, 255),
+                input.accountIndustry
+            );
         Id contactId = isValidId(input.contactId, Contact.SObjectType)
             ? (Id) input.contactId
             : resolveContact(input.clientContactName, input.clientContactEmail, accountId);
+        Id opportunityId = resolveOpportunity(
+            accountId,
+            trimTo(input.company, MAX_COMPANY),
+            parseDecimal(input.estimatedValue)
+        );
 
         MA_Saved_Configuration__c record = new MA_Saved_Configuration__c(
             Offering__c = trimTo(input.offering, MAX_OFFERING),
@@ -140,6 +173,9 @@ public with sharing class MaSavedConfigurationController {
         }
         if (contactId != null) {
             record.Contact__c = contactId;
+        }
+        if (opportunityId != null) {
+            record.Opportunity__c = opportunityId;
         }
         Decimal estimatedValue = parseDecimal(input.estimatedValue);
         if (estimatedValue != null) {
@@ -248,6 +284,40 @@ public with sharing class MaSavedConfigurationController {
         return !rows.isEmpty() && String.isNotBlank(rows[0].Link_Password__c);
     }
 
+    /** Returns the Sales Cloud records linked to a saved config so the
+     * Customize panel can pre-fill Contact, Estimated Value, and Opportunity
+     * without relying on localStorage (Sales Cloud is the source of truth). */
+    @AuraEnabled
+    public static CrmData getConfigurationCrmData(String recordId) {
+        if (String.isBlank(recordId)) return null;
+        List<MA_Saved_Configuration__c> rows = [
+            SELECT Contact__c, Contact__r.Name, Contact__r.Email,
+                   Account__c, Account__r.Name,
+                   Estimated_Value__c,
+                   Opportunity__c, Opportunity__r.Name
+            FROM MA_Saved_Configuration__c
+            WHERE Id = :recordId
+            LIMIT 1
+        ];
+        if (rows.isEmpty()) return null;
+        MA_Saved_Configuration__c r = rows[0];
+        CrmData d = new CrmData();
+        d.contactId    = r.Contact__c;
+        d.contactName  = r.Contact__c  != null ? r.Contact__r.Name  : null;
+        d.contactEmail = r.Contact__c  != null ? r.Contact__r.Email : null;
+        d.accountId    = r.Account__c;
+        d.accountName  = r.Account__c  != null ? r.Account__r.Name  : null;
+        if (r.Estimated_Value__c != null) {
+            Long lv = r.Estimated_Value__c.longValue();
+            d.estimatedValue = (r.Estimated_Value__c == lv)
+                ? String.valueOf(lv)
+                : String.valueOf(r.Estimated_Value__c);
+        }
+        d.opportunityId   = r.Opportunity__c;
+        d.opportunityName = r.Opportunity__c != null ? r.Opportunity__r.Name : null;
+        return d;
+    }
+
     @AuraEnabled
     public static void deleteConfiguration(String recordId) {
         if (String.isBlank(recordId)) {
@@ -287,13 +357,12 @@ public with sharing class MaSavedConfigurationController {
     /**
      * Exact-name match, not fuzzy: good enough to stop the same rep from
      * creating a second Account every time they resave the same client's
-     * link, without guessing at a dedupe strategy more sophisticated than
-     * this feature actually needs. A rep who wants to attach to an
-     * existing Account under a different name can still just retype the
-     * Company field to match it exactly, or fix the link later in Sales
-     * Cloud.
+     * link. Website and industry are set on newly created Accounts (not
+     * on existing ones, to avoid overwriting data already managed in
+     * Sales Cloud). The industry key is mapped to the closest standard
+     * Salesforce Account.Industry picklist value.
      */
-    private static Id resolveAccount(String company) {
+    private static Id resolveAccount(String company, String website, String industryKey) {
         if (String.isBlank(company)) {
             return null;
         }
@@ -304,8 +373,48 @@ public with sharing class MaSavedConfigurationController {
             return existing[0].Id;
         }
         Account acc = new Account(Name = company);
+        if (String.isNotBlank(website)) {
+            acc.Website = website.startsWith('http') ? website : 'https://' + website;
+        }
+        if (String.isNotBlank(industryKey)) {
+            acc.Industry = mapIndustry(industryKey);
+        }
         insert acc;
         return acc.Id;
+    }
+
+    private static String mapIndustry(String key) {
+        if (key == 'fintech')    return 'Finance';
+        if (key == 'medtech')    return 'Healthcare';
+        if (key == 'lifesci')    return 'Biotechnology';
+        if (key == 'media')      return 'Media';
+        if (key == 'transport')  return 'Transportation';
+        if (key == 'government') return 'Government';
+        return null;
+    }
+
+    /** Finds an existing Migration Accelerator Opportunity for the Account
+     * or creates one. Only runs when an Account is resolved -- no Account,
+     * no Opportunity. */
+    private static Id resolveOpportunity(Id accountId, String company, Decimal amount) {
+        if (accountId == null) return null;
+        List<Opportunity> existing = [
+            SELECT Id FROM Opportunity
+            WHERE AccountId = :accountId
+              AND Name LIKE 'Migration Accelerator%'
+            ORDER BY CreatedDate DESC
+            LIMIT 1
+        ];
+        if (!existing.isEmpty()) return existing[0].Id;
+        Opportunity opp = new Opportunity(
+            Name = 'Migration Accelerator — ' + (String.isNotBlank(company) ? company.trim() : 'Assessment'),
+            AccountId = accountId,
+            StageName = 'Prospecting',
+            CloseDate = Date.today().addDays(90)
+        );
+        if (amount != null) opp.Amount = amount;
+        insert opp;
+        return opp.Id;
     }
 
     /** Matches by email (Salesforce doesn't enforce Contact email
