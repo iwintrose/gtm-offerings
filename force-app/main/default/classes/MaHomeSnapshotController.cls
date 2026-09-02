@@ -1,98 +1,72 @@
 /**
  * Aggregate KPIs for the GTM Offerings app's landing page -- one cacheable
  * read, no per-record data, so it's safe to show org-wide regardless of
- * who's looking (a rep's own Engagement Links are still scoped by the
- * standard object sharing rules already governing everything else in this
- * feature; this only sums what the running user can already see).
+ * who's looking.
  */
 public with sharing class MaHomeSnapshotController {
     public class Snapshot {
-        @AuraEnabled
-        public Decimal activeEngagementValue { get; set; }
-        @AuraEnabled
-        public Integer activeEngagementCount { get; set; }
-        @AuraEnabled
-        public Integer newAssessmentCount { get; set; }
-        @AuraEnabled
-        public Decimal openPipelineAmount { get; set; }
+        @AuraEnabled public Integer activeEngagementCount { get; set; }
+        @AuraEnabled public Integer newAssessmentCount    { get; set; }
+        @AuraEnabled public Integer recentViews          { get; set; }
+        @AuraEnabled public Integer submissionsThisMonth { get; set; }
     }
 
     @AuraEnabled(cacheable=true)
     public static Snapshot getSnapshot() {
         Snapshot snap = new Snapshot();
 
-        AggregateResult links = [
-            SELECT SUM(Estimated_Value__c) totalValue, COUNT(Id) total
-            FROM MA_Saved_Configuration__c
-            WHERE Active__c = true
-        ][0];
-        snap.activeEngagementValue = (Decimal) links.get('totalValue') != null
-            ? (Decimal) links.get('totalValue')
-            : 0;
-        snap.activeEngagementCount = (Integer) links.get('total');
-
-        snap.newAssessmentCount = [
-            SELECT COUNT()
-            FROM MA_Assessment_Request__c
-            WHERE Status__c = 'New'
+        snap.activeEngagementCount = [
+            SELECT COUNT() FROM MA_Saved_Configuration__c WHERE Active__c = true
         ];
 
-        AggregateResult pipeline = [
-            SELECT SUM(Amount) totalAmount
-            FROM Opportunity
-            WHERE IsClosed = false
-            AND Id IN (SELECT Opportunity__c FROM MA_Saved_Configuration__c WHERE Opportunity__c != null)
-        ][0];
-        snap.openPipelineAmount = (Decimal) pipeline.get('totalAmount') != null
-            ? (Decimal) pipeline.get('totalAmount')
-            : 0;
+        snap.newAssessmentCount = [
+            SELECT COUNT() FROM MA_Assessment_Request__c WHERE Status__c = 'New'
+        ];
+
+        snap.recentViews = [
+            SELECT COUNT() FROM MA_Link_Event__c
+            WHERE Event_Type__c = 'Page View'
+            AND CreatedDate = LAST_N_DAYS:7
+        ];
+
+        snap.submissionsThisMonth = [
+            SELECT COUNT() FROM MA_Link_Event__c
+            WHERE Event_Type__c = 'Form Submitted'
+            AND CreatedDate = THIS_MONTH
+        ];
 
         return snap;
     }
 
     public class RequestSummary {
-        @AuraEnabled
-        public Id recordId { get; set; }
-        @AuraEnabled
-        public String name { get; set; }
-        @AuraEnabled
-        public String requesterName { get; set; }
-        @AuraEnabled
-        public String company { get; set; }
-        @AuraEnabled
-        public Datetime createdDate { get; set; }
-        /** Preferred navigation target: Opportunity if one was created/linked,
-         * Lead otherwise. The LWC navigates to whichever is non-null,
-         * falling back to the Assessment Request record itself. */
-        @AuraEnabled
-        public Id opportunityId { get; set; }
-        @AuraEnabled
-        public Id leadId { get; set; }
+        @AuraEnabled public Id      recordId      { get; set; }
+        @AuraEnabled public String  name          { get; set; }
+        @AuraEnabled public String  requesterName { get; set; }
+        @AuraEnabled public String  company       { get; set; }
+        @AuraEnabled public String  platform      { get; set; }
+        @AuraEnabled public Datetime createdDate  { get; set; }
     }
 
-    /** The 5 newest requests still sitting at Status = New -- what a rep
-     * should look at first when they open the app, not something they'd
-     * otherwise notice without navigating to the tab and filtering. */
+    /** The 5 newest requests still at Status = New, ordered newest first. */
     @AuraEnabled(cacheable=true)
     public static List<RequestSummary> getRecentNewAssessmentRequests() {
         List<RequestSummary> results = new List<RequestSummary>();
         for (MA_Assessment_Request__c req : [
-            SELECT Id, Name, Requester_Name__c, Company__c, CreatedDate,
-                   Opportunity__c, Lead__c
+            SELECT Id, Name, Requester_Name__c, Company__c,
+                   Current_Platform__c, CreatedDate
             FROM MA_Assessment_Request__c
             WHERE Status__c = 'New'
             ORDER BY CreatedDate DESC
             LIMIT 5
         ]) {
-            RequestSummary summary = new RequestSummary();
-            summary.recordId = req.Id;
-            summary.name = req.Name;
-            summary.requesterName = req.Requester_Name__c;
-            summary.company = req.Company__c;
-            summary.createdDate = req.CreatedDate;
-            summary.opportunityId = req.Opportunity__c;
-            summary.leadId = req.Lead__c;
-            results.add(summary);
+            RequestSummary s = new RequestSummary();
+            s.recordId      = req.Id;
+            s.name          = req.Name;
+            s.requesterName = req.Requester_Name__c;
+            s.company       = req.Company__c;
+            s.platform      = req.Current_Platform__c;
+            s.createdDate   = req.CreatedDate;
+            results.add(s);
         }
         return results;
     }

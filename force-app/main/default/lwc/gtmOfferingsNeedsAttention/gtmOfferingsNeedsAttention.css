@@ -6,7 +6,7 @@
     padding: 0.9rem 1.1rem;
 }
 .na-title {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -21,21 +21,41 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0;
+    padding: 0.55rem 0;
     border-top: 1px solid #f0f0f0;
     text-decoration: none;
     color: #181818;
-    font-size: 0.88rem;
 }
 .na-row:first-of-type {
     border-top: none;
 }
-.na-row:hover {
+.na-row:hover .na-name {
     color: #0176d3;
+}
+.na-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+.na-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.na-meta {
+    font-size: 0.76rem;
+    color: #706e6b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .na-date {
     color: #706e6b;
     font-size: 0.76rem;
     white-space: nowrap;
     margin-left: 0.75rem;
+    flex-shrink: 0;
 }

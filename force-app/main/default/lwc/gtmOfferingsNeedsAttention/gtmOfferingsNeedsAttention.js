@@ -8,12 +8,16 @@ export default class GtmOfferingsNeedsAttention extends LightningElement {
     @wire(getRecentNewAssessmentRequests)
     wiredRequests({ data }) {
         if (data) {
-            this.rows = data.map((r) => ({
-                key: r.recordId,
-                url: navUrl(r),
-                label: r.company ? `${r.requesterName} · ${r.company}` : r.requesterName,
-                date: r.createdDate ? new Date(r.createdDate).toLocaleDateString() : ''
-            }));
+            this.rows = data.map((r) => {
+                const meta = [r.company, r.platform].filter(Boolean).join(' · ');
+                return {
+                    key: r.recordId,
+                    url: `/lightning/r/MA_Assessment_Request__c/${r.recordId}/view`,
+                    name: r.requesterName || r.name,
+                    meta,
+                    date: r.createdDate ? new Date(r.createdDate).toLocaleDateString() : ''
+                };
+            });
         }
         this.loaded = true;
     }
@@ -25,10 +29,4 @@ export default class GtmOfferingsNeedsAttention extends LightningElement {
     get showEmpty() {
         return this.loaded && !this.hasRows;
     }
-}
-
-function navUrl(r) {
-    if (r.opportunityId) return `/lightning/r/Opportunity/${r.opportunityId}/view`;
-    if (r.leadId) return `/lightning/r/Lead/${r.leadId}/view`;
-    return `/lightning/r/MA_Assessment_Request__c/${r.recordId}/view`;
 }

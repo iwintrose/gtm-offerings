@@ -24,34 +24,33 @@ export default class GtmOfferingsSnapshot extends LightningElement {
         if (!this.snapshot) return [];
         return [
             {
-                key: 'active-value',
-                label: 'Active Engagement Value',
-                value: formatCurrency(this.snapshot.activeEngagementValue)
+                key: 'active-links',
+                label: 'Active Links',
+                value: fmt(this.snapshot.activeEngagementCount),
+                icon: 'utility:link'
             },
             {
-                key: 'active-count',
-                label: 'Active Engagement Links',
-                value: formatCount(this.snapshot.activeEngagementCount)
+                key: 'new-requests',
+                label: 'New Requests',
+                value: fmt(this.snapshot.newAssessmentCount),
+                icon: 'utility:inbox'
             },
             {
-                key: 'new-assessments',
-                label: 'New Assessment Requests',
-                value: formatCount(this.snapshot.newAssessmentCount)
+                key: 'views-7d',
+                label: 'Page Views (7d)',
+                value: fmt(this.snapshot.recentViews),
+                icon: 'utility:preview'
             },
             {
-                key: 'open-pipeline',
-                label: 'Open Pipeline (from GTM)',
-                value: formatCurrency(this.snapshot.openPipelineAmount)
+                key: 'submissions',
+                label: 'Submissions This Month',
+                value: fmt(this.snapshot.submissionsThisMonth),
+                icon: 'utility:check'
             }
         ];
     }
 }
 
-function formatCurrency(value) {
-    const n = Number(value) || 0;
-    return '$' + Math.round(n).toLocaleString('en-US');
-}
-
-function formatCount(value) {
+function fmt(value) {
     return Number(value || 0).toLocaleString('en-US');
 }

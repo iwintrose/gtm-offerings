@@ -7,8 +7,11 @@
             <div class="gs-row">
                 <template for:each={tiles} for:item="tile">
                     <div key={tile.key} class="gs-tile">
+                        <div class="gs-tile-header">
+                            <lightning-icon icon-name={tile.icon} size="x-small" class="gs-tile-icon"></lightning-icon>
+                            <span class="gs-label">{tile.label}</span>
+                        </div>
                         <div class="gs-value">{tile.value}</div>
-                        <div class="gs-label">{tile.label}</div>
                     </div>
                 </template>
             </div>

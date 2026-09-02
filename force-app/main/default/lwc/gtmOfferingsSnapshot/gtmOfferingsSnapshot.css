@@ -7,25 +7,31 @@
     gap: 0.75rem;
 }
 .gs-tile {
-    flex: 1 1 180px;
-    min-width: 180px;
+    flex: 1 1 160px;
+    min-width: 160px;
     background: #ffffff;
     border: 1px solid #e5e5e5;
     border-radius: 8px;
     padding: 1rem 1.1rem;
+}
+.gs-tile-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+.gs-label {
+    font-size: 0.76rem;
+    color: #706e6b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 .gs-value {
     font-size: 1.65rem;
     font-weight: 700;
     color: #181818;
     line-height: 1.1;
-}
-.gs-label {
-    margin-top: 0.35rem;
-    font-size: 0.78rem;
-    color: #706e6b;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    font-variant-numeric: tabular-nums;
 }
 .gs-error {
     font-size: 0.85rem;
