@@ -21,6 +21,33 @@
     </div>
     <div class="progress" style={progressStyle}></div>
 
+    <template if:true={showCrmStrip}>
+      <div class="crm-strip">
+        <span class="crm-label">CRM</span>
+        <template if:true={hasCrmAccount}>
+          <a class="crm-chip crm-chip--account" href={crmAccountUrl} target="_blank" rel="noopener">
+            <span class="crm-chip-icon">🏢</span>{crmAccountName}
+          </a>
+        </template>
+        <template if:true={hasCrmOpp}>
+          <a class="crm-chip crm-chip--opp" href={crmOppUrl} target="_blank" rel="noopener">
+            <span class="crm-chip-icon">💼</span>{crmOppName}
+            <template if:true={crmEstimatedValue}>
+              <span class="crm-chip-value">{crmEstimatedValue}</span>
+            </template>
+          </a>
+        </template>
+        <template if:true={hasCrmContact}>
+          <span class="crm-chip crm-chip--contact">
+            <span class="crm-chip-icon">👤</span>{crmContactName}
+            <template if:true={crmContactEmail}>
+              <a class="crm-contact-email" href="mailto:{crmContactEmail}">{crmContactEmail}</a>
+            </template>
+          </span>
+        </template>
+      </div>
+    </template>
+
     <template if:true={_editMode}>
       <div class="admin-edit-strip">
         <a href={builderUrl} target="_blank" rel="noopener" class="aes-chip aes-chip--bld">Edit page layout in Experience Builder ↗</a>

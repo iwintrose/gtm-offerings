@@ -104,6 +104,21 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Opportunity__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Link_Password__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Industry_Label__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>Lead.GTM_Account__c</field>
         <readable>true</readable>
         <editable>true</editable>

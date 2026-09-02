@@ -83,6 +83,16 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Link_Password__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Industry_Label__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Saved_Configuration__c.Account__c</field>
         <readable>true</readable>
         <editable>true</editable>

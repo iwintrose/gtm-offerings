@@ -1,5 +1,6 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isConfigManager';
+import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
@@ -53,6 +54,7 @@ export default class MaConfigurator extends LightningElement {
     /** True while checkPasswordGate() is in flight for a prospect link;
      * hides the page content to prevent a flash of content before the gate. */
     @track _gateCheckPending = false;
+    @track _crmData = null;
 
     @track proofOn = false;
     @track objectsText = '0';
@@ -82,6 +84,7 @@ export default class MaConfigurator extends LightningElement {
         }
         this.maybePrefillContact();
         this.checkPasswordGate();
+        this.loadOverviewCrmData();
     }
 
     /** So a rep starting a brand-new link doesn't have to type their own
@@ -288,6 +291,7 @@ export default class MaConfigurator extends LightningElement {
         this.isProspectLink = !!companyParam;
         this.savedRecordId = cfgIdParam || '';
         this.checkActiveStatus();
+        if (cfgIdParam) this.loadOverviewCrmData();
 
         const exp = get('exp');
         if (exp) {
@@ -777,6 +781,69 @@ export default class MaConfigurator extends LightningElement {
             window.matchMedia &&
             window.matchMedia('(prefers-color-scheme: dark)').matches;
         this.theme = systemDark ? 'light' : 'dark';
+    }
+
+    // ------------------------------------------------------------ CRM overview
+
+    get showCrmStrip() {
+        return this.isConfigManager && !!this.savedRecordId && !!this._crmData;
+    }
+
+    get hasCrmAccount() {
+        return !!(this._crmData && this._crmData.accountId);
+    }
+
+    get crmAccountName() {
+        return this._crmData ? (this._crmData.accountName || '') : '';
+    }
+
+    get crmAccountUrl() {
+        if (!this._crmData || !this._crmData.accountId) return '#';
+        return `${this._orgUrl}/lightning/r/Account/${this._crmData.accountId}/view`;
+    }
+
+    get hasCrmOpp() {
+        return !!(this._crmData && this._crmData.opportunityId);
+    }
+
+    get crmOppName() {
+        return this._crmData ? (this._crmData.opportunityName || '') : '';
+    }
+
+    get crmOppUrl() {
+        if (!this._crmData || !this._crmData.opportunityId) return '#';
+        return `${this._orgUrl}/lightning/r/Opportunity/${this._crmData.opportunityId}/view`;
+    }
+
+    get hasCrmContact() {
+        return !!(this._crmData && this._crmData.contactId);
+    }
+
+    get crmContactName() {
+        return this._crmData ? (this._crmData.contactName || '') : '';
+    }
+
+    get crmContactEmail() {
+        return this._crmData ? (this._crmData.contactEmail || '') : '';
+    }
+
+    get crmEstimatedValue() {
+        if (!this._crmData || !this._crmData.estimatedValue) return '';
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(this._crmData.estimatedValue);
+    }
+
+    async loadOverviewCrmData() {
+        if (!this.isConfigManager || !this.savedRecordId) return;
+        try {
+            this._crmData = await getConfigurationCrmData({ recordId: this.savedRecordId });
+        } catch (e) {
+            this._crmData = null;
+        }
     }
 
     // ---------------------------------------------------------------- helpers

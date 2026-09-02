@@ -227,6 +227,88 @@
   transition: width 0.1s linear;
 }
 
+/* ---------- CRM strip (rep-only) ---------- */
+.crm-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.625rem;
+  padding: 0.5rem clamp(1.1rem, 4vw, 2rem);
+  background: #f0f4ff;
+  border-bottom: 1px solid #d0d9f5;
+  font-size: 0.78rem;
+  color: #2e3a6e;
+}
+
+.crm-label {
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6275b8;
+  margin-right: 0.25rem;
+}
+
+.crm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.crm-chip--account {
+  background: #e6eeff;
+  color: #1f3aa8;
+  border: 1px solid #c0cdf7;
+}
+
+.crm-chip--account:hover {
+  background: #d2deff;
+}
+
+.crm-chip--opp {
+  background: #e8f5ec;
+  color: #1a6637;
+  border: 1px solid #b2d9be;
+}
+
+.crm-chip--opp:hover {
+  background: #d2efda;
+}
+
+.crm-chip--contact {
+  background: #f5f0ff;
+  color: #4a2c91;
+  border: 1px solid #d4c4f5;
+}
+
+.crm-chip-icon {
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.crm-chip-value {
+  margin-left: 0.25rem;
+  font-weight: 700;
+  color: #1a6637;
+}
+
+.crm-contact-email {
+  margin-left: 0.25rem;
+  color: #6275b8;
+  text-decoration: underline;
+  font-size: 0.75rem;
+}
+
+.crm-contact-email:hover {
+  color: #1f3aa8;
+}
+
 /* ---------- admin edit mode ---------- */
 .admin-edit-strip {
   display: flex;
