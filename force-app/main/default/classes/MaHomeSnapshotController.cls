@@ -61,6 +61,13 @@ public with sharing class MaHomeSnapshotController {
         public String company { get; set; }
         @AuraEnabled
         public Datetime createdDate { get; set; }
+        /** Preferred navigation target: Opportunity if one was created/linked,
+         * Lead otherwise. The LWC navigates to whichever is non-null,
+         * falling back to the Assessment Request record itself. */
+        @AuraEnabled
+        public Id opportunityId { get; set; }
+        @AuraEnabled
+        public Id leadId { get; set; }
     }
 
     /** The 5 newest requests still sitting at Status = New -- what a rep
@@ -70,7 +77,8 @@ public with sharing class MaHomeSnapshotController {
     public static List<RequestSummary> getRecentNewAssessmentRequests() {
         List<RequestSummary> results = new List<RequestSummary>();
         for (MA_Assessment_Request__c req : [
-            SELECT Id, Name, Requester_Name__c, Company__c, CreatedDate
+            SELECT Id, Name, Requester_Name__c, Company__c, CreatedDate,
+                   Opportunity__c, Lead__c
             FROM MA_Assessment_Request__c
             WHERE Status__c = 'New'
             ORDER BY CreatedDate DESC
@@ -82,6 +90,8 @@ public with sharing class MaHomeSnapshotController {
             summary.requesterName = req.Requester_Name__c;
             summary.company = req.Company__c;
             summary.createdDate = req.CreatedDate;
+            summary.opportunityId = req.Opportunity__c;
+            summary.leadId = req.Lead__c;
             results.add(summary);
         }
         return results;
