@@ -1,0 +1,150 @@
+<template>
+    <template if:true={isLoading}>
+        <div class="loading">Loading…</div>
+    </template>
+
+    <template if:true={hasError}>
+        <div class="error-msg">Could not load assessment details.</div>
+    </template>
+
+    <template if:false={isLoading}>
+        <template if:false={hasError}>
+
+            <!-- ── Header ── -->
+            <div class="ar-header">
+                <div class="ar-title-row">
+                    <span class="ar-name">{arName}</span>
+                    <span class={statusClass}>{status}</span>
+                </div>
+                <div class="ar-submitter">
+                    <template if:true={reqName}>
+                        <span>{reqName}</span>
+                    </template>
+                    <template if:true={reqEmail}>
+                        <span class="sep">·</span>
+                        <a href="mailto:{reqEmail}" class="submitter-email">{reqEmail}</a>
+                    </template>
+                    <template if:true={company}>
+                        <span class="sep">·</span>
+                        <span>{company}</span>
+                    </template>
+                    <template if:true={role}>
+                        <span class="sep">·</span>
+                        <span class="submitter-role">{role}</span>
+                    </template>
+                </div>
+            </div>
+
+            <!-- ── CRM Connection Chain ── -->
+            <template if:true={hasCrmChain}>
+                <div class="panel">
+                    <div class="panel-label">CRM Connections</div>
+                    <div class="chain">
+
+                        <!-- Engagement Link -->
+                        <template if:true={hasCfg}>
+                            <div class="chain-node">
+                                <div class="node-label">Engagement Link</div>
+                                <a class="chip chip--link" href={cfgRecordUrl}>
+                                    <span class="chip-icon">🔗</span>
+                                    <span class="chip-text">{cfgName}</span>
+                                </a>
+                                <template if:true={cfgProspectUrl}>
+                                    <a class="prospect-url" href={cfgProspectUrl} target="_blank" rel="noopener">
+                                        View prospect link ↗
+                                    </a>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Account -->
+                        <template if:true={hasAccount}>
+                            <template if:true={hasCfg}>
+                                <div class="chain-arrow">→</div>
+                            </template>
+                            <div class="chain-node">
+                                <div class="node-label">Account</div>
+                                <a class="chip chip--account" href={accountUrl}>
+                                    <span class="chip-icon">🏢</span>
+                                    <span class="chip-text">{accountName}</span>
+                                </a>
+                            </div>
+                        </template>
+
+                        <!-- Opportunity -->
+                        <template if:true={hasOpp}>
+                            <div class="chain-arrow">→</div>
+                            <div class="chain-node">
+                                <div class="node-label">Opportunity</div>
+                                <a class="chip chip--opp" href={oppUrl}>
+                                    <span class="chip-icon">💼</span>
+                                    <span class="chip-text">{oppName}</span>
+                                </a>
+                            </div>
+                        </template>
+
+                        <!-- Contact -->
+                        <template if:true={hasContact}>
+                            <div class="chain-arrow">→</div>
+                            <div class="chain-node">
+                                <div class="node-label">Contact</div>
+                                <a class="chip chip--contact" href={contactUrl}>
+                                    <span class="chip-icon">👤</span>
+                                    <span class="chip-text">{contactName}</span>
+                                </a>
+                                <template if:true={contactEmail}>
+                                    <a class="chip-sub-link" href="mailto:{contactEmail}">{contactEmail}</a>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Lead (only when no Contact) -->
+                        <template if:true={hasLead}>
+                            <div class="chain-arrow">→</div>
+                            <div class="chain-node">
+                                <div class="node-label">Lead</div>
+                                <a class="chip chip--lead" href={leadUrl}>
+                                    <span class="chip-icon">👤</span>
+                                    <span class="chip-text">{leadName}</span>
+                                </a>
+                            </div>
+                        </template>
+
+                    </div><!-- .chain -->
+                </div><!-- .panel -->
+            </template>
+
+            <!-- ── Assessment Details ── -->
+            <div class="panel">
+                <div class="panel-label">Assessment Details</div>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Platform</div>
+                        <div class="detail-value">{platform}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Environment Size</div>
+                        <div class="detail-value">{environmentSize}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Timeline</div>
+                        <div class="detail-value">{timeline}</div>
+                    </div>
+                    <template if:true={source}>
+                        <div class="detail-item">
+                            <div class="detail-label">Source</div>
+                            <div class="detail-value">{source}</div>
+                        </div>
+                    </template>
+                </div>
+                <template if:true={hasContext}>
+                    <div class="context-block">
+                        <div class="detail-label">Additional Context</div>
+                        <div class="context-text">{context}</div>
+                    </div>
+                </template>
+            </div>
+
+        </template>
+    </template>
+</template>

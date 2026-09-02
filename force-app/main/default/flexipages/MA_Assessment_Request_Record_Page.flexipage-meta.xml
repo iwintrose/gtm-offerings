@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+    <flexiPageRegions>
+        <name>main</name>
+        <type>Region</type>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:maAssessmentDetail</componentName>
+                <identifier>c_maAssessmentDetail1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>flexipage:recordDetail</componentName>
+                <identifier>flexipage_recordDetail1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>flexipage:relatedListsQuickLinksComponent</componentName>
+                <identifier>flexipage_relatedListsQuickLinksComponent1</identifier>
+            </componentInstance>
+        </itemInstances>
+    </flexiPageRegions>
+    <masterLabel>Assessment Request Record Page</masterLabel>
+    <sobjectType>MA_Assessment_Request__c</sobjectType>
+    <template>
+        <name>flexipage:defaultRecordHomeTemplate</name>
+    </template>
+    <type>RecordPage</type>
+</FlexiPage>
