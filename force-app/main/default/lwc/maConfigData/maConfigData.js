@@ -46,7 +46,7 @@ export const FIELDS = [
     },
     {
         k: 'CUSTOM_NOTE',
-        label: 'A note for this client (replaces the default intro line on the page)',
+        label: 'A note for this client (appears below the industry intro on the page)',
         ph: 'e.g. We know Northwind’s Q3 renewal timeline — here’s how we’d de-risk it.',
         textarea: true
     }

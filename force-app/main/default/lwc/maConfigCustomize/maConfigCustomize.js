@@ -402,6 +402,7 @@ export default class MaConfigCustomize extends LightningElement {
         if (match.accountName) {
             this.emit('companychange', { value: match.accountName });
         }
+        this.scheduleAutoSave();
     }
 
     handleChangeContact() {

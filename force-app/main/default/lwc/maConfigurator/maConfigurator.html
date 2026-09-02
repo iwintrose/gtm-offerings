@@ -49,13 +49,13 @@
           how we get you there as your delivery partner, not just a tool, and
           what the first step looks like.
         </p>
-        <template if:true={hasCustomNote}>
-          <p class="lede rv d2 ind-slot custom-note">{customNoteDisplay}</p>
-        </template>
         <template if:true={showIndustryDefault}>
           <p class="lede rv d2 ind-slot">
             <lightning-formatted-rich-text value={coverSub}></lightning-formatted-rich-text>
           </p>
+        </template>
+        <template if:true={hasCustomNote}>
+          <p class="lede rv d2 ind-slot custom-note">{customNoteDisplay}</p>
         </template>
         <template if:true={hasCompany}>
           <div class="prepared rv d3">

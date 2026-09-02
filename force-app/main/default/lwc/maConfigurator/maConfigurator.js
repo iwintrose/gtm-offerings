@@ -465,9 +465,6 @@ export default class MaConfigurator extends LightningElement {
         return this.industry ? this.industry.coverSub : '';
     }
 
-    /** A rep-written note takes over the cover's intro line in place of the
-     * generic industry blurb -- this is the live-edit-in-Customize ask:
-     * the rep's own words replace the default copy on the page itself. */
     get hasCustomNote() {
         return !!this.tokenValue('CUSTOM_NOTE');
     }
@@ -476,8 +473,10 @@ export default class MaConfigurator extends LightningElement {
         return this.tokenValue('CUSTOM_NOTE');
     }
 
+    /** Industry blurb always shows when an industry is selected -- the
+     * custom note is additive (appears below), not a replacement. */
     get showIndustryDefault() {
-        return this.hasIndustry && !this.hasCustomNote;
+        return this.hasIndustry;
     }
 
     get challengeExtra() {
