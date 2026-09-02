@@ -415,6 +415,13 @@ public without sharing class MaAssessmentRequestController {
         ConfigContext ctx,
         RequestResult result
     ) {
+        // Assessment from a configured prospect link where the Account is
+        // already in Sales Cloud: write a Contact, not an unconverted Lead.
+        if (ctx.accountId != null) {
+            applyContact(input, cleanName, cleanEmail, cfg, ctx, result);
+            return;
+        }
+
         String leadSourceCfg = (String) cfg.get('Lead_Source__c');
         String leadSource = String.isBlank(leadSourceCfg)
             ? 'Migration Accelerator'
@@ -482,6 +489,58 @@ public without sharing class MaAssessmentRequestController {
         }
 
         result.leadId = target.Id;
+        logActivity(target.Id, input, cleanName, cleanEmail, cfg);
+    }
+
+    /**
+     * Creates or updates a Contact under the linked Account when one is known.
+     * An assessment from a configured prospect link where the Account already
+     * exists should produce a Contact, not an unconverted Lead — the two
+     * record types mean different things to a rep's Sales Cloud view.
+     */
+    private static void applyContact(
+        RequestInput input,
+        String cleanName,
+        String cleanEmail,
+        MA_Assessment_Config__mdt cfg,
+        ConfigContext ctx,
+        RequestResult result
+    ) {
+        List<Contact> existing = [
+            SELECT Id, AccountId, Title
+            FROM Contact
+            WHERE Email = :cleanEmail
+            LIMIT 1
+        ];
+
+        Contact target;
+        if (existing.isEmpty()) {
+            target = new Contact(
+                FirstName = firstNameOf(cleanName),
+                LastName = lastNameOf(cleanName),
+                Email = cleanEmail,
+                AccountId = ctx.accountId,
+                Title = trimTo(input.role, MAX_SHORT)
+            );
+            if (ctx.ownerId != null) {
+                target.OwnerId = ctx.ownerId;
+            }
+            insert target;
+            result.leadCreated = true;
+        } else {
+            target = existing[0];
+            Boolean dirty = false;
+            if (String.isBlank(target.Title) && String.isNotBlank(input.role)) {
+                target.Title = trimTo(input.role, MAX_SHORT);
+                dirty = true;
+            }
+            if (dirty) {
+                update target;
+            }
+        }
+
+        result.leadId = target.Id;
+        ctx.contactId = target.Id;
         logActivity(target.Id, input, cleanName, cleanEmail, cfg);
     }
 
