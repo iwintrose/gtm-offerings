@@ -4,9 +4,9 @@
     <filterScope>Mine</filterScope>
     <label>My Client Links</label>
     <columns>NAME</columns>
-    <columns>Company__c</columns>
+    <columns>Account__c</columns>
     <columns>Offering__c</columns>
-    <columns>Industry__c</columns>
+    <columns>Industry_Label__c</columns>
     <columns>Active__c</columns>
     <columns>Opportunity__c</columns>
     <columns>CREATED_DATE</columns>
