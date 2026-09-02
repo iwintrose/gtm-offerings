@@ -33,6 +33,11 @@ export default class MaConfigBooking extends LightningElement {
     @api prospect = '';
     @api industryLabel = '';
     @api savedRecordId = '';
+    /** Pre-filled from the configurator's company param so the guest doesn't retype it. */
+    @api prefillCompany = '';
+    /** Pre-filled from the configurator's SOURCE_PLATFORM token. Matched
+     *  case-insensitively against the platform options list; no-match leaves blank. */
+    @api prefillPlatform = '';
 
     @track form = {
         name: '',
@@ -51,9 +56,32 @@ export default class MaConfigBooking extends LightningElement {
     @track nameInvalid = false;
     @track emailInvalid = false;
 
-    platformOptions = PLATFORMS;
     sizeOptions = SIZES;
     timelineOptions = TIMELINES;
+
+    connectedCallback() {
+        this.applyPrefill();
+    }
+
+    applyPrefill() {
+        const company = this.prefillCompany || '';
+        const raw = (this.prefillPlatform || '').toLowerCase().trim();
+        const matchedPlatform = raw
+            ? (PLATFORMS.find((p) => p.toLowerCase() === raw) || '')
+            : '';
+        this.form = {
+            ...this.form,
+            company: company || this.form.company,
+            currentPlatform: matchedPlatform || this.form.currentPlatform
+        };
+    }
+
+    get platformOptionsForSelect() {
+        return PLATFORMS.map((p) => {
+            const value = p === 'Select…' ? '' : p;
+            return { value, label: p, selected: value === this.form.currentPlatform };
+        });
+    }
 
     // ---------------------------------------------------------------- display
 

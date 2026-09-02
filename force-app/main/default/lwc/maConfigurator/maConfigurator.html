@@ -485,8 +485,35 @@
       prospect={company}
       industry-label={industryLabel}
       saved-record-id={savedRecordId}
+      prefill-company={company}
+      prefill-platform={sourcePlatformPrefill}
       onclose={handleCloseBooking}
     ></c-ma-config-booking>
+
+    <template if:true={showPasswordGate}>
+      <div class="expired on pw-gate">
+        <div class="pw-card">
+          <div class="xt">This link is password protected.</div>
+          <p>Enter the access password provided by your Publicis Sapient contact.</p>
+          <form onsubmit={handlePasswordSubmit}>
+            <input
+              class="pw-input"
+              type="password"
+              placeholder="Access password"
+              value={passwordGateInput}
+              onchange={handlePasswordInput}
+              autocomplete="current-password"
+            />
+            <template if:true={passwordGateError}>
+              <div class="pw-error" role="alert">{passwordGateError}</div>
+            </template>
+            <button class="cta pw-btn" type="submit" disabled={passwordGateChecking}>
+              {passwordGateSubmitLabel}
+            </button>
+          </form>
+        </div>
+      </div>
+    </template>
 
     <template if:true={expired}>
       <div class="expired on">

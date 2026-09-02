@@ -2,6 +2,7 @@ import { LightningElement, api, track } from 'lwc';
 import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
+import hasLinkPassword from '@salesforce/apex/MaSavedConfigurationController.hasLinkPassword';
 import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import { FIELDS, LINKS_KEY, initials, isHex6 } from 'c/maConfigData';
@@ -50,7 +51,22 @@ export default class MaConfigCustomize extends LightningElement {
     }
     set savedRecordId(value) {
         this._savedRecordId = value || '';
-        if (value) this.knownRecordId = value;
+        if (value) {
+            this.knownRecordId = value;
+            this.loadPasswordStatus(value);
+        }
+    }
+
+    @track linkPassword = '';
+    @track clearLinkPassword = false;
+    @track hasExistingPassword = false;
+
+    async loadPasswordStatus(recordId) {
+        try {
+            this.hasExistingPassword = await hasLinkPassword({ recordId });
+        } catch (e) {
+            this.hasExistingPassword = false;
+        }
     }
 
     @track knownRecordId = '';
@@ -406,6 +422,18 @@ export default class MaConfigCustomize extends LightningElement {
         this.clientContactEmail = '';
     }
 
+    handleLinkPasswordInput(event) {
+        this.linkPassword = event.currentTarget.value;
+        this.clearLinkPassword = false;
+    }
+
+    handleClearPassword() {
+        this.linkPassword = '';
+        this.clearLinkPassword = true;
+        this.hasExistingPassword = false;
+        this.scheduleAutoSave();
+    }
+
     handleEstimatedValueInput(event) {
         this.estimatedValue = event.currentTarget.value;
     }
@@ -705,9 +733,15 @@ export default class MaConfigCustomize extends LightningElement {
                     clientContactEmail: this.clientContactEmail,
                     estimatedValue: this.estimatedValue,
                     contactId: this._selectedContact?.id || null,
-                    accountId: this._selectedContact?.accountId || null
+                    accountId: this._selectedContact?.accountId || null,
+                    linkPassword: this.linkPassword || null,
+                    clearLinkPassword: this.clearLinkPassword
                 }
             });
+            if (this.linkPassword) {
+                this.hasExistingPassword = true;
+                this.linkPassword = '';
+            }
             entry.serverId = recordId;
             this.knownRecordId = recordId;
 
@@ -731,6 +765,7 @@ export default class MaConfigCustomize extends LightningElement {
                     });
                 }
             }
+            this.clearLinkPassword = false;
 
             this.links = this.links.map((l) => (l.id === entry.id ? entry : l));
             this.writeLinks();

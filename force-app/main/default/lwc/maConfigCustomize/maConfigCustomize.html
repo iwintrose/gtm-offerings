@@ -236,6 +236,27 @@
           <input id="lbExp" type="date" value={expires} oninput={handleExpires} />
         </div>
 
+        <div class="fld spaced">
+          <label for="lbPassword">Password protection</label>
+          <template if:true={hasExistingPassword}>
+            <div class="pw-status">
+              <span class="pw-on">Password set ✓</span>
+              <button type="button" class="pw-remove" onclick={handleClearPassword}>Remove</button>
+            </div>
+          </template>
+          <input
+            id="lbPassword"
+            type="text"
+            placeholder={hasExistingPassword ? 'Enter a new password to replace…' : 'Set an access password…'}
+            value={linkPassword}
+            oninput={handleLinkPasswordInput}
+            autocomplete="off"
+          />
+          <div class="lb-note">
+            Guests must enter this before viewing the shared link. Leave blank to leave the current setting unchanged.
+          </div>
+        </div>
+
         <div class="lb-t spaced-top">Link for the hosted version</div>
         <div class="lb-out">
           <input class="lb-url" readonly value={linkUrl} />

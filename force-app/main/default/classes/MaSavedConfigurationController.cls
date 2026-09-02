@@ -45,6 +45,16 @@ public with sharing class MaSavedConfigurationController {
          * Company text happens to resolve/create. */
         @AuraEnabled
         public String accountId { get; set; }
+        /** When non-blank, sets Link_Password__c to this value (guests must
+         * enter it before viewing the shared link). Omit or leave blank to
+         * leave the existing password untouched -- set clearLinkPassword to
+         * true instead to explicitly remove it. */
+        @AuraEnabled
+        public String linkPassword { get; set; }
+        /** When true and linkPassword is blank, clears Link_Password__c on
+         * the record. Ignored when linkPassword is non-blank. */
+        @AuraEnabled
+        public Boolean clearLinkPassword { get; set; }
     }
 
     public class ContactSearchResult {
@@ -135,6 +145,11 @@ public with sharing class MaSavedConfigurationController {
         if (estimatedValue != null) {
             record.Estimated_Value__c = estimatedValue;
         }
+        if (String.isNotBlank(input.linkPassword)) {
+            record.Link_Password__c = input.linkPassword.trim();
+        } else if (input.clearLinkPassword == true) {
+            record.Link_Password__c = null;
+        }
 
         try {
             if (String.isNotBlank(input.recordId)) {
@@ -216,6 +231,21 @@ public with sharing class MaSavedConfigurationController {
     @AuraEnabled(cacheable=true)
     public static Boolean isConfigManager() {
         return true;
+    }
+
+    /** Returns true when the saved record currently has a password set.
+     *  Used by the Customize panel to show the rep whether password
+     *  protection is active without exposing the password value itself. */
+    @AuraEnabled(cacheable=false)
+    public static Boolean hasLinkPassword(String recordId) {
+        if (String.isBlank(recordId)) return false;
+        List<MA_Saved_Configuration__c> rows = [
+            SELECT Link_Password__c
+            FROM MA_Saved_Configuration__c
+            WHERE Id = :recordId
+            LIMIT 1
+        ];
+        return !rows.isEmpty() && String.isNotBlank(rows[0].Link_Password__c);
     }
 
     @AuraEnabled

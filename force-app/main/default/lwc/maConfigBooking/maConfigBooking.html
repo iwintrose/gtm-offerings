@@ -70,8 +70,8 @@
                 data-field="currentPlatform"
                 onchange={handleFieldChange}
               >
-                <template for:each={platformOptions} for:item="opt">
-                  <option key={opt} value={opt}>{opt}</option>
+                <template for:each={platformOptionsForSelect} for:item="opt">
+                  <option key={opt.value} value={opt.value} selected={opt.selected}>{opt.label}</option>
                 </template>
               </select>
             </div>

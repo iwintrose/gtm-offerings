@@ -2,6 +2,8 @@ import { LightningElement, api, track, wire } from 'lwc';
 import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isConfigManager';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
+import verifyPassword from '@salesforce/apex/MaLinkAuthController.verifyPassword';
 import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/maConfigData';
 import USER_ID from '@salesforce/user/Id';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
@@ -43,6 +45,12 @@ export default class MaConfigurator extends LightningElement {
     @track isConfigManager = false;
     @track savedRecordId = '';
 
+    @track passwordRequired = false;
+    @track passwordVerified = false;
+    @track passwordGateInput = '';
+    @track passwordGateError = '';
+    @track passwordGateChecking = false;
+
     @track proofOn = false;
     @track objectsText = '0';
     @track depsText = '0';
@@ -70,6 +78,7 @@ export default class MaConfigurator extends LightningElement {
             this.isConfigManager = false;
         }
         this.maybePrefillContact();
+        this.checkPasswordGate();
     }
 
     /** So a rep starting a brand-new link doesn't have to type their own
@@ -378,6 +387,25 @@ export default class MaConfigurator extends LightningElement {
         return this.tokenValue('SOURCE_PLATFORM') || this.tokFallback('SOURCE_PLATFORM');
     }
 
+    /** Raw platform value passed to the booking form so it can pre-select
+     *  the matching option — never includes the {{TOKEN}} placeholder. */
+    get sourcePlatformPrefill() {
+        return this.tokenValue('SOURCE_PLATFORM');
+    }
+
+    get showPasswordGate() {
+        return (
+            !!this.savedRecordId &&
+            !this.isConfigManager &&
+            this.passwordRequired &&
+            !this.passwordVerified
+        );
+    }
+
+    get passwordGateSubmitLabel() {
+        return this.passwordGateChecking ? 'Checking…' : 'Access this link →';
+    }
+
     get sourceTokClass() {
         return this.tokenValue('SOURCE_PLATFORM') || !this.isConfigManager ? 'tok' : 'tok empty';
     }
@@ -599,6 +627,60 @@ export default class MaConfigurator extends LightningElement {
         const next = current && current.nextElementSibling;
         if (next && typeof next.scrollIntoView === 'function') {
             next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // ---------------------------------------------------- password gate
+
+    async checkPasswordGate() {
+        if (!this.savedRecordId || this.isConfigManager) return;
+        try {
+            const sessionKey = `ma-auth-${this.savedRecordId}`;
+            if (window.sessionStorage && window.sessionStorage.getItem(sessionKey) === '1') {
+                this.passwordVerified = true;
+                return;
+            }
+        } catch (e) { /* sessionStorage not available */ }
+        try {
+            this.passwordRequired = await checkPasswordRequired({
+                recordId: this.savedRecordId
+            });
+        } catch (e) {
+            this.passwordRequired = false;
+        }
+    }
+
+    handlePasswordInput(event) {
+        this.passwordGateInput = event.currentTarget.value;
+        this.passwordGateError = '';
+    }
+
+    async handlePasswordSubmit(event) {
+        event.preventDefault();
+        const pw = (this.passwordGateInput || '').trim();
+        if (!pw) {
+            this.passwordGateError = 'Please enter the access password.';
+            return;
+        }
+        this.passwordGateChecking = true;
+        this.passwordGateError = '';
+        try {
+            const ok = await verifyPassword({
+                recordId: this.savedRecordId,
+                password: pw
+            });
+            if (ok) {
+                this.passwordVerified = true;
+                try {
+                    window.sessionStorage.setItem(`ma-auth-${this.savedRecordId}`, '1');
+                } catch (e) { /* sessionStorage not available */ }
+            } else {
+                this.passwordGateError = 'Incorrect password. Please try again.';
+            }
+        } catch (e) {
+            this.passwordGateError = 'Something went wrong. Please try again.';
+        } finally {
+            this.passwordGateChecking = false;
         }
     }
 
