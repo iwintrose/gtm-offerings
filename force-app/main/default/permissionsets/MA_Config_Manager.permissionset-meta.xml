@@ -36,6 +36,15 @@
         <allowEdit>true</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
+        <object>MA_Page_Section__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
         <object>MA_Saved_Configuration__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
@@ -93,6 +102,31 @@
         <object>MA_Page_Content__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>MA_Page_Section__c.Active__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>MA_Page_Section__c.Help_Text__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>MA_Page_Section__c.Label__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>MA_Page_Section__c.Sort_Order__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>MA_Page_Section__c.Width__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <fieldPermissions>
         <field>MA_Saved_Configuration__c.Active__c</field>
         <readable>true</readable>

@@ -47,6 +47,54 @@ public without sharing class MaPageContentReader {
         return result;
     }
 
+    /**
+     * Returns the page's structure and its content together: the ordered,
+     * active sections plus the flat content map. One call so the renderer
+     * never paints a section before its content has arrived.
+     */
+    @AuraEnabled(cacheable=true)
+    public static PageLayout getPageLayout(String offeringKey, String templateType, String industryKey) {
+        PageLayout layout = new PageLayout();
+        layout.content = getPageContent(offeringKey, templateType, industryKey);
+        if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
+            return layout;
+        }
+
+        for (MA_Page_Section__c sec : [
+            SELECT Section_Key__c, Label__c, Help_Text__c, Layout_Type__c, Width__c, Sort_Order__c
+            FROM   MA_Page_Section__c
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
+            AND    Active__c        = true
+            ORDER BY Sort_Order__c ASC NULLS LAST, Section_Key__c ASC
+            LIMIT 200
+        ]) {
+            SectionDto dto = new SectionDto();
+            dto.sectionKey = sec.Section_Key__c;
+            dto.label      = sec.Label__c;
+            dto.helpText   = sec.Help_Text__c;
+            dto.layoutType = sec.Layout_Type__c;
+            dto.width      = sec.Width__c;
+            dto.sortOrder  = sec.Sort_Order__c;
+            layout.sections.add(dto);
+        }
+        return layout;
+    }
+
+    public class PageLayout {
+        @AuraEnabled public List<SectionDto> sections = new List<SectionDto>();
+        @AuraEnabled public Map<String, String> content = new Map<String, String>();
+    }
+
+    public class SectionDto {
+        @AuraEnabled public String sectionKey;
+        @AuraEnabled public String label;
+        @AuraEnabled public String helpText;
+        @AuraEnabled public String layoutType;
+        @AuraEnabled public String width;
+        @AuraEnabled public Decimal sortOrder;
+    }
+
     private static String resolveValue(MA_Page_Content__c rec) {
         if (rec.Field_Type__c == 'rich') return rec.Rich_Value__c;
         if (rec.Field_Type__c == 'json') return rec.JSON_Value__c;

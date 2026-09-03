@@ -424,6 +424,176 @@
    "Text_Value__c": "",
    "Rich_Value__c": "The next step is putting a name and an industry behind it.",
    "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row26"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "mechanism",
+   "Field_Key__c": "eyebrow",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::mechanism::eyebrow",
+   "Active__c": true,
+   "Sort_Order__c": 260,
+   "Text_Value__c": "The mechanism",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row27"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "capabilities",
+   "Field_Key__c": "eyebrow",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::capabilities::eyebrow",
+   "Active__c": true,
+   "Sort_Order__c": 270,
+   "Text_Value__c": "The capabilities",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row28"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "capabilities",
+   "Field_Key__c": "head",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::capabilities::head",
+   "Active__c": true,
+   "Sort_Order__c": 280,
+   "Text_Value__c": "What's actually built.",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row29"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "clientProfile",
+   "Field_Key__c": "eyebrow",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::clientProfile::eyebrow",
+   "Active__c": true,
+   "Sort_Order__c": 290,
+   "Text_Value__c": "The client profile",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row30"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "clientProfile",
+   "Field_Key__c": "head",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::clientProfile::head",
+   "Active__c": true,
+   "Sort_Order__c": 300,
+   "Text_Value__c": "Who this fits.",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row31"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "bd",
+   "Field_Key__c": "eyebrow",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::bd::eyebrow",
+   "Active__c": true,
+   "Sort_Order__c": 310,
+   "Text_Value__c": "For Business Development and Industry Leaders",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row32"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "faq",
+   "Field_Key__c": "eyebrow",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::faq::eyebrow",
+   "Active__c": true,
+   "Sort_Order__c": 320,
+   "Text_Value__c": "FAQ",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row33"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "faq",
+   "Field_Key__c": "head",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::faq::head",
+   "Active__c": true,
+   "Sort_Order__c": 330,
+   "Text_Value__c": "The questions this needs to survive.",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row34"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "closing",
+   "Field_Key__c": "ctaLabel",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::closing::ctaLabel",
+   "Active__c": true,
+   "Sort_Order__c": 340,
+   "Text_Value__c": "Build a client-specific version →",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row35"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "problem",
+   "Field_Key__c": "eyebrow",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::problem::eyebrow",
+   "Active__c": true,
+   "Sort_Order__c": 350,
+   "Text_Value__c": "",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
   }
  ]
 }

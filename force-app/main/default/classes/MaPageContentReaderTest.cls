@@ -105,4 +105,107 @@ private class MaPageContentReaderTest {
         System.assert(noOffering.isEmpty(), 'Blank offering key returns an empty map');
         System.assert(noTemplate.isEmpty(), 'Blank template type returns an empty map');
     }
+
+    // ─── getPageLayout ────────────────────────────────────────────────────────
+
+    private static MA_Page_Section__c section(String key, String layout, Integer sortOrder) {
+        return new MA_Page_Section__c(
+            Section_Address__c = OFFERING + '::' + TMPL + '::' + key,
+            Offering_Key__c    = OFFERING,
+            Template_Type__c   = TMPL,
+            Section_Key__c     = key,
+            Label__c           = key,
+            Layout_Type__c     = layout,
+            Width__c           = 'standard',
+            Sort_Order__c      = sortOrder,
+            Active__c          = true
+        );
+    }
+
+    @IsTest
+    static void layoutReturnsSectionsInSortOrder() {
+        insert new List<MA_Page_Section__c>{
+            section('closing', 'closing', 30),
+            section('hero', 'hero', 10),
+            section('faq', 'faq', 20)
+        };
+
+        Test.startTest();
+        MaPageContentReader.PageLayout layout =
+            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        System.assertEquals(3, layout.sections.size(), 'All active sections return');
+        System.assertEquals('hero', layout.sections[0].sectionKey, 'Lowest Sort_Order__c first');
+        System.assertEquals('faq', layout.sections[1].sectionKey, 'Then the next');
+        System.assertEquals('closing', layout.sections[2].sectionKey, 'Highest last');
+    }
+
+    @IsTest
+    static void reorderingSortOrderReordersThePage() {
+        // The behaviour the Rearrange control depends on: rewriting Sort_Order__c
+        // must change the order the renderer receives, with no code change.
+        List<MA_Page_Section__c> secs = new List<MA_Page_Section__c>{
+            section('hero', 'hero', 10),
+            section('faq', 'faq', 20)
+        };
+        insert secs;
+
+        secs[0].Sort_Order__c = 20;
+        secs[1].Sort_Order__c = 10;
+        update secs;
+
+        Test.startTest();
+        MaPageContentReader.PageLayout layout =
+            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        System.assertEquals('faq', layout.sections[0].sectionKey, 'FAQ moved above the hero');
+        System.assertEquals('hero', layout.sections[1].sectionKey, 'Hero moved below the FAQ');
+    }
+
+    @IsTest
+    static void inactiveSectionIsRemovedFromThePage() {
+        MA_Page_Section__c hidden = section('faq', 'faq', 20);
+        hidden.Active__c = false;
+        insert new List<MA_Page_Section__c>{ section('hero', 'hero', 10), hidden };
+
+        Test.startTest();
+        MaPageContentReader.PageLayout layout =
+            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        System.assertEquals(1, layout.sections.size(), 'Inactive sections do not render');
+        System.assertEquals('hero', layout.sections[0].sectionKey, 'Only the active one remains');
+    }
+
+    @IsTest
+    static void layoutCarriesContentAlongsideStructure() {
+        insert section('hero', 'hero', 10);
+        insert row('hero', 'eyebrow', 'text', 'Eyebrow copy', null, null, null, 1);
+
+        Test.startTest();
+        MaPageContentReader.PageLayout layout =
+            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        System.assertEquals(1, layout.sections.size(), 'Structure returns');
+        System.assertEquals('Eyebrow copy', layout.content.get('hero::eyebrow'),
+            'Content returns in the same call, so the page never paints a section before its content');
+    }
+
+    @IsTest
+    static void layoutForAnotherOfferingIsExcluded() {
+        MA_Page_Section__c other = section('hero', 'hero', 10);
+        other.Offering_Key__c = 'some-other-offering';
+        other.Section_Address__c = 'some-other-offering::' + TMPL + '::hero';
+        insert other;
+
+        Test.startTest();
+        MaPageContentReader.PageLayout layout =
+            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        System.assert(layout.sections.isEmpty(), 'Another offering\'s sections must not leak in');
+    }
 }

@@ -1,6 +1,6 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
-import getPageContent from '@salesforce/apex/MaPageContentReader.getPageContent';
+import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
@@ -21,6 +21,94 @@ function buildBuilderUrl(orgUrl) {
 
 // Hardcoded fallbacks shown until CMS data loads (keeps the page usable if a
 // CMS record hasn't been created yet or a callout fails).
+
+
+// The field vocabulary of each layout type, bucketed by how the value is
+// stored and rendered. This is the contract between the renderer and
+// MA_Page_Content__c: scripts/check-content-contract.py reads it to assert
+// the seeded records match, and the sections getter resolves from it, so the
+// two cannot drift apart. Adding a field to a layout means adding it here.
+const LAYOUT_FIELDS = {
+    'hero':        { text: ['eyebrow'],                      rich: ['headline', 'subhead'],        json: [] },
+    'lede-chips':  { text: ['eyebrow'],                      rich: ['lede', 'close'],              json: ['chips'] },
+    'route-proof': { text: ['eyebrow', 'proofDemoRoot'],     rich: ['head', 'sub', 'proofCtaText'], json: ['routeSteps', 'proofDemoDeps'] },
+    'card-grid':   { text: ['eyebrow', 'head'],              rich: ['bonusCard'],                  json: ['cards'] },
+    'stat':        { text: ['eyebrow', 'head', 'statBig'],   rich: ['statDesc', 'note'],           json: [] },
+    'use-pitch':   { text: ['eyebrow', 'head'],              rich: ['lede'],                       json: ['useCases', 'pitchOldChips', 'pitchNewChips'] },
+    'faq':         { text: ['eyebrow', 'head'],              rich: [],                             json: ['items'] },
+    'closing':     { text: ['ctaLabel'],                     rich: ['head', 'sub'],                json: [] }
+};
+
+
+// Per-layout fallbacks, used when a record is absent. Keyed by layout type and
+// field name so they line up with LAYOUT_FIELDS. These are the floor: the page
+// still renders if the org has no content rows at all.
+const SECTION_FALLBACKS = {
+    'hero': {
+        eyebrow: DEFAULTS.heroEyebrow,
+        headline: DEFAULTS.heroHeadline,
+        subhead: DEFAULTS.heroSubhead
+    },
+    'lede-chips': {
+        lede: DEFAULTS.problemLede,
+        close: DEFAULTS.problemClose,
+        chips: DEFAULTS.problemChips
+    },
+    'route-proof': {
+        eyebrow: 'The mechanism',
+        head: DEFAULTS.mechanismHead,
+        sub: DEFAULTS.mechanismSub,
+        routeSteps: DEFAULTS.routeSteps,
+        proofCtaText: DEFAULTS.proofCtaText,
+        proofDemoRoot: DEFAULTS.proofDemoRoot,
+        proofDemoDeps: DEFAULTS.proofDemoDeps
+    },
+    'card-grid': {
+        eyebrow: 'The capabilities',
+        head: "What's actually built.",
+        cards: DEFAULTS.capabilities,
+        bonusCard: DEFAULTS.bonusCard
+    },
+    'stat': {
+        eyebrow: 'The client profile',
+        head: 'Who this fits.',
+        statBig: DEFAULTS.clientStatBig,
+        statDesc: DEFAULTS.clientStatDesc,
+        note: DEFAULTS.clientNote
+    },
+    'use-pitch': {
+        eyebrow: 'For Business Development and Industry Leaders',
+        head: DEFAULTS.bdHead,
+        lede: DEFAULTS.bdLede,
+        useCases: DEFAULTS.bdUseCases,
+        pitchOldChips: DEFAULTS.pitchOldChips,
+        pitchNewChips: DEFAULTS.pitchNewChips
+    },
+    'faq': {
+        eyebrow: 'FAQ',
+        head: 'The questions this needs to survive.',
+        items: DEFAULTS.faqs
+    },
+    'closing': {
+        head: DEFAULTS.closingHead,
+        sub: DEFAULTS.closingSub,
+        ctaLabel: 'Build a client-specific version \u2192'
+    }
+};
+
+// Fallback structure, used only until getPageLayout returns rows. Order here
+// matches the page as originally authored; MA_Page_Section__c overrides it.
+const DEFAULT_SECTIONS = [
+    { sectionKey: 'hero',          layoutType: 'hero',        width: 'standard', label: '' },
+    { sectionKey: 'problem',       layoutType: 'lede-chips',  width: 'standard', label: '' },
+    { sectionKey: 'mechanism',     layoutType: 'route-proof', width: 'wide',     label: 'The mechanism' },
+    { sectionKey: 'capabilities',  layoutType: 'card-grid',   width: 'standard', label: 'The capabilities' },
+    { sectionKey: 'clientProfile', layoutType: 'stat',        width: 'standard', label: 'The client profile' },
+    { sectionKey: 'bd',            layoutType: 'use-pitch',   width: 'wide',     label: 'For Business Development and Industry Leaders' },
+    { sectionKey: 'faq',           layoutType: 'faq',         width: 'standard', label: 'FAQ' },
+    { sectionKey: 'closing',       layoutType: 'closing',     width: 'standard', label: '' }
+];
+
 const DEFAULTS = {
     heroEyebrow: 'Internal positioning · GTM buy-in',
     heroHeadline: 'Every migration starts with a decade nobody documented. We read it in an afternoon.',
@@ -129,6 +217,13 @@ export default class MaStory extends LightningElement {
     @track _proofHealthScore = null;
     // MA_Page_Content__c flat map: key = 'section::field', value = resolved string
     @track _cms = {};
+    // Structure of the page, ordered. Empty until getPageLayout returns, at
+    // which point DEFAULT_SECTIONS stops being used.
+    @track _sectionRows = [];
+    @track _loadError = '';
+    // Set in the Lightning App Builder / Experience Builder. Defaults to the
+    // first offering but is not bound to it.
+    @api offeringKey = OFFERING_KEY;
 
     _observer;
     _revealed = new Set();
@@ -148,65 +243,95 @@ export default class MaStory extends LightningElement {
         try { return JSON.parse(raw); } catch (e) { return null; }
     }
 
+
+    // ─── section render model ──────────────────────────────────────────────
+    // The page is drawn by iterating this. Every value the template needs is
+    // resolved here, because LWC templates cannot call functions. Layout type
+    // decides which branch draws the section; order comes from the records.
+
+    get sections() {
+        const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
+        return rows.map((row) => {
+            const k = row.sectionKey;
+            const t = row.layoutType;
+            const spec = LAYOUT_FIELDS[t] || { text: [], rich: [], json: [] };
+            const fb = SECTION_FALLBACKS[t] || {};
+
+            const s = {
+                key: k,
+                layoutType: t,
+                isHero: t === 'hero',
+                isLedeChips: t === 'lede-chips',
+                isRouteProof: t === 'route-proof',
+                isCardGrid: t === 'card-grid',
+                isStat: t === 'stat',
+                isUsePitch: t === 'use-pitch',
+                isFaq: t === 'faq',
+                isClosing: t === 'closing',
+                sectionClass: t === 'hero' ? 'hero wrap'
+                    : t === 'closing' ? 'closing wrap'
+                    : row.width === 'wide' ? 'beat wrap wide' : 'beat wrap'
+            };
+
+            // Resolve every field this layout declares: record -> fallback.
+            spec.text.concat(spec.rich).forEach((f) => {
+                s[f] = this._ct(k + '::' + f) || fb[f] || '';
+            });
+            spec.json.forEach((f) => {
+                const fromRecord = this._cj(k + '::' + f);
+                s[f] = (fromRecord && fromRecord.length) ? fromRecord : (fb[f] || []);
+            });
+
+            // An eyebrow renders only when the layout declares one and a value
+            // resolves. The section's editor label is deliberately NOT used as a
+            // fallback: sections like the problem beat carry no eyebrow on the
+            // page, and borrowing the label would invent one.
+            s.hasEyebrow = !!s.eyebrow;
+
+            // Shaping the template cannot do for itself.
+            if (s.isLedeChips) s.chips = this._withKeys(s.chips);
+            if (s.isRouteProof) s.proofDemoDeps = this._withKeys(s.proofDemoDeps);
+            if (s.isCardGrid) {
+                s.cards = s.cards.map((c) => ({ ...c, cardClass: c.isNew ? 'cap-card new' : 'cap-card' }));
+            }
+            if (s.isUsePitch) {
+                s.oldChips = this._withKeys(s.pitchOldChips);
+                s.newChips = this._withKeys(s.pitchNewChips);
+            }
+            if (s.isFaq) s.items = this._buildFaqs(s.items);
+
+            return s;
+        });
+    }
+
+    // for:each needs a stable key, and a bare string cannot carry one.
+    _withKeys(list) {
+        return list.map((text, i) => ({ id: i + '-' + text, text }));
+    }
+
+    _buildFaqs(fromRecords) {
+        const source = fromRecords.length
+            ? fromRecords
+            : (this._faqData && this._faqData.length) ? this._faqData : DEFAULTS.faqs;
+        return source.map((f, index) => {
+            const id = 'q' + (index + 1);
+            const qualified = f.verdict !== 'Yes';
+            return {
+                id,
+                question: f.question,
+                verdict: f.verdict,
+                answer: f.answer,
+                itemClass: this.openFaqId === id ? 'faq-item open' : 'faq-item',
+                verdictClass: qualified ? 'faq-verdict qualified' : 'faq-verdict yes'
+            };
+        });
+    }
+
     // ---- page getters ----
 
-    get heroEyebrow() { return this._ct('hero::eyebrow') || (this._page && this._page.heroEyebrow) || DEFAULTS.heroEyebrow; }
-    get heroHeadline() { return this._ct('hero::headline') || (this._page && this._page.heroHeadline) || DEFAULTS.heroHeadline; }
-    get heroSubhead() { return this._ct('hero::subhead') || (this._page && this._page.heroSubhead) || DEFAULTS.heroSubhead; }
-    get problemLede() { return this._ct('problem::lede') || (this._page && this._page.problemLede) || DEFAULTS.problemLede; }
-    get problemChips() {
-        const cj = this._cj('problem::chips');
-        if (cj && cj.length) return cj;
-        return (this._page && this._page.problemChips && this._page.problemChips.length) ? this._page.problemChips : DEFAULTS.problemChips;
-    }
-    get problemClose() { return this._ct('problem::close') || (this._page && this._page.problemClose) || DEFAULTS.problemClose; }
-    get mechanismHead() { return this._ct('mechanism::head') || (this._page && this._page.mechanismHead) || DEFAULTS.mechanismHead; }
-    get mechanismSub() { return this._ct('mechanism::sub') || (this._page && this._page.mechanismSub) || DEFAULTS.mechanismSub; }
-    get closingHead() { return this._ct('closing::head') || (this._page && this._page.closingHead) || DEFAULTS.closingHead; }
-    get closingSub() { return this._ct('closing::sub') || (this._page && this._page.closingSub) || DEFAULTS.closingSub; }
 
     // ---- body getters ----
 
-    get routeSteps() {
-        const cj = this._cj('mechanism::routeSteps');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.routeSteps && this._body.routeSteps.length) ? this._body.routeSteps : DEFAULTS.routeSteps;
-    }
-    get proofCtaText() { return this._ct('mechanism::proofCtaText') || (this._body && this._body.proofCtaText) || DEFAULTS.proofCtaText; }
-    get proofDemoRoot() { return this._ct('mechanism::proofDemoRoot') || (this._body && this._body.proofDemoRoot) || DEFAULTS.proofDemoRoot; }
-    get proofDemoDeps() {
-        const cj = this._cj('mechanism::proofDemoDeps');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.proofDemoDeps && this._body.proofDemoDeps.length) ? this._body.proofDemoDeps : DEFAULTS.proofDemoDeps;
-    }
-    get capabilities() {
-        const cj = this._cj('capabilities::cards');
-        const caps = (cj && cj.length) ? cj
-            : (this._body && this._body.capabilities && this._body.capabilities.length)
-                ? this._body.capabilities : DEFAULTS.capabilities;
-        return caps.map((c) => ({ ...c, cardClass: c.isNew ? 'cap-card new' : 'cap-card' }));
-    }
-    get bonusCard() { return this._ct('capabilities::bonusCard') || (this._body && this._body.bonusCard) || DEFAULTS.bonusCard; }
-    get clientStatBig() { return this._ct('clientProfile::statBig') || (this._body && this._body.clientStatBig) || DEFAULTS.clientStatBig; }
-    get clientStatDesc() { return this._ct('clientProfile::statDesc') || (this._body && this._body.clientStatDesc) || DEFAULTS.clientStatDesc; }
-    get clientNote() { return this._ct('clientProfile::note') || (this._body && this._body.clientNote) || DEFAULTS.clientNote; }
-    get bdHead() { return this._ct('bd::head') || (this._body && this._body.bdHead) || DEFAULTS.bdHead; }
-    get bdLede() { return this._ct('bd::lede') || (this._body && this._body.bdLede) || DEFAULTS.bdLede; }
-    get bdUseCases() {
-        const cj = this._cj('bd::useCases');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.bdUseCases && this._body.bdUseCases.length) ? this._body.bdUseCases : DEFAULTS.bdUseCases;
-    }
-    get pitchOldChips() {
-        const cj = this._cj('bd::pitchOldChips');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.pitchOldChips && this._body.pitchOldChips.length) ? this._body.pitchOldChips : DEFAULTS.pitchOldChips;
-    }
-    get pitchNewChips() {
-        const cj = this._cj('bd::pitchNewChips');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.pitchNewChips && this._body.pitchNewChips.length) ? this._body.pitchNewChips : DEFAULTS.pitchNewChips;
-    }
 
     // ---- misc computed ----
 
@@ -217,33 +342,10 @@ export default class MaStory extends LightningElement {
     }
 
     get proofClass() { return this.proofOn ? 'proof rv d3 on' : 'proof rv d3'; }
+    get proofBarLabel() { return `${this.offeringKey} \u00b7 live preview`; }
     get gaugeStyle() { return `--pct: ${this.gaugeValue};`; }
     get progressStyle() { return `width: ${this.scrollPct}%;`; }
 
-    get faqs() {
-        const orgUrl = this._orgUrl;
-        // Priority mirrors every other getter: MA_Page_Content__c → legacy CMS → DEFAULTS.
-        const cj = this._cj('faq::items');
-        const source = (cj && cj.length)
-            ? cj
-            : (this._faqData && this._faqData.length) ? this._faqData : DEFAULTS.faqs;
-        return source.map((f, index) => {
-            const id = `q${index + 1}`;
-            const qualified = f.verdict !== 'Yes';
-            const cmsUrl = (orgUrl && f.indexRecordId)
-                ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${f.indexRecordId}/view`
-                : orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
-            return {
-                id,
-                question: f.question,
-                verdict: f.verdict,
-                answer: f.answer,
-                itemClass: this.openFaqId === id ? 'faq-item open' : 'faq-item',
-                verdictClass: qualified ? 'faq-verdict qualified' : 'faq-verdict yes',
-                cmsUrl
-            };
-        });
-    }
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl); }
     get contentManagerUrl() {
@@ -259,10 +361,19 @@ export default class MaStory extends LightningElement {
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
         window.addEventListener('maadminedit', this._editModeHandler);
         // Phase 1 — MA_Page_Content__c is the primary CMS; falls back to legacy getStoryContent.
-        getPageContent({ offeringKey: OFFERING_KEY, templateType: 'story', industryKey: null })
-            .then((map) => { if (map) this._cms = map; })
-            // eslint-disable-next-line no-console
-            .catch((err) => { console.warn('[maStory] getPageContent:', JSON.stringify(err)); });
+        getPageLayout({ offeringKey: this.offeringKey, templateType: 'story', industryKey: null })
+            .then((layout) => {
+                if (!layout) return;
+                if (layout.content) this._cms = layout.content;
+                if (layout.sections && layout.sections.length) this._sectionRows = layout.sections;
+            })
+            .catch((err) => {
+                // Surfaced, not swallowed: a silent failure here is what let the
+                // page render hardcoded defaults for months without anyone noticing.
+                this._loadError = 'Page content could not be loaded; showing built-in defaults.';
+                // eslint-disable-next-line no-console
+                console.error('[maStory] getPageLayout failed:', JSON.stringify(err));
+            });
         getStoryContent({ offeringKey: OFFERING_KEY })
             .then((data) => {
                 if (!data) return;
