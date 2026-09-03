@@ -19,8 +19,8 @@
   </template>
 
   <template if:false={_useLegacyForm}>
-    <div class={panelClass} onclick={handleClose}></div>
-    <aside class={sheetClass} aria-label="New prospect page">
+    <div class={panelClass} style={scrimStyle} onclick={handleClose}></div>
+    <aside class={sheetClass} style={sheetStyle} aria-label="New prospect page">
       <div class="mw-head">
         <span class="mw-title">{headerLabel}</span>
         <div class="mw-head-actions">

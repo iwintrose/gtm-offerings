@@ -121,7 +121,41 @@ export default class MaConfigWizard extends LightningElement {
         if (changed) this._state = next;
     }
 
+    /** Distance from the true page top to where normal content begins --
+     * i.e. the height of whatever Salesforce chrome sits above it (the
+     * global header, plus, on a Developer/sandbox org, the edition ribbon).
+     * Only meaningful in standalone mode. Falls back to a conservative
+     * guess if measurement fails (component not yet laid out, or running
+     * somewhere unexpected) rather than colliding with the chrome. */
+    _standaloneTopOffset = 106;
+
+    _measureChromeOffset() {
+        if (!this.standalone) return;
+        try {
+            const rect = this.template.host.getBoundingClientRect();
+            const offset = Math.round(rect.top + window.scrollY);
+            if (offset > 0) this._standaloneTopOffset = offset;
+        } catch (e) {
+            // keep the fallback
+        }
+    }
+
+    get sheetStyle() {
+        return this.standalone ? `top:${this._standaloneTopOffset}px;` : '';
+    }
+
+    get scrimStyle() {
+        return this.standalone ? `top:${this._standaloneTopOffset}px;` : '';
+    }
+
     connectedCallback() {
+        // Deferred one tick: at connectedCallback the host isn't laid out
+        // yet (getBoundingClientRect would read 0,0). Measuring is only
+        // ever a refinement over the CSS fallback above, never a
+        // requirement for anything else to work.
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        setTimeout(() => this._measureChromeOffset(), 0);
+
         getStoryContent({ offeringKey: OFFERING })
             .then((data) => {
                 if (!data) return;

@@ -1,5 +1,17 @@
 <template>
     <div class="gs-root">
+        <!-- Placed first, ahead of the button/tiles below, purely so its
+             natural (unscrolled) position marks where Salesforce's own
+             chrome ends -- the wizard reads that off itself at connect
+             time to clear the global header + edition ribbon, since their
+             combined height isn't consistent across orgs/contexts and
+             isn't something safe to hardcode. See maConfigWizard.js. -->
+        <c-ma-config-wizard
+            is-open={wizardOpen}
+            standalone
+            onclose={handleCloseWizard}
+            onconfigsaved={handleWizardSaved}
+        ></c-ma-config-wizard>
         <button type="button" class="gs-new-btn" onclick={handleOpenWizard}>+ New Prospect Page</button>
         <template if:true={hasError}>
             <div class="gs-error">Couldn't load the snapshot right now.</div>
@@ -17,11 +29,5 @@
                 </template>
             </div>
         </template>
-        <c-ma-config-wizard
-            is-open={wizardOpen}
-            standalone
-            onclose={handleCloseWizard}
-            onconfigsaved={handleWizardSaved}
-        ></c-ma-config-wizard>
     </div>
 </template>
