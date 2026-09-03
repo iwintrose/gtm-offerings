@@ -284,36 +284,41 @@ public with sharing class MaSavedConfigurationController {
     }
 
     /**
-     * Four approaches tried before this one, in order, each disproven live:
-     *   1. The site's own public siteUrl (*.my.site.com) -- no session on
-     *      that domain at all. Landed as a guest.
+     * Five approaches tried before this one, in order, each disproven live:
+     *   1. The site's own public siteUrl (*.my.site.com), opened directly --
+     *      no session on that domain. Landed as a guest.
      *   2. my.salesforce.com + /servlet/networks/switch -- redirected to
-     *      the org's generic default tab, not the site. (In hindsight this
-     *      wasn't a session problem -- the request clearly got processed
-     *      by an authenticated domain, just not by the right endpoint.)
+     *      the org's generic default tab, not the site.
      *   3. my.salesforce.com + frontdoor.jsp + UserInfo.getSessionId() --
-     *      that session ID isn't valid for frontdoor.jsp from a
-     *      Lightning/LWC context. Rejected outright, real login form.
-     *   4. window.location.origin (*.lightning.force.com) + the site's
-     *      relative path -- session WAS valid this time (no login prompt),
-     *      but that domain doesn't serve site/community paths at all:
-     *      "Page doesn't exist".
-     * #4 actually solved the auth question -- both my.salesforce.com and
-     * *.lightning.force.com carry a valid session for an already-logged-in
-     * rep. The remaining problem was always routing, not identity: the
-     * site's own url path prefix, served from the org's own My Domain
-     * (my.salesforce.com) with no wrapper of any kind -- the standard,
-     * documented way an internal member accesses a Digital Experience site
-     * -- which, after four detours, is what this actually is.
+     *      rejected outright, real login form. (Diagnosed at the time as
+     *      "Lightning session IDs aren't valid for frontdoor.jsp" -- #6
+     *      below suggests that was the wrong domain for frontdoor, not an
+     *      invalid sid; org-domain frontdoor apparently won't redeem a sid
+     *      against a cross-domain community retURL.)
+     *   4. window.location.origin (*.lightning.force.com) + relative path --
+     *      no login prompt this time, but "Page doesn't exist": this
+     *      subdomain doesn't serve site content at all.
+     *   5. my.salesforce.com + the site's url path prefix, no wrapper --
+     *      also redirected to the org's default tab, not the site.
+     * This org's Domain records settled the routing half of this: only
+     * my.salesforce-sites.com (classic Sites) and my.site.com (the actual
+     * Experience Cloud domain) serve site content -- neither
+     * my.salesforce.com nor *.lightning.force.com ever could have worked,
+     * which is why #2, #4, #5 all failed regardless of session state.
+     * Approach #1 had the only viable domain and a working path; its
+     * failure was purely about authentication on that domain.
      *
-     * Returns null if the "GTM Accelerator" site isn't found rather than
-     * throwing, since a missing site here should degrade gracefully (the
-     * standalone launcher just won't be able to build a link) rather than
-     * break anything else on the page.
+     * #6, this one: frontdoor.jsp hosted ON that same site domain, not the
+     * org's -- Experience Cloud sites have their own frontdoor.jsp
+     * specifically for redeeming an org session into a site session, which
+     * is different from asking the org's own frontdoor.jsp to hand off
+     * cross-domain (what #3 actually was, and why it was rejected).
+     *
+     * NOT cacheable: embeds a live session token.
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static String getConfiguratorPageUrl() {
-        return getSiteMyDomainUrl('/s/configurator');
+        return getSiteFrontdoorUrl('/s/configurator');
     }
 
     /**
@@ -324,19 +329,26 @@ public with sharing class MaSavedConfigurationController {
      * instead of dropping them straight onto an unpersonalized configurator.
      * Same contract as getConfiguratorPageUrl() above.
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static String getSiteHomePageUrl() {
-        return getSiteMyDomainUrl('/s/');
+        return getSiteFrontdoorUrl('/s/');
     }
 
-    private static String getSiteMyDomainUrl(String suffix) {
+    private static String getSiteFrontdoorUrl(String siteRelativePath) {
         try {
-            List<Network> nets = [SELECT UrlPathPrefix FROM Network WHERE Name = 'GTM Accelerator' LIMIT 1];
-            if (nets.isEmpty() || String.isBlank(nets[0].UrlPathPrefix)) return null;
-            return URL.getOrgDomainUrl().toExternalForm() + '/' + nets[0].UrlPathPrefix + suffix;
+            for (ConnectApi.Community c : ConnectApi.Communities.getCommunities().communities) {
+                if (c.name != 'GTM Accelerator' || String.isBlank(c.siteUrl)) continue;
+                // c.siteUrl is "https://<host>/<prefix>" -- retURL needs
+                // just the "/<prefix>/s/..." path, relative to that host.
+                String prefix = c.siteUrl.substringAfterLast('/');
+                String retURL = '/' + prefix + siteRelativePath;
+                return c.siteUrl + '/secur/frontdoor.jsp?sid=' + EncodingUtil.urlEncode(UserInfo.getSessionId(), 'UTF-8')
+                    + '&retURL=' + EncodingUtil.urlEncode(retURL, 'UTF-8');
+            }
         } catch (Exception e) {
-            return null;
+            // Degrade gracefully -- see class-level comment above.
         }
+        return null;
     }
 
     /**
