@@ -211,3 +211,14 @@
 .bk-cal .cta {
   margin-top: 1.2rem;
 }
+
+.bk-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin: 1.25rem 0 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #f3f4f6;
+}

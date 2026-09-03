@@ -102,6 +102,176 @@
             </select>
           </div>
 
+          <!-- ── Target & scale ── -->
+          <div class="bk-section-label">Migration target</div>
+
+          <div class="bk-row">
+            <div class="bk-field">
+              <label for="bfTargetPlatform">
+                Target platform
+                <span class="opt">(optional)</span>
+              </label>
+              <select id="bfTargetPlatform" data-field="targetPlatform" onchange={handleFieldChange}>
+                <option value="">Not decided yet</option>
+                <option value="Salesforce Marketing Cloud (SFMC)">Salesforce Marketing Cloud</option>
+                <option value="Salesforce Marketing Cloud Next">SFMC Next</option>
+                <option value="Marketo">Marketo</option>
+                <option value="HubSpot">HubSpot</option>
+                <option value="Pardot / Account Engagement">Pardot / Account Engagement</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="bk-field">
+              <label for="bfBudget">
+                Budget range
+                <span class="opt">(optional)</span>
+              </label>
+              <select id="bfBudget" data-field="budgetRange" onchange={handleFieldChange}>
+                <option value="">Prefer not to say</option>
+                <option value="Under $250K">Under $250K</option>
+                <option value="$250K – $500K">$250K – $500K</option>
+                <option value="$500K – $1M">$500K – $1M</option>
+                <option value="$1M – $2.5M">$1M – $2.5M</option>
+                <option value="$2.5M+">$2.5M+</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bk-row">
+            <div class="bk-field">
+              <label for="bfContacts">
+                Contact / lead database size
+                <span class="opt">(optional)</span>
+              </label>
+              <input
+                type="number"
+                id="bfContacts"
+                min="0"
+                placeholder="e.g. 2500000"
+                data-field="contactCount"
+                onchange={handleFieldChange}
+              />
+            </div>
+            <div class="bk-field">
+              <label for="bfSendVol">
+                Monthly email send volume
+                <span class="opt">(optional)</span>
+              </label>
+              <input
+                type="number"
+                id="bfSendVol"
+                min="0"
+                placeholder="e.g. 5000000"
+                data-field="monthlySendVolume"
+                onchange={handleFieldChange}
+              />
+            </div>
+          </div>
+
+          <!-- ── Goals & integrations ── -->
+          <div class="bk-section-label">Goals &amp; integrations</div>
+
+          <div class="bk-field">
+            <label for="bfPainPoints">
+              What's not working with your current platform?
+              <span class="opt">(optional)</span>
+            </label>
+            <textarea
+              id="bfPainPoints"
+              placeholder="Performance, deliverability, lack of features, cost, support…"
+              data-field="painPoints"
+              onchange={handleFieldChange}
+            ></textarea>
+          </div>
+
+          <div class="bk-field">
+            <label for="bfGoals">
+              What do you need from the new platform?
+              <span class="opt">(optional)</span>
+            </label>
+            <textarea
+              id="bfGoals"
+              placeholder="AI-powered personalisation, better journey automation, real-time triggers…"
+              data-field="migrationGoals"
+              onchange={handleFieldChange}
+            ></textarea>
+          </div>
+
+          <div class="bk-field">
+            <label for="bfIntegrations">
+              Key integrations that must stay connected
+              <span class="opt">(optional)</span>
+            </label>
+            <textarea
+              id="bfIntegrations"
+              placeholder="Salesforce CRM, Snowflake, Adobe AEM, Shopify, internal data warehouse…"
+              data-field="keyIntegrations"
+              onchange={handleFieldChange}
+            ></textarea>
+          </div>
+
+          <div class="bk-field">
+            <label for="bfSuccess">
+              How will you know the migration succeeded?
+              <span class="opt">(optional)</span>
+            </label>
+            <textarea
+              id="bfSuccess"
+              placeholder="KPIs, milestones, or business outcomes that define success"
+              data-field="successCriteria"
+              onchange={handleFieldChange}
+            ></textarea>
+          </div>
+
+          <!-- ── Team & governance ── -->
+          <div class="bk-section-label">Team &amp; governance</div>
+
+          <div class="bk-row">
+            <div class="bk-field">
+              <label for="bfTeamSize">
+                Internal team for this migration
+                <span class="opt">(optional)</span>
+              </label>
+              <select id="bfTeamSize" data-field="internalTeamSize" onchange={handleFieldChange}>
+                <option value="">Select…</option>
+                <option value="Just me">Just me</option>
+                <option value="2–5 people">2–5 people</option>
+                <option value="5–10 people">5–10 people</option>
+                <option value="10+ people">10+ people</option>
+              </select>
+            </div>
+            <div class="bk-field">
+              <label for="bfSponsorship">
+                Executive sponsorship
+                <span class="opt">(optional)</span>
+              </label>
+              <select id="bfSponsorship" data-field="executiveSponsorship" onchange={handleFieldChange}>
+                <option value="">Select…</option>
+                <option value="Strong — executive is driving this">Strong — executive is driving this</option>
+                <option value="Moderate — executive is aware and supportive">Moderate — aware and supportive</option>
+                <option value="Limited — team-level initiative">Limited — team-level initiative</option>
+                <option value="Unknown">Unknown</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bk-field">
+            <label for="bfDecisionMakers">
+              Who approves the final decision?
+              <span class="opt">(optional)</span>
+            </label>
+            <input
+              type="text"
+              id="bfDecisionMakers"
+              placeholder="e.g. CMO, VP Marketing, CIO"
+              data-field="decisionMakers"
+              onchange={handleFieldChange}
+            />
+          </div>
+
+          <!-- ── Context ── -->
+          <div class="bk-section-label">Context</div>
+
           <div class="bk-field">
             <label for="bfContext">
               What's prompting the move?
@@ -113,6 +283,20 @@
               data-field="context"
               onchange={handleFieldChange}
             ></textarea>
+          </div>
+
+          <div class="bk-field">
+            <label for="bfUrgency">
+              What's driving the timeline?
+              <span class="opt">(optional)</span>
+            </label>
+            <input
+              type="text"
+              id="bfUrgency"
+              placeholder="Contract expires March 2026, board mandate, post-acquisition…"
+              data-field="urgencyDriver"
+              onchange={handleFieldChange}
+            />
           </div>
 
           <template if:true={errorMessage}>

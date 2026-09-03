@@ -797,6 +797,22 @@ export default class MaConfigurator extends LightningElement {
         this.customizeOpen = false;
     }
 
+    // -------------------------------------------------- stage actions events
+
+    handleStageSent(event) {
+        const email = event.detail?.requesterEmail;
+        const msg   = email
+            ? `Proposal sent to ${email}.`
+            : 'Proposal marked as sent.';
+        this._showToast(msg);
+    }
+
+    handleStagePreview() {
+        // Toggle isConfigManager so the rep sees the client view temporarily.
+        // A second click or page reload restores their internal view.
+        this._stagePreviewMode = !this._stagePreviewMode;
+    }
+
     // ----------------------------------------------------- scroll and reveal
 
     get reducedMotion() {
@@ -925,6 +941,21 @@ export default class MaConfigurator extends LightningElement {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    _showToast(message) {
+        // Experience Cloud doesn't support ShowToastEvent — use a brief inline banner instead
+        const el = document.createElement('div');
+        el.textContent = message;
+        el.style.cssText = [
+            'position:fixed', 'top:60px', 'left:50%', 'transform:translateX(-50%)',
+            'background:#166534', 'color:#fff', 'padding:10px 20px',
+            'border-radius:6px', 'font-size:14px', 'z-index:9999',
+            'box-shadow:0 4px 12px rgba(0,0,0,.2)'
+        ].join(';');
+        document.body.appendChild(el);
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        setTimeout(() => el.remove(), 3500);
+    }
 
     tokenValue(key) {
         const value = this.tokenState[key];

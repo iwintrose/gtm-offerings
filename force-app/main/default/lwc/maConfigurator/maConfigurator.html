@@ -19,6 +19,13 @@
         <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
       </div>
     </div>
+    <c-ma-stage-actions
+      config-id={savedRecordId}
+      is-config-manager={isConfigManager}
+      onstagesent={handleStageSent}
+      onpreviewclient={handleStagePreview}
+    ></c-ma-stage-actions>
+
     <div class="progress" style={progressStyle}></div>
 
     <template if:true={showCrmStrip}>

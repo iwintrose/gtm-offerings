@@ -50,7 +50,20 @@ export default class MaConfigBooking extends LightningElement {
         currentPlatform: '',
         environmentSize: '',
         timeline: '',
-        context: ''
+        context: '',
+        // Rich assessment fields
+        targetPlatform: '',
+        budgetRange: '',
+        contactCount: '',
+        monthlySendVolume: '',
+        painPoints: '',
+        migrationGoals: '',
+        keyIntegrations: '',
+        successCriteria: '',
+        internalTeamSize: '',
+        executiveSponsorship: '',
+        decisionMakers: '',
+        urgencyDriver: ''
     };
 
     @track showForm = true;
@@ -179,16 +192,29 @@ export default class MaConfigBooking extends LightningElement {
         const payload = {
             name,
             email,
-            company: this.form.company,
-            role: this.form.role,
-            currentPlatform: this.form.currentPlatform,
-            environmentSize: this.form.environmentSize,
-            timeline: this.form.timeline,
-            context: this.form.context,
-            prospect: this.prospect,
-            industry: this.industryLabel,
-            savedRecordId: this.savedRecordId,
-            submissionToken: this.submissionToken || ''
+            company            : this.form.company,
+            role               : this.form.role,
+            currentPlatform    : this.form.currentPlatform,
+            environmentSize    : this.form.environmentSize,
+            timeline           : this.form.timeline,
+            context            : this.form.context,
+            // Rich assessment fields
+            targetPlatform     : this.form.targetPlatform,
+            budgetRange        : this.form.budgetRange,
+            contactCount       : this.form.contactCount,
+            monthlySendVolume  : this.form.monthlySendVolume,
+            painPoints         : this.form.painPoints,
+            migrationGoals     : this.form.migrationGoals,
+            keyIntegrations    : this.form.keyIntegrations,
+            successCriteria    : this.form.successCriteria,
+            internalTeamSize   : this.form.internalTeamSize,
+            executiveSponsorship: this.form.executiveSponsorship,
+            decisionMakers     : this.form.decisionMakers,
+            urgencyDriver      : this.form.urgencyDriver,
+            prospect           : this.prospect,
+            industry           : this.industryLabel,
+            savedRecordId      : this.savedRecordId,
+            submissionToken    : this.submissionToken || ''
         };
 
         try {

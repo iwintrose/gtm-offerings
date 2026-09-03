@@ -42,6 +42,19 @@ public without sharing class MaAssessmentRequestController {
         public String prospect { get; set; }
         @AuraEnabled
         public String industry { get; set; }
+        // Rich assessment fields (added with v2 form)
+        @AuraEnabled public String targetPlatform      { get; set; }
+        @AuraEnabled public String budgetRange         { get; set; }
+        @AuraEnabled public String contactCount        { get; set; }
+        @AuraEnabled public String monthlySendVolume   { get; set; }
+        @AuraEnabled public String painPoints          { get; set; }
+        @AuraEnabled public String migrationGoals      { get; set; }
+        @AuraEnabled public String keyIntegrations     { get; set; }
+        @AuraEnabled public String successCriteria     { get; set; }
+        @AuraEnabled public String internalTeamSize    { get; set; }
+        @AuraEnabled public String executiveSponsorship{ get; set; }
+        @AuraEnabled public String decisionMakers      { get; set; }
+        @AuraEnabled public String urgencyDriver       { get; set; }
         /** cfgId of the MA_Saved_Configuration__c the requester was viewing,
          * when the booking happened from a client's configured link. Used
          * to attribute the Contact to the right rep and to file the request
@@ -326,28 +339,54 @@ public without sharing class MaAssessmentRequestController {
         RequestResult result
     ) {
         try {
+            Id cfgId = isId(input.savedRecordId) ? (Id) Id.valueOf(input.savedRecordId) : null;
+
             MA_Assessment_Request__c req = new MA_Assessment_Request__c(
-                Saved_Configuration__c = isId(input.savedRecordId)
-                    ? (Id) Id.valueOf(input.savedRecordId)
-                    : null,
-                Opportunity__c = ctx.opportunityId,
-                Account__c = ctx.accountId,
-                Contact__c = ctx.contactId,
-                Requester_Name__c = cleanName,
-                Requester_Email__c = cleanEmail,
-                Company__c = trimTo(input.company, MAX_SHORT),
-                Role__c = trimTo(input.role, MAX_SHORT),
-                Current_Platform__c = trimTo(input.currentPlatform, MAX_SHORT),
-                Environment_Size__c = trimTo(input.environmentSize, MAX_SHORT),
-                Timeline__c = trimTo(input.timeline, MAX_SHORT),
-                Context__c = trimTo(input.context, MAX_LONG),
-                Status__c = 'New',
-                Source__c = 'Migration Accelerator'
+                Saved_Configuration__c  = cfgId,
+                Opportunity__c          = ctx.opportunityId,
+                Account__c              = ctx.accountId,
+                Contact__c              = ctx.contactId,
+                Requester_Name__c       = cleanName,
+                Requester_Email__c      = cleanEmail,
+                Company__c              = trimTo(input.company, MAX_SHORT),
+                Role__c                 = trimTo(input.role, MAX_SHORT),
+                Current_Platform__c     = trimTo(input.currentPlatform, MAX_SHORT),
+                Environment_Size__c     = trimTo(input.environmentSize, MAX_SHORT),
+                Timeline__c             = trimTo(input.timeline, MAX_SHORT),
+                Context__c              = trimTo(input.context, MAX_LONG),
+                // Rich v2 fields
+                Target_Platform__c      = trimTo(input.targetPlatform, MAX_SHORT),
+                Budget_Range__c         = trimTo(input.budgetRange, MAX_SHORT),
+                Contact_Count__c        = parseIntOrNull(input.contactCount),
+                Monthly_Send_Volume__c  = parseIntOrNull(input.monthlySendVolume),
+                Pain_Points__c          = trimTo(input.painPoints, MAX_LONG),
+                Migration_Goals__c      = trimTo(input.migrationGoals, MAX_LONG),
+                Key_Integrations__c     = trimTo(input.keyIntegrations, MAX_LONG),
+                Success_Criteria__c     = trimTo(input.successCriteria, MAX_LONG),
+                Internal_Team_Size__c   = trimTo(input.internalTeamSize, MAX_SHORT),
+                Executive_Sponsorship__c= trimTo(input.executiveSponsorship, MAX_SHORT),
+                Decision_Makers__c      = trimTo(input.decisionMakers, MAX_SHORT),
+                Urgency_Driver__c       = trimTo(input.urgencyDriver, MAX_SHORT),
+                Submitted_At__c         = DateTime.now(),
+                Status__c               = 'New',
+                Source__c               = 'Migration Accelerator'
             );
             if (ctx.ownerId != null) {
                 req.OwnerId = ctx.ownerId;
             }
             insert req;
+
+            // Advance the linked config to Assessment stage
+            if (cfgId != null) {
+                try {
+                    update new MA_Saved_Configuration__c(
+                        Id = cfgId,
+                        Presentation_Stage__c = 'Assessment'
+                    );
+                } catch (Exception ex) {
+                    System.debug('Could not set Assessment stage: ' + ex.getMessage());
+                }
+            }
             result.assessmentRequestId = req.Id;
             result.opportunityId = ctx.opportunityId;
 
@@ -659,5 +698,14 @@ public without sharing class MaAssessmentRequestController {
         }
         String trimmed = value.trim();
         return trimmed.length() > max ? trimmed.substring(0, max) : trimmed;
+    }
+
+    private static Decimal parseIntOrNull(String value) {
+        if (String.isBlank(value)) return null;
+        try {
+            return Decimal.valueOf(value.trim().replaceAll('[^0-9]', ''));
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
