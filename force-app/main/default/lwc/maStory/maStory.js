@@ -1,5 +1,6 @@
 import { LightningElement, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import getPageContent from '@salesforce/apex/MaPageContentController.getPageContent';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
@@ -94,6 +95,8 @@ export default class MaStory extends LightningElement {
     @track _proofObjectsCount = null;
     @track _proofDepsCount = null;
     @track _proofHealthScore = null;
+    // MA_Page_Content__c flat map: key = 'section::field', value = resolved string
+    @track _cms = {};
 
     _observer;
     _revealed = new Set();
@@ -108,39 +111,75 @@ export default class MaStory extends LightningElement {
     _bodyContentId = null;
     _bodyIndexRecordId = null;
 
+    // ─── CMS resolution helpers ────────────────────────────────────────────────
+    // Priority: MA_Page_Content__c (_cms map) → legacy CMS (_page/_body) → DEFAULTS
+
+    _ct(key) { return this._cms[key] || null; }
+    _cj(key) {
+        const raw = this._cms[key];
+        if (!raw) return null;
+        try { return JSON.parse(raw); } catch (e) { return null; }
+    }
+
     // ---- page getters ----
 
-    get heroEyebrow() { return (this._page && this._page.heroEyebrow) || DEFAULTS.heroEyebrow; }
-    get heroHeadline() { return (this._page && this._page.heroHeadline) || DEFAULTS.heroHeadline; }
-    get heroSubhead() { return (this._page && this._page.heroSubhead) || DEFAULTS.heroSubhead; }
-    get problemLede() { return (this._page && this._page.problemLede) || DEFAULTS.problemLede; }
-    get problemChips() { return (this._page && this._page.problemChips && this._page.problemChips.length) ? this._page.problemChips : DEFAULTS.problemChips; }
-    get problemClose() { return (this._page && this._page.problemClose) || DEFAULTS.problemClose; }
-    get mechanismHead() { return (this._page && this._page.mechanismHead) || DEFAULTS.mechanismHead; }
-    get mechanismSub() { return (this._page && this._page.mechanismSub) || DEFAULTS.mechanismSub; }
-    get closingHead() { return (this._page && this._page.closingHead) || DEFAULTS.closingHead; }
-    get closingSub() { return (this._page && this._page.closingSub) || DEFAULTS.closingSub; }
+    get heroEyebrow() { return this._ct('hero::eyebrow') || (this._page && this._page.heroEyebrow) || DEFAULTS.heroEyebrow; }
+    get heroHeadline() { return this._ct('hero::headline') || (this._page && this._page.heroHeadline) || DEFAULTS.heroHeadline; }
+    get heroSubhead() { return this._ct('hero::subhead') || (this._page && this._page.heroSubhead) || DEFAULTS.heroSubhead; }
+    get problemLede() { return this._ct('problem::lede') || (this._page && this._page.problemLede) || DEFAULTS.problemLede; }
+    get problemChips() {
+        const cj = this._cj('problem::chips');
+        if (cj && cj.length) return cj;
+        return (this._page && this._page.problemChips && this._page.problemChips.length) ? this._page.problemChips : DEFAULTS.problemChips;
+    }
+    get problemClose() { return this._ct('problem::close') || (this._page && this._page.problemClose) || DEFAULTS.problemClose; }
+    get mechanismHead() { return this._ct('mechanism::head') || (this._page && this._page.mechanismHead) || DEFAULTS.mechanismHead; }
+    get mechanismSub() { return this._ct('mechanism::sub') || (this._page && this._page.mechanismSub) || DEFAULTS.mechanismSub; }
+    get closingHead() { return this._ct('closing::head') || (this._page && this._page.closingHead) || DEFAULTS.closingHead; }
+    get closingSub() { return this._ct('closing::sub') || (this._page && this._page.closingSub) || DEFAULTS.closingSub; }
 
     // ---- body getters ----
 
-    get routeSteps() { return (this._body && this._body.routeSteps && this._body.routeSteps.length) ? this._body.routeSteps : DEFAULTS.routeSteps; }
-    get proofCtaText() { return (this._body && this._body.proofCtaText) || DEFAULTS.proofCtaText; }
-    get proofDemoRoot() { return (this._body && this._body.proofDemoRoot) || DEFAULTS.proofDemoRoot; }
-    get proofDemoDeps() { return (this._body && this._body.proofDemoDeps && this._body.proofDemoDeps.length) ? this._body.proofDemoDeps : DEFAULTS.proofDemoDeps; }
+    get routeSteps() {
+        const cj = this._cj('mechanism::routeSteps');
+        if (cj && cj.length) return cj;
+        return (this._body && this._body.routeSteps && this._body.routeSteps.length) ? this._body.routeSteps : DEFAULTS.routeSteps;
+    }
+    get proofCtaText() { return this._ct('mechanism::proofCtaText') || (this._body && this._body.proofCtaText) || DEFAULTS.proofCtaText; }
+    get proofDemoRoot() { return this._ct('mechanism::proofDemoRoot') || (this._body && this._body.proofDemoRoot) || DEFAULTS.proofDemoRoot; }
+    get proofDemoDeps() {
+        const cj = this._cj('mechanism::proofDemoDeps');
+        if (cj && cj.length) return cj;
+        return (this._body && this._body.proofDemoDeps && this._body.proofDemoDeps.length) ? this._body.proofDemoDeps : DEFAULTS.proofDemoDeps;
+    }
     get capabilities() {
-        const caps = (this._body && this._body.capabilities && this._body.capabilities.length)
-            ? this._body.capabilities : DEFAULTS.capabilities;
+        const cj = this._cj('capabilities::cards');
+        const caps = (cj && cj.length) ? cj
+            : (this._body && this._body.capabilities && this._body.capabilities.length)
+                ? this._body.capabilities : DEFAULTS.capabilities;
         return caps.map((c) => ({ ...c, cardClass: c.isNew ? 'cap-card new' : 'cap-card' }));
     }
-    get bonusCard() { return (this._body && this._body.bonusCard) || DEFAULTS.bonusCard; }
-    get clientStatBig() { return (this._body && this._body.clientStatBig) || DEFAULTS.clientStatBig; }
-    get clientStatDesc() { return (this._body && this._body.clientStatDesc) || DEFAULTS.clientStatDesc; }
-    get clientNote() { return (this._body && this._body.clientNote) || DEFAULTS.clientNote; }
-    get bdHead() { return (this._body && this._body.bdHead) || DEFAULTS.bdHead; }
-    get bdLede() { return (this._body && this._body.bdLede) || DEFAULTS.bdLede; }
-    get bdUseCases() { return (this._body && this._body.bdUseCases && this._body.bdUseCases.length) ? this._body.bdUseCases : DEFAULTS.bdUseCases; }
-    get pitchOldChips() { return (this._body && this._body.pitchOldChips && this._body.pitchOldChips.length) ? this._body.pitchOldChips : DEFAULTS.pitchOldChips; }
-    get pitchNewChips() { return (this._body && this._body.pitchNewChips && this._body.pitchNewChips.length) ? this._body.pitchNewChips : DEFAULTS.pitchNewChips; }
+    get bonusCard() { return this._ct('capabilities::bonusCard') || (this._body && this._body.bonusCard) || DEFAULTS.bonusCard; }
+    get clientStatBig() { return this._ct('clientProfile::statBig') || (this._body && this._body.clientStatBig) || DEFAULTS.clientStatBig; }
+    get clientStatDesc() { return this._ct('clientProfile::statDesc') || (this._body && this._body.clientStatDesc) || DEFAULTS.clientStatDesc; }
+    get clientNote() { return this._ct('clientProfile::note') || (this._body && this._body.clientNote) || DEFAULTS.clientNote; }
+    get bdHead() { return this._ct('bd::head') || (this._body && this._body.bdHead) || DEFAULTS.bdHead; }
+    get bdLede() { return this._ct('bd::lede') || (this._body && this._body.bdLede) || DEFAULTS.bdLede; }
+    get bdUseCases() {
+        const cj = this._cj('bd::useCases');
+        if (cj && cj.length) return cj;
+        return (this._body && this._body.bdUseCases && this._body.bdUseCases.length) ? this._body.bdUseCases : DEFAULTS.bdUseCases;
+    }
+    get pitchOldChips() {
+        const cj = this._cj('bd::pitchOldChips');
+        if (cj && cj.length) return cj;
+        return (this._body && this._body.pitchOldChips && this._body.pitchOldChips.length) ? this._body.pitchOldChips : DEFAULTS.pitchOldChips;
+    }
+    get pitchNewChips() {
+        const cj = this._cj('bd::pitchNewChips');
+        if (cj && cj.length) return cj;
+        return (this._body && this._body.pitchNewChips && this._body.pitchNewChips.length) ? this._body.pitchNewChips : DEFAULTS.pitchNewChips;
+    }
 
     // ---- misc computed ----
 
@@ -199,6 +238,11 @@ export default class MaStory extends LightningElement {
         this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
         window.addEventListener('maadminedit', this._editModeHandler);
+        // Phase 1 — MA_Page_Content__c is the primary CMS; falls back to legacy getStoryContent.
+        getPageContent({ offeringKey: OFFERING_KEY, templateType: 'story', industryKey: null })
+            .then((map) => { if (map) this._cms = map; })
+            // eslint-disable-next-line no-console
+            .catch((err) => { console.warn('[maStory] getPageContent:', JSON.stringify(err)); });
         getStoryContent({ offeringKey: OFFERING_KEY })
             .then((data) => {
                 if (!data) return;

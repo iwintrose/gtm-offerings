@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Text_Value__c</fullName>
+    <label>Text Value</label>
+    <description>Plain-text or short HTML content. Used for headlines, labels, chips (pipe-delimited), and other single-line or short multi-line values.</description>
+    <type>LongTextArea</type>
+    <length>4096</length>
+    <visibleLines>3</visibleLines>
+</CustomField>

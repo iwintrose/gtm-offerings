@@ -1,0 +1,43 @@
+<template>
+  <div class="gcs">
+    <div class="gcs-header" onclick={handleToggle}>
+      <span class="gcs-title">{sectionKey}</span>
+      <span class="gcs-count">{recordCount}</span>
+      <span class="gcs-toggle">{toggleIcon}</span>
+    </div>
+
+    <template if:true={open}>
+      <div class="gcs-body">
+        <template for:each={records} for:item="rec">
+          <c-gtm-content-field
+            key={rec.contentAddress}
+            record={rec}
+            oncontentsaved={handleSaved}
+            oncontentdeleted={handleDeleted}
+          ></c-gtm-content-field>
+        </template>
+
+        <div class="gcs-add">
+          <template if:true={addOpen}>
+            <div class="gcs-add-form">
+              <lightning-input label="Field Key" value={newFieldKey} onchange={handleNewFieldKeyChange}
+                placeholder="e.g. headline"></lightning-input>
+              <lightning-combobox label="Field Type" value={newFieldType} onchange={handleNewFieldTypeChange}
+                options={fieldTypeOptions}></lightning-combobox>
+              <lightning-input label="Industry Key (optional)" value={newIndustryKey}
+                onchange={handleNewIndustryKeyChange}
+                placeholder="e.g. financial-services (blank = all industries)"></lightning-input>
+              <div class="gcs-add-actions">
+                <lightning-button label="Add" variant="brand" onclick={handleAddConfirm}></lightning-button>
+                <lightning-button label="Cancel" onclick={handleAddCancel}></lightning-button>
+              </div>
+            </div>
+          </template>
+          <template if:false={addOpen}>
+            <lightning-button label="+ Add field" onclick={handleAddOpen} variant="neutral"></lightning-button>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>

@@ -1,0 +1,62 @@
+<template>
+  <div class={fieldClass}>
+    <div class="gcf-meta">
+      <span class="gcf-key">{record.fieldKey}</span>
+      <span class="gcf-type">{record.fieldType}</span>
+      <template if:true={record.industryKey}>
+        <span class="gcf-industry">{record.industryKey}</span>
+      </template>
+    </div>
+
+    <template if:true={isText}>
+      <lightning-textarea
+        label="Value"
+        value={record.textValue}
+        onchange={handleTextChange}
+        class="gcf-input"
+      ></lightning-textarea>
+    </template>
+
+    <template if:true={isRich}>
+      <lightning-input-rich-text
+        value={record.richValue}
+        onchange={handleRichChange}
+        class="gcf-input"
+      ></lightning-input-rich-text>
+    </template>
+
+    <template if:true={isJson}>
+      <lightning-textarea
+        label="JSON Value"
+        value={record.jsonValue}
+        onchange={handleJsonChange}
+        class="gcf-input gcf-json"
+        placeholder='e.g. ["chip 1","chip 2"] or [{"cardTitle":"...","cardDesc":"..."}]'
+      ></lightning-textarea>
+      <template if:true={jsonError}>
+        <p class="gcf-json-err">{jsonError}</p>
+      </template>
+    </template>
+
+    <div class="gcf-actions">
+      <lightning-button
+        label={saveLabel}
+        variant="brand"
+        onclick={handleSave}
+        disabled={isSaving}
+        class="gcf-save"
+      ></lightning-button>
+      <template if:true={record.id}>
+        <lightning-button
+          label="Delete"
+          variant="destructive-text"
+          onclick={handleDelete}
+          class="gcf-del"
+        ></lightning-button>
+      </template>
+      <template if:true={saveError}>
+        <span class="gcf-save-err">{saveError}</span>
+      </template>
+    </div>
+  </div>
+</template>

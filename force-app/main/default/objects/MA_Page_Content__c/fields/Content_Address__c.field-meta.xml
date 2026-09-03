@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Content_Address__c</fullName>
+    <label>Content Address</label>
+    <description>Formula-derived unique key: Offering_Key__c + '::' + Template_Type__c + '::' + Section_Key__c + '::' + Field_Key__c. Used as external ID for upsert-by-key.</description>
+    <type>Formula</type>
+    <formula>Offering_Key__c &amp; '::' &amp; TEXT(Template_Type__c) &amp; '::' &amp; Section_Key__c &amp; '::' &amp; Field_Key__c</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <returnType>Text</returnType>
+    <unique>true</unique>
+    <caseSensitive>false</caseSensitive>
+    <externalId>true</externalId>
+</CustomField>

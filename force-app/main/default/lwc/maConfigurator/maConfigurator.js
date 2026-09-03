@@ -3,6 +3,7 @@ import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isC
 import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import getPageContent from '@salesforce/apex/MaPageContentController.getPageContent';
 import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
 import verifyAndIssueToken from '@salesforce/apex/MaLinkAuthController.verifyAndIssueToken';
 import logEvent from '@salesforce/apex/MaLinkEventController.logEvent';
@@ -151,6 +152,8 @@ export default class MaConfigurator extends LightningElement {
     @track _storySetting = null;
 
     _cmsDefaults = {};
+    // MA_Page_Content__c flat map: key = 'section::field', value = resolved string
+    @track _cms = {};
 
     // -------------------------------------------------------------- lifecycle
 
@@ -159,6 +162,11 @@ export default class MaConfigurator extends LightningElement {
         this.tokenState = this.loadState();
         this.readUrlParams();
         this.setPageTitle();
+        // Phase 1 — MA_Page_Content__c is the primary CMS source for static content.
+        getPageContent({ offeringKey: OFFERING_KEY, templateType: 'configurator', industryKey: null })
+            .then((map) => { if (map) this._cms = map; })
+            // eslint-disable-next-line no-console
+            .catch((err) => { console.warn('[maConfigurator] getPageContent:', JSON.stringify(err)); });
         getStoryContent({ offeringKey: OFFERING_KEY })
             .then((data) => {
                 if (!data) return;
@@ -196,6 +204,14 @@ export default class MaConfigurator extends LightningElement {
         window.addEventListener('keydown', this._keyHandler);
         window.addEventListener('maadminedit', this._editModeHandler);
         document.addEventListener('visibilitychange', this._visibilityHandler);
+    }
+
+    // ─── CMS resolution helpers ────────────────────────────────────────────────
+    _ct(key) { return this._cms[key] || null; }
+    _cj(key) {
+        const raw = this._cms[key];
+        if (!raw) return null;
+        try { return JSON.parse(raw); } catch (e) { return null; }
     }
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl, this._lightningUrl, this._sites); }

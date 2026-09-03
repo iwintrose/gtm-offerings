@@ -1,0 +1,73 @@
+<template>
+  <div class="gcm">
+    <div class="gcm-bar">
+      <div class="gcm-bar-left">
+        <span class="gcm-label">GTM Content Manager</span>
+        <span class="gcm-offering">{offeringKey}</span>
+      </div>
+      <div class="gcm-bar-right">
+        <lightning-combobox
+          label="Template"
+          value={templateType}
+          options={templateTypeOptions}
+          onchange={handleTemplateChange}
+          variant="label-hidden"
+          class="gcm-tmpl-sel"
+        ></lightning-combobox>
+        <lightning-button label="+ New section" variant="neutral" onclick={handleNewSection}></lightning-button>
+        <lightning-button label="Refresh" onclick={handleRefresh} icon-name="utility:refresh"></lightning-button>
+      </div>
+    </div>
+
+    <template if:true={isLoading}>
+      <div class="gcm-loading">
+        <lightning-spinner alternative-text="Loading content…" size="small"></lightning-spinner>
+        <span>Loading content…</span>
+      </div>
+    </template>
+
+    <template if:true={loadError}>
+      <div class="gcm-error">
+        <lightning-icon icon-name="utility:error" size="small"></lightning-icon>
+        <span>{loadError}</span>
+      </div>
+    </template>
+
+    <template if:false={isLoading}>
+      <template if:true={hasContent}>
+        <div class="gcm-sections">
+          <template for:each={sections} for:item="sec">
+            <c-gtm-content-section
+              key={sec.sectionKey}
+              section-key={sec.sectionKey}
+              offering-key={offeringKey}
+              template-type={templateType}
+              records={sec.records}
+              oncontentsaved={handleContentSaved}
+              oncontentdeleted={handleContentDeleted}
+              onfieldcreate={handleFieldCreate}
+            ></c-gtm-content-section>
+          </template>
+        </div>
+      </template>
+
+      <template if:false={hasContent}>
+        <div class="gcm-empty">
+          <p>No content records yet for <strong>{offeringKey} / {templateType}</strong>.</p>
+          <p>Click <strong>+ New section</strong> to start building the content map for this template.</p>
+        </div>
+      </template>
+    </template>
+
+    <template if:true={newSectionOpen}>
+      <div class="gcm-newsec">
+        <lightning-input label="Section Key" value={newSectionKey} onchange={handleNewSectionKeyChange}
+          placeholder="e.g. hero, problem, mechanism"></lightning-input>
+        <div class="gcm-newsec-actions">
+          <lightning-button label="Create section" variant="brand" onclick={handleNewSectionConfirm}></lightning-button>
+          <lightning-button label="Cancel" onclick={handleNewSectionCancel}></lightning-button>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>

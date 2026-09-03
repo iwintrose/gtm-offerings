@@ -1,0 +1,65 @@
+:host {
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.gcs {
+    border: 1px solid #dddbda;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.gcs-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    background: #f3f2f2;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gcs-header:hover {
+    background: #e8e6e6;
+}
+
+.gcs-title {
+    font-family: monospace;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #032d60;
+    flex: 1;
+}
+
+.gcs-count {
+    font-size: 0.7rem;
+    color: #706e6b;
+}
+
+.gcs-toggle {
+    font-size: 0.65rem;
+    color: #706e6b;
+}
+
+.gcs-body {
+    padding: 0.75rem;
+    background: #ffffff;
+}
+
+.gcs-add {
+    margin-top: 0.75rem;
+}
+
+.gcs-add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px dashed #a8b7c7;
+    border-radius: 4px;
+}
+
+.gcs-add-actions {
+    display: flex;
+    gap: 0.5rem;
+}
