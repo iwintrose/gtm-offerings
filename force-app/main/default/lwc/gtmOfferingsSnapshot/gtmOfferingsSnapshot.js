@@ -27,16 +27,18 @@ export default class GtmOfferingsSnapshot extends LightningElement {
      * skipping) is what actually opens the wizard, on the configurator
      * page itself. New tab, so the rep doesn't lose this Lightning tab.
      *
-     * Apex returns a ready-to-use frontdoor.jsp URL carrying the rep's own
-     * live session -- open it as-is, don't prepend anything (see
-     * MaSavedConfigurationController.getSiteHomePageUrl for why a plain
-     * link to any Salesforce subdomain isn't reliable here). */
+     * Apex returns a relative path, not an absolute URL. window.location.origin
+     * here is the one domain guaranteed to already have a valid session in
+     * THIS browser -- it's read directly off the page that's rendering
+     * right now, not guessed or looked up (see
+     * MaSavedConfigurationController.getConfiguratorPageUrl for the three
+     * approaches that guessed wrong first). */
     async handleNewProspectPage() {
         this._navBusy = true;
         try {
-            const url = await getSiteHomePageUrl();
-            if (url) {
-                window.open(url, '_blank', 'noopener');
+            const path = await getSiteHomePageUrl();
+            if (path) {
+                window.open(window.location.origin + path, '_blank', 'noopener');
             }
         } catch (e) {
             // Best-effort -- nothing else this button can usefully do if
