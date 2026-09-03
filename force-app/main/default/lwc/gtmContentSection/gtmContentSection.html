@@ -1,14 +1,19 @@
 <template>
   <div class="gcs">
     <div class="gcs-header" onclick={handleToggle}>
-      <span class="gcs-title">{sectionKey}</span>
+      <div class="gcs-header-text">
+        <span class="gcs-title">{displayLabel}</span>
+        <template if:true={sectionHelp}>
+          <span class="gcs-help">{sectionHelp}</span>
+        </template>
+      </div>
       <span class="gcs-count">{recordCount}</span>
       <span class="gcs-toggle">{toggleIcon}</span>
     </div>
 
     <template if:true={open}>
       <div class="gcs-body">
-        <template for:each={records} for:item="rec">
+        <template for:each={fieldsWithMeta} for:item="rec">
           <c-gtm-content-field
             key={rec.contentAddress}
             record={rec}

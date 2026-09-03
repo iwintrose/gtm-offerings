@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from 'lwc';
+import { fieldMeta } from 'c/gtmContentSchema';
 
 const FIELD_TYPE_OPTIONS = [
     { label: 'Text', value: 'text' },
@@ -8,11 +9,13 @@ const FIELD_TYPE_OPTIONS = [
 
 export default class GtmContentSection extends LightningElement {
     @api sectionKey;
+    @api sectionLabel;
+    @api sectionHelp;
     @api offeringKey;
     @api templateType;
     @api records = [];
 
-    @track open = false;
+    @track open = true;
     @track addOpen = false;
     @track newFieldKey = '';
     @track newFieldType = 'text';
@@ -20,8 +23,16 @@ export default class GtmContentSection extends LightningElement {
 
     fieldTypeOptions = FIELD_TYPE_OPTIONS;
 
+    get displayLabel() { return this.sectionLabel || this.sectionKey; }
     get recordCount() { return `${this.records ? this.records.length : 0} field(s)`; }
     get toggleIcon() { return this.open ? '▲' : '▼'; }
+
+    get fieldsWithMeta() {
+        return (this.records || []).map((rec) => {
+            const meta = fieldMeta(this.templateType, this.sectionKey, rec.fieldKey);
+            return { ...rec, displayLabel: meta.label, displayHelp: meta.help };
+        });
+    }
 
     handleToggle() {
         this.open = !this.open;

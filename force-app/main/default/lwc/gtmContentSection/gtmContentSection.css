@@ -23,12 +23,26 @@
     background: #e8e6e6;
 }
 
-.gcs-title {
-    font-family: monospace;
-    font-weight: 600;
-    font-size: 0.8rem;
-    color: #032d60;
+.gcs-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
     flex: 1;
+    min-width: 0;
+}
+
+.gcs-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #032d60;
+}
+
+.gcs-help {
+    font-size: 0.7rem;
+    color: #706e6b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .gcs-count {

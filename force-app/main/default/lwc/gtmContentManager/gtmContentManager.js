@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from 'lwc';
 import getAllContent from '@salesforce/apex/MaPageContentController.getAllContent';
+import { sectionMeta } from 'c/gtmContentSchema';
 
 const TEMPLATE_TYPE_OPTIONS = [
     { label: 'Configurator', value: 'configurator' },
@@ -56,10 +57,12 @@ export default class GtmContentManager extends LightningElement {
         });
         const result = [];
         map.forEach((records, sectionKey) => {
-            result.push({ sectionKey, records });
+            const meta = sectionMeta(this.templateType, sectionKey);
+            result.push({ sectionKey, records, label: meta.label, help: meta.help, order: meta.order });
         });
-        // Stable sort by section key alphabetically (records are already ORDER BY sectionKey from Apex)
-        result.sort((a, b) => a.sectionKey.localeCompare(b.sectionKey));
+        // Known sections in their real page order first; anything not in the
+        // schema yet falls to the back, alphabetically, instead of breaking.
+        result.sort((a, b) => (a.order - b.order) || a.sectionKey.localeCompare(b.sectionKey));
         return result;
     }
 
