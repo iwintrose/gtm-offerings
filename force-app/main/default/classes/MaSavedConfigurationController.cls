@@ -207,6 +207,28 @@ public with sharing class MaSavedConfigurationController {
                 'We could not save this link: ' + e.getDmlMessage(0)
             );
         }
+
+        // The Opportunity needs this link's own Id, which only exists once
+        // the insert/update above has run -- and Amount should track
+        // whatever the rep just set here, not just whatever it happened to
+        // be the first time this Opportunity was created. Best-effort: the
+        // link itself already saved successfully above.
+        if (opportunityId != null) {
+            try {
+                Opportunity oppUpdate = new Opportunity(
+                    Id = opportunityId,
+                    Engagement_Link__c = record.Id
+                );
+                if (estimatedValue != null) {
+                    oppUpdate.Amount = estimatedValue;
+                }
+                update oppUpdate;
+            } catch (Exception e) {
+                // Link save already succeeded -- don't fail the whole
+                // request over the Opportunity sync.
+            }
+        }
+
         return record.Id;
     }
 

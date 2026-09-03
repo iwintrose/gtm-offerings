@@ -268,6 +268,7 @@ public without sharing class MaAssessmentRequestController {
         }
         try {
             Id opportunityId = ctx.opportunityId;
+            Boolean linkedToEngagementLink = isId(savedRecordId);
             if (opportunityId == null) {
                 String offeringLabel = offeringLabel(ctx.offering);
                 String company = String.isNotBlank(ctx.company) ? ctx.company : 'New Prospect';
@@ -284,10 +285,13 @@ public without sharing class MaAssessmentRequestController {
                 if (ctx.ownerId != null) {
                     opp.OwnerId = ctx.ownerId;
                 }
+                if (linkedToEngagementLink) {
+                    opp.Engagement_Link__c = (Id) Id.valueOf(savedRecordId);
+                }
                 insert opp;
                 opportunityId = opp.Id;
 
-                if (isId(savedRecordId)) {
+                if (linkedToEngagementLink) {
                     update new MA_Saved_Configuration__c(
                         Id = (Id) Id.valueOf(savedRecordId),
                         Opportunity__c = opportunityId
