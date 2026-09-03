@@ -61,6 +61,10 @@ for (MA_Assessment_Request__c ar : toMigrate) {
         System.debug('AR ' + ar.Id + ': reusing existing Contact ' + contactId);
     } else {
         // Create a Contact from the Lead data.
+        // AllowSave = true lets the insert proceed when duplicate detection
+        // rules would otherwise block it — this is a one-shot data migration
+        // running under admin context, and we've already confirmed no existing
+        // Contact matched above.
         Contact c = new Contact(
             FirstName = ar.Lead__r.FirstName,
             LastName  = String.isNotBlank(ar.Lead__r.LastName) ? ar.Lead__r.LastName : 'Unknown',
@@ -68,7 +72,9 @@ for (MA_Assessment_Request__c ar : toMigrate) {
             AccountId = accountId,
             Title     = ar.Lead__r.Title
         );
-        insert c;
+        Database.DmlOptions opts = new Database.DmlOptions();
+        opts.DuplicateRuleHeader.AllowSave = true;
+        Database.insert(c, opts);
         contactId = c.Id;
         System.debug('AR ' + ar.Id + ': created new Contact ' + contactId);
     }
