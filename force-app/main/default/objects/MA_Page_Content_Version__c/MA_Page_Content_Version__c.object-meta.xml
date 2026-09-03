@@ -16,4 +16,5 @@
         <type>AutoNumber</type>
     </nameField>
     <pluralLabel>Page Content Versions</pluralLabel>
+    <sharingModel>ControlledByParent</sharingModel>
 </CustomObject>
