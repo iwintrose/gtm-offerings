@@ -175,6 +175,10 @@ export default class MaConfigCustomize extends LightningElement {
         this._agentMode = !this._agentMode;
     }
 
+    handleAgentDelta(e) {
+        this._applyDelta(e.detail.changes);
+    }
+
     _applyDelta(delta) {
         if (!delta || typeof delta !== 'object') return;
         // Mirror the same emit() calls as the v1 form handlers so the parent's

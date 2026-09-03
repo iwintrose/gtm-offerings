@@ -22,19 +22,14 @@
 
       <template if:true={_agentMode}>
         <div class="agent-slot">
-          <!-- Agentforce slot — replace the div below with
+          <!-- Claude proxy — swap for Agentforce once license is provisioned:
                <einstein-copilot-chat agent-api-name="GTM_Configurator_Assistant"
-                 session-variables={agentSessionVars}></einstein-copilot-chat>
-               once the GTM_Configurator_Assistant agent is configured in
-               Einstein Copilot Studio and the org has Agentforce provisioned. -->
-          <div class="agent-placeholder">
-            <p class="agent-ph-title">AI assistant coming soon</p>
-            <p class="agent-ph-body">
-              Once configured, describe your prospect here and the assistant will
-              personalize the page automatically. Switch to the form to fill
-              in details manually.
-            </p>
-          </div>
+                 session-variables={agentSessionVars}></einstein-copilot-chat> -->
+          <c-ma-agent-chat
+            session-token={_sessionToken}
+            config-id={knownRecordId}
+            onagentdelta={handleAgentDelta}
+          ></c-ma-agent-chat>
         </div>
       </template>
 
