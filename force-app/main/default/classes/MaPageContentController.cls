@@ -67,7 +67,7 @@ public without sharing class MaPageContentController {
             SELECT Id, Name, Section_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c,
                    Industry_Key__c, Sort_Order__c, Active__c,
-                   Content_Address__c, Last_Edited_By_Label__c
+                   Content_Address__c, Offering_Key__c, Template_Type__c
             FROM   MA_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -137,6 +137,10 @@ public without sharing class MaPageContentController {
         return rec.Text_Value__c;
     }
 
+    private static String contentAddress(String offeringKey, String templateType, String sectionKey, String fieldKey) {
+        return offeringKey + '::' + templateType + '::' + sectionKey + '::' + fieldKey;
+    }
+
     // ─── Inner wrapper ────────────────────────────────────────────────────────
 
     public class ContentRecord {
@@ -154,7 +158,6 @@ public without sharing class MaPageContentController {
         @AuraEnabled public Integer sortOrder       { get; set; }
         @AuraEnabled public Boolean active          { get; set; }
         @AuraEnabled public String contentAddress   { get; set; }
-        @AuraEnabled public String lastEditedByLabel { get; set; }
 
         public ContentRecord() {}
 
@@ -173,23 +176,24 @@ public without sharing class MaPageContentController {
             this.sortOrder         = rec.Sort_Order__c == null ? 0 : rec.Sort_Order__c.intValue();
             this.active            = rec.Active__c;
             this.contentAddress    = rec.Content_Address__c;
-            this.lastEditedByLabel = rec.Last_Edited_By_Label__c;
         }
 
         public MA_Page_Content__c toSObject() {
             MA_Page_Content__c rec = new MA_Page_Content__c();
             if (String.isNotBlank(this.id)) rec.Id = this.id;
-            rec.Offering_Key__c  = this.offeringKey;
-            rec.Template_Type__c = this.templateType;
-            rec.Section_Key__c   = this.sectionKey;
-            rec.Field_Key__c     = this.fieldKey;
-            rec.Field_Type__c    = this.fieldType;
-            rec.Text_Value__c    = this.textValue;
-            rec.Rich_Value__c    = this.richValue;
-            rec.JSON_Value__c    = this.jsonValue;
-            rec.Industry_Key__c  = this.industryKey;
-            rec.Sort_Order__c    = this.sortOrder == null ? 0 : this.sortOrder;
-            rec.Active__c        = this.active == null ? true : this.active;
+            rec.Offering_Key__c    = this.offeringKey;
+            rec.Template_Type__c   = this.templateType;
+            rec.Section_Key__c     = this.sectionKey;
+            rec.Field_Key__c       = this.fieldKey;
+            rec.Field_Type__c      = this.fieldType;
+            rec.Text_Value__c      = this.textValue;
+            rec.Rich_Value__c      = this.richValue;
+            rec.JSON_Value__c      = this.jsonValue;
+            rec.Industry_Key__c    = this.industryKey;
+            rec.Sort_Order__c      = this.sortOrder == null ? 0 : this.sortOrder;
+            rec.Active__c          = this.active == null ? true : this.active;
+            // Content_Address__c is a plain Text external ID — Apex must set it.
+            rec.Content_Address__c = contentAddress(this.offeringKey, this.templateType, this.sectionKey, this.fieldKey);
             return rec;
         }
     }

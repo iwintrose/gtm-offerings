@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Rich_Value__c</fullName>
-    <label>Rich Value</label>
     <description>HTML rich-text content rendered by lightning-formatted-rich-text. Used for body copy, lede paragraphs, and formatted blocks.</description>
-    <type>Html</type>
+    <label>Rich Value</label>
     <length>32768</length>
+    <trackTrending>false</trackTrending>
+    <type>Html</type>
     <visibleLines>10</visibleLines>
 </CustomField>

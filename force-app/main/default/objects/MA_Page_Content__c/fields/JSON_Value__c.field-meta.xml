@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>JSON_Value__c</fullName>
-    <label>JSON Value</label>
     <description>Structured content as a JSON string. Used for arrays (chips, route steps, capability cards, FAQ items, use-case cards, pitch chips) and nested objects.</description>
-    <type>LongTextArea</type>
+    <label>JSON Value</label>
     <length>32768</length>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
     <visibleLines>5</visibleLines>
 </CustomField>

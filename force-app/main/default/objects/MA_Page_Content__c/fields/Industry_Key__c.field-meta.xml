@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Industry_Key__c</fullName>
-    <label>Industry Key</label>
     <description>Optional. When set, this record applies only when the viewer has selected this industry. Blank records apply to all industries (offering defaults).</description>
-    <type>Text</type>
+    <externalId>false</externalId>
+    <label>Industry Key</label>
     <length>80</length>
     <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
     <unique>false</unique>
-    <caseSensitive>false</caseSensitive>
-    <externalId>false</externalId>
 </CustomField>
