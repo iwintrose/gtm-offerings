@@ -1,6 +1,6 @@
 import { LightningElement, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
-import getPageContent from '@salesforce/apex/MaPageContentController.getPageContent';
+import getPageContent from '@salesforce/apex/MaPageContentReader.getPageContent';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
@@ -36,6 +36,38 @@ const DEFAULTS = {
     mechanismSub: 'Point it at a client\'s email tool (ex: SFMC, Eloqua, etc) — get a build-ready plan out, and for the pieces it\'s confident about, a finished migration.',
     closingHead: 'This is Migration Accelerator today: an offering built on evidence, moving toward a finished migration instead of a plan for one.',
     closingSub: 'The next step is putting a name and an industry behind it.',
+    faqs: [
+        {
+            question: 'Does it let us run a migration with fewer people?',
+            verdict: 'Yes',
+            answer: 'The platform drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.'
+        },
+        {
+            question: 'Does it let us do it faster?',
+            verdict: 'Yes',
+            answer: 'Assessment runs in about an hour instead of weeks. A full plan for a mid-size environment fits inside a single sprint.'
+        },
+        {
+            question: 'Can it actually execute the migration, or just plan it?',
+            verdict: 'Yes',
+            answer: 'For supported objects, the platform previews the change with a dry run, executes it live, and keeps rollback ready if anything doesn\'t land clean.'
+        },
+        {
+            question: 'Does it mean fewer defects?',
+            verdict: 'Yes',
+            answer: 'Dependency-aware planning won\'t let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely.'
+        },
+        {
+            question: 'Does it give us better scoping, less risk?',
+            verdict: 'Yes',
+            answer: 'The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.'
+        },
+        {
+            question: 'Does it let us scale without deep platform specialists on every deal?',
+            verdict: 'Qualified yes',
+            answer: 'Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve.'
+        }
+    ],
     routeSteps: [
         { stepLabel: 'Ingest', stepDesc: 'Every asset, read directly' },
         { stepLabel: 'Audit', stepDesc: 'A live health score' },
@@ -190,7 +222,12 @@ export default class MaStory extends LightningElement {
 
     get faqs() {
         const orgUrl = this._orgUrl;
-        return this._faqData.map((f, index) => {
+        // Priority mirrors every other getter: MA_Page_Content__c → legacy CMS → DEFAULTS.
+        const cj = this._cj('faq::items');
+        const source = (cj && cj.length)
+            ? cj
+            : (this._faqData && this._faqData.length) ? this._faqData : DEFAULTS.faqs;
+        return source.map((f, index) => {
             const id = `q${index + 1}`;
             const qualified = f.verdict !== 'Yes';
             const cmsUrl = (orgUrl && f.indexRecordId)
