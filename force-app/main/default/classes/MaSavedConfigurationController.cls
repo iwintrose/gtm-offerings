@@ -291,17 +291,14 @@ public with sharing class MaSavedConfigurationController {
      * A caller already on the live page builds its own link from
      * window.location instead and never needs this.
      *
-     * ConnectApi.Communities is a native platform API, not an HTTP callout --
-     * safe to call from the same transaction as a DML save. Read-only,
-     * returns null if the "GTM Accelerator" site isn't found rather than
+     * Returns null if the "GTM Accelerator" site isn't found rather than
      * throwing, since a missing site here should degrade gracefully (the
      * standalone launcher just won't be able to build a link) rather than
      * break anything else on the page.
      */
     @AuraEnabled(cacheable=true)
     public static String getConfiguratorPageUrl() {
-        String base = getSiteBaseUrl();
-        return base == null ? null : base + '/configurator';
+        return getSiteSwitchUrl('/s/configurator');
     }
 
     /**
@@ -313,21 +310,33 @@ public with sharing class MaSavedConfigurationController {
      */
     @AuraEnabled(cacheable=true)
     public static String getSiteHomePageUrl() {
-        String base = getSiteBaseUrl();
-        return base == null ? null : base + '/';
+        return getSiteSwitchUrl('/s/');
     }
 
-    private static String getSiteBaseUrl() {
+    /**
+     * Deliberately NOT the site's own public siteUrl (the *.my.site.com
+     * domain from ConnectApi.Communities) -- opening that directly in a new
+     * tab is a fresh, unauthenticated browser context with no session on
+     * that domain at all, even for a rep who's already logged into
+     * Lightning right now. It lands as a guest: no Customize button, no
+     * wizard, silently.
+     *
+     * /servlet/networks/switch is the same internal-user-into-a-site bridge
+     * Salesforce's own UI uses (the network switcher, "View" from Setup) --
+     * built on the org's own domain, where the rep's Lightning session
+     * already exists, it forwards them into the site's real external
+     * domain already authenticated as themselves, not as a guest.
+     */
+    private static String getSiteSwitchUrl(String startURL) {
         try {
-            for (ConnectApi.Community c : ConnectApi.Communities.getCommunities().communities) {
-                if (c.name == 'GTM Accelerator' && String.isNotBlank(c.siteUrl)) {
-                    return c.siteUrl + '/s';
-                }
-            }
+            List<Network> nets = [SELECT Id FROM Network WHERE Name = 'GTM Accelerator' LIMIT 1];
+            if (nets.isEmpty()) return null;
+            String orgDomain = URL.getOrgDomainUrl().toExternalForm();
+            return orgDomain + '/servlet/networks/switch?networkId=' + nets[0].Id
+                + '&startURL=' + EncodingUtil.urlEncode(startURL, 'UTF-8');
         } catch (Exception e) {
-            // Degrade gracefully -- see comment above.
+            return null;
         }
-        return null;
     }
 
     /**
