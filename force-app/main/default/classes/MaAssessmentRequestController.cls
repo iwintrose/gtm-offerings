@@ -596,9 +596,9 @@ public without sharing class MaAssessmentRequestController {
             throw new AuraHandledException('Submission token does not match this link. Please refresh and try again.');
         }
 
-        // Must be within the valid window.
+        // Must be within the valid window (30 min, matching MaLinkAuthController).
         Long nowEpoch = System.now().getTime() / 1000L;
-        if (nowEpoch - tokenEpoch > MaLinkAuthController.tokenWindowSeconds()) {
+        if (nowEpoch - tokenEpoch > 1800L) {
             throw new AuraHandledException(
                 'Your session has expired. Please re-enter the access password.'
             );

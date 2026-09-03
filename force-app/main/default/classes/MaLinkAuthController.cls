@@ -106,13 +106,6 @@ public without sharing class MaLinkAuthController {
         return payload + ':' + EncodingUtil.convertToHex(mac);
     }
 
-    /**
-     * Returns the window in seconds a token stays valid.
-     * Exposed via @TestVisible so MaAssessmentRequestControllerTest can
-     * generate tokens that haven't expired.
-     */
-    @TestVisible
-    static Integer tokenWindowSeconds() { return TOKEN_WINDOW_SECONDS; }
 
     private static void logAccess(String recordId, Boolean success) {
         try {
