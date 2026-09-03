@@ -33,6 +33,9 @@ export default class MaConfigBooking extends LightningElement {
     @api prospect = '';
     @api industryLabel = '';
     @api savedRecordId = '';
+    /** HMAC token from verifyAndIssueToken(); required by submitRequest() when the
+     *  engagement link has a password set. Passed down from maConfigurator. */
+    @api submissionToken = '';
     /** Pre-filled from the configurator's company param so the guest doesn't retype it. */
     @api prefillCompany = '';
     /** Pre-filled from the configurator's SOURCE_PLATFORM token. Matched
@@ -184,7 +187,8 @@ export default class MaConfigBooking extends LightningElement {
             context: this.form.context,
             prospect: this.prospect,
             industry: this.industryLabel,
-            savedRecordId: this.savedRecordId
+            savedRecordId: this.savedRecordId,
+            submissionToken: this.submissionToken || ''
         };
 
         try {

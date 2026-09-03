@@ -4,7 +4,7 @@ import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationContro
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
-import verifyPassword from '@salesforce/apex/MaLinkAuthController.verifyPassword';
+import verifyAndIssueToken from '@salesforce/apex/MaLinkAuthController.verifyAndIssueToken';
 import logEvent from '@salesforce/apex/MaLinkEventController.logEvent';
 import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/maConfigData';
 import USER_ID from '@salesforce/user/Id';
@@ -78,6 +78,10 @@ export default class MaConfigurator extends LightningElement {
     _sessionId = null;
     _formOpened = false;
     _formSubmitted = false;
+
+    // Submission token issued by verifyAndIssueToken(); passed to maConfigBooking
+    // so submitRequest() can validate that the guest entered the correct password.
+    _submissionToken = '';
 
     /** Real, server-verified signal for rep-only UI (Customize, saved
      * links). Guests can't call this at all -- no class access -- so the
@@ -666,13 +670,29 @@ export default class MaConfigurator extends LightningElement {
         // Blank the page immediately so there's no flash of content while
         // we wait for the Apex check to tell us whether a gate is needed.
         this._gateCheckPending = true;
+
+        // Restore a cached token from this browser session, but only if it
+        // is still within its 30-minute validity window (epoch is embedded
+        // in the token as the second colon-delimited segment).
         try {
             const sessionKey = `ma-auth-${this.savedRecordId}`;
-            if (window.sessionStorage && window.sessionStorage.getItem(sessionKey) === '1') {
-                this.passwordVerified = true;
-                return;
+            const cached = window.sessionStorage && window.sessionStorage.getItem(sessionKey);
+            if (cached) {
+                const parts = cached.split(':');
+                const epochSeconds = parts.length === 3 ? parseInt(parts[1], 10) : 0;
+                const nowSeconds = Math.floor(Date.now() / 1000);
+                if (epochSeconds > 0 && nowSeconds - epochSeconds < 1800) {
+                    this._submissionToken = cached;
+                    this.passwordVerified = true;
+                    this._gateCheckPending = false;
+                    this._logEvent('Page View');
+                    return;
+                }
+                // Expired or old '1' marker — clear and re-gate.
+                window.sessionStorage.removeItem(sessionKey);
             }
         } catch (e) { /* sessionStorage not available */ }
+
         try {
             this.passwordRequired = await checkPasswordRequired({
                 recordId: this.savedRecordId
@@ -702,15 +722,22 @@ export default class MaConfigurator extends LightningElement {
         this.passwordGateChecking = true;
         this.passwordGateError = '';
         try {
-            const ok = await verifyPassword({
+            const res = await verifyAndIssueToken({
                 recordId: this.savedRecordId,
                 password: pw
             });
-            if (ok) {
+            if (res && res.matched) {
+                this._submissionToken = res.submissionToken || '';
                 this.passwordVerified = true;
                 this._logEvent('Page View');
                 try {
-                    window.sessionStorage.setItem(`ma-auth-${this.savedRecordId}`, '1');
+                    // Cache the token so a same-session page refresh doesn't force
+                    // re-entry. The token embeds its own epoch; checkPasswordGate()
+                    // checks expiry before using it.
+                    window.sessionStorage.setItem(
+                        `ma-auth-${this.savedRecordId}`,
+                        this._submissionToken
+                    );
                 } catch (e) { /* sessionStorage not available */ }
             } else {
                 this.passwordGateError = 'Incorrect password. Please try again.';
@@ -720,6 +747,10 @@ export default class MaConfigurator extends LightningElement {
         } finally {
             this.passwordGateChecking = false;
         }
+    }
+
+    get submissionToken() {
+        return this._submissionToken;
     }
 
     // -------------------------------------------------------- booking events

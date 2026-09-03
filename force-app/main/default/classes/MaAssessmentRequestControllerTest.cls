@@ -482,4 +482,142 @@ private class MaAssessmentRequestControllerTest {
         Assert.isTrue(result.success, 'A bad savedRecordId should not block the submission');
         Assert.isNull(result.opportunityId);
     }
+
+    // ------------------------------------------------------------ token gate
+
+    @isTest
+    static void tokenNotRequiredForUnprotectedLink() {
+        // A config with no Link_Password__c should never require a token.
+        Account acc = new Account(Name = 'Northwind Retail');
+        insert acc;
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator',
+            Account__c = acc.Id,
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+        input.submissionToken = null; // no token
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'No token should be needed for an unprotected link');
+    }
+
+    @isTest
+    static void tokenRequiredForPasswordProtectedLink_missingTokenThrows() {
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator',
+            Link_Password__c = 'secret123',
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+        input.submissionToken = null;
+
+        Boolean threw = false;
+        Test.startTest();
+        try {
+            MaAssessmentRequestController.submitRequest(input);
+        } catch (AuraHandledException e) {
+            threw = true;
+        }
+        Test.stopTest();
+
+        Assert.isTrue(threw, 'Missing token for a password-protected link should throw');
+    }
+
+    @isTest
+    static void tokenRequiredForPasswordProtectedLink_validTokenSucceeds() {
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator',
+            Link_Password__c = 'secret123',
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        // Issue a real token the same way the LWC auth flow would.
+        MaLinkAuthController.VerifyResult auth =
+            MaLinkAuthController.verifyAndIssueToken(savedConfig.Id, 'secret123');
+        Assert.isTrue(auth.matched, 'verifyAndIssueToken should succeed with correct password');
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+        input.submissionToken = auth.submissionToken;
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'A valid token should allow submission to proceed');
+    }
+
+    @isTest
+    static void tokenRequiredForPasswordProtectedLink_tamperedHmacThrows() {
+        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator',
+            Link_Password__c = 'secret123',
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        MaLinkAuthController.VerifyResult auth =
+            MaLinkAuthController.verifyAndIssueToken(savedConfig.Id, 'secret123');
+
+        // Tamper with the HMAC portion.
+        List<String> parts = auth.submissionToken.split(':');
+        String tamperedToken = parts[0] + ':' + parts[1] + ':' + 'deadbeef0000000000000000000000000000000000000000000000000000dead';
+
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+        input.submissionToken = tamperedToken;
+
+        Boolean threw = false;
+        Test.startTest();
+        try {
+            MaAssessmentRequestController.submitRequest(input);
+        } catch (AuraHandledException e) {
+            threw = true;
+        }
+        Test.stopTest();
+
+        Assert.isTrue(threw, 'A tampered HMAC should be rejected');
+    }
+
+    @isTest
+    static void directBookingWithNoSavedRecordIdNeverNeedsToken() {
+        // Even if a caller somehow passes a token, it should be silently
+        // ignored when there is no savedRecordId (no password-protected link).
+        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        MaAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = null;
+        input.submissionToken = 'garbage-token';
+
+        Test.startTest();
+        MaAssessmentRequestController.RequestResult result =
+            MaAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'A garbage token should be ignored for a direct booking');
+    }
 }

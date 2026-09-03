@@ -44,10 +44,17 @@ public without sharing class MaAssessmentRequestController {
         public String industry { get; set; }
         /** cfgId of the MA_Saved_Configuration__c the requester was viewing,
          * when the booking happened from a client's configured link. Used
-         * to attribute the Lead to the right rep and to file the request
+         * to attribute the Contact to the right rep and to file the request
          * under the right Opportunity -- see resolveConfigContext(). */
         @AuraEnabled
         public String savedRecordId { get; set; }
+        /**
+         * HMAC token issued by MaLinkAuthController.verifyAndIssueToken().
+         * Required when the engagement link has a password set; ignored
+         * (not checked) for direct bookings and unprotected links.
+         */
+        @AuraEnabled
+        public String submissionToken { get; set; }
     }
 
     /** What we know about the client link the request came from. */
@@ -59,6 +66,9 @@ public without sharing class MaAssessmentRequestController {
         String company;
         String offering;
         Decimal estimatedValue;
+        /** Populated when the link has Link_Password__c set; used by
+         * validateTokenIfRequired() to re-derive the expected HMAC. */
+        String linkPassword;
     }
 
     public class RequestResult {
@@ -110,6 +120,7 @@ public without sharing class MaAssessmentRequestController {
 
         MA_Assessment_Config__mdt cfg = loadConfig();
         ConfigContext ctx = resolveConfigContext(input.savedRecordId);
+        validateTokenIfRequired(input.savedRecordId, input.submissionToken, ctx);
         // A company name is a company name wherever it shows up in this
         // flow -- it should resolve to a real Account, not sit as a bare
         // string on the request. If a linked Engagement Link already
@@ -166,7 +177,7 @@ public without sharing class MaAssessmentRequestController {
             Id configId = Id.valueOf(savedRecordId);
             List<MA_Saved_Configuration__c> rows = [
                 SELECT OwnerId, Opportunity__c, Account__c, Contact__c,
-                       Company__c, Offering__c, Estimated_Value__c
+                       Company__c, Offering__c, Estimated_Value__c, Link_Password__c
                 FROM MA_Saved_Configuration__c
                 WHERE Id = :configId
                 LIMIT 1
@@ -179,6 +190,7 @@ public without sharing class MaAssessmentRequestController {
                 ctx.company = rows[0].Company__c;
                 ctx.offering = rows[0].Offering__c;
                 ctx.estimatedValue = rows[0].Estimated_Value__c;
+                ctx.linkPassword = rows[0].Link_Password__c;
             }
         } catch (Exception e) {
             // Malformed id, or no read access -- proceed unlinked.
@@ -531,6 +543,84 @@ public without sharing class MaAssessmentRequestController {
             'Source: Migration Accelerator configurator'
         };
         return trimTo(String.join(lines, '\n'), MAX_LONG);
+    }
+
+    // ------------------------------------------------------------ token gate
+
+    /**
+     * Enforces the submission token when the linked engagement link has a
+     * password set. Throws AuraHandledException (visible to the LWC) on
+     * any failure — missing token, wrong format, expired, wrong record, or
+     * invalid HMAC.
+     *
+     * The HMAC is verified with a constant-time comparison to prevent
+     * timing side-channels. Secret is the stored Link_Password__c, which
+     * is never returned to the caller.
+     *
+     * Skips validation entirely when:
+     *   - No savedRecordId was supplied (direct booking, no link)
+     *   - The linked config has no Link_Password__c (unprotected link)
+     */
+    private static void validateTokenIfRequired(
+        String savedRecordId,
+        String token,
+        ConfigContext ctx
+    ) {
+        if (!isId(savedRecordId) || String.isBlank(ctx.linkPassword)) {
+            return; // Not a password-protected link — nothing to enforce.
+        }
+
+        if (String.isBlank(token)) {
+            throw new AuraHandledException(
+                'A submission token is required. Please enter the access password again.'
+            );
+        }
+
+        // Expected format: "<recordId>:<epochSeconds>:<hmacHex>"
+        List<String> parts = token.split(':');
+        if (parts.size() != 3) {
+            throw new AuraHandledException('Invalid submission token. Please refresh and try again.');
+        }
+
+        String tokenRecordId = parts[0];
+        Long tokenEpoch;
+        try {
+            tokenEpoch = Long.valueOf(parts[1]);
+        } catch (Exception e) {
+            throw new AuraHandledException('Invalid submission token. Please refresh and try again.');
+        }
+        String tokenHmac = parts[2];
+
+        // Must be for the same record this request references.
+        if (tokenRecordId != savedRecordId) {
+            throw new AuraHandledException('Submission token does not match this link. Please refresh and try again.');
+        }
+
+        // Must be within the valid window.
+        Long nowEpoch = System.now().getTime() / 1000L;
+        if (nowEpoch - tokenEpoch > MaLinkAuthController.tokenWindowSeconds()) {
+            throw new AuraHandledException(
+                'Your session has expired. Please re-enter the access password.'
+            );
+        }
+
+        // Verify the HMAC (constant-time comparison prevents timing attacks).
+        String payload = tokenRecordId + ':' + parts[1];
+        Blob expected = Crypto.generateMac('HmacSHA256', Blob.valueOf(payload), Blob.valueOf(ctx.linkPassword));
+        String expectedHex = EncodingUtil.convertToHex(expected);
+        if (!constantTimeEqual(expectedHex, tokenHmac)) {
+            throw new AuraHandledException('Invalid submission token. Please refresh and try again.');
+        }
+    }
+
+    /** Compares two hex strings in O(n) time to prevent HMAC timing attacks. */
+    private static Boolean constantTimeEqual(String a, String b) {
+        if (a == null || b == null || a.length() != b.length()) return false;
+        Integer diff = 0;
+        for (Integer i = 0; i < a.length(); i++) {
+            diff |= a.charAt(i) ^ b.charAt(i);
+        }
+        return diff == 0;
     }
 
     // ----------------------------------------------------------------- helpers
