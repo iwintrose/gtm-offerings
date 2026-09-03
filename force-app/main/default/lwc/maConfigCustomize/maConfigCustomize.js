@@ -127,6 +127,7 @@ export default class MaConfigCustomize extends LightningElement {
     @track brandLookupBusy = false;
     @track brandLookupError = '';
     @track _saveStatus = ''; // '' | 'saving' | 'saved'
+    @track _advancedOpen = false;
     _autoSaveTimer = null;
 
     get saveLabel() {
@@ -136,7 +137,21 @@ export default class MaConfigCustomize extends LightningElement {
     get saveStatusText() {
         if (this._saveStatus === 'saving') return 'Saving…';
         if (this._saveStatus === 'saved') return 'Saved ✓';
-        return 'Changes save automatically';
+        return '';
+    }
+
+    get saveToastClass() {
+        if (this._saveStatus === 'saving') return 'save-toast saving';
+        if (this._saveStatus === 'saved') return 'save-toast saved';
+        return 'save-toast';
+    }
+
+    get advancedChevron() {
+        return this._advancedOpen ? 'adv-chevron open' : 'adv-chevron';
+    }
+
+    handleAdvancedToggle() {
+        this._advancedOpen = !this._advancedOpen;
     }
 
     /** value is the just-typed text (direct from the input event) when
