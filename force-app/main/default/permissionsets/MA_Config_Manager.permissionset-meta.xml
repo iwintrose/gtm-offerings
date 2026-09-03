@@ -132,6 +132,11 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>MA_Saved_Configuration__c.Presentation_Stage__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>Lead.GTM_Account__c</field>
         <readable>true</readable>
         <editable>true</editable>
@@ -203,6 +208,71 @@
     </fieldPermissions>
     <fieldPermissions>
         <field>MA_Assessment_Request__c.Source__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Target_Platform__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Budget_Range__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Contact_Count__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Monthly_Send_Volume__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Pain_Points__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Migration_Goals__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Key_Integrations__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Success_Criteria__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Internal_Team_Size__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Executive_Sponsorship__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Decision_Makers__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Urgency_Driver__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Assessment_Request__c.Submitted_At__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
