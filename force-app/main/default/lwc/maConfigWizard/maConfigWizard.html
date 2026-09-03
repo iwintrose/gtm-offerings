@@ -85,6 +85,20 @@
         <template if:true={showFull}>
           <template if:false={isDone}>
 
+            <div class="mw-dotrow" role="tablist" aria-label="Jump to a step">
+              <template for:each={stepDots} for:item="d">
+                <button
+                  key={d.n}
+                  type="button"
+                  class={d.dotClass}
+                  data-step={d.n}
+                  title={d.label}
+                  aria-label={d.label}
+                  onclick={handleStepJump}
+                >{d.n}</button>
+              </template>
+            </div>
+
             <!-- STEP 1 — company -->
             <template if:true={isStep1}>
               <div class="mw-step">
@@ -243,6 +257,11 @@
                 <template if:true={_saveError}>
                   <div class="mw-error" role="alert">{_saveError}</div>
                 </template>
+                <template if:false={_saveError}>
+                  <template if:false={canGenerateLink}>
+                    <div class="mw-hint">{generateBlockedReason}</div>
+                  </template>
+                </template>
               </div>
             </template>
 
@@ -256,7 +275,7 @@
               <template if:true={showSkip}>
                 <button type="button" class="mw-btn ghost" onclick={handleFullSkip}>Skip</button>
               </template>
-              <button type="button" class="mw-btn primary" onclick={handleFullNext} disabled={_saving}>{nextLabel}</button>
+              <button type="button" class="mw-btn primary" onclick={handleFullNext} disabled={nextDisabled}>{nextLabel}</button>
             </div>
           </template>
         </template>

@@ -408,6 +408,15 @@ export default class MaConfigWizard extends LightningElement {
 
     // -------------------------------------------------------------- nav
 
+    /** Steps a rep has landed on, in either direction or via a direct jump
+     * -- drives the "done" dot state below. A plain array (not a Set) so
+     * reassigning it is what LWC's @track reactivity actually watches. */
+    @track _visitedSteps = [1];
+
+    _markVisited(n) {
+        if (!this._visitedSteps.includes(n)) this._visitedSteps = [...this._visitedSteps, n];
+    }
+
     get canGoBackFull() { return this._step > 1; }
 
     get isStep1() { return this._step === 1; }
@@ -419,22 +428,79 @@ export default class MaConfigWizard extends LightningElement {
     get isStep7() { return this._step === 7; }
     get isStep8() { return this._step === 8; }
 
+    /** Required, not just visited: company (Step 1) and the rep's own
+     * contact details (Step 6) -- everything else stays genuinely optional,
+     * including industry ("Not sure — use general content" is itself a
+     * valid, complete answer, not a blank one). This is the one thing
+     * that's actually enforced; every other step is free to skip or jump
+     * past, per Isiah's ask -- reps can move around freely, only
+     * *generating the link* is held back until this is true. */
+    get canGenerateLink() {
+        return !!(this._company || '').trim()
+            && !!(this._state.CONTACT_NAME || '').trim()
+            && !!(this._state.CONTACT_EMAIL || '').trim();
+    }
+
+    get generateBlockedReason() {
+        if (this.canGenerateLink) return '';
+        if (!(this._company || '').trim()) return 'Add a company name (Step 1) before generating a link.';
+        return 'Add your name and email (Step 6) before generating a link.';
+    }
+
+    /** Numbered, clickable progress rail -- lets a rep jump straight to any
+     * step instead of only stepping through with Next/Back. dotState drives
+     * the CSS class: 'current', 'needs' (a required step still incomplete),
+     * 'done' (visited, or optional and already has a value), or 'todo'. */
+    get stepDots() {
+        const labels = ['Company', 'Industry', 'Colour', 'Environment', 'Note', 'Contact', 'Password', 'Review'];
+        const requiredOk = [
+            !!(this._company || '').trim(),
+            true,
+            true,
+            true,
+            true,
+            !!(this._state.CONTACT_NAME || '').trim() && !!(this._state.CONTACT_EMAIL || '').trim(),
+            true,
+            true
+        ];
+        return labels.map((label, i) => {
+            const n = i + 1;
+            let dotState = 'todo';
+            if (n === this._step) dotState = 'current';
+            else if (!requiredOk[i]) dotState = 'needs';
+            else if (this._visitedSteps.includes(n)) dotState = 'done';
+            return { n, label, dotClass: `mw-dot mw-dot--${dotState}` };
+        });
+    }
+
+    handleStepJump(event) {
+        const n = parseInt(event.currentTarget.dataset.step, 10);
+        if (!n || n === this._step) return;
+        this._step = n;
+        this._markVisited(n);
+        if (n === 7) this._ensureGeneratedPassword();
+    }
+
     handleFullNext() {
-        if (this._step === 1 && !(this._company || '').trim()) {
-            this._companyInvalid = true;
-            this._saveError = 'Add a company name to continue.';
-            return;
-        }
         if (this._step < TOTAL_STEPS) {
             this._step += 1;
+            this._markVisited(this._step);
             if (this._step === 7) this._ensureGeneratedPassword();
         } else {
+            if (!this.canGenerateLink) {
+                this._companyInvalid = !(this._company || '').trim();
+                this._saveError = this.generateBlockedReason;
+                return;
+            }
             this._save();
         }
     }
 
     handleFullBack() {
-        if (this._step > 1) this._step -= 1;
+        if (this._step > 1) {
+            this._step -= 1;
+            this._markVisited(this._step);
+        }
     }
 
     handleFullSkip() {
@@ -444,6 +510,10 @@ export default class MaConfigWizard extends LightningElement {
     get nextLabel() {
         if (this._step === TOTAL_STEPS) return this._saving ? 'Saving…' : 'Save & generate link';
         return 'Next →';
+    }
+
+    get nextDisabled() {
+        return this._saving || (this._step === TOTAL_STEPS && !this.canGenerateLink);
     }
 
     get showSkip() {

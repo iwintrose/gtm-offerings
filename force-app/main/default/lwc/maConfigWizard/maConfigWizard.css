@@ -152,6 +152,46 @@
   line-height: 1.4;
 }
 
+/* ---------- step-jump rail ---------- */
+.mw-dotrow {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1.1rem;
+}
+.mw-dot {
+  flex: 1;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+.mw-dot:hover {
+  border-color: var(--coral);
+}
+.mw-dot--current {
+  background: var(--coral);
+  border-color: var(--coral);
+  color: #fff;
+}
+.mw-dot--done {
+  background: var(--coral-soft);
+  border-color: var(--line);
+  color: var(--coral-ink);
+}
+.mw-dot--needs {
+  border-color: var(--coral-ink);
+  border-style: dashed;
+  color: var(--coral-ink);
+}
+.mw-dot--todo {
+  color: var(--ink-faint);
+}
+
 /* ---------- steps ---------- */
 .mw-step {
   display: flex;
