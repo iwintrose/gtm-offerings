@@ -144,8 +144,8 @@ public without sharing class MaAssessmentRequestController {
         // that never connects to Sales Cloud.
         if (ctx.accountId == null) {
             ctx.accountId = resolveAccount(trimTo(input.company, MAX_SHORT));
+            ctx.company = trimTo(input.company, MAX_SHORT);
         }
-        ensureOpportunity(input.savedRecordId, ctx);
 
         try {
             Boolean createContact = (Boolean) cfg.get('Create_Lead__c');
@@ -155,6 +155,9 @@ public without sharing class MaAssessmentRequestController {
             if (createContact == true) {
                 applyContact(input, cleanName, cleanEmail, cfg, ctx, result);
             }
+            // Runs after applyContact so the OpportunityContactRole below
+            // can attach the requester, not just the Account.
+            ensureOpportunity(input.savedRecordId, ctx, cleanName);
             if (sendEmail == true && String.isNotBlank(notifyEmail)) {
                 result.emailSent = notify(input, cleanName, cleanEmail, cfg);
             }
@@ -242,25 +245,31 @@ public without sharing class MaAssessmentRequestController {
     }
 
     /**
-     * The whole point of the Account/Contact/Estimated Value fields on the
-     * client link: an assessment booked from that link is real buying
-     * intent, so it should land as a real Opportunity in the pipeline, not
-     * wait for a rep to notice and create one by hand. Only creates one
-     * when the client link doesn't already have one -- never overwrites or
-     * duplicates. Best-effort, like the rest of this file's linkage: an
-     * Opportunity that fails to create should never block the submission
-     * that's already otherwise succeeded.
+     * Every assessment submission is its own buying-intent event and gets
+     * its own Opportunity -- never reused across submissions. The same
+     * Account can carry many Opportunities over time: different
+     * requesters, different reps on the same accelerator, or a sales cycle
+     * that closes and later restarts. When a Contact is known, attaches
+     * them to the new Opportunity as primary via OpportunityContactRole so
+     * the Opportunity is tied to the person, not just the Account.
+     * Best-effort, like the rest of this file's linkage: an Opportunity
+     * that fails to create should never block the submission that's
+     * already otherwise succeeded.
      */
-    private static void ensureOpportunity(String savedRecordId, ConfigContext ctx) {
-        if (ctx.opportunityId != null || !isId(savedRecordId)) {
+    private static void ensureOpportunity(String savedRecordId, ConfigContext ctx, String requesterName) {
+        if (ctx.accountId == null) {
             return;
         }
         try {
             String offeringLabel = offeringLabel(ctx.offering);
             String company = String.isNotBlank(ctx.company) ? ctx.company : 'New Prospect';
+            String oppName = company + ' - ' + offeringLabel;
+            if (String.isNotBlank(requesterName)) {
+                oppName += ' (' + requesterName + ')';
+            }
 
             Opportunity opp = new Opportunity(
-                Name = company + ' - ' + offeringLabel,
+                Name = oppName,
                 AccountId = ctx.accountId,
                 StageName = 'Qualification',
                 CloseDate = Date.today().addDays(90),
@@ -274,16 +283,26 @@ public without sharing class MaAssessmentRequestController {
             insert opp;
             ctx.opportunityId = opp.Id;
 
-            // Write back so the next assessment on this same link reuses
-            // this Opportunity instead of creating another one, and so the
-            // rep sees it from the Engagement Link record too.
-            update new MA_Saved_Configuration__c(
-                Id = (Id) Id.valueOf(savedRecordId),
-                Opportunity__c = opp.Id
-            );
+            if (ctx.contactId != null) {
+                insert new OpportunityContactRole(
+                    OpportunityId = opp.Id,
+                    ContactId = ctx.contactId,
+                    Role = 'Decision Maker',
+                    IsPrimary = true
+                );
+            }
+
+            // Informational only -- reflects the most recently created
+            // Opportunity for this link, not a gate on future creation.
+            if (isId(savedRecordId)) {
+                update new MA_Saved_Configuration__c(
+                    Id = (Id) Id.valueOf(savedRecordId),
+                    Opportunity__c = opp.Id
+                );
+            }
         } catch (Exception e) {
-            // No Opportunity this time -- the Lead/Task/assessment record
-            // path already succeeded and isn't affected.
+            // No Opportunity this time -- the Contact/Task/assessment
+            // record path already succeeded and isn't affected.
         }
     }
 
