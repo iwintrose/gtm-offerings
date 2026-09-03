@@ -158,6 +158,11 @@ public without sharing class MaAssessmentRequestController {
             // Runs after applyContact so the OpportunityContactRole below
             // can attach the requester, not just the Account.
             ensureOpportunity(input.savedRecordId, ctx, cleanName);
+            // Runs after both, so the activity lands on the Opportunity
+            // (WhatId) as well as the Contact (WhoId) -- the rep working
+            // the Opportunity sees what happened and when without having
+            // to go find the Contact's own timeline.
+            logActivity(ctx.contactId, ctx.opportunityId, input, cleanName, cleanEmail, cfg);
             if (sendEmail == true && String.isNotBlank(notifyEmail)) {
                 result.emailSent = notify(input, cleanName, cleanEmail, cfg);
             }
@@ -519,37 +524,57 @@ public without sharing class MaAssessmentRequestController {
 
         result.contactId = target.Id;
         ctx.contactId = target.Id;
-        logActivity(target.Id, input, cleanName, cleanEmail, cfg);
     }
 
+    /**
+     * Logs the submission as a Task or Event (per config) against both the
+     * Contact (WhoId) and the Opportunity (WhatId) when known, so the
+     * timeline of what happened and when shows up on the Opportunity a rep
+     * is actually working, not just buried on the Contact. Called once,
+     * after both the Contact and the Opportunity have been resolved --
+     * never from inside applyContact, which runs before the Opportunity
+     * exists.
+     */
     private static void logActivity(
-        Id leadId,
+        Id contactId,
+        Id opportunityId,
         RequestInput input,
         String cleanName,
         String cleanEmail,
         MA_Assessment_Config__mdt cfg
     ) {
+        if (contactId == null) {
+            return;
+        }
         String subject = 'Environment assessment request';
         String body = buildSummary(input, cleanName, cleanEmail);
         String activityType = (String) cfg.get('Activity_Type__c');
 
         if ('Event'.equalsIgnoreCase(activityType)) {
-            insert new Event(
-                WhoId = leadId,
+            Event e = new Event(
+                WhoId = contactId,
                 Subject = subject,
                 Description = body,
                 StartDateTime = System.now(),
                 DurationInMinutes = 30
             );
+            if (opportunityId != null) {
+                e.WhatId = opportunityId;
+            }
+            insert e;
         } else {
-            insert new Task(
-                WhoId = leadId,
+            Task t = new Task(
+                WhoId = contactId,
                 Subject = subject,
                 Description = body,
                 Status = 'Completed',
                 Priority = 'Normal',
                 ActivityDate = System.today()
             );
+            if (opportunityId != null) {
+                t.WhatId = opportunityId;
+            }
+            insert t;
         }
     }
 
