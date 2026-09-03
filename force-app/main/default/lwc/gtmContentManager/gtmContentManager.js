@@ -1,6 +1,5 @@
 import { LightningElement, api, track } from 'lwc';
 import getAllContent from '@salesforce/apex/MaPageContentController.getAllContent';
-import saveContentRecord from '@salesforce/apex/MaPageContentController.saveContentRecord';
 
 const TEMPLATE_TYPE_OPTIONS = [
     { label: 'Configurator', value: 'configurator' },

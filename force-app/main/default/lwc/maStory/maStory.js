@@ -105,11 +105,6 @@ export default class MaStory extends LightningElement {
     _orgUrl = '';
     _lightningUrl = '';
     _sites = [];
-    _cmsChannelId = '';
-    _pageContentId = null;
-    _pageIndexRecordId = null;
-    _bodyContentId = null;
-    _bodyIndexRecordId = null;
 
     // ─── CMS resolution helpers ────────────────────────────────────────────────
     // Priority: MA_Page_Content__c (_cms map) → legacy CMS (_page/_body) → DEFAULTS
@@ -195,16 +190,12 @@ export default class MaStory extends LightningElement {
 
     get faqs() {
         const orgUrl = this._orgUrl;
-        const channelId = this._cmsChannelId;
         return this._faqData.map((f, index) => {
             const id = `q${index + 1}`;
             const qualified = f.verdict !== 'Yes';
             const cmsUrl = (orgUrl && f.indexRecordId)
                 ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${f.indexRecordId}/view`
                 : orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
-            const recUrl = (orgUrl && f.indexRecordId)
-                ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${f.indexRecordId}/view`
-                : '#';
             return {
                 id,
                 question: f.question,
@@ -212,22 +203,14 @@ export default class MaStory extends LightningElement {
                 answer: f.answer,
                 itemClass: this.openFaqId === id ? 'faq-item open' : 'faq-item',
                 verdictClass: qualified ? 'faq-verdict qualified' : 'faq-verdict yes',
-                cmsUrl,
-                recUrl
+                cmsUrl
             };
         });
     }
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl, this._lightningUrl, this._sites); }
-    get pageEditCmsUrl() {
-        return (this._orgUrl && this._pageIndexRecordId)
-            ? `${this._orgUrl}/lightning/r/MA_CMS_Content_Index__c/${this._pageIndexRecordId}/view`
-            : this._orgUrl ? `${this._orgUrl}/lightning/cms/home` : '#';
-    }
-    get bodyEditCmsUrl() {
-        return (this._orgUrl && this._bodyIndexRecordId)
-            ? `${this._orgUrl}/lightning/r/MA_CMS_Content_Index__c/${this._bodyIndexRecordId}/view`
-            : this._orgUrl ? `${this._orgUrl}/lightning/cms/home` : '#';
+    get contentManagerUrl() {
+        return this._orgUrl ? `${this._orgUrl}/lightning/o/MA_Page_Content__c/list` : '#';
     }
 
     // ---- lifecycle ----
@@ -249,11 +232,6 @@ export default class MaStory extends LightningElement {
                 this._faqData = data.faqs || [];
                 this._orgUrl = data.orgUrl || '';
                 this._lightningUrl = data.lightningUrl || '';
-                this._cmsChannelId = data.cmsChannelId || '';
-                this._pageContentId = data.pageContentId || null;
-                this._pageIndexRecordId = data.pageIndexRecordId || null;
-                this._bodyContentId = data.bodyContentId || null;
-                this._bodyIndexRecordId = data.bodyIndexRecordId || null;
                 if (data.page) {
                     this._page = data.page;
                     this._proofObjectsCount = data.page.proofObjectsCount;
