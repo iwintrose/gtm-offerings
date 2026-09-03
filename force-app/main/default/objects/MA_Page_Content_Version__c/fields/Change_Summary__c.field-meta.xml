@@ -4,7 +4,7 @@
     <description>Brief description of what changed in this version</description>
     <externalId>false</externalId>
     <label>Change Summary</label>
-    <length>1000</length>
+    <length>255</length>
     <trackHistory>false</trackHistory>
     <type>Text</type>
 </CustomField>
