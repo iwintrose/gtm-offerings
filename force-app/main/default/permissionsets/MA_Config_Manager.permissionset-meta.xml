@@ -162,11 +162,6 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
-        <field>MA_Assessment_Request__c.Lead__c</field>
-        <readable>true</readable>
-        <editable>false</editable>
-    </fieldPermissions>
-    <fieldPermissions>
         <field>MA_Assessment_Request__c.Requester_Name__c</field>
         <readable>true</readable>
         <editable>false</editable>

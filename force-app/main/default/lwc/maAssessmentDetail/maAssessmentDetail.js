@@ -13,8 +13,6 @@ import OPP_NAME          from '@salesforce/schema/MA_Assessment_Request__c.Oppor
 import CONTACT_ID        from '@salesforce/schema/MA_Assessment_Request__c.Contact__c';
 import CONTACT_NAME      from '@salesforce/schema/MA_Assessment_Request__c.Contact__r.Name';
 import CONTACT_EMAIL     from '@salesforce/schema/MA_Assessment_Request__c.Contact__r.Email';
-import LEAD_ID           from '@salesforce/schema/MA_Assessment_Request__c.Lead__c';
-import LEAD_NAME         from '@salesforce/schema/MA_Assessment_Request__c.Lead__r.Name';
 import PLATFORM_FIELD    from '@salesforce/schema/MA_Assessment_Request__c.Current_Platform__c';
 import ENV_SIZE_FIELD    from '@salesforce/schema/MA_Assessment_Request__c.Environment_Size__c';
 import TIMELINE_FIELD    from '@salesforce/schema/MA_Assessment_Request__c.Timeline__c';
@@ -31,7 +29,6 @@ const FIELDS = [
     ACCOUNT_ID, ACCOUNT_NAME,
     OPP_ID, OPP_NAME,
     CONTACT_ID, CONTACT_NAME, CONTACT_EMAIL,
-    LEAD_ID, LEAD_NAME,
     PLATFORM_FIELD, ENV_SIZE_FIELD, TIMELINE_FIELD, CONTEXT_FIELD,
     REQ_NAME, REQ_EMAIL, COMPANY_FIELD, ROLE_FIELD, SOURCE_FIELD
 ];
@@ -97,14 +94,6 @@ export default class MaAssessmentDetail extends LightningElement {
     get contactUrl()    {
         const id = this._fv(CONTACT_ID);
         return id ? `/lightning/r/Contact/${id}/view` : '#';
-    }
-
-    // ---- lead (shown only when no contact)
-    get hasLead()   { return !this.hasContact && !!this._fv(LEAD_ID); }
-    get leadName()  { return this._fv(LEAD_NAME) || ''; }
-    get leadUrl()   {
-        const id = this._fv(LEAD_ID);
-        return id ? `/lightning/r/Lead/${id}/view` : '#';
     }
 
     get hasCrmChain() { return this.hasCfg || this.hasAccount; }

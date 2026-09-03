@@ -3,12 +3,12 @@
  * Accelerator configurator (LWC: maConfigBooking).
  *
  * Runs `without sharing` deliberately: the request form is reachable by the
- * Experience Cloud guest user, which has no read access to Lead. Finding an
- * existing Lead by email requires elevated context. The blast radius is kept
+ * Experience Cloud guest user, which has no read access to Contact. Finding an
+ * existing Contact by email requires elevated context. The blast radius is kept
  * small on purpose — this class exposes exactly one entry point, writes only
- * to Lead / Task / Event, never reflects caller input into SOQL, and takes the
- * notification destination from custom metadata rather than from the caller so
- * the endpoint cannot be used as an open mail relay.
+ * to Account / Contact / Task / Event, never reflects caller input into SOQL,
+ * and takes the notification destination from custom metadata rather than from
+ * the caller so the endpoint cannot be used as an open mail relay.
  */
 public without sharing class MaAssessmentRequestController {
     private static final String DEFAULT_CONFIG = 'Default';
@@ -65,9 +65,9 @@ public without sharing class MaAssessmentRequestController {
         @AuraEnabled
         public Boolean success { get; set; }
         @AuraEnabled
-        public String leadId { get; set; }
+        public String contactId { get; set; }
         @AuraEnabled
-        public Boolean leadCreated { get; set; }
+        public Boolean contactCreated { get; set; }
         @AuraEnabled
         public Boolean emailSent { get; set; }
         @AuraEnabled
@@ -79,7 +79,7 @@ public without sharing class MaAssessmentRequestController {
 
         public RequestResult() {
             this.success = false;
-            this.leadCreated = false;
+            this.contactCreated = false;
             this.emailSent = false;
         }
     }
@@ -124,12 +124,12 @@ public without sharing class MaAssessmentRequestController {
         ensureOpportunity(input.savedRecordId, ctx);
 
         try {
-            Boolean createLead = (Boolean) cfg.get('Create_Lead__c');
+            Boolean createContact = (Boolean) cfg.get('Create_Lead__c');
             Boolean sendEmail = (Boolean) cfg.get('Send_Email__c');
             String notifyEmail = (String) cfg.get('Notify_Email__c');
 
-            if (createLead == true) {
-                applyLead(input, cleanName, cleanEmail, cfg, ctx, result);
+            if (createContact == true) {
+                applyContact(input, cleanName, cleanEmail, cfg, ctx, result);
             }
             if (sendEmail == true && String.isNotBlank(notifyEmail)) {
                 result.emailSent = notify(input, cleanName, cleanEmail, cfg);
@@ -301,9 +301,9 @@ public without sharing class MaAssessmentRequestController {
 
     /**
      * Files a real, queryable record of the request -- linked to the
-     * client's link, the Lead, and the Opportunity when known -- instead of
+     * client's link, the Contact, and the Opportunity when known -- instead of
      * the request only existing as free text buried in a Task description.
-     * Best-effort: a failure here must never take down the Lead/Task path
+     * Best-effort: a failure here must never take down the Contact/Task path
      * that already succeeded above.
      */
     private static void recordAssessmentRequest(
@@ -321,9 +321,6 @@ public without sharing class MaAssessmentRequestController {
                 Opportunity__c = ctx.opportunityId,
                 Account__c = ctx.accountId,
                 Contact__c = ctx.contactId,
-                Lead__c = String.isNotBlank(result.leadId)
-                    ? (Id) Id.valueOf(result.leadId)
-                    : null,
                 Requester_Name__c = cleanName,
                 Requester_Email__c = cleanEmail,
                 Company__c = trimTo(input.company, MAX_SHORT),
@@ -387,8 +384,7 @@ public without sharing class MaAssessmentRequestController {
             return configOverride;
         }
         List<MA_Assessment_Config__mdt> rows = [
-            SELECT Notify_Email__c, Create_Lead__c, Send_Email__c,
-                   Lead_Source__c, Activity_Type__c
+            SELECT Notify_Email__c, Create_Lead__c, Send_Email__c, Activity_Type__c
             FROM MA_Assessment_Config__mdt
             WHERE DeveloperName = :DEFAULT_CONFIG
             LIMIT 1
@@ -396,107 +392,19 @@ public without sharing class MaAssessmentRequestController {
         if (!rows.isEmpty()) {
             return rows[0];
         }
-        // No config deployed yet — capture the lead, stay quiet otherwise.
+        // No config deployed yet — create contact, stay quiet otherwise.
         return new MA_Assessment_Config__mdt(
             Create_Lead__c = true,
             Send_Email__c = false,
-            Lead_Source__c = 'Migration Accelerator',
             Activity_Type__c = 'Task'
         );
     }
 
-    // ------------------------------------------------------------------- lead
-
-    private static void applyLead(
-        RequestInput input,
-        String cleanName,
-        String cleanEmail,
-        MA_Assessment_Config__mdt cfg,
-        ConfigContext ctx,
-        RequestResult result
-    ) {
-        // Assessment from a configured prospect link where the Account is
-        // already in Sales Cloud: write a Contact, not an unconverted Lead.
-        if (ctx.accountId != null) {
-            applyContact(input, cleanName, cleanEmail, cfg, ctx, result);
-            return;
-        }
-
-        String leadSourceCfg = (String) cfg.get('Lead_Source__c');
-        String leadSource = String.isBlank(leadSourceCfg)
-            ? 'Migration Accelerator'
-            : leadSourceCfg;
-
-        List<Lead> existing = [
-            SELECT Id, Company, Title, LeadSource, GTM_Account__c
-            FROM Lead
-            WHERE Email = :cleanEmail AND IsConverted = FALSE
-            ORDER BY CreatedDate DESC
-            LIMIT 1
-        ];
-
-        Lead target;
-        if (existing.isEmpty()) {
-            target = new Lead(
-                FirstName = firstNameOf(cleanName),
-                LastName = lastNameOf(cleanName),
-                Email = cleanEmail,
-                Company = companyOrFallback(input),
-                Title = trimTo(input.role, MAX_SHORT),
-                LeadSource = leadSource,
-                // Standard Lead.Company never links to Account until the
-                // Lead is converted -- this is a same-feature convenience
-                // pointing at the Account already resolved for this
-                // submission, so a rep can jump there without converting
-                // first. See GTM_Account__c's own field description.
-                GTM_Account__c = ctx.accountId
-            );
-            // Attribute to the rep who owns the client link the requester
-            // was viewing, rather than leaving it to fall to the guest
-            // user or a generic assignment rule -- this is the entire
-            // point of threading savedRecordId through: the rep who built
-            // the link is the one who should see the Lead land on them.
-            if (ctx.ownerId != null) {
-                target.OwnerId = ctx.ownerId;
-            }
-            insert target;
-            result.leadCreated = true;
-        } else {
-            // Existing lead: fill blanks only, never overwrite owned data.
-            target = existing[0];
-            Boolean dirty = false;
-            String company = trimTo(input.company, MAX_SHORT);
-            if (String.isBlank(target.Company) && String.isNotBlank(company)) {
-                target.Company = company;
-                dirty = true;
-            }
-            String role = trimTo(input.role, MAX_SHORT);
-            if (String.isBlank(target.Title) && String.isNotBlank(role)) {
-                target.Title = role;
-                dirty = true;
-            }
-            if (String.isBlank(target.LeadSource)) {
-                target.LeadSource = leadSource;
-                dirty = true;
-            }
-            if (target.GTM_Account__c == null && ctx.accountId != null) {
-                target.GTM_Account__c = ctx.accountId;
-                dirty = true;
-            }
-            if (dirty) {
-                update target;
-            }
-        }
-
-        result.leadId = target.Id;
-        logActivity(target.Id, input, cleanName, cleanEmail, cfg);
-    }
+    // --------------------------------------------------------------- contact
 
     /**
-     * Creates or updates a Contact under the linked Account when one is known.
-     * An assessment from a configured prospect link where the Account already
-     * exists should produce a Contact, not an unconverted Lead — the two
-     * record types mean different things to a rep's Sales Cloud view.
+     * Finds or creates a Contact scoped to the resolved Account.
+     * Fills blank Title from the submitted role; never overwrites existing data.
      */
     private static void applyContact(
         RequestInput input,
@@ -509,7 +417,7 @@ public without sharing class MaAssessmentRequestController {
         List<Contact> existing = [
             SELECT Id, AccountId, Title
             FROM Contact
-            WHERE Email = :cleanEmail
+            WHERE Email = :cleanEmail AND AccountId = :ctx.accountId
             LIMIT 1
         ];
 
@@ -526,7 +434,7 @@ public without sharing class MaAssessmentRequestController {
                 target.OwnerId = ctx.ownerId;
             }
             insert target;
-            result.leadCreated = true;
+            result.contactCreated = true;
         } else {
             target = existing[0];
             Boolean dirty = false;
@@ -539,7 +447,7 @@ public without sharing class MaAssessmentRequestController {
             }
         }
 
-        result.leadId = target.Id;
+        result.contactId = target.Id;
         ctx.contactId = target.Id;
         logActivity(target.Id, input, cleanName, cleanEmail, cfg);
     }
@@ -649,15 +557,6 @@ public without sharing class MaAssessmentRequestController {
             return trimTo(String.join(lastParts, ' '), 80);
         }
         return trimTo(fullName, 80);
-    }
-
-    private static String companyOrFallback(RequestInput input) {
-        String company = trimTo(input.company, MAX_SHORT);
-        if (String.isNotBlank(company)) {
-            return company;
-        }
-        String prospect = trimTo(input.prospect, MAX_SHORT);
-        return String.isNotBlank(prospect) ? prospect : 'Unknown';
     }
 
     private static String dash(String value) {

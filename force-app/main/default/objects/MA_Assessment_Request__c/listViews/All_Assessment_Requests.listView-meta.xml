@@ -8,7 +8,7 @@
     <columns>Company__c</columns>
     <columns>Status__c</columns>
     <columns>Opportunity__c</columns>
-    <columns>Lead__c</columns>
+    <columns>Contact__c</columns>
     <columns>Saved_Configuration__c</columns>
     <columns>CREATED_DATE</columns>
 </ListView>

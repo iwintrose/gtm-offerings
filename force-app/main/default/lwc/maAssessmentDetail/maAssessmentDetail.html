@@ -85,20 +85,6 @@
                             </div>
                         </template>
 
-                        <!-- Lead (only when no Contact yet) -->
-                        <template if:true={hasLead}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
-                                <div class="record-tile">
-                                    <div class="record-tile__header">
-                                        <lightning-icon icon-name="standard:lead" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                                        <span class="slds-text-title slds-text-color_weak">Lead</span>
-                                    </div>
-                                    <div class="record-tile__body">
-                                        <a href={leadUrl} class="slds-text-link">{leadName}</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
 
                     </div>
                 </lightning-card>

@@ -16,21 +16,20 @@ private class MaAssessmentRequestControllerTest {
     }
 
     private static MA_Assessment_Config__mdt config(
-        Boolean createLead,
+        Boolean createContact,
         Boolean sendEmail,
         String activityType
     ) {
         return new MA_Assessment_Config__mdt(
-            Create_Lead__c = createLead,
+            Create_Lead__c = createContact,
             Send_Email__c = sendEmail,
             Notify_Email__c = 'assessments@example.com',
-            Lead_Source__c = 'Migration Accelerator',
             Activity_Type__c = activityType
         );
     }
 
     @isTest
-    static void createsLeadAndTaskForNewEmail() {
+    static void createsContactAndTaskForNewEmail() {
         MaAssessmentRequestController.configOverride = config(true, false, 'Task');
 
         Test.startTest();
@@ -39,20 +38,21 @@ private class MaAssessmentRequestControllerTest {
         Test.stopTest();
 
         Assert.isTrue(result.success, 'Submission should succeed');
-        Assert.isTrue(result.leadCreated, 'A new Lead should have been created');
+        Assert.isTrue(result.contactCreated, 'A new Contact should have been created');
 
-        Lead created = [
-            SELECT FirstName, LastName, Email, Company, Title, LeadSource
-            FROM Lead
-            WHERE Id = :result.leadId
+        Contact created = [
+            SELECT FirstName, LastName, Email, Title, AccountId
+            FROM Contact
+            WHERE Id = :result.contactId
         ];
         Assert.areEqual('Alex', created.FirstName);
         Assert.areEqual('Rivera', created.LastName);
-        Assert.areEqual('Northwind Retail', created.Company);
-        Assert.areEqual('Migration Accelerator', created.LeadSource);
+        Assert.areEqual('alex.rivera@example.com', created.Email);
+        Assert.areEqual('Director, Marketing Technology', created.Title);
+        Assert.isNotNull(created.AccountId, 'Contact should be linked to the resolved Account');
 
         List<Task> logged = [
-            SELECT Subject, Status, Description FROM Task WHERE WhoId = :result.leadId
+            SELECT Subject, Status, Description FROM Task WHERE WhoId = :result.contactId
         ];
         Assert.areEqual(1, logged.size(), 'One activity should be logged');
         Assert.areEqual('Environment assessment request', logged[0].Subject);
@@ -63,11 +63,13 @@ private class MaAssessmentRequestControllerTest {
     }
 
     @isTest
-    static void reusesExistingLeadAndFillsBlanksOnly() {
-        Lead seeded = new Lead(
+    static void reusesExistingContactAndFillsBlanksOnly() {
+        Account acc = new Account(Name = 'Northwind Retail');
+        insert acc;
+        Contact seeded = new Contact(
             LastName = 'Rivera',
-            Company = 'Original Co',
-            Email = 'alex.rivera@example.com'
+            Email = 'alex.rivera@example.com',
+            AccountId = acc.Id
         );
         insert seeded;
 
@@ -78,15 +80,10 @@ private class MaAssessmentRequestControllerTest {
             MaAssessmentRequestController.submitRequest(sampleInput());
         Test.stopTest();
 
-        Assert.isFalse(result.leadCreated, 'Existing Lead should be reused');
-        Assert.areEqual(seeded.Id, result.leadId);
+        Assert.isFalse(result.contactCreated, 'Existing Contact should be reused');
+        Assert.areEqual(seeded.Id, result.contactId);
 
-        Lead after = [SELECT Company, Title, LeadSource FROM Lead WHERE Id = :seeded.Id];
-        Assert.areEqual(
-            'Original Co',
-            after.Company,
-            'An existing Company must not be overwritten'
-        );
+        Contact after = [SELECT Title FROM Contact WHERE Id = :seeded.Id];
         Assert.areEqual(
             'Director, Marketing Technology',
             after.Title,
@@ -100,8 +97,8 @@ private class MaAssessmentRequestControllerTest {
         );
         Assert.areEqual(
             1,
-            [SELECT COUNT() FROM Lead WHERE Email = 'alex.rivera@example.com'],
-            'No duplicate Lead should be created'
+            [SELECT COUNT() FROM Contact WHERE Email = 'alex.rivera@example.com'],
+            'No duplicate Contact should be created'
         );
     }
 
@@ -116,13 +113,13 @@ private class MaAssessmentRequestControllerTest {
 
         Assert.areEqual(
             1,
-            [SELECT COUNT() FROM Event WHERE WhoId = :result.leadId],
+            [SELECT COUNT() FROM Event WHERE WhoId = :result.contactId],
             'An Event should be logged instead of a Task'
         );
     }
 
     @isTest
-    static void skipsLeadWhenDisabled() {
+    static void skipsContactWhenDisabled() {
         MaAssessmentRequestController.configOverride = config(false, false, 'Task');
 
         Test.startTest();
@@ -131,8 +128,8 @@ private class MaAssessmentRequestControllerTest {
         Test.stopTest();
 
         Assert.isTrue(result.success);
-        Assert.isNull(result.leadId, 'No Lead should be created when disabled');
-        Assert.areEqual(0, [SELECT COUNT() FROM Lead]);
+        Assert.isNull(result.contactId, 'No Contact should be created when disabled');
+        Assert.areEqual(0, [SELECT COUNT() FROM Contact]);
     }
 
     @isTest
@@ -175,7 +172,7 @@ private class MaAssessmentRequestControllerTest {
             threw = true;
         }
         Assert.isTrue(threw, 'A malformed email should be rejected');
-        Assert.areEqual(0, [SELECT COUNT() FROM Lead]);
+        Assert.areEqual(0, [SELECT COUNT() FROM Contact]);
     }
 
     @isTest
@@ -190,7 +187,9 @@ private class MaAssessmentRequestControllerTest {
     }
 
     @isTest
-    static void fallsBackToCompanyPlaceholderWhenUnknown() {
+    static void succeedsWithNoCompanyOrProspect() {
+        // No company/prospect means no Account resolved, so Contact is created
+        // without an AccountId — submission should still succeed.
         MaAssessmentRequestController.configOverride = config(true, false, 'Task');
         MaAssessmentRequestController.RequestInput input = sampleInput();
         input.company = null;
@@ -201,8 +200,8 @@ private class MaAssessmentRequestControllerTest {
             MaAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
-        Lead created = [SELECT Company FROM Lead WHERE Id = :result.leadId];
-        Assert.areEqual('Unknown', created.Company);
+        Assert.isTrue(result.success, 'Submission should succeed without company');
+        Assert.isTrue(result.contactCreated, 'A Contact should still be created');
     }
 
     @isTest
@@ -216,7 +215,7 @@ private class MaAssessmentRequestControllerTest {
             MaAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
-        Lead created = [SELECT FirstName, LastName FROM Lead WHERE Id = :result.leadId];
+        Contact created = [SELECT FirstName, LastName FROM Contact WHERE Id = :result.contactId];
         Assert.isNull(created.FirstName);
         Assert.areEqual('Cher', created.LastName);
     }
@@ -247,24 +246,28 @@ private class MaAssessmentRequestControllerTest {
         );
         MA_Assessment_Request__c req = [
             SELECT Requester_Name__c, Requester_Email__c, Company__c, Status__c,
-                   Lead__c, Opportunity__c, Saved_Configuration__c
+                   Contact__c, Opportunity__c, Saved_Configuration__c
             FROM MA_Assessment_Request__c
             WHERE Id = :result.assessmentRequestId
         ];
         Assert.areEqual('Alex Rivera', req.Requester_Name__c);
         Assert.areEqual('alex.rivera@example.com', req.Requester_Email__c);
         Assert.areEqual('New', req.Status__c);
-        Assert.areEqual(result.leadId, req.Lead__c);
+        Assert.areEqual(result.contactId, req.Contact__c);
         Assert.isNull(req.Opportunity__c, 'No client link was supplied');
         Assert.isNull(req.Saved_Configuration__c);
     }
 
     @isTest
-    static void linksToOpportunityAndAttributesLeadViaSavedConfig() {
+    static void linksToOpportunityAndAttributesContactViaSavedConfig() {
+        Account acc = new Account(Name = 'Northwind Retail');
+        insert acc;
+
         Opportunity opp = new Opportunity(
             Name = 'Northwind Retail Migration',
             StageName = 'Qualification',
-            CloseDate = Date.today().addMonths(2)
+            CloseDate = Date.today().addMonths(2),
+            AccountId = acc.Id
         );
         insert opp;
 
@@ -273,6 +276,7 @@ private class MaAssessmentRequestControllerTest {
             Industry__c = 'Financial Services',
             Company__c = 'Northwind Retail',
             Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Account__c = acc.Id,
             Opportunity__c = opp.Id,
             OwnerId = UserInfo.getUserId()
         );
@@ -290,18 +294,18 @@ private class MaAssessmentRequestControllerTest {
         Assert.areEqual(opp.Id, result.opportunityId, 'Opportunity should carry through to the result');
 
         MA_Assessment_Request__c req = [
-            SELECT Opportunity__c, Saved_Configuration__c, Lead__c
+            SELECT Opportunity__c, Saved_Configuration__c, Contact__c
             FROM MA_Assessment_Request__c
             WHERE Id = :result.assessmentRequestId
         ];
         Assert.areEqual(opp.Id, req.Opportunity__c);
         Assert.areEqual(savedConfig.Id, req.Saved_Configuration__c);
 
-        Lead created = [SELECT OwnerId FROM Lead WHERE Id = :result.leadId];
+        Contact created = [SELECT OwnerId FROM Contact WHERE Id = :result.contactId];
         Assert.areEqual(
             UserInfo.getUserId(),
             created.OwnerId,
-            'A new Lead should be owned by the rep who owns the client link, not left unassigned'
+            'A new Contact should be owned by the rep who owns the client link, not left unassigned'
         );
     }
 
@@ -407,60 +411,7 @@ private class MaAssessmentRequestControllerTest {
     }
 
     @isTest
-    static void newLeadCarriesTheResolvedAccountEvenBeforeConversion() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
-        input.savedRecordId = null;
-        input.company = 'Northwind Retail';
-
-        Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
-        Test.stopTest();
-
-        Lead created = [SELECT GTM_Account__c FROM Lead WHERE Id = :result.leadId];
-        Assert.isNotNull(
-            created.GTM_Account__c,
-            'A new Lead should carry the resolved Account even though standard Lead.Company never links to one pre-conversion'
-        );
-    }
-
-    @isTest
-    static void existingLeadFillsBlankAccountButNeverOverwritesOne() {
-        Account original = new Account(Name = 'Original Account');
-        insert original;
-
-        Lead seeded = new Lead(
-            LastName = 'Rivera',
-            Company = 'Northwind Retail',
-            Email = 'alex.rivera@example.com',
-            GTM_Account__c = original.Id
-        );
-        insert seeded;
-
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
-        input.savedRecordId = null;
-        input.company = 'A Totally Different Company';
-
-        Test.startTest();
-        MaAssessmentRequestController.submitRequest(input);
-        Test.stopTest();
-
-        Lead after = [SELECT GTM_Account__c FROM Lead WHERE Id = :seeded.Id];
-        Assert.areEqual(
-            original.Id,
-            after.GTM_Account__c,
-            'An existing Lead\'s own GTM_Account__c must never be overwritten'
-        );
-    }
-
-    @isTest
     static void directBookingWithNoEngagementLinkStillResolvesAccount() {
-        // No savedRecordId at all -- e.g. a booking from the Story page's
-        // own CTA, with no client link in the picture. The company name
-        // the requester typed is the only signal available, and it should
-        // still connect to a real Account rather than sit as bare text.
         MaAssessmentRequestController.configOverride = config(true, false, 'Task');
         MaAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = null;
@@ -503,9 +454,6 @@ private class MaAssessmentRequestControllerTest {
         MaAssessmentRequestController.configOverride = config(true, false, 'Task');
         MaAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
-        // Deliberately different text than the link's own Company -- the
-        // already-resolved Account from the link should win, not get
-        // second-guessed by whatever the requester typed in the form.
         input.company = 'Northwind Retail (typo)';
 
         Test.startTest();
