@@ -8,6 +8,5 @@
     <precision>4</precision>
     <required>false</required>
     <scale>0</scale>
-    <trackHistory>true</trackHistory>
     <type>Number</type>
 </CustomField>

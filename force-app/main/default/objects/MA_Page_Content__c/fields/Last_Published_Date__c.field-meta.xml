@@ -5,6 +5,5 @@
     <externalId>false</externalId>
     <label>Last Published Date</label>
     <required>false</required>
-    <trackHistory>true</trackHistory>
     <type>DateTime</type>
 </CustomField>
