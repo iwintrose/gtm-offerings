@@ -1,17 +1,14 @@
 import { LightningElement, wire, track } from 'lwc';
-import { refreshApex } from '@salesforce/apex';
 import getSnapshot from '@salesforce/apex/MaHomeSnapshotController.getSnapshot';
+import getSiteHomePageUrl from '@salesforce/apex/MaSavedConfigurationController.getSiteHomePageUrl';
 
 export default class GtmOfferingsSnapshot extends LightningElement {
     snapshot;
     error;
-    @track wizardOpen = false;
-    _wiredSnapshotResult;
+    @track _navBusy = false;
 
     @wire(getSnapshot)
-    wiredSnapshot(result) {
-        this._wiredSnapshotResult = result;
-        const { data, error } = result;
+    wiredSnapshot({ data, error }) {
         if (data) {
             this.snapshot = data;
             this.error = undefined;
@@ -21,18 +18,27 @@ export default class GtmOfferingsSnapshot extends LightningElement {
         }
     }
 
-    handleOpenWizard() {
-        this.wizardOpen = true;
+    get newButtonLabel() {
+        return this._navBusy ? 'Opening…' : '+ New Prospect Page';
     }
 
-    handleCloseWizard() {
-        this.wizardOpen = false;
-    }
-
-    /** A link built in the wizard should show up in this tile row (Active
-     * Links) without the rep having to navigate away and back. */
-    handleWizardSaved() {
-        if (this._wiredSnapshotResult) refreshApex(this._wiredSnapshotResult);
+    /** Sends the rep to the live site's "Choose your industry" page rather
+     * than opening a wizard inline here -- picking an industry there (or
+     * skipping) is what actually opens the wizard, on the configurator
+     * page itself. New tab, so the rep doesn't lose this Lightning tab. */
+    async handleNewProspectPage() {
+        this._navBusy = true;
+        try {
+            const url = await getSiteHomePageUrl();
+            if (url) {
+                window.open(url, '_blank', 'noopener');
+            }
+        } catch (e) {
+            // Best-effort -- nothing else this button can usefully do if
+            // the site URL can't be resolved.
+        } finally {
+            this._navBusy = false;
+        }
     }
 
     get hasError() {

@@ -300,10 +300,28 @@ public with sharing class MaSavedConfigurationController {
      */
     @AuraEnabled(cacheable=true)
     public static String getConfiguratorPageUrl() {
+        String base = getSiteBaseUrl();
+        return base == null ? null : base + '/configurator';
+    }
+
+    /**
+     * The site's own home page -- "Choose your industry" (see chooseIndustry
+     * LWC), not the configurator. Used by the standalone launcher (the
+     * Overview tab's "+ New Prospect Page" button) to send a rep through the
+     * same industry-first flow a client-shared link would start from,
+     * instead of dropping them straight onto an unpersonalized configurator.
+     */
+    @AuraEnabled(cacheable=true)
+    public static String getSiteHomePageUrl() {
+        String base = getSiteBaseUrl();
+        return base == null ? null : base + '/';
+    }
+
+    private static String getSiteBaseUrl() {
         try {
             for (ConnectApi.Community c : ConnectApi.Communities.getCommunities().communities) {
                 if (c.name == 'GTM Accelerator' && String.isNotBlank(c.siteUrl)) {
-                    return c.siteUrl + '/s/configurator';
+                    return c.siteUrl + '/s';
                 }
             }
         } catch (Exception e) {

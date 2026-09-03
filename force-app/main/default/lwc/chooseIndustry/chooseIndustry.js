@@ -64,9 +64,24 @@ export default class ChooseIndustry extends LightningElement {
         return 'ci-root';
     }
 
+    /** Every tile here (an industry, or "Skip for now") is a rep starting
+     * a brand-new page -- wizard=1 tells maConfigurator to open the wizard
+     * immediately instead of landing on a bare configurator with no clear
+     * next step. A prospect clicking a link a rep already built and shared
+     * carries its own cfgId/company params instead and never passes through
+     * this page at all, so this never fires for them. */
+    get skipHref() {
+        return this._withWizardParam(this.configuratorUrl || '/configurator');
+    }
+
+    _withWizardParam(url) {
+        const joiner = url.indexOf('?') === -1 ? '?' : '&';
+        return `${url}${joiner}wizard=1`;
+    }
+
     get industries() {
-        const base = this.configuratorUrl || '/configurator';
-        const joiner = base.indexOf('?') === -1 ? '?' : '&';
+        const base = this._withWizardParam(this.configuratorUrl || '/configurator');
+        const joiner = '&';
         const orgUrl = this._orgUrl;
         const channelId = this._cmsChannelId;
         return this._industries.map((ind) => {

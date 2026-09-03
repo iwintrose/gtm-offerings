@@ -74,6 +74,7 @@ export default class MaConfigurator extends LightningElement {
     _orgUrl = '';
     _lightningUrl = '';
     _sites = [];
+    _autoOpenWizard = false;
 
     // Activity tracking
     _sessionId = null;
@@ -97,6 +98,20 @@ export default class MaConfigurator extends LightningElement {
         this.maybePrefillContact();
         this.checkPasswordGate();
         this.loadOverviewCrmData();
+        this.maybeAutoOpenWizard();
+    }
+
+    /** ?wizard=1 (set by chooseIndustry's tiles, including "Skip for now")
+     * opens the wizard immediately instead of landing a rep on a bare
+     * configurator with no obvious next step. Only for a confirmed config
+     * manager -- isConfigManager resolves asynchronously, so this re-checks
+     * from the wire callback rather than firing once from readUrlParams,
+     * and only ever fires once (_autoOpenWizard is cleared after) so it
+     * can't reopen the panel if something else re-renders this wire. */
+    maybeAutoOpenWizard() {
+        if (!this._autoOpenWizard || !this.isConfigManager) return;
+        this._autoOpenWizard = false;
+        this.customizeOpen = true;
     }
 
     /** So a rep starting a brand-new link doesn't have to type their own
@@ -332,6 +347,13 @@ export default class MaConfigurator extends LightningElement {
         this.savedRecordId = cfgIdParam || '';
         this.checkActiveStatus();
         if (cfgIdParam) this.loadOverviewCrmData();
+
+        // Set from chooseIndustry's tiles (?wizard=1); consumed once
+        // isConfigManager resolves -- see maybeAutoOpenWizard(). Never set
+        // on a prospect link (isProspectLink), which never carries this
+        // param in the first place, but guarded here too for safety.
+        this._autoOpenWizard = get('wizard') === '1' && !this.isProspectLink;
+        this.maybeAutoOpenWizard();
 
         const exp = get('exp');
         if (exp) {
