@@ -1,7 +1,7 @@
 import { LightningElement, api, track } from 'lwc';
 
 export default class GtmContentPreview extends LightningElement {
-    @api offeringKey = 'ma-migrator';
+    @api offeringKey = 'migration-accelerator';
     @api templateType = 'story';
     @api records = [];
 

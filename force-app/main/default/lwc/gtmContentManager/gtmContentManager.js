@@ -10,7 +10,7 @@ const TEMPLATE_TYPE_OPTIONS = [
 ];
 
 export default class GtmContentManager extends LightningElement {
-    @api offeringKey = 'ma-migrator';
+    @api offeringKey = 'migration-accelerator';
 
     @track templateType = 'story';
     @track _allRecords = [];
