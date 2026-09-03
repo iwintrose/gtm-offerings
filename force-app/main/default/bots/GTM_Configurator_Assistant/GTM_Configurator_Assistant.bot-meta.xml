@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Agentforce agent for the GTM Configurator panel.
+  REQUIRES: Agentforce (Einstein Copilot) provisioned on the org.
+  Deploy with: sf project deploy start --source-dir force-app/main/default/bots
+  After deploy: activate the agent in Agentforce Studio, then swap the
+  placeholder <div> in maConfigCustomize.html for:
+    <einstein-copilot-chat agent-api-name="GTM_Configurator_Assistant"
+      session-variables={agentSessionVars}></einstein-copilot-chat>
+-->
+<Bot xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Helps PS sales reps personalize GTM Accelerator client presentations via natural language. The rep describes the prospect; the agent reads the current page state, applies field updates, and reflects them live in the configurator panel.</description>
+    <label>GTM Configurator Assistant</label>
+    <logPrivateConversationData>false</logPrivateConversationData>
+    <richContentEnabled>false</richContentEnabled>
+    <type>EinsteinCopilot</type>
+    <botVersions>
+        <fullName>v1</fullName>
+        <botStepMappings>
+            <botInvocationMapping>
+                <parameterName>sessionToken</parameterName>
+                <type>ConversationVariable</type>
+                <value>sessionToken</value>
+            </botInvocationMapping>
+            <botInvocationMapping>
+                <parameterName>configId</parameterName>
+                <type>ConversationVariable</type>
+                <value>configId</value>
+            </botInvocationMapping>
+        </botStepMappings>
+        <conversationVariables>
+            <dataType>Text</dataType>
+            <developerName>sessionToken</developerName>
+            <label>Session Token</label>
+        </conversationVariables>
+        <conversationVariables>
+            <dataType>Text</dataType>
+            <developerName>configId</developerName>
+            <label>Config Id</label>
+        </conversationVariables>
+        <description>Initial version — read + write configurator state via Agentforce actions.</description>
+        <label>v1</label>
+    </botVersions>
+</Bot>
