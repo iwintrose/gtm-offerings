@@ -149,12 +149,19 @@ export default class MaConfigWizard extends LightningElement {
 
     // ------------------------------------------------------------- display
 
+    /** Standalone (launched from the GTM Offerings Overview Lightning tab)
+     * sits inside real Salesforce chrome -- the fixed global header and, on
+     * a Developer/sandbox org, the edition ribbon above it. Embedded mode
+     * (the live Experience Cloud page) has no such chrome to clear, so it
+     * keeps the full-height panel unchanged. */
     get panelClass() {
-        return this.isOpen ? 'mw-scrim open' : 'mw-scrim';
+        const base = this.standalone ? 'mw-scrim mw-scrim--standalone' : 'mw-scrim';
+        return this.isOpen ? `${base} open` : base;
     }
 
     get sheetClass() {
-        return this.isOpen ? 'mw-sheet open' : 'mw-sheet';
+        const base = this.standalone ? 'mw-sheet mw-sheet--standalone' : 'mw-sheet';
+        return this.isOpen ? `${base} open` : base;
     }
 
     get showChooser() { return this._path === 'choose'; }

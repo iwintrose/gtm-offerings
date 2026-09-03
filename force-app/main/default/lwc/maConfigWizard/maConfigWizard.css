@@ -25,6 +25,14 @@
   opacity: 1;
   pointer-events: auto;
 }
+/* Clears Salesforce's own fixed global header (plus, on a Developer/sandbox
+ * org, the edition ribbon above it) so the panel doesn't render underneath
+ * it. Only needed in standalone mode -- the embedded/live-page context has
+ * no such chrome. 106px covers both bars with a little headroom; if a
+ * given org's header renders taller/shorter this is the one place to tune. */
+.mw-scrim--standalone {
+  top: 106px;
+}
 
 .mw-sheet {
   position: fixed;
@@ -46,6 +54,10 @@
 }
 .mw-sheet.open {
   transform: none;
+}
+.mw-sheet--standalone {
+  top: 106px;
+  box-shadow: -20px 0 50px -24px rgba(0, 0, 0, 0.4), 0 -1px 0 var(--line);
 }
 
 .mw-head {
