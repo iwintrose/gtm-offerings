@@ -6,13 +6,13 @@ const FONTS_HREF =
 
 const OFFERING_KEY = 'migration-accelerator';
 
-function buildBuilderUrl(orgUrl, lightningUrl, sites) {
+function buildBuilderUrl(orgUrl) {
+    // The previous per-site deep link (/apex/networkbranding) pointed at a
+    // page that does not exist in this org. Digital Experiences > All Sites
+    // is the one Setup route guaranteed to exist; from there "Builder" opens
+    // the right site in one more click.
     if (!orgUrl) return '#';
-    const prefix = window.location.pathname.split('/').filter(Boolean)[0] || '';
-    const site = sites && sites.find((s) => s.urlPathPrefix === prefix);
-    if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
-    const base = lightningUrl || orgUrl;
-    return `${base}/apex/networkbranding?networkId=${site.networkId}`;
+    return `${orgUrl}/lightning/setup/SetupNetworks/home`;
 }
 
 const PICKER_BLURBS = {
@@ -94,7 +94,7 @@ export default class ChooseIndustry extends LightningElement {
         });
     }
 
-    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._lightningUrl, this._sites); }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl); }
 
     connectedCallback() {
         this.loadFonts();

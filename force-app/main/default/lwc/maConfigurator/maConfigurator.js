@@ -13,13 +13,13 @@ import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import USER_NAME_FIELD from '@salesforce/schema/User.Name';
 import USER_EMAIL_FIELD from '@salesforce/schema/User.Email';
 
-function buildBuilderUrl(orgUrl, lightningUrl, sites) {
+function buildBuilderUrl(orgUrl) {
+    // The previous per-site deep link (/apex/networkbranding) pointed at a
+    // page that does not exist in this org. Digital Experiences > All Sites
+    // is the one Setup route guaranteed to exist; from there "Builder" opens
+    // the right site in one more click.
     if (!orgUrl) return '#';
-    const prefix = window.location.pathname.split('/').filter(Boolean)[0] || '';
-    const site = sites && sites.find((s) => s.urlPathPrefix === prefix);
-    if (!site) return `${orgUrl}/lightning/setup/SetupNetworks/home`;
-    const base = lightningUrl || orgUrl;
-    return `${base}/apex/networkbranding?networkId=${site.networkId}`;
+    return `${orgUrl}/lightning/setup/SetupNetworks/home`;
 }
 
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
@@ -214,7 +214,7 @@ export default class MaConfigurator extends LightningElement {
         try { return JSON.parse(raw); } catch (e) { return null; }
     }
 
-    get builderUrl() { return buildBuilderUrl(this._orgUrl, this._lightningUrl, this._sites); }
+    get builderUrl() { return buildBuilderUrl(this._orgUrl); }
 
     disconnectedCallback() {
         if (this._scrollHandler) {

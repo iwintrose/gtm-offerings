@@ -6,6 +6,14 @@
         <application>GTM_Offerings</application>
         <visible>true</visible>
     </applicationVisibilities>
+    <applicationVisibilities>
+        <application>GTM_Content_Manager</application>
+        <visible>true</visible>
+    </applicationVisibilities>
+    <classAccesses>
+        <apexClass>MaPageContentController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <classAccesses>
         <apexClass>MaSavedConfigurationController</apexClass>
         <enabled>true</enabled>
@@ -75,6 +83,15 @@
         <modifyAllRecords>false</modifyAllRecords>
         <object>MA_Link_Event__c</object>
         <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>MA_Page_Content__c</object>
+        <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <fieldPermissions>
         <field>MA_Saved_Configuration__c.Active__c</field>
@@ -277,6 +294,41 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>MA_Page_Content__c.Active__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Page_Content__c.Content_Address__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Page_Content__c.Industry_Key__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Page_Content__c.JSON_Value__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Page_Content__c.Rich_Value__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Page_Content__c.Sort_Order__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>MA_Page_Content__c.Text_Value__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_CMS_Content_Index__c.Display_Order__c</field>
         <readable>true</readable>
         <editable>true</editable>
@@ -320,6 +372,14 @@
     </tabSettings>
     <tabSettings>
         <tab>GTM_Offerings_Overview</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GTM_Content_Manager</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>MA_Page_Content__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
