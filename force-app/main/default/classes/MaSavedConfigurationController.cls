@@ -284,41 +284,24 @@ public with sharing class MaSavedConfigurationController {
     }
 
     /**
-     * Five approaches tried before this one, in order, each disproven live:
-     *   1. The site's own public siteUrl (*.my.site.com), opened directly --
-     *      no session on that domain. Landed as a guest.
-     *   2. my.salesforce.com + /servlet/networks/switch -- redirected to
-     *      the org's generic default tab, not the site.
-     *   3. my.salesforce.com + frontdoor.jsp + UserInfo.getSessionId() --
-     *      rejected outright, real login form. (Diagnosed at the time as
-     *      "Lightning session IDs aren't valid for frontdoor.jsp" -- #6
-     *      below suggests that was the wrong domain for frontdoor, not an
-     *      invalid sid; org-domain frontdoor apparently won't redeem a sid
-     *      against a cross-domain community retURL.)
-     *   4. window.location.origin (*.lightning.force.com) + relative path --
-     *      no login prompt this time, but "Page doesn't exist": this
-     *      subdomain doesn't serve site content at all.
-     *   5. my.salesforce.com + the site's url path prefix, no wrapper --
-     *      also redirected to the org's default tab, not the site.
-     * This org's Domain records settled the routing half of this: only
-     * my.salesforce-sites.com (classic Sites) and my.site.com (the actual
-     * Experience Cloud domain) serve site content -- neither
-     * my.salesforce.com nor *.lightning.force.com ever could have worked,
-     * which is why #2, #4, #5 all failed regardless of session state.
-     * Approach #1 had the only viable domain and a working path; its
-     * failure was purely about authentication on that domain.
+     * Public Experience Cloud site URL for the configurator page -- needed
+     * only by a caller running OUTSIDE the site itself (e.g. the wizard
+     * launched from the internal GTM Offerings Overview Lightning tab,
+     * where window.location is a *.lightning.force.com URL, not the site's).
+     * A caller already on the live page builds its own link from
+     * window.location instead and never needs this.
      *
-     * #6, this one: frontdoor.jsp hosted ON that same site domain, not the
-     * org's -- Experience Cloud sites have their own frontdoor.jsp
-     * specifically for redeeming an org session into a site session, which
-     * is different from asking the org's own frontdoor.jsp to hand off
-     * cross-domain (what #3 actually was, and why it was rejected).
-     *
-     * NOT cacheable: embeds a live session token.
+     * ConnectApi.Communities is a native platform API, not an HTTP callout --
+     * safe to call from the same transaction as a DML save. Read-only,
+     * returns null if the "GTM Accelerator" site isn't found rather than
+     * throwing, since a missing site here should degrade gracefully (the
+     * standalone launcher just won't be able to build a link) rather than
+     * break anything else on the page.
      */
-    @AuraEnabled(cacheable=false)
+    @AuraEnabled(cacheable=true)
     public static String getConfiguratorPageUrl() {
-        return getSiteFrontdoorUrl('/s/configurator');
+        String base = getSiteBaseUrl();
+        return base == null ? null : base + '/configurator';
     }
 
     /**
@@ -327,26 +310,22 @@ public with sharing class MaSavedConfigurationController {
      * Overview tab's "+ New Prospect Page" button) to send a rep through the
      * same industry-first flow a client-shared link would start from,
      * instead of dropping them straight onto an unpersonalized configurator.
-     * Same contract as getConfiguratorPageUrl() above.
      */
-    @AuraEnabled(cacheable=false)
+    @AuraEnabled(cacheable=true)
     public static String getSiteHomePageUrl() {
-        return getSiteFrontdoorUrl('/s/');
+        String base = getSiteBaseUrl();
+        return base == null ? null : base + '/';
     }
 
-    private static String getSiteFrontdoorUrl(String siteRelativePath) {
+    private static String getSiteBaseUrl() {
         try {
             for (ConnectApi.Community c : ConnectApi.Communities.getCommunities().communities) {
-                if (c.name != 'GTM Accelerator' || String.isBlank(c.siteUrl)) continue;
-                // c.siteUrl is "https://<host>/<prefix>" -- retURL needs
-                // just the "/<prefix>/s/..." path, relative to that host.
-                String prefix = c.siteUrl.substringAfterLast('/');
-                String retURL = '/' + prefix + siteRelativePath;
-                return c.siteUrl + '/secur/frontdoor.jsp?sid=' + EncodingUtil.urlEncode(UserInfo.getSessionId(), 'UTF-8')
-                    + '&retURL=' + EncodingUtil.urlEncode(retURL, 'UTF-8');
+                if (c.name == 'GTM Accelerator' && String.isNotBlank(c.siteUrl)) {
+                    return c.siteUrl + '/s';
+                }
             }
         } catch (Exception e) {
-            // Degrade gracefully -- see class-level comment above.
+            // Degrade gracefully -- see comment above.
         }
         return null;
     }
