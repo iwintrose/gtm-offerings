@@ -154,6 +154,9 @@ public with sharing class MaSavedConfigurationController {
             trimTo(input.company, MAX_COMPANY),
             parseDecimal(input.estimatedValue)
         );
+        // Same rule as the client-submission flow: an Opportunity never
+        // sits without the Contact it's known to belong to.
+        ensureOpportunityContactRole(opportunityId, contactId);
 
         MA_Saved_Configuration__c record = new MA_Saved_Configuration__c(
             Offering__c = trimTo(input.offering, MAX_OFFERING),
@@ -415,6 +418,41 @@ public with sharing class MaSavedConfigurationController {
         if (amount != null) opp.Amount = amount;
         insert opp;
         return opp.Id;
+    }
+
+    /**
+     * A rep saving the Customize panel resolves a Contact and an
+     * Opportunity independently -- neither knew about the other, so an
+     * Opportunity could sit with a known Contact right next to it and no
+     * OpportunityContactRole tying them together. Same rule as the
+     * assessment-submission flow: an Opportunity with a known Contact is
+     * never left contact-less. Idempotent on resave (skips if the role
+     * already exists); only marks primary when the Opportunity doesn't
+     * already have another primary Contact, so a later resave with a
+     * different Contact adds a role instead of erroring on a duplicate
+     * primary.
+     */
+    private static void ensureOpportunityContactRole(Id opportunityId, Id contactId) {
+        if (opportunityId == null || contactId == null) {
+            return;
+        }
+        List<OpportunityContactRole> existing = [
+            SELECT Id FROM OpportunityContactRole
+            WHERE OpportunityId = :opportunityId AND ContactId = :contactId
+            LIMIT 1
+        ];
+        if (!existing.isEmpty()) {
+            return;
+        }
+        Boolean hasAnyRole = ![
+            SELECT Id FROM OpportunityContactRole WHERE OpportunityId = :opportunityId LIMIT 1
+        ].isEmpty();
+        insert new OpportunityContactRole(
+            OpportunityId = opportunityId,
+            ContactId = contactId,
+            Role = 'Decision Maker',
+            IsPrimary = !hasAnyRole
+        );
     }
 
     /** Matches by email (Salesforce doesn't enforce Contact email
