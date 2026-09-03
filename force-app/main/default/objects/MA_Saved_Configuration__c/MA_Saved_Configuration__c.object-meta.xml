@@ -4,6 +4,7 @@
     <pluralLabel>Engagement Links</pluralLabel>
     <deploymentStatus>Deployed</deploymentStatus>
     <sharingModel>Private</sharingModel>
+    <enableActivities>true</enableActivities>
     <enableFeeds>true</enableFeeds>
     <nameField>
         <type>AutoNumber</type>
