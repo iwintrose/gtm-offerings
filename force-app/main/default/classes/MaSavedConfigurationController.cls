@@ -284,25 +284,27 @@ public with sharing class MaSavedConfigurationController {
     }
 
     /**
-     * Relative path only -- e.g. "/gtmaccelerator/s/configurator" -- never
-     * an absolute URL. Three prior approaches to building this as a full
-     * URL from Apex all failed live testing:
-     *   1. The site's own public siteUrl (*.my.site.com) -- a domain the
-     *      rep's browser has no session on at all. Landed as a guest.
-     *   2. URL.getOrgDomainUrl() (my.salesforce.com), the org's canonical
-     *      domain -- not necessarily where the browser's session actually
-     *      lives (Lightning itself commonly runs on a different
-     *      *.lightning.force.com subdomain). Landed on the org's generic
-     *      default tab.
-     *   3. frontdoor.jsp with UserInfo.getSessionId() -- that session ID
-     *      isn't valid for frontdoor.jsp when obtained from a Lightning/LWC
-     *      context (unlike Visualforce, where this is the standard,
-     *      documented pattern); Salesforce scopes it deliberately.
-     *      Rejected outright, landed on the real Salesforce login form.
-     * All three guessed at a domain instead of using one already proven
-     * valid. The caller prepends its own window.location.origin -- not a
-     * guess, the exact domain the browser is *provably* authenticated on
-     * this instant, read directly off the live page.
+     * Four approaches tried before this one, in order, each disproven live:
+     *   1. The site's own public siteUrl (*.my.site.com) -- no session on
+     *      that domain at all. Landed as a guest.
+     *   2. my.salesforce.com + /servlet/networks/switch -- redirected to
+     *      the org's generic default tab, not the site. (In hindsight this
+     *      wasn't a session problem -- the request clearly got processed
+     *      by an authenticated domain, just not by the right endpoint.)
+     *   3. my.salesforce.com + frontdoor.jsp + UserInfo.getSessionId() --
+     *      that session ID isn't valid for frontdoor.jsp from a
+     *      Lightning/LWC context. Rejected outright, real login form.
+     *   4. window.location.origin (*.lightning.force.com) + the site's
+     *      relative path -- session WAS valid this time (no login prompt),
+     *      but that domain doesn't serve site/community paths at all:
+     *      "Page doesn't exist".
+     * #4 actually solved the auth question -- both my.salesforce.com and
+     * *.lightning.force.com carry a valid session for an already-logged-in
+     * rep. The remaining problem was always routing, not identity: the
+     * site's own url path prefix, served from the org's own My Domain
+     * (my.salesforce.com) with no wrapper of any kind -- the standard,
+     * documented way an internal member accesses a Digital Experience site
+     * -- which, after four detours, is what this actually is.
      *
      * Returns null if the "GTM Accelerator" site isn't found rather than
      * throwing, since a missing site here should degrade gracefully (the
@@ -311,7 +313,7 @@ public with sharing class MaSavedConfigurationController {
      */
     @AuraEnabled(cacheable=true)
     public static String getConfiguratorPageUrl() {
-        return getSiteRelativePath('/s/configurator');
+        return getSiteMyDomainUrl('/s/configurator');
     }
 
     /**
@@ -320,18 +322,18 @@ public with sharing class MaSavedConfigurationController {
      * Overview tab's "+ New Prospect Page" button) to send a rep through the
      * same industry-first flow a client-shared link would start from,
      * instead of dropping them straight onto an unpersonalized configurator.
-     * Same relative-path contract as getConfiguratorPageUrl() above.
+     * Same contract as getConfiguratorPageUrl() above.
      */
     @AuraEnabled(cacheable=true)
     public static String getSiteHomePageUrl() {
-        return getSiteRelativePath('/s/');
+        return getSiteMyDomainUrl('/s/');
     }
 
-    private static String getSiteRelativePath(String suffix) {
+    private static String getSiteMyDomainUrl(String suffix) {
         try {
             List<Network> nets = [SELECT UrlPathPrefix FROM Network WHERE Name = 'GTM Accelerator' LIMIT 1];
             if (nets.isEmpty() || String.isBlank(nets[0].UrlPathPrefix)) return null;
-            return '/' + nets[0].UrlPathPrefix + suffix;
+            return URL.getOrgDomainUrl().toExternalForm() + '/' + nets[0].UrlPathPrefix + suffix;
         } catch (Exception e) {
             return null;
         }

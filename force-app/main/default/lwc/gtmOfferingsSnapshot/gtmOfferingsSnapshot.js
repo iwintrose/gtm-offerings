@@ -27,18 +27,15 @@ export default class GtmOfferingsSnapshot extends LightningElement {
      * skipping) is what actually opens the wizard, on the configurator
      * page itself. New tab, so the rep doesn't lose this Lightning tab.
      *
-     * Apex returns a relative path, not an absolute URL. window.location.origin
-     * here is the one domain guaranteed to already have a valid session in
-     * THIS browser -- it's read directly off the page that's rendering
-     * right now, not guessed or looked up (see
-     * MaSavedConfigurationController.getConfiguratorPageUrl for the three
-     * approaches that guessed wrong first). */
+     * Apex now returns a ready-to-use absolute URL on the org's own My
+     * Domain -- open as-is (see MaSavedConfigurationController.getConfiguratorPageUrl
+     * for the four approaches tried before this one). */
     async handleNewProspectPage() {
         this._navBusy = true;
         try {
-            const path = await getSiteHomePageUrl();
-            if (path) {
-                window.open(window.location.origin + path, '_blank', 'noopener');
+            const url = await getSiteHomePageUrl();
+            if (url) {
+                window.open(url, '_blank', 'noopener');
             }
         } catch (e) {
             // Best-effort -- nothing else this button can usefully do if
