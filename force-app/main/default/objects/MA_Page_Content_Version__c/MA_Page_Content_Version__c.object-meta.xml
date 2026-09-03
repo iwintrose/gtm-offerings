@@ -9,5 +9,10 @@
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <label>Page Content Version</label>
+    <nameField>
+        <displayFormat>PCV-{0000}</displayFormat>
+        <label>Version Name</label>
+        <type>AutoNumber</type>
+    </nameField>
     <pluralLabel>Page Content Versions</pluralLabel>
 </CustomObject>
