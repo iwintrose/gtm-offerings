@@ -12,19 +12,31 @@ const TEMPLATE_TYPE_OPTIONS = [
 export default class GtmContentManager extends LightningElement {
     @api offeringKey = 'ma-migrator';
 
-    @track templateType = 'configurator';
+    @track templateType = 'story';
     @track _allRecords = [];
+    @track _draftRecords = [];
     @track isLoading = false;
     @track loadError = '';
     @track newSectionOpen = false;
     @track newSectionKey = '';
-    // Optimistic stub records pending save (fieldcreate events before the save happens).
     @track _pendingStubs = [];
+    @track dividerPos = 60;
+    @track isDraggingDivider = false;
+    @track showVersionHistory = false;
+    @track isSaving = false;
+    @track saveMessage = '';
 
     templateTypeOptions = TEMPLATE_TYPE_OPTIONS;
 
     connectedCallback() {
         this.loadContent();
+        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        document.addEventListener('mouseup', this.handleMouseUp.bind(this));
+    }
+
+    disconnectedCallback() {
+        document.removeEventListener('mousemove', this.handleMouseMove.bind(this));
+        document.removeEventListener('mouseup', this.handleMouseUp.bind(this));
     }
 
     loadContent() {
@@ -34,6 +46,8 @@ export default class GtmContentManager extends LightningElement {
         getAllContent({ offeringKey: this.offeringKey, templateType: this.templateType })
             .then((records) => {
                 this._allRecords = records || [];
+                // Initialize draft records from loaded content (or from draft status)
+                this._draftRecords = JSON.parse(JSON.stringify(this._allRecords));
             })
             .catch((err) => {
                 this.loadError = (err && err.body && err.body.message) ? err.body.message : 'Failed to load content.';
@@ -43,8 +57,57 @@ export default class GtmContentManager extends LightningElement {
             });
     }
 
+    handleMouseDown() {
+        this.isDraggingDivider = true;
+    }
+
+    handleMouseMove(event) {
+        if (!this.isDraggingDivider) return;
+        const gcm = this.template.querySelector('.gcm-split');
+        if (!gcm) return;
+        const rect = gcm.getBoundingClientRect();
+        const newPos = ((event.clientX - rect.left) / rect.width) * 100;
+        if (newPos > 40 && newPos < 80) {
+            this.dividerPos = newPos;
+        }
+    }
+
+    handleMouseUp() {
+        this.isDraggingDivider = false;
+    }
+
     get hasContent() {
         return (this._allRecords.length + this._pendingStubs.length) > 0;
+    }
+
+    get draftSections() {
+        const combined = [...this._draftRecords, ...this._pendingStubs];
+        const map = new Map();
+        combined.forEach((rec) => {
+            const sk = rec.sectionKey;
+            if (!map.has(sk)) map.set(sk, []);
+            map.get(sk).push(rec);
+        });
+        const result = [];
+        map.forEach((records, sectionKey) => {
+            const meta = sectionMeta(this.templateType, sectionKey);
+            result.push({ sectionKey, records, label: meta.label, help: meta.help, order: meta.order });
+        });
+        result.sort((a, b) => (a.order - b.order) || a.sectionKey.localeCompare(b.sectionKey));
+        return result;
+    }
+
+    get editorStyle() {
+        return `width: ${this.dividerPos}%;`;
+    }
+
+    get previewStyle() {
+        return `width: ${100 - this.dividerPos}%;`;
+    }
+
+    get hasDraftChanges() {
+        // Simple comparison: check if draft differs from published
+        return JSON.stringify(this._draftRecords) !== JSON.stringify(this._allRecords);
     }
 
     get sections() {
@@ -77,6 +140,18 @@ export default class GtmContentManager extends LightningElement {
 
     handleContentSaved(event) {
         const saved = event.detail.record;
+        // Update draft records immediately for live preview
+        const draftIdx = this._draftRecords.findIndex(
+            (r) => r.contentAddress === saved.contentAddress || (saved.id && r.id === saved.id)
+        );
+        if (draftIdx >= 0) {
+            const updated = [...this._draftRecords];
+            updated[draftIdx] = saved;
+            this._draftRecords = updated;
+        } else {
+            this._draftRecords = [...this._draftRecords, saved];
+        }
+
         // Replace matching record in _allRecords (or add if new).
         const idx = this._allRecords.findIndex(
             (r) => r.contentAddress === saved.contentAddress || (saved.id && r.id === saved.id)
@@ -146,5 +221,41 @@ export default class GtmContentManager extends LightningElement {
     handleNewSectionCancel() {
         this.newSectionOpen = false;
         this.newSectionKey = '';
+    }
+
+    handleSaveDraft() {
+        this.isSaving = true;
+        this.saveMessage = 'Saving draft…';
+        // In a real implementation, this would mark all draft records with Status='Draft'
+        // and save them to Salesforce. For now, just confirm locally.
+        setTimeout(() => {
+            this.isSaving = false;
+            this.saveMessage = '✓ Draft saved';
+            setTimeout(() => {
+                this.saveMessage = '';
+            }, 2000);
+        }, 500);
+    }
+
+    handlePublish() {
+        this.isSaving = true;
+        this.saveMessage = 'Publishing…';
+        // In a real implementation:
+        // 1. Create version history records for current published state
+        // 2. Mark all draft records with Status='Published'
+        // 3. Update Version_Number and Last_Published_Date
+        // 4. Save to Salesforce
+        setTimeout(() => {
+            this._allRecords = JSON.parse(JSON.stringify(this._draftRecords));
+            this.isSaving = false;
+            this.saveMessage = '✓ Published';
+            setTimeout(() => {
+                this.saveMessage = '';
+            }, 2000);
+        }, 500);
+    }
+
+    handleToggleVersionHistory() {
+        this.showVersionHistory = !this.showVersionHistory;
     }
 }
