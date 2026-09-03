@@ -52,33 +52,38 @@ export default class GtmContentPreview extends LightningElement {
     // Hero section
     get heroEyebrow() { return this.getValue('hero', 'eyebrow'); }
     get heroHeadline() { return this.getValue('hero', 'headline'); }
-    get heroSubheadline() { return this.getValue('hero', 'subheadline'); }
-    get heroBgImage() { return this.getValue('hero', 'bgImage'); }
+    get heroSubheadline() { return this.getValue('hero', 'subhead'); }
 
     // Problem section
-    get problemHeadline() { return this.getValue('problem', 'headline'); }
-    get problemPitchOldChips() { return this.getJsonValue('problem', 'pitchOldChips'); }
-    get problemBody() { return this.getValue('problem', 'body'); }
+    get problemLede() { return this.getValue('problem', 'lede'); }
+    get problemChips() { return this.getJsonValue('problem', 'chips'); }
+    get problemClose() { return this.getValue('problem', 'close'); }
 
     // BD section
-    get bdHeadline() { return this.getValue('bd', 'headline'); }
+    get bdHead() { return this.getValue('bd', 'head'); }
+    get bdLede() { return this.getValue('bd', 'lede'); }
+    get bdPitchOldChips() { return this.getJsonValue('bd', 'pitchOldChips'); }
     get bdPitchNewChips() { return this.getJsonValue('bd', 'pitchNewChips'); }
-    get bdBody() { return this.getValue('bd', 'body'); }
+    get bdUseCases() { return this.getJsonValue('bd', 'useCases'); }
 
     // Mechanism section
-    get mechanismHeadline() { return this.getValue('mechanism', 'headline'); }
-    get mechanismSteps() { return this.getJsonValue('mechanism', 'steps'); }
-    get mechanismBody() { return this.getValue('mechanism', 'body'); }
+    get mechanismHead() { return this.getValue('mechanism', 'head'); }
+    get mechanismSub() { return this.getValue('mechanism', 'sub'); }
+    get mechanismSteps() { return this.getJsonValue('mechanism', 'routeSteps'); }
+    get mechanismProofCtaText() { return this.getValue('mechanism', 'proofCtaText'); }
+    get mechanismProofDemoRoot() { return this.getValue('mechanism', 'proofDemoRoot'); }
+    get mechanismProofDemoDeps() { return this.getJsonValue('mechanism', 'proofDemoDeps'); }
 
     // Capabilities section
-    get capabilitiesHeadline() { return this.getValue('capabilities', 'headline'); }
     get capabilitiesCards() { return this.getJsonValue('capabilities', 'cards'); }
+    get capabilitiesBonusCard() { return this.getValue('capabilities', 'bonusCard'); }
 
     // Client profile section
-    get clientprofileHeadline() { return this.getValue('clientprofile', 'headline'); }
-    get clientprofileBody() { return this.getValue('clientprofile', 'body'); }
+    get clientProfileStatBig() { return this.getValue('clientProfile', 'statBig'); }
+    get clientProfileStatDesc() { return this.getValue('clientProfile', 'statDesc'); }
+    get clientProfileNote() { return this.getValue('clientProfile', 'note'); }
 
     // Closing section
-    get closingHeadline() { return this.getValue('closing', 'headline'); }
-    get closingBody() { return this.getValue('closing', 'body'); }
+    get closingHead() { return this.getValue('closing', 'head'); }
+    get closingSub() { return this.getValue('closing', 'sub'); }
 }

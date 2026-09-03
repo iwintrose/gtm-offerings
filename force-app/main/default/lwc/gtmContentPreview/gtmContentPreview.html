@@ -19,65 +19,100 @@
 
     <!-- Problem -->
     <section class="gcp-section">
-      <template if:true={problemHeadline}>
-        <h2 class="gcp-section-head">
-          <lightning-formatted-rich-text value={problemHeadline}></lightning-formatted-rich-text>
-        </h2>
-      </template>
-      <template if:true={problemBody}>
+      <template if:true={problemLede}>
         <p class="gcp-body">
-          <lightning-formatted-rich-text value={problemBody}></lightning-formatted-rich-text>
+          <lightning-formatted-rich-text value={problemLede}></lightning-formatted-rich-text>
         </p>
       </template>
-      <template if:true={problemPitchOldChips}>
+      <template if:true={problemChips}>
         <div class="gcp-chips">
-          <template for:each={problemPitchOldChips} for:item="chip">
+          <template for:each={problemChips} for:item="chip">
             <span key={chip} class="gcp-chip">{chip}</span>
           </template>
         </div>
       </template>
-    </section>
-
-    <!-- BD / New way -->
-    <section class="gcp-section">
-      <template if:true={bdHeadline}>
-        <h2 class="gcp-section-head">
-          <lightning-formatted-rich-text value={bdHeadline}></lightning-formatted-rich-text>
-        </h2>
-      </template>
-      <template if:true={bdBody}>
+      <template if:true={problemClose}>
         <p class="gcp-body">
-          <lightning-formatted-rich-text value={bdBody}></lightning-formatted-rich-text>
+          <lightning-formatted-rich-text value={problemClose}></lightning-formatted-rich-text>
         </p>
       </template>
-      <template if:true={bdPitchNewChips}>
-        <div class="gcp-chips">
-          <template for:each={bdPitchNewChips} for:item="chip">
-            <span key={chip} class="gcp-chip">{chip}</span>
+    </section>
+
+    <!-- BD -->
+    <section class="gcp-section">
+      <template if:true={bdHead}>
+        <h2 class="gcp-section-head">
+          <lightning-formatted-rich-text value={bdHead}></lightning-formatted-rich-text>
+        </h2>
+      </template>
+      <template if:true={bdLede}>
+        <p class="gcp-body">
+          <lightning-formatted-rich-text value={bdLede}></lightning-formatted-rich-text>
+        </p>
+      </template>
+      <template if:true={bdUseCases}>
+        <div class="gcp-use-cases">
+          <template for:each={bdUseCases} for:item="useCase">
+            <div key={useCase.title} class="gcp-use-case">
+              <div class="gcp-use-case-title">{useCase.title}</div>
+              <div class="gcp-use-case-desc">{useCase.description}</div>
+            </div>
           </template>
+        </div>
+      </template>
+      <template if:true={bdPitchOldChips}>
+        <div class="gcp-chips-group">
+          <div class="gcp-chips-label">Current state</div>
+          <div class="gcp-chips">
+            <template for:each={bdPitchOldChips} for:item="chip">
+              <span key={chip} class="gcp-chip">{chip}</span>
+            </template>
+          </div>
+        </div>
+      </template>
+      <template if:true={bdPitchNewChips}>
+        <div class="gcp-chips-group">
+          <div class="gcp-chips-label">New way</div>
+          <div class="gcp-chips">
+            <template for:each={bdPitchNewChips} for:item="chip">
+              <span key={chip} class="gcp-chip gcp-chip-highlight">{chip}</span>
+            </template>
+          </div>
         </div>
       </template>
     </section>
 
     <!-- Mechanism -->
     <section class="gcp-section">
-      <template if:true={mechanismHeadline}>
+      <template if:true={mechanismHead}>
         <h2 class="gcp-section-head">
-          <lightning-formatted-rich-text value={mechanismHeadline}></lightning-formatted-rich-text>
+          <lightning-formatted-rich-text value={mechanismHead}></lightning-formatted-rich-text>
         </h2>
       </template>
-      <template if:true={mechanismBody}>
+      <template if:true={mechanismSub}>
         <p class="gcp-body">
-          <lightning-formatted-rich-text value={mechanismBody}></lightning-formatted-rich-text>
+          <lightning-formatted-rich-text value={mechanismSub}></lightning-formatted-rich-text>
         </p>
       </template>
       <template if:true={mechanismSteps}>
         <div class="gcp-steps">
           <template for:each={mechanismSteps} for:item="step">
-            <div key={step.stepLabel} class="gcp-step">
-              <div class="gcp-step-label">{step.stepLabel}</div>
-              <div class="gcp-step-desc">{step.stepDesc}</div>
+            <div key={step.label} class="gcp-step">
+              <div class="gcp-step-label">{step.label}</div>
+              <div class="gcp-step-desc">{step.description}</div>
             </div>
+          </template>
+        </div>
+      </template>
+      <template if:true={mechanismProofCtaText}>
+        <p class="gcp-body gcp-proof-cta">
+          <lightning-formatted-rich-text value={mechanismProofCtaText}></lightning-formatted-rich-text>
+        </p>
+      </template>
+      <template if:true={mechanismProofDemoDeps}>
+        <div class="gcp-chips">
+          <template for:each={mechanismProofDemoDeps} for:item="dep">
+            <span key={dep} class="gcp-chip">{dep}</span>
           </template>
         </div>
       </template>
@@ -85,47 +120,51 @@
 
     <!-- Capabilities -->
     <section class="gcp-section">
-      <template if:true={capabilitiesHeadline}>
-        <h2 class="gcp-section-head">
-          <lightning-formatted-rich-text value={capabilitiesHeadline}></lightning-formatted-rich-text>
-        </h2>
-      </template>
       <template if:true={capabilitiesCards}>
         <div class="gcp-cards">
           <template for:each={capabilitiesCards} for:item="card">
-            <div key={card.cardTitle} class="gcp-card">
-              <h3 class="gcp-card-title">{card.cardTitle}</h3>
-              <p class="gcp-card-desc">{card.cardDesc}</p>
+            <div key={card.title} class="gcp-card">
+              <h3 class="gcp-card-title">{card.title}</h3>
+              <p class="gcp-card-desc">{card.description}</p>
             </div>
           </template>
         </div>
+        <template if:true={capabilitiesBonusCard}>
+          <div class="gcp-card gcp-card-bonus">
+            <h3 class="gcp-card-title">{capabilitiesBonusCard.title}</h3>
+            <p class="gcp-card-desc">{capabilitiesBonusCard.description}</p>
+          </div>
+        </template>
       </template>
     </section>
 
     <!-- Client Profile -->
     <section class="gcp-section">
-      <template if:true={clientprofileHeadline}>
-        <h2 class="gcp-section-head">
-          <lightning-formatted-rich-text value={clientprofileHeadline}></lightning-formatted-rich-text>
-        </h2>
+      <template if:true={clientProfileStatBig}>
+        <div class="gcp-stat">
+          <div class="gcp-stat-big">{clientProfileStatBig}</div>
+          <template if:true={clientProfileStatDesc}>
+            <div class="gcp-stat-desc">{clientProfileStatDesc}</div>
+          </template>
+        </div>
       </template>
-      <template if:true={clientprofileBody}>
+      <template if:true={clientProfileNote}>
         <p class="gcp-body">
-          <lightning-formatted-rich-text value={clientprofileBody}></lightning-formatted-rich-text>
+          <lightning-formatted-rich-text value={clientProfileNote}></lightning-formatted-rich-text>
         </p>
       </template>
     </section>
 
     <!-- Closing -->
     <section class="gcp-section">
-      <template if:true={closingHeadline}>
+      <template if:true={closingHead}>
         <h2 class="gcp-section-head">
-          <lightning-formatted-rich-text value={closingHeadline}></lightning-formatted-rich-text>
+          <lightning-formatted-rich-text value={closingHead}></lightning-formatted-rich-text>
         </h2>
       </template>
-      <template if:true={closingBody}>
+      <template if:true={closingSub}>
         <p class="gcp-body">
-          <lightning-formatted-rich-text value={closingBody}></lightning-formatted-rich-text>
+          <lightning-formatted-rich-text value={closingSub}></lightning-formatted-rich-text>
         </p>
       </template>
     </section>

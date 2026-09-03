@@ -129,6 +129,91 @@
     line-height: 1.5;
 }
 
+/* Use cases */
+.gcp-use-cases {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.gcp-use-case {
+    padding: 1rem;
+    background: #f8f8f8;
+    border-radius: 4px;
+}
+
+.gcp-use-case-title {
+    font-weight: 600;
+    color: #032d60;
+    margin-bottom: 0.25rem;
+}
+
+.gcp-use-case-desc {
+    font-size: 0.9rem;
+    color: #706e6b;
+}
+
+/* Chips groups */
+.gcp-chips-group {
+    margin: 1.5rem 0;
+}
+
+.gcp-chips-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #706e6b;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.gcp-chip-highlight {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Stats */
+.gcp-stat {
+    padding: 2rem 1rem;
+    background: #f8f8f8;
+    border-radius: 4px;
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.gcp-stat-big {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #032d60;
+    margin-bottom: 0.5rem;
+}
+
+.gcp-stat-desc {
+    font-size: 0.95rem;
+    color: #706e6b;
+}
+
+/* Card variants */
+.gcp-card-bonus {
+    background: #fff3cd;
+    border-color: #ffc107;
+}
+
+.gcp-card-bonus .gcp-card-title {
+    color: #856404;
+}
+
+/* Proof CTA */
+.gcp-proof-cta {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #032d60;
+    background: #e8f4ff;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
 /* Empty states */
 .gcp:empty::after {
     content: 'Start editing to see preview';
