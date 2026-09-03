@@ -108,7 +108,7 @@ private class MaPageContentControllerTest {
         Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
-        System.assertFalse(result.containsKey('hero::headline'), 'Inactive records should not appear');
+        System.assert(!result.containsKey('hero::headline'), 'Inactive records should not appear');
     }
 
     @IsTest
@@ -120,7 +120,7 @@ private class MaPageContentControllerTest {
         Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
-        System.assertFalse(result.containsKey('hero::headline'), 'Records for a different template should not appear');
+        System.assert(!result.containsKey('hero::headline'), 'Records for a different template should not appear');
     }
 
     // ─── getAllContent ────────────────────────────────────────────────────────
