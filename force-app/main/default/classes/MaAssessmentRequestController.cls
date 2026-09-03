@@ -250,65 +250,85 @@ public without sharing class MaAssessmentRequestController {
     }
 
     /**
-     * Every assessment submission is its own buying-intent event and gets
-     * its own Opportunity -- never reused across submissions. The same
-     * Account can carry many Opportunities over time: different
-     * requesters, different reps on the same accelerator, or a sales cycle
-     * that closes and later restarts. When a Contact is known, attaches
-     * them to the new Opportunity as primary via OpportunityContactRole so
-     * the Opportunity is tied to the person, not just the Account.
-     * Best-effort, like the rest of this file's linkage: an Opportunity
-     * that fails to create should never block the submission that's
-     * already otherwise succeeded.
+     * One Opportunity per Engagement Link, not one per submission. Every
+     * distinct person who touches that link -- the rep's own pick when
+     * setting it up, and every requester who later submits an assessment
+     * through it -- lands as an additional OpportunityContactRole on the
+     * same Opportunity, rather than spawning a new one each time. A
+     * different link for the same Account (a different rep, a restarted
+     * cycle) still gets its own Opportunity, since reuse is keyed off the
+     * link's own stored Opportunity__c, never a name/Account match.
+     * Best-effort, like the rest of this file's linkage: a failure here
+     * should never block the submission that's already otherwise
+     * succeeded.
      */
     private static void ensureOpportunity(String savedRecordId, ConfigContext ctx, String requesterName) {
         if (ctx.accountId == null) {
             return;
         }
         try {
-            String offeringLabel = offeringLabel(ctx.offering);
-            String company = String.isNotBlank(ctx.company) ? ctx.company : 'New Prospect';
-            String oppName = company + ' - ' + offeringLabel;
-            if (String.isNotBlank(requesterName)) {
-                oppName += ' (' + requesterName + ')';
-            }
+            Id opportunityId = ctx.opportunityId;
+            if (opportunityId == null) {
+                String offeringLabel = offeringLabel(ctx.offering);
+                String company = String.isNotBlank(ctx.company) ? ctx.company : 'New Prospect';
 
-            Opportunity opp = new Opportunity(
-                Name = oppName,
-                AccountId = ctx.accountId,
-                StageName = 'Qualification',
-                CloseDate = Date.today().addDays(90),
-                Amount = ctx.estimatedValue != null
-                    ? ctx.estimatedValue
-                    : offeringAnnualTarget(ctx.offering)
-            );
-            if (ctx.ownerId != null) {
-                opp.OwnerId = ctx.ownerId;
-            }
-            insert opp;
-            ctx.opportunityId = opp.Id;
-
-            if (ctx.contactId != null) {
-                insert new OpportunityContactRole(
-                    OpportunityId = opp.Id,
-                    ContactId = ctx.contactId,
-                    Role = 'Decision Maker',
-                    IsPrimary = true
+                Opportunity opp = new Opportunity(
+                    Name = company + ' - ' + offeringLabel,
+                    AccountId = ctx.accountId,
+                    StageName = 'Qualification',
+                    CloseDate = Date.today().addDays(90),
+                    Amount = ctx.estimatedValue != null
+                        ? ctx.estimatedValue
+                        : offeringAnnualTarget(ctx.offering)
                 );
-            }
+                if (ctx.ownerId != null) {
+                    opp.OwnerId = ctx.ownerId;
+                }
+                insert opp;
+                opportunityId = opp.Id;
 
-            // Informational only -- reflects the most recently created
-            // Opportunity for this link, not a gate on future creation.
-            if (isId(savedRecordId)) {
-                update new MA_Saved_Configuration__c(
-                    Id = (Id) Id.valueOf(savedRecordId),
-                    Opportunity__c = opp.Id
-                );
+                if (isId(savedRecordId)) {
+                    update new MA_Saved_Configuration__c(
+                        Id = (Id) Id.valueOf(savedRecordId),
+                        Opportunity__c = opportunityId
+                    );
+                }
             }
+            ctx.opportunityId = opportunityId;
+            ensureOpportunityContactRole(opportunityId, ctx.contactId);
         } catch (Exception e) {
             // No Opportunity this time -- the Contact/Task/assessment
             // record path already succeeded and isn't affected.
         }
+    }
+
+    /**
+     * Adds the Contact to the Opportunity if it isn't already there.
+     * Claims primary only when the Opportunity has no primary Contact
+     * yet, so a second (or third) distinct person submitting through the
+     * same link adds a role instead of erroring on a duplicate primary.
+     */
+    private static void ensureOpportunityContactRole(Id opportunityId, Id contactId) {
+        if (opportunityId == null || contactId == null) {
+            return;
+        }
+        List<OpportunityContactRole> existing = [
+            SELECT Id FROM OpportunityContactRole
+            WHERE OpportunityId = :opportunityId AND ContactId = :contactId
+            LIMIT 1
+        ];
+        if (!existing.isEmpty()) {
+            return;
+        }
+        Boolean hasAnyRole = ![
+            SELECT Id FROM OpportunityContactRole WHERE OpportunityId = :opportunityId LIMIT 1
+        ].isEmpty();
+        insert new OpportunityContactRole(
+            OpportunityId = opportunityId,
+            ContactId = contactId,
+            Role = 'Decision Maker',
+            IsPrimary = !hasAnyRole
+        );
     }
 
     private static String offeringLabel(String offeringKey) {

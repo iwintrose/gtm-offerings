@@ -150,6 +150,7 @@ public with sharing class MaSavedConfigurationController {
             ? (Id) input.contactId
             : resolveContact(input.clientContactName, input.clientContactEmail, accountId);
         Id opportunityId = resolveOpportunity(
+            input.recordId,
             accountId,
             trimTo(input.company, MAX_COMPANY),
             parseDecimal(input.estimatedValue)
@@ -396,19 +397,28 @@ public with sharing class MaSavedConfigurationController {
         return null;
     }
 
-    /** Finds an existing Migration Accelerator Opportunity for the Account
-     * or creates one. Only runs when an Account is resolved -- no Account,
-     * no Opportunity. */
-    private static Id resolveOpportunity(Id accountId, String company, Decimal amount) {
+    /**
+     * Reuses THIS link's own Opportunity if it already has one -- never a
+     * different Opportunity just because it happens to match on Account,
+     * which would wrongly glom two different links (different reps,
+     * different sales cycles) for the same Account onto one record. A
+     * brand-new link, or an existing one that never got an Opportunity,
+     * gets a fresh one. Only runs when an Account is resolved -- no
+     * Account, no Opportunity.
+     */
+    private static Id resolveOpportunity(String recordId, Id accountId, String company, Decimal amount) {
         if (accountId == null) return null;
-        List<Opportunity> existing = [
-            SELECT Id FROM Opportunity
-            WHERE AccountId = :accountId
-              AND Name LIKE 'Migration Accelerator%'
-            ORDER BY CreatedDate DESC
-            LIMIT 1
-        ];
-        if (!existing.isEmpty()) return existing[0].Id;
+        if (isValidId(recordId, MA_Saved_Configuration__c.SObjectType)) {
+            List<MA_Saved_Configuration__c> existingLink = [
+                SELECT Opportunity__c
+                FROM MA_Saved_Configuration__c
+                WHERE Id = :recordId
+                LIMIT 1
+            ];
+            if (!existingLink.isEmpty() && existingLink[0].Opportunity__c != null) {
+                return existingLink[0].Opportunity__c;
+            }
+        }
         Opportunity opp = new Opportunity(
             Name = 'Migration Accelerator — ' + (String.isNotBlank(company) ? company.trim() : 'Assessment'),
             AccountId = accountId,
