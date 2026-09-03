@@ -3,6 +3,14 @@
     <description>Makes all tabs visible for Standard Platform Users</description>
     <hasActivationRequired>false</hasActivationRequired>
     <label>GTM Platform Visibility</label>
+    <applicationVisibilities>
+        <application>GTM_Offerings</application>
+        <visible>true</visible>
+    </applicationVisibilities>
+    <applicationVisibilities>
+        <application>GTM_Content_Manager</application>
+        <visible>true</visible>
+    </applicationVisibilities>
     <tabSettings>
         <tab>devedapp__Get_Started_Agentforce</tab>
         <visibility>Visible</visibility>
