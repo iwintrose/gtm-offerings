@@ -284,6 +284,35 @@ public with sharing class MaSavedConfigurationController {
     }
 
     /**
+     * Public Experience Cloud site URL for the configurator page -- needed
+     * only by a caller running OUTSIDE the site itself (e.g. the wizard
+     * launched from the internal GTM Offerings Overview Lightning tab,
+     * where window.location is a *.lightning.force.com URL, not the site's).
+     * A caller already on the live page builds its own link from
+     * window.location instead and never needs this.
+     *
+     * ConnectApi.Communities is a native platform API, not an HTTP callout --
+     * safe to call from the same transaction as a DML save. Read-only,
+     * returns null if the "GTM Accelerator" site isn't found rather than
+     * throwing, since a missing site here should degrade gracefully (the
+     * standalone launcher just won't be able to build a link) rather than
+     * break anything else on the page.
+     */
+    @AuraEnabled(cacheable=true)
+    public static String getConfiguratorPageUrl() {
+        try {
+            for (ConnectApi.Community c : ConnectApi.Communities.getCommunities().communities) {
+                if (c.name == 'GTM Accelerator' && String.isNotBlank(c.siteUrl)) {
+                    return c.siteUrl + '/s/configurator';
+                }
+            }
+        } catch (Exception e) {
+            // Degrade gracefully -- see comment above.
+        }
+        return null;
+    }
+
+    /**
      * Lets a component gate rep-only UI (the Customize panel, the saved
      * links bar) on real authentication rather than guessing from URL
      * params. Guests -- and anyone without this permission -- can't even

@@ -497,7 +497,7 @@
       </span>
     </footer>
 
-    <c-ma-config-customize
+    <c-ma-config-wizard
       is-open={customizeOpen}
       state={tokenState}
       company={company}
@@ -509,10 +509,8 @@
       oncompanychange={handleCompanyChange}
       onindustrychange={handleIndustryChange}
       onaccentchange={handleAccentChange}
-      onloadexample={handleLoadExample}
-      onclearall={handleClearAll}
       onconfigsaved={handleConfigSaved}
-    ></c-ma-config-customize>
+    ></c-ma-config-wizard>
 
     <c-ma-config-booking
       is-open={bookingOpen}

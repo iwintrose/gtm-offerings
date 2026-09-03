@@ -1,6 +1,22 @@
 .gs-root {
     padding: 0.75rem 1rem;
 }
+.gs-new-btn {
+    display: block;
+    width: 100%;
+    background: #ee3d23;
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.85rem;
+    cursor: pointer;
+}
+.gs-new-btn:hover {
+    background: #c42e17;
+}
 .gs-row {
     display: flex;
     flex-wrap: wrap;

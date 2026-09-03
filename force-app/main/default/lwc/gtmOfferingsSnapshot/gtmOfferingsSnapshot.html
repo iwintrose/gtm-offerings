@@ -1,5 +1,6 @@
 <template>
     <div class="gs-root">
+        <button type="button" class="gs-new-btn" onclick={handleOpenWizard}>+ New Prospect Page</button>
         <template if:true={hasError}>
             <div class="gs-error">Couldn't load the snapshot right now.</div>
         </template>
@@ -16,5 +17,11 @@
                 </template>
             </div>
         </template>
+        <c-ma-config-wizard
+            is-open={wizardOpen}
+            standalone
+            onclose={handleCloseWizard}
+            onconfigsaved={handleWizardSaved}
+        ></c-ma-config-wizard>
     </div>
 </template>
