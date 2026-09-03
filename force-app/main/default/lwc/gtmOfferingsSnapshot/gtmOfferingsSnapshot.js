@@ -25,7 +25,12 @@ export default class GtmOfferingsSnapshot extends LightningElement {
     /** Sends the rep to the live site's "Choose your industry" page rather
      * than opening a wizard inline here -- picking an industry there (or
      * skipping) is what actually opens the wizard, on the configurator
-     * page itself. New tab, so the rep doesn't lose this Lightning tab. */
+     * page itself. New tab, so the rep doesn't lose this Lightning tab.
+     *
+     * Apex returns a ready-to-use frontdoor.jsp URL carrying the rep's own
+     * live session -- open it as-is, don't prepend anything (see
+     * MaSavedConfigurationController.getSiteHomePageUrl for why a plain
+     * link to any Salesforce subdomain isn't reliable here). */
     async handleNewProspectPage() {
         this._navBusy = true;
         try {

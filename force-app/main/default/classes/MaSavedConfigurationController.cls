@@ -284,21 +284,34 @@ public with sharing class MaSavedConfigurationController {
     }
 
     /**
-     * Public Experience Cloud site URL for the configurator page -- needed
-     * only by a caller running OUTSIDE the site itself (e.g. the wizard
-     * launched from the internal GTM Offerings Overview Lightning tab,
-     * where window.location is a *.lightning.force.com URL, not the site's).
-     * A caller already on the live page builds its own link from
-     * window.location instead and never needs this.
+     * Two prior approaches to this both failed live testing:
+     *   1. The site's own public siteUrl (*.my.site.com) opened in a new
+     *      tab -- a fresh browser context with no session on that domain
+     *      at all, even for a rep already logged into Lightning. Landed as
+     *      a guest, silently: no Customize button, wizard never opened.
+     *   2. An absolute link built on URL.getOrgDomainUrl() (the org's
+     *      canonical my.salesforce.com domain) -- Lightning itself usually
+     *      runs on a *different* subdomain (*.lightning.force.com), so
+     *      that link had no session either. It landed on the org's generic
+     *      default tab instead of the site.
+     * Both share the same root problem: a plain link assumes the target
+     * domain already has a valid session cookie in the rep's browser, and
+     * that assumption doesn't hold across Salesforce's own subdomains.
      *
-     * Returns null if the "GTM Accelerator" site isn't found rather than
-     * throwing, since a missing site here should degrade gracefully (the
-     * standalone launcher just won't be able to build a link) rather than
-     * break anything else on the page.
+     * frontdoor.jsp with the CURRENT user's own live session ID
+     * (UserInfo.getSessionId()) sidesteps the whole problem -- it doesn't
+     * matter which domain the browser started on, this presents fresh,
+     * valid credentials to whichever domain the link targets. This is the
+     * same mechanism `sf org open` used successfully earlier for the
+     * Overview tab itself, generated here per-request for whichever user
+     * is actually clicking the button, not a fixed CLI session.
+     *
+     * NOT cacheable: this embeds a live session token in the URL, so it
+     * must never be cached/reused across calls.
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static String getConfiguratorPageUrl() {
-        return getSiteSwitchUrl('/s/configurator');
+        return buildFrontdoorUrl('/s/configurator');
     }
 
     /**
@@ -307,33 +320,21 @@ public with sharing class MaSavedConfigurationController {
      * Overview tab's "+ New Prospect Page" button) to send a rep through the
      * same industry-first flow a client-shared link would start from,
      * instead of dropping them straight onto an unpersonalized configurator.
+     * Same frontdoor.jsp contract as getConfiguratorPageUrl() above.
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static String getSiteHomePageUrl() {
-        return getSiteSwitchUrl('/s/');
+        return buildFrontdoorUrl('/s/');
     }
 
-    /**
-     * Deliberately NOT the site's own public siteUrl (the *.my.site.com
-     * domain from ConnectApi.Communities) -- opening that directly in a new
-     * tab is a fresh, unauthenticated browser context with no session on
-     * that domain at all, even for a rep who's already logged into
-     * Lightning right now. It lands as a guest: no Customize button, no
-     * wizard, silently.
-     *
-     * /servlet/networks/switch is the same internal-user-into-a-site bridge
-     * Salesforce's own UI uses (the network switcher, "View" from Setup) --
-     * built on the org's own domain, where the rep's Lightning session
-     * already exists, it forwards them into the site's real external
-     * domain already authenticated as themselves, not as a guest.
-     */
-    private static String getSiteSwitchUrl(String startURL) {
+    private static String buildFrontdoorUrl(String siteRelativePath) {
         try {
-            List<Network> nets = [SELECT Id FROM Network WHERE Name = 'GTM Accelerator' LIMIT 1];
-            if (nets.isEmpty()) return null;
+            List<Network> nets = [SELECT UrlPathPrefix FROM Network WHERE Name = 'GTM Accelerator' LIMIT 1];
+            if (nets.isEmpty() || String.isBlank(nets[0].UrlPathPrefix)) return null;
+            String retURL = '/' + nets[0].UrlPathPrefix + siteRelativePath;
             String orgDomain = URL.getOrgDomainUrl().toExternalForm();
-            return orgDomain + '/servlet/networks/switch?networkId=' + nets[0].Id
-                + '&startURL=' + EncodingUtil.urlEncode(startURL, 'UTF-8');
+            return orgDomain + '/secur/frontdoor.jsp?sid=' + EncodingUtil.urlEncode(UserInfo.getSessionId(), 'UTF-8')
+                + '&retURL=' + EncodingUtil.urlEncode(retURL, 'UTF-8');
         } catch (Exception e) {
             return null;
         }
