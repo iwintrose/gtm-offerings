@@ -639,3 +639,46 @@
 .adv-chevron.open {
   transform: rotate(180deg);
 }
+
+/* ── Agent mode toggle bar ───────────────────────────────────────────── */
+.agent-mode-bar {
+  padding: 0.5rem 1.25rem 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.agent-mode-toggle {
+  background: none;
+  border: 1px solid var(--coral, #ee3d23);
+  color: var(--coral, #ee3d23);
+  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.agent-mode-toggle:hover {
+  background: var(--coral, #ee3d23);
+  color: #fff;
+}
+
+/* ── Agent slot (placeholder until einstein-copilot-chat is wired) ──── */
+.agent-slot {
+  padding: 1.25rem;
+}
+.agent-placeholder {
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: #888;
+}
+.agent-ph-title {
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: #555;
+}
+.agent-ph-body {
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.5;
+}

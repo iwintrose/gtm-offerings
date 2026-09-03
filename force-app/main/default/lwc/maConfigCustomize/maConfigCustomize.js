@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from 'lwc';
+import { subscribe, unsubscribe } from 'lightning/empApi';
 import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
@@ -8,6 +9,8 @@ import getOrgBaseUrl from '@salesforce/apex/MaSavedConfigurationController.getOr
 import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import { FIELDS, LINKS_KEY, initials, isHex6 } from 'c/maConfigData';
+
+const CONFIG_UPDATE_CHANNEL = '/event/MA_Config_Update__e';
 
 const OFFERING = 'migration-accelerator';
 
@@ -128,6 +131,9 @@ export default class MaConfigCustomize extends LightningElement {
     @track brandLookupError = '';
     @track _saveStatus = ''; // '' | 'saving' | 'saved'
     @track _advancedOpen = false;
+    @track _agentMode = false; // true = show AI assistant slot; false = show v1 form
+    _sessionToken = '';
+    _empSubscription = null;
     _autoSaveTimer = null;
 
     get saveLabel() {
@@ -152,6 +158,35 @@ export default class MaConfigCustomize extends LightningElement {
 
     handleAdvancedToggle() {
         this._advancedOpen = !this._advancedOpen;
+    }
+
+    get agentModeLabel() {
+        return this._agentMode ? 'Switch to form' : 'Try the AI assistant';
+    }
+
+    get agentSessionVars() {
+        return [
+            { name: 'sessionToken', value: this._sessionToken },
+            { name: 'configId',     value: this.knownRecordId || '' }
+        ];
+    }
+
+    handleAgentModeToggle() {
+        this._agentMode = !this._agentMode;
+    }
+
+    _applyDelta(delta) {
+        if (!delta || typeof delta !== 'object') return;
+        // Mirror the same emit() calls as the v1 form handlers so the parent's
+        // state updaters are exercised exactly the same way — no new code path.
+        if ('company'  in delta) this.emit('companychange', { value: String(delta.company) });
+        if ('industry' in delta) this.emit('industrychange', { value: String(delta.industry) });
+        if ('accent'   in delta) this.emit('accentchange', { value: String(delta.accent) });
+        // Proof/note fields live in _state, so use fieldchange like the inputs do.
+        const stateFields = ['objectsCount', 'depsCount', 'healthScore', 'note'];
+        stateFields.forEach((k) => {
+            if (k in delta) this.emit('fieldchange', { key: k, value: String(delta[k]) });
+        });
     }
 
     /** value is the just-typed text (direct from the input event) when
@@ -202,6 +237,30 @@ export default class MaConfigCustomize extends LightningElement {
     @track _industries = [];
 
     connectedCallback() {
+        // Generate a session token to scope platform event messages to this instance.
+        // eslint-disable-next-line no-undef
+        this._sessionToken = (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+        // Subscribe to agent-driven config updates. Only apply events whose
+        // session token matches ours to prevent cross-session contamination.
+        subscribe(CONFIG_UPDATE_CHANNEL, -1, (msg) => {
+            try {
+                const payload = msg && msg.data && msg.data.payload;
+                if (!payload) return;
+                if (payload.Session_Token__c !== this._sessionToken) return;
+                const delta = JSON.parse(payload.Updates_JSON__c || '{}');
+                this._applyDelta(delta);
+                this.scheduleAutoSave();
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.error('[maConfigCustomize] empApi delta error:', e);
+            }
+        }).then((sub) => { this._empSubscription = sub; })
+          // eslint-disable-next-line no-console
+          .catch((err) => { console.warn('[maConfigCustomize] empApi subscribe failed:', err); });
+
         getStoryContent({ offeringKey: OFFERING })
             .then((data) => {
                 if (!data) return;
@@ -221,6 +280,14 @@ export default class MaConfigCustomize extends LightningElement {
         this.links = all.filter((l) => !!l.serverId);
         if (this.links.length !== all.length) {
             this.writeLinks();
+        }
+    }
+
+    disconnectedCallback() {
+        if (this._empSubscription) {
+            unsubscribe(this._empSubscription)
+                // eslint-disable-next-line no-console
+                .catch((err) => { console.warn('[maConfigCustomize] empApi unsubscribe:', err); });
         }
     }
 

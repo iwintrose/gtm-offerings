@@ -14,6 +14,31 @@
     </div>
 
     <div class="cust-scroll">
+      <div class="agent-mode-bar">
+        <button type="button" class="agent-mode-toggle" onclick={handleAgentModeToggle}>
+          {agentModeLabel}
+        </button>
+      </div>
+
+      <template if:true={_agentMode}>
+        <div class="agent-slot">
+          <!-- Agentforce slot — replace the div below with
+               <einstein-copilot-chat agent-api-name="GTM_Configurator_Assistant"
+                 session-variables={agentSessionVars}></einstein-copilot-chat>
+               once the GTM_Configurator_Assistant agent is configured in
+               Einstein Copilot Studio and the org has Agentforce provisioned. -->
+          <div class="agent-placeholder">
+            <p class="agent-ph-title">AI assistant coming soon</p>
+            <p class="agent-ph-body">
+              Once configured, describe your prospect here and the assistant will
+              personalize the page automatically. Switch to the form to fill
+              in details manually.
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <template if:false={_agentMode}>
       <div class="lb">
         <div class="lb-t">Personalize this page</div>
         <div class="lb-s">
@@ -331,6 +356,7 @@
           The link below carries the same settings to anyone you send it to.
         </div>
       </div>
+      </template><!-- end if:false={_agentMode} -->
     </div>
 
     <div class="cust-foot">

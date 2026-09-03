@@ -7,7 +7,7 @@
         <target>lightning__Tab</target>
     </targets>
     <targetConfigs>
-        <targetConfig targets="lightning__AppPage,lightning__Tab">
+        <targetConfig targets="lightning__AppPage">
             <property name="offeringKey" type="String" label="Offering Key" description="Developer name of the offering (e.g. ma-migrator)." default="ma-migrator"/>
         </targetConfig>
     </targetConfigs>
