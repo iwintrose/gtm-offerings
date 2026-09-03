@@ -215,6 +215,9 @@ export default class MaConfigurator extends LightningElement {
     }
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl); }
+    get contentManagerUrl() {
+        return this._orgUrl ? `${this._orgUrl}/lightning/o/MA_Page_Content__c/list` : '#';
+    }
 
     disconnectedCallback() {
         if (this._scrollHandler) {
