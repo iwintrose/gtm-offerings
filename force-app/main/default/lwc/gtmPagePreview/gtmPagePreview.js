@@ -57,29 +57,54 @@ export default class GtmPagePreview extends LightningElement {
     _queued = false;
 
     // ─── which renderer ───────────────────────────────────────────────────────
-    // Only the story renders inside the editor today. The other pages are
-    // Experience Cloud pages whose components read live per-visitor state — a
-    // chosen industry, a company from the query string — so rendering them
-    // here would show a version of the page nobody ever sees. Saying so is
-    // more useful than previewing the wrong page, which is what it did.
+    // Every page previews through the component that actually renders it, fed
+    // the draft being edited. A stand-in that only approximated the page would
+    // drift from it, and "no preview available" is not an answer when the
+    // whole point of the editor is seeing the change.
 
     get isStory() { return this.templateType === 'story'; }
-    get isUnpreviewable() { return !this.isStory; }
-
-    get unpreviewableTitle() {
-        return 'No in-editor preview for this page.';
+    get isOfferings() {
+        // An offerings-listing is one tile on the offerings page, so it is
+        // previewed in the page it appears on rather than on its own.
+        return this.templateType === 'offerings-page'
+            || this.templateType === 'offerings-listing';
+    }
+    get isIndustry() { return this.templateType === 'industry-chooser'; }
+    get isConfigurator() { return this.templateType === 'configurator'; }
+    get isUnknown() {
+        return !this.isStory && !this.isOfferings && !this.isIndustry && !this.isConfigurator;
     }
 
-    get unpreviewableHint() {
+    /**
+     * The offerings page draws its tiles from every offering, so when the tile
+     * itself is what is being edited, the draft is handed in and takes that
+     * offering's place in the grid.
+     */
+    get previewTile() {
+        if (this.templateType !== 'offerings-listing') return null;
+        const c = this.content || {};
+        return {
+            offeringKey: this.offeringKey,
+            mark: c['tile::mark'] || '',
+            name: c['tile::name'] || '',
+            description: c['tile::description'] || '',
+            isLive: true
+        };
+    }
+
+    /** The offerings page's own copy is framework content, not this page's. */
+    get offeringsContent() {
+        return this.templateType === 'offerings-page' ? this.content : {};
+    }
+
+    get previewNote() {
+        if (this.templateType === 'offerings-listing') {
+            return 'Shown in place on the offerings page — the other tiles are live.';
+        }
         if (this.templateType === 'configurator') {
-            return 'The configurator is built per prospect from the link they were sent, '
-                 + 'so there is no single version of it to show here.';
+            return 'Shown as a prospect sees it, using the first industry on this page.';
         }
-        if (this.templateType === 'offerings-page') {
-            return 'The offerings page is assembled from every offering, not from this '
-                 + 'page alone.';
-        }
-        return 'Your edits are saved and appear on the live page once published.';
+        return '';
     }
 
     // ─── head ─────────────────────────────────────────────────────────────────
@@ -258,9 +283,11 @@ export default class GtmPagePreview extends LightningElement {
     }
 
     rects() {
-        const story = this.template.querySelector('c-ma-story');
-        if (!story || typeof story.getSectionRects !== 'function') return [];
-        return story.getSectionRects();
+        const el = this.template.querySelector(
+            'c-ma-story, c-offering-chooser, c-choose-industry, c-ma-configurator'
+        );
+        if (!el || typeof el.getSectionRects !== 'function') return [];
+        return el.getSectionRects();
     }
 
     /**

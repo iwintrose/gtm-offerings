@@ -68,6 +68,51 @@ export default class OfferingChooser extends LightningElement {
     /** Where the Migration Accelerator tile points. Set in Experience Builder. */
     @api industryUrl = '/choose-industry';
 
+    // Preview mode. The GTM Content Manager hands this component the draft it
+    // is editing and this renders that, so the editor previews through the
+    // real page rather than a second implementation of it that can drift.
+    _preview = false;
+
+    @api
+    get previewContent() { return this._cms; }
+    set previewContent(value) {
+        if (!value || !Object.keys(value).length) return;
+        this._preview = true;
+        this._cms = value;
+    }
+
+    /**
+     * One offering's draft tile, when the tile itself is what is being edited.
+     * It replaces that offering's published tile in the grid, so an
+     * offerings-listing edit is previewed where it actually appears.
+     */
+    @api
+    get previewTile() { return this._previewTile; }
+    set previewTile(value) {
+        if (!value) return;
+        this._preview = true;
+        this._previewTile = value;
+    }
+
+    /** Where each section sits, so the editor's rail and this stay in step. */
+    @api
+    getSectionRects() {
+        const out = [];
+        this.template.querySelectorAll('[data-section]').forEach((el) => {
+            const r = el.getBoundingClientRect();
+            const pos = window.getComputedStyle(el).position;
+            out.push({
+                sectionKey: el.dataset.section,
+                top: r.top,
+                bottom: r.bottom,
+                pinned: pos === 'sticky' || pos === 'fixed'
+            });
+        });
+        return out;
+    }
+
+    _previewTile = null;
+
     @track _loadError = '';
     @track theme = null;
     @track _tileDescription = null;
@@ -116,7 +161,15 @@ export default class OfferingChooser extends LightningElement {
      * shape of what is coming rather than hiding it.
      */
     get tiles() {
-        const source = this._tiles.length ? this._tiles : DEFAULTS.cards;
+        let source = this._tiles.length ? this._tiles : DEFAULTS.cards;
+        const draft = this._previewTile;
+        if (draft) {
+            const key = draft.offeringKey;
+            const hit = source.findIndex((c) => c.offeringKey === key);
+            source = source.slice();
+            if (hit >= 0) source[hit] = { ...source[hit], ...draft };
+            else source = source.concat([draft]);
+        }
         return source.map((c, i) => {
             const live = c.isLive === true;
             return {
@@ -150,6 +203,10 @@ export default class OfferingChooser extends LightningElement {
                 // eslint-disable-next-line no-console
                 console.error('[offeringChooser] getOfferingTiles failed:', JSON.stringify(err));
             });
+
+        // In preview the parent owns the copy; fetching would overwrite the
+        // draft with what is published and the preview would stop being live.
+        if (this._preview) return;
 
         getPageLayout({
             offeringKey: FRAMEWORK_KEY,

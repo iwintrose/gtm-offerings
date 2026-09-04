@@ -29,7 +29,7 @@ const LAYOUT_FIELDS = {
     'page-footer': { text: ['footerLeft', 'footerRight'],     rich: [], json: [] },
     'hero':        { text: ['eyebrow'],                      rich: ['headline', 'subhead'],        json: [] },
     'lede-chips':  { text: ['eyebrow'],                      rich: ['lede', 'close'],              json: ['chips'] },
-    'route-proof': { text: ['eyebrow', 'proofDemoRoot'],     rich: ['head', 'sub', 'proofCtaText'], json: ['routeSteps', 'proofDemoDeps'] },
+    'route-proof': { text: ['eyebrow', 'proofDemoRoot', 'proofObjectsCount', 'proofDepsCount', 'proofHealthScore'], rich: ['head', 'sub', 'proofCtaText'], json: ['routeSteps', 'proofDemoDeps'] },
     'card-grid':   { text: ['eyebrow', 'head'],              rich: ['bonusCard'],                  json: ['cards'] },
     'stat':        { text: ['eyebrow', 'head', 'statBig'],   rich: ['statDesc', 'note'],           json: [] },
     'use-pitch':   { text: ['eyebrow', 'head'],              rich: ['lede'],                       json: ['useCases', 'pitchOldChips', 'pitchNewChips'] },
@@ -37,11 +37,24 @@ const LAYOUT_FIELDS = {
     'closing':     { text: [], rich: ['head', 'sub'], json: [], icontext: ['ctaLabel'] },
     // One offering's entry on the offerings page: how it introduces itself.
     'offering-tile': { text: ['mark', 'name'], rich: ['description'], json: [] },
-    // One industry's full configurator content: the picker-facing blurb plus
-    // everything the configurator personalizes once that industry is chosen.
+    // The defaults a configurator starts from before a rep customises it.
+    'offering-defaults': {
+        text: ['defaultSourcePlatform', 'defaultTargetPlatform', 'defaultAssetCount',
+               'defaultDependencyCount', 'defaultHealthScore', 'genericDemoRoot'],
+        rich: [],
+        json: ['genericDemoDeps', 'genericChips', 'swatches']
+    },
+    'industry-tile': {
+        text: ['industryLabel'],
+        rich: ['pickerBlurb'],
+        json: []
+    },
+    // How one offering pitches itself to one industry. This is offering copy,
+    // not taxonomy: it lives on that offering's configurator page, so two
+    // offerings can say different things about the same industry.
     'industry-profile': {
-        text: ['industryLabel', 'whyHead', 'demoRoot'],
-        rich: ['pickerBlurb', 'coverSub', 'problem', 'useCase', 'solution', 'proofLine', 'whyLine'],
+        text: ['whyHead', 'demoRoot'],
+        rich: ['coverSub', 'problem', 'useCase', 'solution', 'proofLine', 'whyLine'],
         json: ['uniquePoints', 'demoDeps']
     }
 };
@@ -60,7 +73,9 @@ const LAYOUT_LABELS = {
     'faq': 'FAQ',
     'closing': 'Closing call to action',
     'offering-tile': 'Offering tile',
-    'industry-profile': 'Industry profile'
+    'offering-defaults': 'Configurator defaults',
+    'industry-tile': 'Industry',
+    'industry-profile': 'Industry angle'
 };
 
 const LAYOUT_HINTS = {
@@ -75,7 +90,9 @@ const LAYOUT_HINTS = {
     'faq': 'A list of questions and answers.',
     'closing': 'Final headline, subhead, and a call-to-action button.',
     'offering-tile': 'The short badge, name and description shown on the offerings page.',
-    'industry-profile': 'One industry\'s full configurator content: picker blurb, problem, solution, proof and demo.'
+    'offering-defaults': 'What a configurator shows before a rep customises it: platforms, counts, demo and colour swatches.',
+    'industry-tile': 'One industry in the shared list: its name and the blurb on its card.',
+    'industry-profile': 'What this offering says to one industry: their problem, the solution, the proof and the demo.'
 };
 
 /**
@@ -206,9 +223,11 @@ function starterFor(templateType) {
  * showing one fixed list.
  */
 // Industries are a shared taxonomy — fintech and medtech are not facts about
-// Migration Accelerator — so the industry chooser and the industry profiles
-// behind it belong to the framework, and every offering's configurator reads
-// the same set. Only the pages that describe one offering belong to it.
+// Migration Accelerator — so the list of them, and the chooser page that shows
+// it, belong to the framework. What an offering *says* to an industry is not
+// taxonomy: that copy lives on that offering's own configurator page, one
+// section per industry, so two offerings can pitch the same industry
+// differently.
 const OFFERING_TEMPLATES = ['story', 'configurator', 'offerings-listing'];
 const FRAMEWORK_TEMPLATES = ['offerings-page', 'industry-chooser'];
 

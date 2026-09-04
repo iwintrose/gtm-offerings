@@ -1,7 +1,7 @@
 import { LightningElement, api, track } from 'lwc';
-import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
+import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
 import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 const FONTS_HREF =
@@ -74,13 +74,41 @@ export default class ChooseIndustry extends LightningElement {
     /** Configurator page. Industry is appended as ?industry=<key>. */
     @api configuratorUrl = '/configurator';
 
+    // Preview mode: the GTM Content Manager hands over the draft it is editing
+    // and this renders that, so the editor previews the real page.
+    _preview = false;
+
+    @api
+    get previewContent() { return this._cms; }
+    set previewContent(value) {
+        if (!value || !Object.keys(value).length) return;
+        this._preview = true;
+        this._cms = value;
+    }
+
+    /** Where each section sits, so the editor's rail and this stay in step. */
+    @api
+    getSectionRects() {
+        const out = [];
+        this.template.querySelectorAll('[data-section]').forEach((el) => {
+            const r = el.getBoundingClientRect();
+            const pos = window.getComputedStyle(el).position;
+            out.push({
+                sectionKey: el.dataset.section,
+                top: r.top,
+                bottom: r.bottom,
+                pinned: pos === 'sticky' || pos === 'fixed'
+            });
+        });
+        return out;
+    }
+
     @track theme = null;
     @track _loadError = '';
     @track _industries = [];
     @track _editMode = false;
     @track _openEditId = null;
     @track _orgUrl = '';
-    @track _cmsChannelId = '';
     _lightningUrl = '';
     _sites = [];
 
@@ -115,27 +143,50 @@ export default class ChooseIndustry extends LightningElement {
     get footerLeft() { return this._ct('footer::footerLeft') || CHROME_DEFAULTS.footerLeft; }
     get footerRight() { return this._ct('footer::footerRight') || CHROME_DEFAULTS.footerRight; }
 
+    /**
+     * In preview the profiles are rebuilt from the draft content map, so
+     * editing an industry's blurb changes its tile as you type. Published
+     * profiles come from the reader instead.
+     */
+    get _profiles() {
+        if (!this._preview) return this._industries;
+        const byKey = {};
+        Object.keys(this._cms || {}).forEach((addr) => {
+            const cut = addr.indexOf('::');
+            if (cut < 0) return;
+            const section = addr.substring(0, cut);
+            if (section.indexOf('industry-') !== 0) return;
+            const key = section.substring(9);
+            if (!byKey[key]) byKey[key] = { industryKey: key };
+            byKey[key][addr.substring(cut + 2)] = this._cms[addr];
+        });
+        const drafted = Object.keys(byKey).map((k) => byKey[k]);
+        return drafted.length ? drafted : this._industries;
+    }
+
     get industries() {
         const base = this._withWizardParam(this.configuratorUrl || '/configurator');
         const joiner = '&';
         const orgUrl = this._orgUrl;
-        const channelId = this._cmsChannelId;
-        return this._industries.map((ind) => {
+        return this._profiles.map((ind) => {
             const key = ind.industryKey;
             const href = `${base}${joiner}industry=${encodeURIComponent(key)}`;
-            const cmsUrl = (orgUrl && ind.indexRecordId)
-                ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${ind.indexRecordId}/view`
-                : orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
+            // Industry copy is edited in the GTM Content Manager now that the
+            // CMS content index is gone.
+            const cmsUrl = orgUrl
+                ? `${orgUrl}/lightning/n/GTM_Content_Manager`
+                : '#';
             const indexUrl = cmsUrl;
             const builderUrl = this.builderUrl;
             const isOpen = this._openEditId === key;
             return {
                 key,
-                label: ind.industryLabel,
+                sectionKey: `industry-${key}`,
+                label: ind.industryLabel || key,
                 desc: ind.pickerBlurb || PICKER_BLURBS[key] || '',
                 href,
                 contentId: ind.contentId || '',
-                indexRecordId: ind.indexRecordId || '',
+                address: `gtm::industry-chooser::industry-${key}`,
                 cmsUrl,
                 indexUrl,
                 builderUrl,
@@ -157,9 +208,35 @@ export default class ChooseIndustry extends LightningElement {
 
         // Industries are a shared taxonomy, so this page and the profiles
         // behind it belong to the framework, not to one offering.
+        window.addEventListener('maadminedit', this._editModeHandler);
+        window.addEventListener('click', this._winClickHandler);
+
+        // Org URL and site list drive the edit-mode chrome only. This used to
+        // come from getStoryContent, which also returned an industry list from
+        // the retired CMS index and resolved late enough to overwrite the real
+        // profiles below with it.
+        getSiteInfo()
+            .then((info) => {
+                if (!info) return;
+                this._orgUrl = info.orgUrl || '';
+                this._lightningUrl = info.lightningUrl || '';
+                this._sites = info.sites || [];
+            })
+            .catch(() => {
+                // Deep links are progressive enhancement; the page works without them.
+            });
+
+        // In preview the parent owns the content, so fetching would replace the
+        // draft with what is published.
+        if (this._preview) return;
+
         getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: this.templateType })
-            .then((rows) => { if (rows && rows.length) this._industries = rows; })
+            .then((rows) => {
+                this._industries = (rows && rows.length) ? rows : HARDCODED_INDUSTRIES;
+            })
             .catch((err) => {
+                this._loadError = 'Industry content could not be loaded; showing built-in defaults.';
+                this._industries = HARDCODED_INDUSTRIES;
                 // eslint-disable-next-line no-console
                 console.error('[chooseIndustry] getIndustryProfiles failed:', JSON.stringify(err));
             });
@@ -176,30 +253,6 @@ export default class ChooseIndustry extends LightningElement {
                 this._loadError = 'Page content could not be loaded; showing built-in defaults.';
                 // eslint-disable-next-line no-console
                 console.error('[chooseIndustry] getPageLayout failed:', JSON.stringify(err));
-            });
-        window.addEventListener('maadminedit', this._editModeHandler);
-        window.addEventListener('click', this._winClickHandler);
-        getStoryContent({ offeringKey: this.offeringKey })
-            .then((data) => {
-                const industries = (data && data.industries) || [];
-                // Fall back to hardcoded data when the CMS callout returns nothing
-                // (guest users on orgs where unauthenticated CMS API calls aren't
-                // yet enabled, or a transient CMS delivery error).
-                this._industries = industries.length > 0 ? industries : HARDCODED_INDUSTRIES;
-                if (data) {
-                    this._orgUrl = data.orgUrl || '';
-                    this._lightningUrl = data.lightningUrl || '';
-                    this._cmsChannelId = data.cmsChannelId || '';
-                    this._sites = data.sites || [];
-                }
-            })
-            .catch((err) => {
-                // Surfaced, not swallowed: a console-only failure here is
-                // indistinguishable from the page simply having no content.
-                this._loadError = 'Industry content could not be loaded; showing built-in defaults.';
-                // eslint-disable-next-line no-console
-                console.error('[chooseIndustry] getStoryContent:', JSON.stringify(err));
-                this._industries = HARDCODED_INDUSTRIES;
             });
     }
 

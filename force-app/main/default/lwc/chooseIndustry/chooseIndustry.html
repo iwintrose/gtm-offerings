@@ -5,7 +5,7 @@
     </template>
 
 
-    <div class="bar">
+    <div class="bar" data-section="header">
       <div class="bar-wm">
         <span class="tick"></span> {brandLabel}
         <span class="bar-tag mono">{brandTag}</span>
@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <div class="wrap">
+    <div class="wrap" data-section="intro">
       <div class="eyebrow"><span class="bead"></span> {eyebrow}</div>
       <template if:true={_editMode}>
         <a href={builderUrl} target="_blank" rel="noopener" class="hd-edit-chip">
@@ -29,7 +29,7 @@
 
       <div class="grid">
         <template for:each={industries} for:item="ind">
-          <div key={ind.key} class={ind.wrapClass}>
+          <div key={ind.key} class={ind.wrapClass} data-section={ind.sectionKey}>
             <a class="tile" href={ind.href}>
               <div class="tile-name">{ind.label}</div>
               <div class="tile-desc">{ind.desc}</div>
@@ -40,17 +40,17 @@
               <div class={ind.popClass} onclick={handlePopClick}>
                 <div class="pop-hd">
                   <div class="pop-name">{ind.label}</div>
-                  <div class="pop-id">{ind.indexRecordId}</div>
+                  <div class="pop-id">{ind.address}</div>
                 </div>
                 <div class="pop-acts">
                   <a href={ind.cmsUrl} target="_blank" rel="noopener" class="pop-act pop-act--cms">
-                    <span class="picon"></span>Edit CMS content ↗
+                    <span class="picon"></span>Edit this industry ↗
                   </a>
                   <a href={ind.builderUrl} target="_blank" rel="noopener" class="pop-act pop-act--bld">
                     <span class="picon"></span>Edit page layout ↗
                   </a>
                   <a href={ind.indexUrl} target="_blank" rel="noopener" class="pop-act pop-act--rec">
-                    <span class="picon"></span>View index record ↗
+                    <span class="picon"></span>Open Content Manager ↗
                   </a>
                 </div>
               </div>
@@ -75,7 +75,7 @@
       </div>
     </div>
 
-    <footer class="pf">
+    <footer class="pf" data-section="footer">
       <span>{footerLeft}</span>
       <span>{footerRight}</span>
     </footer>

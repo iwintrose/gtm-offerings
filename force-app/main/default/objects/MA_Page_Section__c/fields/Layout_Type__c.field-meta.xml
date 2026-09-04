@@ -70,6 +70,16 @@
                 <default>false</default>
                 <label>industry-profile</label>
             </value>
+            <value>
+                <fullName>offering-defaults</fullName>
+                <default>false</default>
+                <label>offering-defaults</label>
+            </value>
+            <value>
+                <fullName>industry-tile</fullName>
+                <default>false</default>
+                <label>Industry</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

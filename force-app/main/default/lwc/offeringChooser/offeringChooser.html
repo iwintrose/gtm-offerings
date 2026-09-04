@@ -5,7 +5,7 @@
     </template>
 
 
-    <div class="bar">
+    <div class="bar" data-section="header">
       <div class="bar-wm">
         <span class="tick"></span> {brandLabel}
         <span class="bar-tag mono">{brandTag}</span>
@@ -16,7 +16,7 @@
       </div>
     </div>
 
-    <div class="wrap">
+    <div class="wrap" data-section="intro">
       <div class="eyebrow"><span class="bead"></span> {eyebrow}</div>
       <template if:true={_editMode}>
         <a href={builderUrl} target="_blank" rel="noopener" class="hd-edit-chip">
@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    <footer class="pf">
+    <footer class="pf" data-section="footer">
       <span>{footerLeft}</span>
       <span>{footerRight}</span>
     </footer>

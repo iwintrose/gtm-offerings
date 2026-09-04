@@ -2,8 +2,7 @@ import { LightningElement, api, track, wire } from 'lwc';
 import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isConfigManager';
 import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
-import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
-import getPageContent from '@salesforce/apex/MaPageContentController.getPageContent';
+import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
 import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
 import verifyAndIssueToken from '@salesforce/apex/MaLinkAuthController.verifyAndIssueToken';
 import logEvent from '@salesforce/apex/MaLinkEventController.logEvent';
@@ -46,6 +45,37 @@ export default class MaConfigurator extends LightningElement {
     @api offeringsUrl = '/';
     @api industryUrl = '/choose-industry';
     @api accentColor = ''; // deprecated — colour is set via saved links / Customize panel
+
+    // Preview mode. The GTM Content Manager hands over the draft it is editing;
+    // this renders that instead of fetching, so the editor previews the page
+    // itself rather than a stand-in for it.
+    _preview = false;
+
+    @api
+    get previewContent() { return this._cms; }
+    set previewContent(value) {
+        if (!value || !Object.keys(value).length) return;
+        this._preview = true;
+        this._cms = value;
+        this.tokenState = { ...this._defaultsFromCms(), ...this.tokenState };
+    }
+
+    /** Where each section sits, so the editor's rail and this stay in step. */
+    @api
+    getSectionRects() {
+        const out = [];
+        this.template.querySelectorAll('[data-section]').forEach((el) => {
+            const r = el.getBoundingClientRect();
+            const pos = window.getComputedStyle(el).position;
+            out.push({
+                sectionKey: el.dataset.section,
+                top: r.top,
+                bottom: r.bottom,
+                pinned: pos === 'sticky' || pos === 'fixed'
+            });
+        });
+        return out;
+    }
 
     @track _loadError = '';
     @track tokenState = {};
@@ -189,14 +219,36 @@ export default class MaConfigurator extends LightningElement {
     connectedCallback() {
         // Only the parts that are the same for every client; the hero is
         // assembled from runtime values and stays in the component.
-        // One shared industry taxonomy, read from the framework, so every
-        // offering's configurator personalizes off the same set.
-        getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: 'industry-chooser' })
+        // The industry copy is this offering's own: one section per industry on
+        // this configurator page, edited alongside the rest of the page. The
+        // framework owns only the list of industries, not what we say to them.
+        getIndustryProfiles({ offeringKey: this.offeringKey, templateType: this.templateType })
             .then((rows) => { if (rows && rows.length) this._industries = rows; })
             .catch((err) => {
                 // eslint-disable-next-line no-console
                 console.error('[maConfigurator] getIndustryProfiles failed:', JSON.stringify(err));
             });
+
+        // Org URL and site list drive edit-mode deep links only.
+        getSiteInfo()
+            .then((info) => {
+                if (!info) return;
+                this._orgUrl = info.orgUrl || '';
+                this._lightningUrl = info.lightningUrl || '';
+                this._sites = info.sites || [];
+            })
+            .catch(() => {
+                // Deep links are progressive enhancement.
+            });
+
+        this._sessionId = this._makeSessionId();
+        this.tokenState = this.loadState();
+        this.readUrlParams();
+        this.setPageTitle();
+
+        // In preview the parent owns the copy, so fetching would replace the
+        // draft with what is published.
+        if (this._preview) return;
 
         getPageLayout({
             offeringKey: this.offeringKey,
@@ -204,49 +256,18 @@ export default class MaConfigurator extends LightningElement {
             industryKey: null
         })
             .then((layout) => {
-                if (layout && layout.content) this._cms = layout.content;
+                if (!layout || !layout.content) return;
+                this._cms = layout.content;
+                // The starting numbers on this page are content now, seeded on
+                // the configurator's own defaults section, rather than a custom
+                // setting read through the retired story CMS controller.
+                this._cmsDefaults = this._defaultsFromCms();
+                this.tokenState = { ...this._cmsDefaults, ...this.tokenState };
             })
-            .catch((err) => {
-                // eslint-disable-next-line no-console
-                console.error('[maConfigurator] getPageLayout failed:', JSON.stringify(err));
-            });
-
-        this._sessionId = this._makeSessionId();
-        this.tokenState = this.loadState();
-        this.readUrlParams();
-        this.setPageTitle();
-        // Phase 1 — MA_Page_Content__c is the primary CMS source for static content.
-        getPageContent({ offeringKey: this.offeringKey, templateType: 'configurator', industryKey: null })
-            .then((map) => { if (map) this._cms = map; })
-            // eslint-disable-next-line no-console
             .catch((err) => {
                 this._loadError = 'Page content could not be loaded; showing built-in defaults.';
                 // eslint-disable-next-line no-console
-                console.error('[maConfigurator] getPageContent:', JSON.stringify(err));
-            });
-        getStoryContent({ offeringKey: this.offeringKey })
-            .then((data) => {
-                if (!data) return;
-                this._orgUrl = data.orgUrl || '';
-                this._lightningUrl = data.lightningUrl || '';
-                this._sites = data.sites || [];
-                this._storySetting = data.setting;
-                if (data.setting) {
-                    const cmsDefaults = {
-                        SOURCE_PLATFORM: data.setting.defaultSourcePlatform,
-                        TARGET_PLATFORM: data.setting.defaultTargetPlatform,
-                        ASSET_COUNT: data.setting.defaultAssetCount,
-                        DEPENDENCY_COUNT: data.setting.defaultDependencyCount,
-                        HEALTH_SCORE: data.setting.defaultHealthScore
-                    };
-                    this._cmsDefaults = cmsDefaults;
-                    this.tokenState = { ...cmsDefaults, ...this.tokenState };
-                }
-            })
-            .catch((err) => {
-                this._loadError = 'Offering content could not be loaded; showing built-in defaults.';
-                // eslint-disable-next-line no-console
-                console.error('[maConfigurator] getStoryContent:', JSON.stringify(err));
+                console.error('[maConfigurator] getPageLayout failed:', JSON.stringify(err));
             });
 
         this._scrollHandler = this.handleScroll.bind(this);
@@ -271,6 +292,19 @@ export default class MaConfigurator extends LightningElement {
         const raw = this._cms[key];
         if (!raw) return null;
         try { return JSON.parse(raw); } catch (e) { return null; }
+    }
+
+    /** The starting numbers, read from the configurator's defaults section. */
+    _defaultsFromCms() {
+        const map = {
+            SOURCE_PLATFORM: this._ct('defaults::defaultSourcePlatform'),
+            TARGET_PLATFORM: this._ct('defaults::defaultTargetPlatform'),
+            ASSET_COUNT: this._ct('defaults::defaultAssetCount'),
+            DEPENDENCY_COUNT: this._ct('defaults::defaultDependencyCount'),
+            HEALTH_SCORE: this._ct('defaults::defaultHealthScore')
+        };
+        Object.keys(map).forEach((k) => { if (!map[k]) delete map[k]; });
+        return map;
     }
 
 
@@ -565,12 +599,39 @@ export default class MaConfigurator extends LightningElement {
     // ------------------------------------------------------- industry engine
 
     get industry() {
-        if (!this.industryKey) return null;
-        return (
-            this._industries.find(
-                (ind) => ind.industryKey === this.industryKey
-            ) || null
-        );
+        const rows = this._preview ? this._draftProfiles() : this._industries;
+        if (!rows.length) return null;
+        // A prospect arrives with an industry chosen. The editor has no
+        // prospect, so it previews the first industry on the page rather than
+        // the generic version, which is where the copy being edited shows up.
+        const key = this.industryKey || (this._preview ? rows[0].industryKey : '');
+        if (!key) return null;
+        return rows.find((ind) => ind.industryKey === key) || null;
+    }
+
+    /**
+     * The per-industry sections of the draft being edited, rebuilt from the
+     * content map so the preview changes as the copy is typed.
+     */
+    _draftProfiles() {
+        const byKey = {};
+        const out = [];
+        Object.keys(this._cms || {}).forEach((addr) => {
+            const cut = addr.indexOf('::');
+            if (cut < 0) return;
+            const section = addr.substring(0, cut);
+            if (section.indexOf('industry-') !== 0) return;
+            const key = section.substring(9);
+            if (!byKey[key]) { byKey[key] = { industryKey: key }; out.push(byKey[key]); }
+            const field = addr.substring(cut + 2);
+            const raw = this._cms[addr];
+            if (field === 'uniquePoints' || field === 'demoDeps') {
+                try { byKey[key][field] = JSON.parse(raw); } catch (e) { byKey[key][field] = []; }
+            } else {
+                byKey[key][field] = raw;
+            }
+        });
+        return out.length ? out : this._industries;
     }
 
     get hasIndustry() {
