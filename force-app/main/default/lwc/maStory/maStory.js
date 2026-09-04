@@ -238,6 +238,28 @@ export default class MaStory extends LightningElement {
     // first offering but is not bound to it.
     @api offeringKey = OFFERING_KEY;
 
+    // Preview mode. When the GTM Content Manager passes draft structure and
+    // content in, this component renders those instead of fetching its own,
+    // so the editor previews through the real renderer rather than a
+    // reimplementation of it that can drift.
+    _preview = false;
+
+    @api
+    get previewSections() { return this._sectionRows; }
+    set previewSections(value) {
+        if (!value) return;
+        this._preview = true;
+        this._sectionRows = value;
+    }
+
+    @api
+    get previewContent() { return this._cms; }
+    set previewContent(value) {
+        if (!value) return;
+        this._preview = true;
+        this._cms = value;
+    }
+
     _observer;
     _revealed = new Set();
     _scrollHandler;
@@ -388,6 +410,8 @@ export default class MaStory extends LightningElement {
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
         window.addEventListener('maadminedit', this._editModeHandler);
         // Phase 1 — MA_Page_Content__c is the primary CMS; falls back to legacy getStoryContent.
+        // In preview mode the parent owns the data; fetching would overwrite the draft.
+        if (this._preview) return;
         getPageLayout({ offeringKey: this.offeringKey, templateType: 'story', industryKey: null })
             .then((layout) => {
                 if (!layout) return;

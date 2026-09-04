@@ -1,261 +1,288 @@
 import { LightningElement, api, track } from 'lwc';
 import getAllContent from '@salesforce/apex/MaPageContentController.getAllContent';
-import { sectionMeta } from 'c/gtmContentSchema';
+import getEditorSections from '@salesforce/apex/MaPageContentController.getEditorSections';
+import saveContentRecords from '@salesforce/apex/MaPageContentController.saveContentRecords';
+import saveSectionOrder from '@salesforce/apex/MaPageContentController.saveSectionOrder';
+import setSectionActive from '@salesforce/apex/MaPageContentController.setSectionActive';
 
 const TEMPLATE_TYPE_OPTIONS = [
-    { label: 'Configurator', value: 'configurator' },
     { label: 'Story', value: 'story' },
+    { label: 'Configurator', value: 'configurator' },
     { label: 'Offerings Listing', value: 'offerings-listing' },
     { label: 'Industry Chooser', value: 'industry-chooser' }
 ];
+
+// Which value column a field type resolves from. Mirrors
+// MaPageContentController.resolveValue.
+const COLUMN = { text: 'textValue', rich: 'richValue', json: 'jsonValue' };
 
 export default class GtmContentManager extends LightningElement {
     @api offeringKey = 'migration-accelerator';
 
     @track templateType = 'story';
-    @track _allRecords = [];
-    @track _draftRecords = [];
+    @track sections = [];
+    @track records = [];
+    @track activeKey = '';
     @track isLoading = false;
-    @track loadError = '';
-    @track newSectionOpen = false;
-    @track newSectionKey = '';
-    @track _pendingStubs = [];
-    @track dividerPos = 60;
-    @track isDraggingDivider = false;
-    @track showVersionHistory = false;
     @track isSaving = false;
+    @track loadError = '';
     @track saveMessage = '';
+    @track reorderMode = false;
+    @track dirtyKeys = [];
 
     templateTypeOptions = TEMPLATE_TYPE_OPTIONS;
+    _dragKey = '';
+    _saveTimer;
+
+    // ─── lifecycle ────────────────────────────────────────────────────────────
 
     connectedCallback() {
-        this.loadContent();
-        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        document.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        this.load();
     }
 
-    disconnectedCallback() {
-        document.removeEventListener('mousemove', this.handleMouseMove.bind(this));
-        document.removeEventListener('mouseup', this.handleMouseUp.bind(this));
-    }
-
-    loadContent() {
+    load() {
         this.isLoading = true;
         this.loadError = '';
-        this._pendingStubs = [];
-        getAllContent({ offeringKey: this.offeringKey, templateType: this.templateType })
-            .then((records) => {
-                this._allRecords = records || [];
-                // Initialize draft records from loaded content (or from draft status)
-                this._draftRecords = JSON.parse(JSON.stringify(this._allRecords));
+        Promise.all([
+            getEditorSections({ offeringKey: this.offeringKey, templateType: this.templateType }),
+            getAllContent({ offeringKey: this.offeringKey, templateType: this.templateType })
+        ])
+            .then(([sections, records]) => {
+                this.sections = (sections || []).map((s) => ({ ...s }));
+                this.records = (records || []).map((r) => ({ ...r }));
+                if (!this.activeKey && this.sections.length) {
+                    this.activeKey = this.sections[0].sectionKey;
+                }
+                this.dirtyKeys = [];
             })
             .catch((err) => {
-                this.loadError = (err && err.body && err.body.message) ? err.body.message : 'Failed to load content.';
+                this.loadError = this.messageFrom(err) || 'Content could not be loaded.';
             })
-            .finally(() => {
-                this.isLoading = false;
+            .finally(() => { this.isLoading = false; });
+    }
+
+    messageFrom(err) {
+        if (!err) return '';
+        if (err.body && err.body.message) return err.body.message;
+        return err.message || '';
+    }
+
+    // ─── rail ─────────────────────────────────────────────────────────────────
+
+    get railSections() {
+        return this.sections.map((s, i) => ({
+            ...s,
+            isActive: s.sectionKey === this.activeKey,
+            isDirty: this.dirtyKeys.indexOf(s.sectionKey) > -1,
+            fieldCount: this.records.filter((r) => r.sectionKey === s.sectionKey).length,
+            itemClass: 'sec'
+                + (s.sectionKey === this.activeKey ? ' sec--active' : '')
+                + (s.active === false ? ' sec--off' : ''),
+            isFirst: i === 0,
+            isLast: i === this.sections.length - 1,
+            toggleLabel: s.active === false ? 'Show on page' : 'Hide from page'
+        }));
+    }
+
+    get sectionCount() { return this.sections.length; }
+
+    handleSelectSection(event) {
+        this.activeKey = event.currentTarget.dataset.key;
+    }
+
+    handleToggleReorder() {
+        this.reorderMode = !this.reorderMode;
+    }
+
+    get reorderLabel() { return this.reorderMode ? 'Done' : 'Rearrange'; }
+
+    get reorderVariant() { return this.reorderMode ? 'brand' : 'neutral'; }
+
+    get railHint() {
+        return this.reorderMode
+            ? 'Drag a section, or use the arrows. Order here is the order on the page.'
+            : 'Order here is the order on the page.';
+    }
+
+    handleMoveUp(event) { this.move(event.currentTarget.dataset.key, -1); }
+    handleMoveDown(event) { this.move(event.currentTarget.dataset.key, 1); }
+
+    move(key, delta) {
+        const from = this.sections.findIndex((s) => s.sectionKey === key);
+        const to = from + delta;
+        if (from < 0 || to < 0 || to >= this.sections.length) return;
+        const next = [...this.sections];
+        next.splice(to, 0, next.splice(from, 1)[0]);
+        this.sections = next;
+        this.persistOrder();
+    }
+
+    handleDragStart(event) { this._dragKey = event.currentTarget.dataset.key; }
+
+    handleDragOver(event) { event.preventDefault(); }
+
+    handleDrop(event) {
+        event.preventDefault();
+        const target = event.currentTarget.dataset.key;
+        if (!this._dragKey || this._dragKey === target) return;
+        const from = this.sections.findIndex((s) => s.sectionKey === this._dragKey);
+        const to = this.sections.findIndex((s) => s.sectionKey === target);
+        if (from < 0 || to < 0) return;
+        const next = [...this.sections];
+        next.splice(to, 0, next.splice(from, 1)[0]);
+        this.sections = next;
+        this._dragKey = '';
+        this.persistOrder();
+    }
+
+    persistOrder() {
+        this.isSaving = true;
+        this.saveMessage = 'Saving order…';
+        saveSectionOrder({ sectionIds: this.sections.map((s) => s.id) })
+            .then(() => { this.saveMessage = 'Order saved'; })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'The new order could not be saved.';
+            })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    handleToggleActive(event) {
+        const key = event.currentTarget.dataset.key;
+        const section = this.sections.find((s) => s.sectionKey === key);
+        if (!section) return;
+        const next = !(section.active !== false);
+        this.isSaving = true;
+        setSectionActive({ sectionId: section.id, active: next })
+            .then(() => {
+                this.sections = this.sections.map((s) =>
+                    s.sectionKey === key ? { ...s, active: next } : s);
+                this.saveMessage = next ? 'Section shown' : 'Section hidden';
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The section could not be updated.';
+            })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    // ─── field editor ─────────────────────────────────────────────────────────
+
+    get activeSection() {
+        return this.sections.find((s) => s.sectionKey === this.activeKey);
+    }
+
+    get activeSectionLabel() {
+        const s = this.activeSection;
+        return s ? (s.label || s.sectionKey) : '';
+    }
+
+    get activeSectionHelp() {
+        const s = this.activeSection;
+        return s ? (s.helpText || '') : '';
+    }
+
+    get activeAddress() {
+        return `${this.offeringKey}::${this.templateType}::${this.activeKey}`;
+    }
+
+    get activeFields() {
+        return this.records
+            .filter((r) => r.sectionKey === this.activeKey)
+            .map((r) => {
+                const type = r.fieldType || 'text';
+                const value = r[COLUMN[type]] || '';
+                return {
+                    ...r,
+                    value,
+                    isJson: type === 'json',
+                    isLong: type === 'rich' || value.length > 80,
+                    isShort: !(type === 'json') && !(type === 'rich' || value.length > 80),
+                    column: COLUMN[type],
+                    address: `${this.activeKey}::${r.fieldKey}`
+                };
             });
     }
 
-    handleMouseDown() {
-        this.isDraggingDivider = true;
+    get fieldCountLabel() {
+        const n = this.activeFields.length;
+        return `${n} field${n === 1 ? '' : 's'}`;
     }
 
-    handleMouseMove(event) {
-        if (!this.isDraggingDivider) return;
-        const gcm = this.template.querySelector('.gcm-split');
-        if (!gcm) return;
-        const rect = gcm.getBoundingClientRect();
-        const newPos = ((event.clientX - rect.left) / rect.width) * 100;
-        if (newPos > 40 && newPos < 80) {
-            this.dividerPos = newPos;
+    handleFieldChange(event) {
+        const id = event.currentTarget.dataset.id;
+        const column = event.currentTarget.dataset.column;
+        const value = event.target.value;
+        this.records = this.records.map((r) =>
+            r.id === id ? { ...r, [column]: value } : r);
+        if (this.dirtyKeys.indexOf(this.activeKey) === -1) {
+            this.dirtyKeys = [...this.dirtyKeys, this.activeKey];
         }
+        this.scheduleSave();
     }
 
-    handleMouseUp() {
-        this.isDraggingDivider = false;
+    scheduleSave() {
+        this.saveMessage = 'Editing…';
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        clearTimeout(this._saveTimer);
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._saveTimer = setTimeout(() => { this.saveDraft(); }, 900);
     }
 
-    get hasContent() {
-        return (this._allRecords.length + this._pendingStubs.length) > 0;
-    }
-
-    get draftSections() {
-        const combined = [...this._draftRecords, ...this._pendingStubs];
-        const map = new Map();
-        combined.forEach((rec) => {
-            const sk = rec.sectionKey;
-            if (!map.has(sk)) map.set(sk, []);
-            map.get(sk).push(rec);
-        });
-        const result = [];
-        map.forEach((records, sectionKey) => {
-            const meta = sectionMeta(this.templateType, sectionKey);
-            result.push({ sectionKey, records, label: meta.label, help: meta.help, order: meta.order });
-        });
-        result.sort((a, b) => (a.order - b.order) || a.sectionKey.localeCompare(b.sectionKey));
-        return result;
-    }
-
-    get editorStyle() {
-        return `width: ${this.dividerPos}%;`;
-    }
-
-    get previewStyle() {
-        return `width: ${100 - this.dividerPos}%;`;
-    }
-
-    get hasDraftChanges() {
-        // Simple comparison: check if draft differs from published
-        return JSON.stringify(this._draftRecords) !== JSON.stringify(this._allRecords);
-    }
-
-    get sections() {
-        const combined = [...this._allRecords, ...this._pendingStubs];
-        const map = new Map();
-        combined.forEach((rec) => {
-            const sk = rec.sectionKey;
-            if (!map.has(sk)) map.set(sk, []);
-            map.get(sk).push(rec);
-        });
-        const result = [];
-        map.forEach((records, sectionKey) => {
-            const meta = sectionMeta(this.templateType, sectionKey);
-            result.push({ sectionKey, records, label: meta.label, help: meta.help, order: meta.order });
-        });
-        // Known sections in their real page order first; anything not in the
-        // schema yet falls to the back, alphabetically, instead of breaking.
-        result.sort((a, b) => (a.order - b.order) || a.sectionKey.localeCompare(b.sectionKey));
-        return result;
+    saveDraft() {
+        const dirty = this.records.filter((r) => this.dirtyKeys.indexOf(r.sectionKey) > -1);
+        if (!dirty.length) return;
+        this.isSaving = true;
+        this.saveMessage = 'Saving…';
+        saveContentRecords({ payloads: dirty })
+            .then(() => {
+                this.saveMessage = 'Draft saved';
+                this.dirtyKeys = [];
+            })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'Changes could not be saved.';
+            })
+            .finally(() => { this.isSaving = false; });
     }
 
     handleTemplateChange(event) {
         this.templateType = event.detail.value;
-        this.loadContent();
+        this.activeKey = '';
+        this.load();
     }
 
-    handleRefresh() {
-        this.loadContent();
+    handleRefresh() { this.load(); }
+
+    handleDismissError() { this.loadError = ''; }
+
+    // ─── preview ──────────────────────────────────────────────────────────────
+    // Rendered by the real maStory component, driven from the draft. Nothing
+    // about the page is reimplemented here, so the preview cannot drift from
+    // what the site actually serves.
+
+    get previewSections() {
+        return this.sections
+            .filter((s) => s.active !== false)
+            .map((s) => ({
+                sectionKey: s.sectionKey,
+                label: s.label,
+                layoutType: s.layoutType,
+                width: s.width
+            }));
     }
 
-    handleContentSaved(event) {
-        const saved = event.detail.record;
-        // Update draft records immediately for live preview
-        const draftIdx = this._draftRecords.findIndex(
-            (r) => r.contentAddress === saved.contentAddress || (saved.id && r.id === saved.id)
-        );
-        if (draftIdx >= 0) {
-            const updated = [...this._draftRecords];
-            updated[draftIdx] = saved;
-            this._draftRecords = updated;
-        } else {
-            this._draftRecords = [...this._draftRecords, saved];
-        }
-
-        // Replace matching record in _allRecords (or add if new).
-        const idx = this._allRecords.findIndex(
-            (r) => r.contentAddress === saved.contentAddress || (saved.id && r.id === saved.id)
-        );
-        if (idx >= 0) {
-            const updated = [...this._allRecords];
-            updated[idx] = saved;
-            this._allRecords = updated;
-        } else {
-            this._allRecords = [...this._allRecords, saved];
-        }
-        // Remove any matching pending stub
-        this._pendingStubs = this._pendingStubs.filter(
-            (s) => s.contentAddress !== saved.contentAddress
-        );
+    get previewContent() {
+        const map = {};
+        this.records.forEach((r) => {
+            const type = r.fieldType || 'text';
+            map[`${r.sectionKey}::${r.fieldKey}`] = r[COLUMN[type]] || '';
+        });
+        return map;
     }
 
-    handleContentDeleted(event) {
-        const deleted = event.detail.record;
-        this._allRecords = this._allRecords.filter((r) => r.id !== deleted.id);
-        this._pendingStubs = this._pendingStubs.filter(
-            (s) => s.contentAddress !== deleted.contentAddress
-        );
-    }
+    get isStoryTemplate() { return this.templateType === 'story'; }
 
-    handleFieldCreate(event) {
-        const stub = event.detail.record;
-        // Show optimistically while the user edits and saves via gtmContentField.
-        const exists = this._allRecords.some((r) => r.contentAddress === stub.contentAddress)
-            || this._pendingStubs.some((s) => s.contentAddress === stub.contentAddress);
-        if (!exists) {
-            this._pendingStubs = [...this._pendingStubs, stub];
-        }
-    }
+    get hasSections() { return !this.isLoading && this.sections.length > 0; }
 
-    handleNewSection() {
-        this.newSectionOpen = true;
-    }
-
-    handleNewSectionKeyChange(event) {
-        this.newSectionKey = event.target.value;
-    }
-
-    handleNewSectionConfirm() {
-        const sk = (this.newSectionKey || '').trim();
-        if (!sk) return;
-        // Create a stub field so the section renders immediately.
-        const stub = {
-            id: null,
-            offeringKey: this.offeringKey,
-            templateType: this.templateType,
-            sectionKey: sk,
-            fieldKey: 'default',
-            fieldType: 'text',
-            textValue: null,
-            richValue: null,
-            jsonValue: null,
-            industryKey: null,
-            sortOrder: 0,
-            active: true,
-            contentAddress: `${this.offeringKey}::${this.templateType}::${sk}::default`
-        };
-        this._pendingStubs = [...this._pendingStubs, stub];
-        this.handleNewSectionCancel();
-    }
-
-    handleNewSectionCancel() {
-        this.newSectionOpen = false;
-        this.newSectionKey = '';
-    }
-
-    handleSaveDraft() {
-        this.isSaving = true;
-        this.saveMessage = 'Saving draft…';
-        // In a real implementation, this would mark all draft records with Status='Draft'
-        // and save them to Salesforce. For now, just confirm locally.
-        setTimeout(() => {
-            this.isSaving = false;
-            this.saveMessage = '✓ Draft saved';
-            setTimeout(() => {
-                this.saveMessage = '';
-            }, 2000);
-        }, 500);
-    }
-
-    handlePublish() {
-        this.isSaving = true;
-        this.saveMessage = 'Publishing…';
-        // In a real implementation:
-        // 1. Create version history records for current published state
-        // 2. Mark all draft records with Status='Published'
-        // 3. Update Version_Number and Last_Published_Date
-        // 4. Save to Salesforce
-        setTimeout(() => {
-            this._allRecords = JSON.parse(JSON.stringify(this._draftRecords));
-            this.isSaving = false;
-            this.saveMessage = '✓ Published';
-            setTimeout(() => {
-                this.saveMessage = '';
-            }, 2000);
-        }, 500);
-    }
-
-    handleToggleVersionHistory() {
-        this.showVersionHistory = !this.showVersionHistory;
-    }
+    get isEmpty() { return !this.isLoading && this.sections.length === 0; }
 }

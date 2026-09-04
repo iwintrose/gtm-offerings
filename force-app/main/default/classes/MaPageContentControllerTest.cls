@@ -266,4 +266,95 @@ private class MaPageContentControllerTest {
         Test.stopTest();
         System.assert(threw, 'Blank ID should throw AuraHandledException');
     }
+
+    // ─── editor section methods ───────────────────────────────────────────────
+
+    private static MA_Page_Section__c pageSection(String key, Integer sortOrder, Boolean active) {
+        return new MA_Page_Section__c(
+            Section_Address__c = OFFERING + '::' + TMPL + '::' + key,
+            Offering_Key__c    = OFFERING,
+            Template_Type__c   = TMPL,
+            Section_Key__c     = key,
+            Label__c           = key,
+            Layout_Type__c     = 'hero',
+            Width__c           = 'standard',
+            Sort_Order__c      = sortOrder,
+            Active__c          = active
+        );
+    }
+
+    @IsTest
+    static void editorSectionsIncludeInactiveOnes() {
+        insert new List<MA_Page_Section__c>{
+            pageSection('hero', 10, true),
+            pageSection('faq', 20, false)
+        };
+
+        Test.startTest();
+        List<MaPageContentController.EditorSection> secs =
+            MaPageContentController.getEditorSections(OFFERING, TMPL);
+        Test.stopTest();
+
+        System.assertEquals(2, secs.size(),
+            'The editor shows switched-off sections so they can be restored');
+        System.assertEquals('hero', secs[0].sectionKey, 'Ordered by Sort_Order__c');
+        System.assertEquals(false, secs[1].active, 'Inactive flag round-trips');
+    }
+
+    @IsTest
+    static void saveSectionOrderRewritesSortOrder() {
+        List<MA_Page_Section__c> secs = new List<MA_Page_Section__c>{
+            pageSection('hero', 10, true),
+            pageSection('faq', 20, true)
+        };
+        insert secs;
+
+        Test.startTest();
+        // Rail order reversed: faq first.
+        MaPageContentController.saveSectionOrder(
+            new List<String>{ secs[1].Id, secs[0].Id });
+        Test.stopTest();
+
+        Map<Id, MA_Page_Section__c> after = new Map<Id, MA_Page_Section__c>(
+            [SELECT Id, Sort_Order__c FROM MA_Page_Section__c]);
+        System.assert(after.get(secs[1].Id).Sort_Order__c < after.get(secs[0].Id).Sort_Order__c,
+            'The section moved to the top of the rail sorts first');
+    }
+
+    @IsTest
+    static void saveSectionOrderIgnoresEmptyInput() {
+        Test.startTest();
+        MaPageContentController.saveSectionOrder(null);
+        MaPageContentController.saveSectionOrder(new List<String>());
+        Test.stopTest();
+        System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Section__c],
+            'No rows created or touched by an empty reorder');
+    }
+
+    @IsTest
+    static void setSectionActiveTogglesVisibility() {
+        MA_Page_Section__c sec = pageSection('faq', 10, true);
+        insert sec;
+
+        Test.startTest();
+        MaPageContentController.setSectionActive(sec.Id, false);
+        Test.stopTest();
+
+        System.assertEquals(false,
+            [SELECT Active__c FROM MA_Page_Section__c WHERE Id = :sec.Id].Active__c,
+            'Section is switched off without being deleted');
+    }
+
+    @IsTest
+    static void setSectionActiveRejectsBlankId() {
+        Boolean threw = false;
+        Test.startTest();
+        try {
+            MaPageContentController.setSectionActive('', true);
+        } catch (AuraHandledException e) {
+            threw = true;
+        }
+        Test.stopTest();
+        System.assert(threw, 'A blank section id is rejected');
+    }
 }

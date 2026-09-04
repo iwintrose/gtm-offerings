@@ -131,6 +131,89 @@ public without sharing class MaPageContentController {
 
     // ─── Private helpers ─────────────────────────────────────────────────────
 
+    /**
+     * Sections for the editor: every row including inactive ones, so the rail
+     * can show and restore a section that has been switched off. Distinct from
+     * MaPageContentReader.getPageLayout, which is cacheable, guest-facing and
+     * returns only what renders.
+     */
+    @AuraEnabled(cacheable=false)
+    public static List<EditorSection> getEditorSections(String offeringKey, String templateType) {
+        List<EditorSection> out = new List<EditorSection>();
+        if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
+            return out;
+        }
+        for (MA_Page_Section__c sec : [
+            SELECT Id, Section_Key__c, Label__c, Help_Text__c, Layout_Type__c,
+                   Width__c, Sort_Order__c, Active__c
+            FROM   MA_Page_Section__c
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
+            ORDER BY Sort_Order__c ASC NULLS LAST, Section_Key__c ASC
+            LIMIT 200
+        ]) {
+            EditorSection e = new EditorSection();
+            e.id         = sec.Id;
+            e.sectionKey = sec.Section_Key__c;
+            e.label      = sec.Label__c;
+            e.helpText   = sec.Help_Text__c;
+            e.layoutType = sec.Layout_Type__c;
+            e.width      = sec.Width__c;
+            e.sortOrder  = sec.Sort_Order__c;
+            e.active     = sec.Active__c;
+            out.add(e);
+        }
+        return out;
+    }
+
+    /**
+     * Persists a new section order. Takes ids in the order the rail shows them
+     * and rewrites Sort_Order__c to match, so the page follows the records.
+     */
+    @AuraEnabled
+    public static void saveSectionOrder(List<String> sectionIds) {
+        if (sectionIds == null || sectionIds.isEmpty()) {
+            return;
+        }
+        List<MA_Page_Section__c> updates = new List<MA_Page_Section__c>();
+        Integer position = 0;
+        for (String id : sectionIds) {
+            position += 10;
+            updates.add(new MA_Page_Section__c(Id = id, Sort_Order__c = position));
+        }
+        try {
+            update updates;
+        } catch (DmlException e) {
+            throw new AuraHandledException('Could not save the section order: ' + e.getMessage());
+        }
+    }
+
+    /**
+     * Toggles a section on or off without deleting it or its content rows.
+     */
+    @AuraEnabled
+    public static void setSectionActive(String sectionId, Boolean active) {
+        if (String.isBlank(sectionId) || active == null) {
+            throw new AuraHandledException('A section id and active flag are both required.');
+        }
+        try {
+            update new MA_Page_Section__c(Id = sectionId, Active__c = active);
+        } catch (DmlException e) {
+            throw new AuraHandledException('Could not update the section: ' + e.getMessage());
+        }
+    }
+
+    public class EditorSection {
+        @AuraEnabled public String  id          { get; set; }
+        @AuraEnabled public String  sectionKey  { get; set; }
+        @AuraEnabled public String  label       { get; set; }
+        @AuraEnabled public String  helpText    { get; set; }
+        @AuraEnabled public String  layoutType  { get; set; }
+        @AuraEnabled public String  width       { get; set; }
+        @AuraEnabled public Decimal sortOrder   { get; set; }
+        @AuraEnabled public Boolean active      { get; set; }
+    }
+
     private static String resolveValue(MA_Page_Content__c rec) {
         if (rec.Field_Type__c == 'rich')   return rec.Rich_Value__c;
         if (rec.Field_Type__c == 'json')   return rec.JSON_Value__c;
