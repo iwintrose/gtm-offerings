@@ -66,6 +66,11 @@ public without sharing class MaPageContentReader {
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             AND    Active__c        = true
+            // Draft_State__c is deliberately not read here: the public page
+            // shows what was published, and a pending reorder, hide or delete
+            // is not published. A section created in the editor is Draft until
+            // someone publishes it, so it does not appear at all.
+            AND    Status__c        = 'Published'
             ORDER BY Sort_Order__c ASC NULLS LAST, Section_Key__c ASC
             LIMIT 200
         ]) {

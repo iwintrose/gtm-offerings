@@ -2,16 +2,16 @@ import { LightningElement, api, track, wire } from 'lwc';
 import { CurrentPageReference } from 'lightning/navigation';
 import getOfferings from '@salesforce/apex/MaPageContentController.getOfferings';
 import getTemplateSummary from '@salesforce/apex/MaPageContentController.getTemplateSummary';
-import getEditorSections from '@salesforce/apex/MaPageContentController.getEditorSections';
+import getEditorSections from '@salesforce/apex/MaPageSectionController.getEditorSections';
 import getAllContent from '@salesforce/apex/MaPageContentController.getAllContent';
 import saveDrafts from '@salesforce/apex/MaPageContentController.saveDrafts';
 import publishPage from '@salesforce/apex/MaPageContentController.publishPage';
 import discardDrafts from '@salesforce/apex/MaPageContentController.discardDrafts';
-import saveSectionOrder from '@salesforce/apex/MaPageContentController.saveSectionOrder';
-import setSectionActive from '@salesforce/apex/MaPageContentController.setSectionActive';
-import createSection from '@salesforce/apex/MaPageContentController.createSection';
-import deleteSection from '@salesforce/apex/MaPageContentController.deleteSection';
-import createField from '@salesforce/apex/MaPageContentController.createField';
+import saveSectionOrder from '@salesforce/apex/MaPageSectionController.saveSectionOrder';
+import setSectionActive from '@salesforce/apex/MaPageSectionController.setSectionActive';
+import createSection from '@salesforce/apex/MaPageSectionController.createSection';
+import deleteSection from '@salesforce/apex/MaPageSectionController.deleteSection';
+import createField from '@salesforce/apex/MaPageSectionController.createField';
 // One definition of what a layout is made of, shared with the renderer.
 import { addableLayouts, fieldsFor } from 'c/gtmPageLayouts';
 

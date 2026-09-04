@@ -1,0 +1,51 @@
+<template>
+  <div class="pv">
+    <div class="pv-head">
+      <span class="pv-live" title="The preview re-renders on every keystroke">
+        <span class="lv"></span>{stateLabel}
+      </span>
+      <span class="pv-url" title={urlTitle}>{urlLabel}</span>
+
+      <div class="vp">
+        <button class={fullClass} data-dev="full" onclick={handleDevice}
+                title="Fit the panel — renders at whatever width the panel gives it">Desktop</button>
+        <button class={tabletClass} data-dev="tablet" onclick={handleDevice}
+                title="Tablet — 834 × 1112">Tablet</button>
+        <button class={phoneClass} data-dev="phone" onclick={handleDevice}
+                title="Phone — 414 × 896">Phone</button>
+      </div>
+
+      <span class="vpsize" title="Viewport width the page is rendered at, in CSS pixels">
+        <input class="vpw" type="number" min="320" max="1920" step="1"
+               value={widthValue} onchange={handleWidth} oninput={handleWidth}>
+        <span class="px">px</span>
+      </span>
+
+      <select class="zoomsel" value={zoom} disabled={zoomDisabled} onchange={handleZoom}
+              title="Canvas zoom — the page still renders at full size">
+        <option value="fit">Fit</option>
+        <option value="1">100%</option>
+        <option value="0.75">75%</option>
+        <option value="0.5">50%</option>
+        <option value="0.25">25%</option>
+      </select>
+      <span class="zoomread">{zoomLabel}</span>
+    </div>
+
+    <div class="pv-stage">
+      <div class="pv-scroll" onscroll={handleScroll} onwheel={handleIntent}
+           onpointerdown={handleIntent} onkeydown={handleIntent}>
+        <div class="dev-slot">
+          <div class="device">
+            <c-ma-story
+              offering-key={offeringKey}
+              preview-sections={sections}
+              preview-content={content}></c-ma-story>
+          </div>
+          <button class="grip" aria-label="Drag to resize the viewport"
+                  title="Drag to resize the viewport" onpointerdown={handleGripDown}></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

@@ -132,296 +132,52 @@ public without sharing class MaPageContentController {
 
     // ─── Private helpers ─────────────────────────────────────────────────────
 
-    /**
-     * Sections for the editor: every row including inactive ones, so the rail
-     * can show and restore a section that has been switched off. Distinct from
-     * MaPageContentReader.getPageLayout, which is cacheable, guest-facing and
-     * returns only what renders.
-     */
+
+    // ─── compatibility shims ──────────────────────────────────────────────────
+    // Section methods moved to MaPageSectionController. Lightning caches
+    // component bundles in the browser, so a client loaded before that split
+    // still imports them from here and would fail with "No apex action
+    // available" until its cache cleared. These delegate rather than
+    // duplicate, and can be deleted once no cached bundle can still be live.
+
     @AuraEnabled(cacheable=false)
-    public static List<EditorSection> getEditorSections(String offeringKey, String templateType) {
-        List<EditorSection> out = new List<EditorSection>();
-        if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
-            return out;
-        }
-        for (MA_Page_Section__c sec : [
-            SELECT Id, Section_Key__c, Label__c, Help_Text__c, Layout_Type__c,
-                   Width__c, Sort_Order__c, Active__c
-            FROM   MA_Page_Section__c
-            WHERE  Offering_Key__c  = :offeringKey
-            AND    Template_Type__c = :templateType
-            ORDER BY Sort_Order__c ASC NULLS LAST, Section_Key__c ASC
-            LIMIT 200
-        ]) {
-            EditorSection e = new EditorSection();
-            e.id         = sec.Id;
-            e.sectionKey = sec.Section_Key__c;
-            e.label      = sec.Label__c;
-            e.helpText   = sec.Help_Text__c;
-            e.layoutType = sec.Layout_Type__c;
-            e.width      = sec.Width__c;
-            e.sortOrder  = sec.Sort_Order__c;
-            e.active     = sec.Active__c;
-            out.add(e);
-        }
-        return out;
+    public static List<MaPageSectionController.EditorSection> getEditorSections(
+        String offeringKey, String templateType
+    ) {
+        return MaPageSectionController.getEditorSections(offeringKey, templateType);
     }
 
-    /**
-     * Persists a new section order. Takes ids in the order the rail shows them
-     * and rewrites Sort_Order__c to match, so the page follows the records.
-     */
     @AuraEnabled
     public static void saveSectionOrder(List<String> sectionIds) {
-        if (sectionIds == null || sectionIds.isEmpty()) {
-            return;
-        }
-        List<MA_Page_Section__c> updates = new List<MA_Page_Section__c>();
-        Integer position = 0;
-        for (String id : sectionIds) {
-            position += 10;
-            updates.add(new MA_Page_Section__c(Id = id, Sort_Order__c = position));
-        }
-        try {
-            update updates;
-        } catch (DmlException e) {
-            throw new AuraHandledException('Could not save the section order: ' + e.getMessage());
-        }
+        MaPageSectionController.saveSectionOrder(sectionIds);
     }
 
-    /**
-     * Toggles a section on or off without deleting it or its content rows.
-     */
     @AuraEnabled
     public static void setSectionActive(String sectionId, Boolean active) {
-        if (String.isBlank(sectionId) || active == null) {
-            throw new AuraHandledException('A section id and active flag are both required.');
-        }
-        try {
-            update new MA_Page_Section__c(Id = sectionId, Active__c = active);
-        } catch (DmlException e) {
-            throw new AuraHandledException('Could not update the section: ' + e.getMessage());
-        }
+        MaPageSectionController.setSectionActive(sectionId, active);
     }
 
-    /**
-     * Creates a section and, in the same transaction, the content rows its
-     * layout declares. The field list comes from the client because the layout
-     * vocabulary is defined once, in c/gtmPageLayouts, and shared by the
-     * renderer and the editor; duplicating it here is how the two would drift.
-     * Everything in it is validated below rather than trusted.
-     *
-     * A section without its rows would render built-in fallbacks and look
-     * broken, so the two are created together or not at all.
-     */
-    @AuraEnabled
-    public static String createSection(
-        String offeringKey,
-        String templateType,
-        String sectionKey,
-        String label,
-        String layoutType,
-        String width,
-        List<FieldSeed> fields
-    ) {
-        if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
-            throw new AuraHandledException('An offering and a page are both required.');
-        }
-        String key = normaliseKey(sectionKey);
-        if (String.isBlank(key)) {
-            throw new AuraHandledException(
-                'A section needs a name made of letters or numbers.'
-            );
-        }
-        if (String.isBlank(layoutType)) {
-            throw new AuraHandledException('A section needs a layout.');
-        }
-        // The key is the address of every field under it, so a collision would
-        // silently merge two sections' content.
-        if (![
-            SELECT Id FROM MA_Page_Section__c
-            WHERE Offering_Key__c = :offeringKey
-            AND   Template_Type__c = :templateType
-            AND   Section_Key__c = :key
-            LIMIT 1
-        ].isEmpty()) {
-            throw new AuraHandledException(
-                'This page already has a section called "' + key + '". Pick another name.'
-            );
-        }
-
-        MA_Page_Section__c sec = new MA_Page_Section__c();
-        sec.Section_Address__c = offeringKey + '::' + templateType + '::' + key;
-        sec.Offering_Key__c    = offeringKey;
-        sec.Template_Type__c   = templateType;
-        sec.Section_Key__c     = key;
-        sec.Label__c           = String.isBlank(label) ? key : label;
-        sec.Layout_Type__c     = layoutType;
-        sec.Width__c           = String.isBlank(width) ? 'standard' : width;
-        sec.Active__c          = true;
-        sec.Sort_Order__c      = nextSortOrder(offeringKey, templateType);
-
-        List<MA_Page_Content__c> rows = new List<MA_Page_Content__c>();
-        Integer position = 0;
-        for (FieldSeed f : (fields == null ? new List<FieldSeed>() : fields)) {
-            if (f == null || String.isBlank(f.fieldKey)) continue;
-            position += 10;
-            MA_Page_Content__c row = new MA_Page_Content__c();
-            row.Content_Address__c = contentAddress(offeringKey, templateType, key, f.fieldKey);
-            row.Offering_Key__c    = offeringKey;
-            row.Template_Type__c   = templateType;
-            row.Section_Key__c     = key;
-            row.Field_Key__c       = f.fieldKey;
-            row.Field_Type__c      = String.isBlank(f.fieldType) ? 'text' : f.fieldType;
-            row.Label__c           = f.label;
-            row.Sort_Order__c      = position;
-            row.Active__c          = true;
-            // A json field with no value is not an empty string, it is an
-            // empty list; the editor parses this column to build its repeater.
-            if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
-            rows.add(row);
-        }
-
-        Savepoint sp = Database.setSavepoint();
-        try {
-            insert sec;
-            if (!rows.isEmpty()) insert rows;
-        } catch (DmlException e) {
-            Database.rollback(sp);
-            throw new AuraHandledException('The section could not be created: ' + e.getMessage());
-        }
-        return sec.Id;
-    }
-
-    /**
-     * Deletes a section and every content row addressed under it. Content rows
-     * are matched by offering + template + section key rather than by a lookup,
-     * because the address is what ties them together.
-     *
-     * This is the destructive counterpart to setSectionActive: hiding a section
-     * keeps its content, deleting it does not.
-     */
     @AuraEnabled
     public static Integer deleteSection(String sectionId) {
-        if (String.isBlank(sectionId)) {
-            throw new AuraHandledException('A section id is required.');
-        }
-        List<MA_Page_Section__c> found = [
-            SELECT Id, Offering_Key__c, Template_Type__c, Section_Key__c
-            FROM   MA_Page_Section__c
-            WHERE  Id = :sectionId
-            LIMIT  1
-        ];
-        if (found.isEmpty()) {
-            throw new AuraHandledException('That section no longer exists.');
-        }
-        MA_Page_Section__c sec = found[0];
-        List<MA_Page_Content__c> rows = [
-            SELECT Id FROM MA_Page_Content__c
-            WHERE  Offering_Key__c  = :sec.Offering_Key__c
-            AND    Template_Type__c = :sec.Template_Type__c
-            AND    Section_Key__c   = :sec.Section_Key__c
-            LIMIT  2000
-        ];
-        Savepoint sp = Database.setSavepoint();
-        try {
-            if (!rows.isEmpty()) delete rows;
-            delete sec;
-        } catch (DmlException e) {
-            Database.rollback(sp);
-            throw new AuraHandledException('The section could not be deleted: ' + e.getMessage());
-        }
-        return rows.size();
+        return MaPageSectionController.deleteSection(sectionId);
     }
 
-    /**
-     * Creates a single content row for a field the section's layout declares
-     * but has no record for. This is a repair action, not a way to invent
-     * fields: a field the renderer does not know about would never appear on
-     * the page, so the editor only offers the layout's own vocabulary.
-     */
+    @AuraEnabled
+    public static String createSection(
+        String offeringKey, String templateType, String sectionKey, String label,
+        String layoutType, String width, List<MaPageSectionController.FieldSeed> fields
+    ) {
+        return MaPageSectionController.createSection(
+            offeringKey, templateType, sectionKey, label, layoutType, width, fields);
+    }
+
     @AuraEnabled
     public static String createField(
-        String offeringKey,
-        String templateType,
-        String sectionKey,
-        String fieldKey,
-        String fieldType,
-        String label
+        String offeringKey, String templateType, String sectionKey,
+        String fieldKey, String fieldType, String label
     ) {
-        if (String.isBlank(offeringKey) || String.isBlank(templateType)
-            || String.isBlank(sectionKey) || String.isBlank(fieldKey)) {
-            throw new AuraHandledException('An offering, page, section and field are all required.');
-        }
-        String address = contentAddress(offeringKey, templateType, sectionKey, fieldKey);
-        if (![SELECT Id FROM MA_Page_Content__c WHERE Content_Address__c = :address LIMIT 1].isEmpty()) {
-            throw new AuraHandledException('That field already exists on this section.');
-        }
-        MA_Page_Content__c row = new MA_Page_Content__c();
-        row.Content_Address__c = address;
-        row.Offering_Key__c    = offeringKey;
-        row.Template_Type__c   = templateType;
-        row.Section_Key__c     = sectionKey;
-        row.Field_Key__c       = fieldKey;
-        row.Field_Type__c      = String.isBlank(fieldType) ? 'text' : fieldType;
-        row.Label__c           = label;
-        row.Active__c          = true;
-        row.Sort_Order__c      = 0;
-        if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
-        try {
-            insert row;
-        } catch (DmlException e) {
-            throw new AuraHandledException('The field could not be added: ' + e.getMessage());
-        }
-        return row.Id;
-    }
-
-    /**
-     * Sort order for a section appended to the end of a page. Steps of 10 so a
-     * later reorder has room to move one section between two others without
-     * rewriting every row.
-     */
-    private static Decimal nextSortOrder(String offeringKey, String templateType) {
-        AggregateResult[] top = [
-            SELECT MAX(Sort_Order__c) top
-            FROM   MA_Page_Section__c
-            WHERE  Offering_Key__c  = :offeringKey
-            AND    Template_Type__c = :templateType
-        ];
-        Decimal current = (top.isEmpty() || top[0].get('top') == null)
-            ? 0
-            : (Decimal) top[0].get('top');
-        return current + 10;
-    }
-
-    /**
-     * A section key is part of a content address, so it has to survive being
-     * concatenated and split on "::". Anything that is not a letter, a digit or
-     * an internal hyphen is dropped rather than escaped.
-     */
-    private static String normaliseKey(String raw) {
-        if (String.isBlank(raw)) return null;
-        String cleaned = raw.trim().toLowerCase().replaceAll('[^a-z0-9]+', '-');
-        cleaned = cleaned.replaceAll('^-+', '').replaceAll('-+$', '');
-        return String.isBlank(cleaned) ? null : cleaned.left(80);
-    }
-
-    /** One field to create alongside a new section. */
-    public class FieldSeed {
-        @AuraEnabled public String fieldKey  { get; set; }
-        @AuraEnabled public String fieldType { get; set; }
-        @AuraEnabled public String label     { get; set; }
-    }
-
-    public class EditorSection {
-        @AuraEnabled public String  id          { get; set; }
-        @AuraEnabled public String  sectionKey  { get; set; }
-        @AuraEnabled public String  label       { get; set; }
-        @AuraEnabled public String  helpText    { get; set; }
-        @AuraEnabled public String  layoutType  { get; set; }
-        @AuraEnabled public String  width       { get; set; }
-        @AuraEnabled public Decimal sortOrder   { get; set; }
-        @AuraEnabled public Boolean active      { get; set; }
+        return MaPageSectionController.createField(
+            offeringKey, templateType, sectionKey, fieldKey, fieldType, label);
     }
 
     /**
@@ -676,6 +432,12 @@ public without sharing class MaPageContentController {
      */
     @AuraEnabled
     public static Integer publishPage(String offeringKey, String templateType) {
+        // Structure first, and only then load the content rows. Publishing a
+        // pending section delete removes that section's content, so a list of
+        // drafts gathered beforehand would still hold rows that no longer
+        // exist and the update below would fail on them.
+        Integer structural = publishSections(offeringKey, templateType);
+
         // Draft_Value__c is a long text area, which SOQL cannot filter on, so
         // the "has a draft" test happens in Apex.
         List<MA_Page_Content__c> drafts = new List<MA_Page_Content__c>();
@@ -690,7 +452,7 @@ public without sharing class MaPageContentController {
         ]) {
             if (rec.Draft_Value__c != null) { drafts.add(rec); }
         }
-        if (drafts.isEmpty()) { return 0; }
+        if (drafts.isEmpty()) { return structural; }
 
         List<MA_Page_Content_Version__c> versions = new List<MA_Page_Content_Version__c>();
         for (MA_Page_Content__c rec : drafts) {
@@ -718,7 +480,69 @@ public without sharing class MaPageContentController {
         } catch (DmlException ex) {
             throw new AuraHandledException('Publish failed: ' + ex.getMessage());
         }
-        return drafts.size();
+        return drafts.size() + structural;
+    }
+
+    /**
+     * Applies a page's pending structural changes: a new section goes live, a
+     * pending order or visibility change is written to the real column, and a
+     * section marked for deletion is removed along with its content.
+     *
+     * Deletion is the one publish step with no undo — there is no version
+     * snapshot for a section — which is why the editor asks before marking one.
+     */
+    private static Integer publishSections(String offeringKey, String templateType) {
+        List<MA_Page_Section__c> secs = [
+            SELECT Id, Section_Key__c, Sort_Order__c, Active__c, Status__c, Draft_State__c
+            FROM   MA_Page_Section__c
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
+            LIMIT  200
+        ];
+        List<MA_Page_Section__c> updates = new List<MA_Page_Section__c>();
+        List<MA_Page_Section__c> removals = new List<MA_Page_Section__c>();
+        Set<String> removedKeys = new Set<String>();
+
+        for (MA_Page_Section__c sec : secs) {
+            Map<String, Object> d = MaPageSectionController.draftOf(sec);
+            Boolean wasNew = sec.Status__c == 'Draft';
+            if (d.isEmpty() && !wasNew) continue;
+
+            if (d.get('deleted') == true) {
+                removals.add(sec);
+                removedKeys.add(sec.Section_Key__c);
+                continue;
+            }
+            if (d.containsKey('sortOrder')) {
+                sec.Sort_Order__c = Decimal.valueOf(String.valueOf(d.get('sortOrder')));
+            }
+            if (d.containsKey('active')) {
+                sec.Active__c = Boolean.valueOf(d.get('active'));
+            }
+            sec.Draft_State__c = null;
+            sec.Status__c = 'Published';
+            updates.add(sec);
+        }
+        if (updates.isEmpty() && removals.isEmpty()) return 0;
+
+        List<MA_Page_Content__c> orphaned = removedKeys.isEmpty()
+            ? new List<MA_Page_Content__c>()
+            : [SELECT Id FROM MA_Page_Content__c
+               WHERE Offering_Key__c = :offeringKey
+               AND   Template_Type__c = :templateType
+               AND   Section_Key__c IN :removedKeys
+               LIMIT 2000];
+
+        Savepoint sp = Database.setSavepoint();
+        try {
+            if (!updates.isEmpty())  update updates;
+            if (!orphaned.isEmpty()) delete orphaned;
+            if (!removals.isEmpty()) delete removals;
+        } catch (DmlException ex) {
+            Database.rollback(sp);
+            throw new AuraHandledException('Publish failed on the page structure: ' + ex.getMessage());
+        }
+        return updates.size() + removals.size();
     }
 
     /**
@@ -727,6 +551,10 @@ public without sharing class MaPageContentController {
      */
     @AuraEnabled
     public static Integer discardDrafts(String offeringKey, String templateType) {
+        // Same ordering rule as publish: discarding a section that was never
+        // published deletes its content rows, so they must be gone before the
+        // remaining drafts are read.
+        Integer structural = discardSections(offeringKey, templateType);
         List<MA_Page_Content__c> drafts = [
             SELECT Id FROM MA_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
@@ -734,7 +562,7 @@ public without sharing class MaPageContentController {
             AND    Status__c        = 'Draft'
             LIMIT 2000
         ];
-        if (drafts.isEmpty()) { return 0; }
+        if (drafts.isEmpty()) { return structural; }
         for (MA_Page_Content__c rec : drafts) {
             rec.Draft_Value__c = null;
             rec.Status__c      = 'Published';
@@ -744,7 +572,55 @@ public without sharing class MaPageContentController {
         } catch (DmlException ex) {
             throw new AuraHandledException('Changes could not be discarded: ' + ex.getMessage());
         }
-        return drafts.size();
+        return drafts.size() + structural;
+    }
+
+    /**
+     * Reverts pending structural changes. A section created since the last
+     * publish is removed outright with its content: it has never been part of
+     * the published page, so there is nothing to revert it to.
+     */
+    private static Integer discardSections(String offeringKey, String templateType) {
+        List<MA_Page_Section__c> secs = [
+            SELECT Id, Section_Key__c, Status__c, Draft_State__c
+            FROM   MA_Page_Section__c
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
+            LIMIT  200
+        ];
+        List<MA_Page_Section__c> cleared = new List<MA_Page_Section__c>();
+        List<MA_Page_Section__c> removals = new List<MA_Page_Section__c>();
+        Set<String> removedKeys = new Set<String>();
+
+        for (MA_Page_Section__c sec : secs) {
+            if (sec.Status__c == 'Draft') {
+                removals.add(sec);
+                removedKeys.add(sec.Section_Key__c);
+            } else if (String.isNotBlank(sec.Draft_State__c)) {
+                sec.Draft_State__c = null;
+                cleared.add(sec);
+            }
+        }
+        if (cleared.isEmpty() && removals.isEmpty()) return 0;
+
+        List<MA_Page_Content__c> orphaned = removedKeys.isEmpty()
+            ? new List<MA_Page_Content__c>()
+            : [SELECT Id FROM MA_Page_Content__c
+               WHERE Offering_Key__c = :offeringKey
+               AND   Template_Type__c = :templateType
+               AND   Section_Key__c IN :removedKeys
+               LIMIT 2000];
+
+        Savepoint sp = Database.setSavepoint();
+        try {
+            if (!cleared.isEmpty())  update cleared;
+            if (!orphaned.isEmpty()) delete orphaned;
+            if (!removals.isEmpty()) delete removals;
+        } catch (DmlException ex) {
+            Database.rollback(sp);
+            throw new AuraHandledException('Changes could not be discarded: ' + ex.getMessage());
+        }
+        return cleared.size() + removals.size();
     }
 
     public class DraftEdit {
@@ -758,9 +634,6 @@ public without sharing class MaPageContentController {
         return rec.Text_Value__c;
     }
 
-    private static String contentAddress(String offeringKey, String templateType, String sectionKey, String fieldKey) {
-        return offeringKey + '::' + templateType + '::' + sectionKey + '::' + fieldKey;
-    }
 
     // ─── Inner wrapper ────────────────────────────────────────────────────────
 
@@ -824,7 +697,7 @@ public without sharing class MaPageContentController {
             rec.Sort_Order__c      = this.sortOrder == null ? 0 : this.sortOrder;
             rec.Active__c          = this.active == null ? true : this.active;
             // Content_Address__c is a plain Text external ID — Apex must set it.
-            rec.Content_Address__c = contentAddress(this.offeringKey, this.templateType, this.sectionKey, this.fieldKey);
+            rec.Content_Address__c = MaContentAddress.forField(this.offeringKey, this.templateType, this.sectionKey, this.fieldKey);
             return rec;
         }
     }
