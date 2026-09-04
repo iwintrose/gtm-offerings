@@ -62,7 +62,7 @@
     display: flex; flex-direction: column; min-height: 0;
     background: #fff; border-right: 1px solid #e5e5e5;
 }
-.gcm-preview { display: flex; flex-direction: column; min-height: 0; background: #f3f3f3; }
+.gcm-preview { min-height: 0; }
 
 .gcm-colhead {
     display: flex; align-items: center; gap: 0.4rem;
@@ -362,3 +362,17 @@
     font-size: 10.5px; color: #747474;
     word-break: break-all;
 }
+
+
+/* ── pending structural changes ──────────────────────────────────────────── */
+.sec-pending {
+    display: inline-block; margin-top: 0.15rem;
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #8c4b02; background: #fef5e7; border: 1px solid #f0d9a8;
+    border-radius: 3px; padding: 0 0.25rem;
+}
+.sec--doomed .sec-name { text-decoration: line-through; color: #969696; }
+.sec--doomed .sec-pending { color: #ba0517; background: #fdf2f2; border-color: #f2c2c2; }
+.sec--pending { border-left: 2px solid #dd7a01; }
+.mv--undo { color: #0176d3; }
+.mv--undo:hover:not(:disabled) { background: #eef4ff; }

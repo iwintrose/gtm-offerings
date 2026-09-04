@@ -12,6 +12,7 @@ import setSectionActive from '@salesforce/apex/MaPageSectionController.setSectio
 import createSection from '@salesforce/apex/MaPageSectionController.createSection';
 import deleteSection from '@salesforce/apex/MaPageSectionController.deleteSection';
 import createField from '@salesforce/apex/MaPageSectionController.createField';
+import restoreSection from '@salesforce/apex/MaPageSectionController.restoreSection';
 // One definition of what a layout is made of, shared with the renderer.
 import { addableLayouts, fieldsFor } from 'c/gtmPageLayouts';
 
@@ -228,106 +229,53 @@ export default class GtmContentManager extends LightningElement {
     // ─── rail ─────────────────────────────────────────────────────────────────
 
     get railSections() {
-        return this.sections.map((s, i) => ({
-            ...s,
-            icon: SECTION_ICONS[s.layoutType] || 'utility:record',
-            isDirty: this.dirtyKeys.indexOf(s.sectionKey) > -1,
-            fieldCount: this.records.filter((r) => r.sectionKey === s.sectionKey).length,
-            itemClass: 'sec'
-                + (s.sectionKey === this.activeKey ? ' sec--active' : '')
-                + (s.active === false ? ' sec--off' : ''),
-            isFirst: i === 0,
-            isLast: i === this.sections.length - 1,
-            toggleLabel: s.active === false ? 'Show on page' : 'Hide from page'
-        }));
+        return this.sections.map((s, i) => {
+            // What is pending on this section, said in the words an editor
+            // would use. A structural change is a draft like any other, so it
+            // has to be visible before Publish, not only afterwards.
+            let pending = '';
+            if (s.isDeleted) pending = 'Delete on publish';
+            else if (s.isNew) pending = 'New — not published';
+            else if (s.isHidden) pending = s.active === false ? 'Hide on publish' : 'Show on publish';
+            else if (s.isMoved) pending = 'Moved';
+
+            return {
+                ...s,
+                icon: SECTION_ICONS[s.layoutType] || 'utility:record',
+                isDirty: this.dirtyKeys.indexOf(s.sectionKey) > -1,
+                fieldCount: this.records.filter((r) => r.sectionKey === s.sectionKey).length,
+                itemClass: 'sec'
+                    + (s.sectionKey === this.activeKey ? ' sec--active' : '')
+                    + (s.active === false ? ' sec--off' : '')
+                    + (s.isDeleted ? ' sec--doomed' : '')
+                    + (s.isDraft ? ' sec--pending' : ''),
+                isFirst: i === 0,
+                isLast: i === this.sections.length - 1,
+                toggleLabel: s.active === false ? 'Show on page' : 'Hide from page',
+                pendingLabel: pending,
+                hasPending: !!pending,
+                canDelete: !s.isDeleted,
+                canRestore: s.isDeleted === true
+            };
+        });
     }
 
     get sectionCount() { return this.sections.length; }
 
+    // Picking a section in the rail moves the preview to it: c/gtmPagePreview
+    // scrolls its canvas when activeKey changes, so setting it is the whole
+    // binding. Without it the two halves of the editor describe the same page
+    // but never agree on where you are in it.
     handleSelectSection(event) {
         this.activeKey = event.currentTarget.dataset.key;
-        // Picking a section in the rail moves the preview to it. Without this
-        // the two halves of the editor describe the same page but never agree
-        // on where you are in it.
-        this.scrollPreviewTo(this.activeKey);
     }
 
-    // ─── rail ↔ preview sync ──────────────────────────────────────────────────
-
-    scrollPreviewTo(sectionKey) {
-        const pane = this.template.querySelector('.gcm-preview-body');
-        const story = this.template.querySelector('c-ma-story');
-        if (!pane || !story || typeof story.getSectionRects !== 'function') return;
-        const paneTop = pane.getBoundingClientRect().top;
-        const hit = story.getSectionRects().find((r) => r.sectionKey === sectionKey);
-        // Page chrome renders around the page rather than in the sequence, so
-        // it has no rect of its own; the top of the page is where it lives.
-        const target = hit ? pane.scrollTop + (hit.top - paneTop) - 8 : 0;
-        // A scroll this code started is not the reader scrolling. Clearing the
-        // intent flag as well as suppressing matters for the last section,
-        // where the pane cannot scroll far enough to honour the request and
-        // settles at its maximum — which the scroll-spy would otherwise read
-        // as "you are looking at the section above".
-        this._previewDriven = false;
-        this._suppressScrollSync = true;
-        pane.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-        // eslint-disable-next-line @lwc/lwc/no-async-operation
-        clearTimeout(this._syncTimer);
-        // Released once the smooth scroll has settled, so the scroll it just
-        // caused does not bounce the rail selection back.
-        // eslint-disable-next-line @lwc/lwc/no-async-operation
-        this._syncTimer = setTimeout(() => { this._suppressScrollSync = false; }, 500);
-    }
-
-    // Only a scroll the reader caused moves the rail. Typing re-renders the
-    // preview, which reflows it, which fires scroll — and syncing on that
-    // reassigned the active section mid-keystroke and took the cursor with it.
-    // A wheel, a drag or a key on the preview is the reader; a reflow is not.
-    handlePreviewIntent() {
-        this._previewDriven = true;
-        // eslint-disable-next-line @lwc/lwc/no-async-operation
-        clearTimeout(this._intentTimer);
-        // eslint-disable-next-line @lwc/lwc/no-async-operation
-        this._intentTimer = setTimeout(() => { this._previewDriven = false; }, 1200);
-    }
-
-    handlePreviewScroll() {
-        if (!this._previewDriven) return;
-        if (this._suppressScrollSync || this._scrollQueued) return;
-        this._scrollQueued = true;
-        // eslint-disable-next-line @lwc/lwc/no-async-operation
-        requestAnimationFrame(() => {
-            this._scrollQueued = false;
-            this.syncRailToPreview();
-        });
-    }
-
-    syncRailToPreview() {
-        const pane = this.template.querySelector('.gcm-preview-body');
-        const story = this.template.querySelector('c-ma-story');
-        if (!pane || !story || typeof story.getSectionRects !== 'function') return;
-        const rects = story.getSectionRects();
-        if (!rects.length) return;
-
-        // The last section can never cover the top of the pane: the pane runs
-        // out of scroll while the section before it is still up there. Reading
-        // the top alone therefore made the final section unselectable and
-        // snapped the rail back to the one above it. At the bottom of the
-        // scroll, the last section is what you are looking at.
-        const atBottom = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - 4;
-        let current = atBottom ? rects[rects.length - 1].sectionKey : '';
-
-        if (!current) {
-            const paneTop = pane.getBoundingClientRect().top;
-            // Otherwise: the last section whose top has passed the pane's top.
-            rects.forEach((r) => {
-                if (r.top - paneTop <= 24) current = r.sectionKey;
-            });
-        }
-        if (current && current !== this.activeKey) {
-            this.activeKey = current;
-            this.scrollRailTo(current);
-        }
+    // The reverse direction: the reader scrolled the preview, so follow.
+    handlePreviewSectionChange(event) {
+        const key = event.detail.sectionKey;
+        if (!key || key === this.activeKey) return;
+        this.activeKey = key;
+        this.scrollRailTo(key);
     }
 
     // Keeps the highlighted section visible when the preview drives the
@@ -344,6 +292,11 @@ export default class GtmContentManager extends LightningElement {
             body.scrollTop += rowRect.bottom - bodyRect.bottom + 4;
         }
     }
+
+    disconnectedCallback() {
+        clearTimeout(this._saveTimer);
+    }
+
 
     handleToggleReorder() { this.reorderMode = !this.reorderMode; }
 
@@ -617,10 +570,21 @@ export default class GtmContentManager extends LightningElement {
     // ─── publish ──────────────────────────────────────────────────────────────
 
     get draftCount() { return this.records.filter((r) => r.isDraft).length; }
-    get hasDrafts() { return this.draftCount > 0; }
+
+    // Reordering, hiding and deleting are unpublished changes too. Counting
+    // only field edits meant a page could be structurally rewritten and still
+    // report nothing to publish.
+    get structuralCount() { return this.sections.filter((s) => s.isDraft).length; }
+    get totalChanges() { return this.draftCount + this.structuralCount; }
+    get hasDrafts() { return this.totalChanges > 0; }
+
     get draftSummary() {
-        const n = this.draftCount;
-        return n === 1 ? '1 unpublished change' : `${n} unpublished changes`;
+        const parts = [];
+        const f = this.draftCount;
+        const st = this.structuralCount;
+        if (f) parts.push(f === 1 ? '1 field edited' : `${f} fields edited`);
+        if (st) parts.push(st === 1 ? '1 section changed' : `${st} sections changed`);
+        return parts.join(' · ') || 'No unpublished changes';
     }
 
     handleOpenExit() { this.exitOpen = true; }
@@ -741,12 +705,22 @@ export default class GtmContentManager extends LightningElement {
                 // below the fold; bring it into view rather than making the
                 // editor hunt for what it just added.
                 this.scrollRailTo(key);
-                this.scrollPreviewTo(key);
             })
             .catch((err) => {
                 this.saveMessage = '';
                 this.loadError = this.messageFrom(err) || 'The section could not be added.';
             })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    handleRestore(event) {
+        const key = event.currentTarget.dataset.key;
+        const section = this.sections.find((s) => s.sectionKey === key);
+        if (!section) return;
+        this.isSaving = true;
+        restoreSection({ sectionId: section.id })
+            .then(() => { this.saveMessage = 'Delete undone'; return this.loadPage(); })
+            .catch((err) => { this.loadError = this.messageFrom(err) || 'The section could not be restored.'; })
             .finally(() => { this.isSaving = false; });
     }
 
@@ -758,6 +732,7 @@ export default class GtmContentManager extends LightningElement {
             id: section.id,
             sectionKey: section.sectionKey,
             label: section.label || section.sectionKey,
+            isNew: section.isNew === true,
             fieldCount: this.records.filter((r) => r.sectionKey === section.sectionKey).length
         };
     }
@@ -770,6 +745,14 @@ export default class GtmContentManager extends LightningElement {
         return `"${this.deleteTarget.label}" and its ${n} field${n === 1 ? '' : 's'}`;
     }
 
+    // A section that was never published is removed outright; one that is on
+    // the live page is only marked, and the dialog has to say which, or
+    // "delete" looks like it did nothing.
+    get deleteIsImmediate() { return !!(this.deleteTarget && this.deleteTarget.isNew); }
+    get deleteConfirmLabel() {
+        return this.deleteIsImmediate ? 'Delete section' : 'Mark for deletion';
+    }
+
     handleCancelDelete() { this.deleteTarget = null; }
 
     handleConfirmDelete() {
@@ -777,13 +760,12 @@ export default class GtmContentManager extends LightningElement {
         if (!target) return;
         this.deleteTarget = null;
         this.isSaving = true;
-        this.saveMessage = 'Deleting…';
+        this.saveMessage = 'Marking for deletion…';
         deleteSection({ sectionId: target.id })
-            .then((removed) => {
-                this.saveMessage = removed === 1
-                    ? 'Section and 1 field deleted'
-                    : `Section and ${removed} fields deleted`;
-                if (this.activeKey === target.sectionKey) this.activeKey = '';
+            .then(() => {
+                this.saveMessage = target.isNew
+                    ? 'Section removed'
+                    : 'Marked for deletion — publish to remove it';
                 return this.loadPage();
             })
             .catch((err) => {
@@ -842,15 +824,17 @@ export default class GtmContentManager extends LightningElement {
             .finally(() => { this.isSaving = false; });
     }
 
-    // ─── live preview ─────────────────────────────────────────────────────────
-    // The preview is the real <c-ma-story> renderer fed from this component's
-    // working copy, not a second implementation of the page. It is driven by
-    // getters, so every keystroke that lands in `records` redraws it — the
-    // draft is visible here before it is visible to anyone else.
+    // Resolved by Apex from the offering's configured site path, not built
+    // here: a relative link would resolve against the Lightning domain, where
+    // Experience Cloud sites do not exist.
+    // ─── preview data ─────────────────────────────────────────────────────────
+    // The preview renders from this component's working copy, so every
+    // keystroke redraws it: the draft is visible here before anyone else sees
+    // it. It is the published renderer, not a second implementation.
 
     get previewSections() {
         return this.sections
-            .filter((s) => s.active !== false)
+            .filter((s) => s.active !== false && !s.isDeleted)
             .map((s) => ({
                 sectionKey: s.sectionKey,
                 layoutType: s.layoutType,
@@ -859,12 +843,6 @@ export default class GtmContentManager extends LightningElement {
             }));
     }
 
-    /**
-     * The flat `sectionKey::fieldKey` map the renderer resolves against, built
-     * from the working copy: draft value where one exists, published value
-     * otherwise. Same shape MaPageContentReader.getPageLayout returns, so the
-     * preview and the live page agree by construction.
-     */
     get previewContent() {
         const map = {};
         this.records.forEach((r) => {
@@ -876,56 +854,6 @@ export default class GtmContentManager extends LightningElement {
         return map;
     }
 
-    get previewScaleLabel() { return `${this._scalePct}% of 1280px`; }
-
-    fitPreview() {
-        const pane = this.template.querySelector('.gcm-preview-body');
-        const stage = this.template.querySelector('.gcm-stage');
-        const shell = this.template.querySelector('.gcm-stage-shell');
-        if (!pane || !stage || !shell) return;
-        // clientWidth includes the pane's padding, so read the real value
-        // rather than assuming it: the padding tightens at narrow widths, and
-        // a stale constant here would push the scaled page under the scrollbar.
-        const cs = window.getComputedStyle(pane);
-        const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-        const available = pane.clientWidth - pad;
-        if (available <= 0) return;
-        const scale = Math.min(1, available / PREVIEW_WIDTH);
-        stage.style.transform = `scale(${scale})`;
-        // transform does not affect layout, so the shell has to be told what
-        // the scaled page now occupies or the pane scrolls to the wrong height.
-        shell.style.width = `${Math.round(PREVIEW_WIDTH * scale)}px`;
-        shell.style.height = `${Math.round(stage.scrollHeight * scale)}px`;
-        const pct = Math.round(scale * 100);
-        if (pct !== this._scalePct) this._scalePct = pct;
-    }
-
-    renderedCallback() {
-        this.fitPreview();
-        if (this._fitObserver || typeof ResizeObserver === 'undefined') return;
-        const pane = this.template.querySelector('.gcm-preview-body');
-        const stage = this.template.querySelector('.gcm-stage');
-        if (!pane || !stage) return;
-        // Two things change the fit: the pane resizing with the window, and the
-        // page itself growing or shrinking as content is edited.
-        this._fitObserver = new ResizeObserver(() => { this.fitPreview(); });
-        this._fitObserver.observe(pane);
-        this._fitObserver.observe(stage);
-    }
-
-    disconnectedCallback() {
-        if (this._fitObserver) {
-            this._fitObserver.disconnect();
-            this._fitObserver = undefined;
-        }
-        clearTimeout(this._saveTimer);
-        clearTimeout(this._syncTimer);
-        clearTimeout(this._intentTimer);
-    }
-
-    // Resolved by Apex from the offering's configured site path, not built
-    // here: a relative link would resolve against the Lightning domain, where
-    // Experience Cloud sites do not exist.
     get livePageUrl() {
         const o = this.offerings.find((x) => x.offeringKey === this.selectedOffering);
         return (o && o.publicUrl) || '';
