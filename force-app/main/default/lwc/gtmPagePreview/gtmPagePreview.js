@@ -233,14 +233,37 @@ export default class GtmPagePreview extends LightningElement {
         return story.getSectionRects();
     }
 
+    /**
+     * Which element actually scrolls, which depends on the mode.
+     *
+     * Fluid renders the page at full height and the canvas scrolls it. A device
+     * preset is a fixed window — a phone screen is 896px tall whatever the page
+     * does — so the page scrolls inside the device and the canvas does not move
+     * at all. Scrolling the wrong one is why selecting a section did nothing in
+     * tablet and phone.
+     *
+     * The device is also the element carrying the scale transform, so its own
+     * scrollTop is in unscaled pixels while getBoundingClientRect is in scaled
+     * ones. The caller has to divide by the scale; the canvas needs no such
+     * correction because it is not transformed.
+     */
+    scroller() {
+        const device = this.template.querySelector('.device');
+        const canvas = this.template.querySelector('.pv-scroll');
+        if (!this.fluid && device) return { el: device, scaled: true };
+        return { el: canvas, scaled: false };
+    }
+
     syncFromScroll() {
-        const sc = this.template.querySelector('.pv-scroll');
+        const { el: sc } = this.scroller();
         const rects = this.rects();
         if (!sc || !rects.length) return;
 
         // The last section can never cover the top of the canvas: the canvas
         // runs out of scroll while the one before it is still up there. At the
         // bottom, the last section is what you are looking at.
+        // A phone frame is short enough that the last section often cannot
+        // reach the top; at the end of the scroll it is what you are looking at.
         const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4;
         let current = atBottom ? rects[rects.length - 1].sectionKey : '';
         if (!current) {
@@ -255,13 +278,16 @@ export default class GtmPagePreview extends LightningElement {
 
     @api
     scrollTo(sectionKey) {
-        const sc = this.template.querySelector('.pv-scroll');
+        const { el: sc, scaled } = this.scroller();
         if (!sc) return;
         const hit = this.rects().find((r) => r.sectionKey === sectionKey);
         // Page chrome renders around the page rather than in the sequence, so
         // it has no rect; the top of the page is where it lives.
         const top = sc.getBoundingClientRect().top;
-        const target = hit ? sc.scrollTop + (hit.top - top) - 8 : 0;
+        // Rect deltas are post-transform; a scrolled element's own scrollTop is
+        // not. Only the device carries the transform.
+        const k = scaled ? (this.currentScale() || 1) : 1;
+        const target = hit ? sc.scrollTop + (hit.top - top) / k - 8 : 0;
         // A scroll this code started is not the reader scrolling. That matters
         // most for the last section, where the canvas cannot scroll far enough
         // to honour the request and parks somewhere the spy would misread.

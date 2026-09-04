@@ -36,7 +36,8 @@
       <div class="pv-scroll" onscroll={handleScroll} onwheel={handleIntent}
            onpointerdown={handleIntent} onkeydown={handleIntent}>
         <div class="dev-slot">
-          <div class="device">
+          <div class="device" onscroll={handleScroll} onwheel={handleIntent}
+               onpointerdown={handleIntent} onkeydown={handleIntent}>
             <c-ma-story
               offering-key={offeringKey}
               preview-sections={sections}

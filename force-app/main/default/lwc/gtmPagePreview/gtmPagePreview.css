@@ -78,7 +78,11 @@
 .device {
     position: absolute; top: 0; left: 0;
     transform-origin: top left;
-    background: #fff; overflow: hidden;
+    background: #fff;
+    /* A device preset is a fixed window with the page scrolling inside it,
+       the way the real device behaves. In fluid mode the device is auto-height
+       so this never engages and the canvas does the scrolling. */
+    overflow: auto;
     border: 1px solid #c9c9c9; border-radius: 8px;
     box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.3);
 }
