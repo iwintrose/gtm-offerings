@@ -1,744 +1,789 @@
 {
- "records": [
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row1"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "hero",
-   "Field_Key__c": "eyebrow",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::hero::eyebrow",
-   "Active__c": true,
-   "Sort_Order__c": 10,
-   "Text_Value__c": "Internal positioning · GTM buy-in",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Eyebrow",
-   "Help_Text__c": "Small label above the headline."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row2"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "hero",
-   "Field_Key__c": "headline",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::hero::headline",
-   "Active__c": true,
-   "Sort_Order__c": 20,
-   "Text_Value__c": "",
-   "Rich_Value__c": "Every migration starts with a decade nobody documented.<br>We read it in <span class=\"accent\">an afternoon.</span>",
-   "JSON_Value__c": "",
-   "Label__c": "Headline",
-   "Help_Text__c": "The main hero headline. <br> starts a new line."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row3"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "hero",
-   "Field_Key__c": "subhead",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::hero::subhead",
-   "Active__c": true,
-   "Sort_Order__c": 30,
-   "Text_Value__c": "",
-   "Rich_Value__c": "How Migration Accelerator turns an untrusted platform and a go-live date that won't move into a plan, and increasingly, a finished migration.",
-   "JSON_Value__c": "",
-   "Label__c": "Subheadline",
-   "Help_Text__c": "Supporting line under the headline."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row4"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "problem",
-   "Field_Key__c": "lede",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::problem::lede",
-   "Active__c": true,
-   "Sort_Order__c": 40,
-   "Text_Value__c": "",
-   "Rich_Value__c": "Every enterprise migration starts the same way.",
-   "JSON_Value__c": "",
-   "Label__c": "Opening line",
-   "Help_Text__c": "The first line making the case that something is broken."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row5"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "problem",
-   "Field_Key__c": "chips",
-   "Field_Type__c": "json",
-   "Content_Address__c": "migration-accelerator::story::problem::chips",
-   "Active__c": true,
-   "Sort_Order__c": 50,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "[\"A platform nobody fully trusts\", \"A decade of undocumented campaigns\", \"A go-live date that won't move\"]",
-   "Label__c": "Pain points",
-   "Help_Text__c": "One chip per entry."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row6"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "problem",
-   "Field_Key__c": "close",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::problem::close",
-   "Active__c": true,
-   "Sort_Order__c": 60,
-   "Text_Value__c": "",
-   "Rich_Value__c": "Migration Accelerator starts working before the rebuild, before the plan, at the part everyone dreads: finding out what's actually there.",
-   "JSON_Value__c": "",
-   "Label__c": "Closing line",
-   "Help_Text__c": "Wraps up the problem before the pitch."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row7"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "mechanism",
-   "Field_Key__c": "head",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::mechanism::head",
-   "Active__c": true,
-   "Sort_Order__c": 70,
-   "Text_Value__c": "",
-   "Rich_Value__c": "Point it at the platform.<br>Get a plan you can act on.",
-   "JSON_Value__c": "",
-   "Label__c": "Section heading",
-   "Help_Text__c": "<br> starts a new line."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row8"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "mechanism",
-   "Field_Key__c": "sub",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::mechanism::sub",
-   "Active__c": true,
-   "Sort_Order__c": 80,
-   "Text_Value__c": "",
-   "Rich_Value__c": "Eloqua or Salesforce Marketing Cloud, in, a build-ready plan out, and for the pieces it's confident about, a finished migration.",
-   "JSON_Value__c": "",
-   "Label__c": "Opening line",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row9"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "mechanism",
-   "Field_Key__c": "routeSteps",
-   "Field_Type__c": "json",
-   "Content_Address__c": "migration-accelerator::story::mechanism::routeSteps",
-   "Active__c": true,
-   "Sort_Order__c": 90,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "[{\"stepLabel\": \"Ingest\", \"stepDesc\": \"Every asset, read directly\"}, {\"stepLabel\": \"Audit\", \"stepDesc\": \"A live health score\"}, {\"stepLabel\": \"Decide\", \"stepDesc\": \"Port, rework, retire, logged\"}, {\"stepLabel\": \"Plan\", \"stepDesc\": \"Dependencies pulled automatically\"}, {\"stepLabel\": \"Execute\", \"stepDesc\": \"Dry run, then live, rollback ready\"}]",
-   "Label__c": "Process steps",
-   "Help_Text__c": "Step label and description for each stage."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row10"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "mechanism",
-   "Field_Key__c": "proofCtaText",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::mechanism::proofCtaText",
-   "Active__c": true,
-   "Sort_Order__c": 100,
-   "Text_Value__c": "",
-   "Rich_Value__c": "A snapshot of what the platform reads from an environment, automatically, on day one.",
-   "JSON_Value__c": "",
-   "Label__c": "Proof panel copy",
-   "Help_Text__c": "Sits above the See it work button."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row11"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "mechanism",
-   "Field_Key__c": "proofDemoRoot",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::mechanism::proofDemoRoot",
-   "Active__c": true,
-   "Sort_Order__c": 110,
-   "Text_Value__c": "APAC Onboarding",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Demo root asset",
-   "Help_Text__c": "The root asset name in the live demo."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row12"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "mechanism",
-   "Field_Key__c": "proofDemoDeps",
-   "Field_Type__c": "json",
-   "Content_Address__c": "migration-accelerator::story::mechanism::proofDemoDeps",
-   "Active__c": true,
-   "Sort_Order__c": 120,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "[\"Welcome email\", \"Shared data extension\", \"Brand header\"]",
-   "Label__c": "Demo dependencies",
-   "Help_Text__c": "Assets shown hanging off the root."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row13"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "capabilities",
-   "Field_Key__c": "cards",
-   "Field_Type__c": "json",
-   "Content_Address__c": "migration-accelerator::story::capabilities::cards",
-   "Active__c": true,
-   "Sort_Order__c": 130,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "[{\"icon\": \"In\", \"cardTitle\": \"Ingestion & inventory\", \"cardDesc\": \"Automatic, for Eloqua and Salesforce Marketing Cloud (Content Builder).\", \"isNew\": false}, {\"icon\": \"Au\", \"cardTitle\": \"Automated audit\", \"cardDesc\": \"A health score plus an exportable report, generated on demand.\", \"isNew\": true}, {\"icon\": \"De\", \"cardTitle\": \"Disposition & audit trail\", \"cardDesc\": \"Port, rework, or retire, on every object, with full history.\", \"isNew\": false}, {\"icon\": \"Pl\", \"cardTitle\": \"Dependency-aware planning\", \"cardDesc\": \"Assigning one object pulls in everything it needs, automatically.\", \"isNew\": false}, {\"icon\": \"Sp\", \"cardTitle\": \"AI-drafted build specs\", \"cardDesc\": \"Human-reviewed requirements per object, down to Journey Builder specs.\", \"isNew\": false}, {\"icon\": \"Ex\", \"cardTitle\": \"Live execution & rollback\", \"cardDesc\": \"Dry run, then live, with a verification pass once it finishes.\", \"isNew\": true}]",
-   "Label__c": "Capability cards",
-   "Help_Text__c": "Badge, title and description per card."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row14"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "capabilities",
-   "Field_Key__c": "bonusCard",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::capabilities::bonusCard",
-   "Active__c": true,
-   "Sort_Order__c": 140,
-   "Text_Value__c": "",
-   "Rich_Value__c": "<strong>Also in the toolkit:</strong> a design-to-email pipeline. An approved Figma layout becomes a built, publishable email, no separate rebuild.",
-   "JSON_Value__c": "",
-   "Label__c": "Bonus card",
-   "Help_Text__c": "Highlighted note under the card grid."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row15"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "clientProfile",
-   "Field_Key__c": "statBig",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::clientProfile::statBig",
-   "Active__c": true,
-   "Sort_Order__c": 150,
-   "Text_Value__c": "500–2,000+",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Big stat",
-   "Help_Text__c": "The large accent number."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row16"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "clientProfile",
-   "Field_Key__c": "statDesc",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::clientProfile::statDesc",
-   "Active__c": true,
-   "Sort_Order__c": 160,
-   "Text_Value__c": "",
-   "Rich_Value__c": "objects is where this offering's advantage is largest, enterprise accounts migrating between major marketing automation platforms, carrying a sizable, under-documented environment.",
-   "JSON_Value__c": "",
-   "Label__c": "Stat description",
-   "Help_Text__c": "What the number means."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row17"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "clientProfile",
-   "Field_Key__c": "note",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::clientProfile::note",
-   "Active__c": true,
-   "Sort_Order__c": 170,
-   "Text_Value__c": "",
-   "Rich_Value__c": "Today, this runs through us, in working sessions, not a self-serve portal, and that's exactly how it should work for now.",
-   "JSON_Value__c": "",
-   "Label__c": "Client note",
-   "Help_Text__c": "The honest caveat under the stat."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row18"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "bd",
-   "Field_Key__c": "head",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::bd::head",
-   "Active__c": true,
-   "Sort_Order__c": 180,
-   "Text_Value__c": "One story. Here's how to run it.",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Section heading",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row19"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "bd",
-   "Field_Key__c": "lede",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::bd::lede",
-   "Active__c": true,
-   "Sort_Order__c": 190,
-   "Text_Value__c": "",
-   "Rich_Value__c": "This is the pitch, the same one a client hears. The job is fluency in it, plus the tools to make it specific to whoever's in the room.",
-   "JSON_Value__c": "",
-   "Label__c": "Opening line",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row20"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "bd",
-   "Field_Key__c": "useCases",
-   "Field_Type__c": "json",
-   "Content_Address__c": "migration-accelerator::story::bd::useCases",
-   "Active__c": true,
-   "Sort_Order__c": 200,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "[{\"caseTitle\": \"Presales\", \"caseDesc\": \"Run a prospect's export before the SOW. Walk in with a real health score, not a guess.\"}, {\"caseTitle\": \"Delivery\", \"caseDesc\": \"Run the full engagement through it, start to finish, and increasingly, the cutover itself.\"}, {\"caseTitle\": \"The pitch\", \"caseDesc\": \"A real environment becoming a real plan, live, in the room, not described afterward.\"}]",
-   "Label__c": "Use cases",
-   "Help_Text__c": "Title and description per card."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row21"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "bd",
-   "Field_Key__c": "pitchOldChips",
-   "Field_Type__c": "json",
-   "Content_Address__c": "migration-accelerator::story::bd::pitchOldChips",
-   "Active__c": true,
-   "Sort_Order__c": 210,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "[\"A promise to figure out scope after signature\", \"An estimate built on intuition\", \"A plan that ends in a manual handoff\"]",
-   "Label__c": "Old pitch",
-   "Help_Text__c": "One chip per entry."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row22"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "bd",
-   "Field_Key__c": "pitchNewChips",
-   "Field_Type__c": "json",
-   "Content_Address__c": "migration-accelerator::story::bd::pitchNewChips",
-   "Active__c": true,
-   "Sort_Order__c": 220,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "[\"A real health score, produced live, in the room\", \"Scope set from the actual environment\", \"A dry run, and where it applies, a finished cutover\"]",
-   "Label__c": "This pitch",
-   "Help_Text__c": "One chip per entry."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "canon1"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "faq",
-   "Field_Key__c": "items",
-   "Field_Type__c": "json",
-   "Content_Address__c": "migration-accelerator::story::faq::items",
-   "Active__c": true,
-   "Sort_Order__c": 230,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "[{\"question\": \"Does it let us run a migration with fewer people?\", \"verdict\": \"Yes\", \"answer\": \"The platform drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.\"}, {\"question\": \"Does it let us do it faster?\", \"verdict\": \"Yes\", \"answer\": \"Assessment runs in about an hour instead of weeks. A full plan for a mid-size environment fits inside a single sprint.\"}, {\"question\": \"Can it actually execute the migration, or just plan it?\", \"verdict\": \"Yes\", \"answer\": \"For supported objects, the platform previews the change with a dry run, executes it live, and keeps rollback ready if anything doesn't land clean.\"}, {\"question\": \"Does it mean fewer defects?\", \"verdict\": \"Yes\", \"answer\": \"Dependency-aware planning won't let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely.\"}, {\"question\": \"Does it give us better scoping, less risk?\", \"verdict\": \"Yes\", \"answer\": \"The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.\"}, {\"question\": \"Does it let us scale without deep platform specialists on every deal?\", \"verdict\": \"Qualified yes\", \"answer\": \"Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve.\"}]",
-   "Label__c": "Questions",
-   "Help_Text__c": "Verdict, question and answer per entry."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row24"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "closing",
-   "Field_Key__c": "head",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::closing::head",
-   "Active__c": true,
-   "Sort_Order__c": 240,
-   "Text_Value__c": "",
-   "Rich_Value__c": "This is Migration Accelerator today: an offering built on evidence, moving toward a finished migration instead of a plan for one.",
-   "JSON_Value__c": "",
-   "Label__c": "Closing headline",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row25"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "closing",
-   "Field_Key__c": "sub",
-   "Field_Type__c": "rich",
-   "Content_Address__c": "migration-accelerator::story::closing::sub",
-   "Active__c": true,
-   "Sort_Order__c": 250,
-   "Text_Value__c": "",
-   "Rich_Value__c": "The next step is putting a name and an industry behind it.",
-   "JSON_Value__c": "",
-   "Label__c": "Closing subheading",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row26"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "mechanism",
-   "Field_Key__c": "eyebrow",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::mechanism::eyebrow",
-   "Active__c": true,
-   "Sort_Order__c": 260,
-   "Text_Value__c": "The mechanism",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Eyebrow",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row27"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "capabilities",
-   "Field_Key__c": "eyebrow",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::capabilities::eyebrow",
-   "Active__c": true,
-   "Sort_Order__c": 270,
-   "Text_Value__c": "The capabilities",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Eyebrow",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row28"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "capabilities",
-   "Field_Key__c": "head",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::capabilities::head",
-   "Active__c": true,
-   "Sort_Order__c": 280,
-   "Text_Value__c": "What's actually built.",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Section heading",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row29"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "clientProfile",
-   "Field_Key__c": "eyebrow",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::clientProfile::eyebrow",
-   "Active__c": true,
-   "Sort_Order__c": 290,
-   "Text_Value__c": "The client profile",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Eyebrow",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row30"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "clientProfile",
-   "Field_Key__c": "head",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::clientProfile::head",
-   "Active__c": true,
-   "Sort_Order__c": 300,
-   "Text_Value__c": "Who this fits.",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Section heading",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row31"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "bd",
-   "Field_Key__c": "eyebrow",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::bd::eyebrow",
-   "Active__c": true,
-   "Sort_Order__c": 310,
-   "Text_Value__c": "For Business Development and Industry Leaders",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Eyebrow",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row32"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "faq",
-   "Field_Key__c": "eyebrow",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::faq::eyebrow",
-   "Active__c": true,
-   "Sort_Order__c": 320,
-   "Text_Value__c": "FAQ",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Eyebrow",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row33"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "faq",
-   "Field_Key__c": "head",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::faq::head",
-   "Active__c": true,
-   "Sort_Order__c": 330,
-   "Text_Value__c": "The questions this needs to survive.",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Section heading",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row34"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "closing",
-   "Field_Key__c": "ctaLabel",
-   "Field_Type__c": "icontext",
-   "Content_Address__c": "migration-accelerator::story::closing::ctaLabel",
-   "Active__c": true,
-   "Sort_Order__c": 340,
-   "Rich_Value__c": "",
-   "JSON_Value__c": "{\"label\": \"Build a client-specific version\", \"icon\": \"arrow\"}",
-   "Label__c": "Button label",
-   "Help_Text__c": "Text on the call-to-action button."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row35"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "problem",
-   "Field_Key__c": "eyebrow",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::problem::eyebrow",
-   "Active__c": true,
-   "Sort_Order__c": 350,
-   "Text_Value__c": "",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Eyebrow",
-   "Help_Text__c": "Optional. This section has none on the live page."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row36"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "header",
-   "Field_Key__c": "brandLabel",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::header::brandLabel",
-   "Active__c": true,
-   "Sort_Order__c": 360,
-   "Text_Value__c": "Migration Accelerator",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Brand name",
-   "Help_Text__c": "Shown in the masthead, top left."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row37"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "header",
-   "Field_Key__c": "brandTag",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::header::brandTag",
-   "Active__c": true,
-   "Sort_Order__c": 370,
-   "Text_Value__c": "/ the story",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Masthead tag",
-   "Help_Text__c": "The small mono label beside the brand name."
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row38"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "footer",
-   "Field_Key__c": "footerLeft",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::footer::footerLeft",
-   "Active__c": true,
-   "Sort_Order__c": 380,
-   "Text_Value__c": "Migration Accelerator — positioning working draft",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Footer, left",
-   "Help_Text__c": ""
-  },
-  {
-   "attributes": {
-    "type": "MA_Page_Content__c",
-    "referenceId": "row39"
-   },
-   "Offering_Key__c": "migration-accelerator",
-   "Template_Type__c": "story",
-   "Section_Key__c": "footer",
-   "Field_Key__c": "footerRight",
-   "Field_Type__c": "text",
-   "Content_Address__c": "migration-accelerator::story::footer::footerRight",
-   "Active__c": true,
-   "Sort_Order__c": 390,
-   "Text_Value__c": "Grounded against ma-migrator + project-conduit, August 2026",
-   "Rich_Value__c": "",
-   "JSON_Value__c": "",
-   "Label__c": "Footer, right",
-   "Help_Text__c": ""
-  }
- ]
+  "records": [
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row1"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "hero",
+      "Field_Key__c": "eyebrow",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::hero::eyebrow",
+      "Active__c": true,
+      "Sort_Order__c": 10,
+      "Text_Value__c": "Internal positioning · GTM buy-in",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Eyebrow",
+      "Help_Text__c": "Small label above the headline."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row2"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "hero",
+      "Field_Key__c": "headline",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::hero::headline",
+      "Active__c": true,
+      "Sort_Order__c": 20,
+      "Text_Value__c": "",
+      "Rich_Value__c": "Every migration starts with a decade nobody documented.<br>We read it in <span class=\"accent\">an afternoon.</span>",
+      "JSON_Value__c": "",
+      "Label__c": "Headline",
+      "Help_Text__c": "The main hero headline. <br> starts a new line."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row3"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "hero",
+      "Field_Key__c": "subhead",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::hero::subhead",
+      "Active__c": true,
+      "Sort_Order__c": 30,
+      "Text_Value__c": "",
+      "Rich_Value__c": "How Migration Accelerator turns an untrusted platform and a go-live date that won't move into a plan, and increasingly, a finished migration.",
+      "JSON_Value__c": "",
+      "Label__c": "Subheadline",
+      "Help_Text__c": "Supporting line under the headline."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row4"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "problem",
+      "Field_Key__c": "lede",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::problem::lede",
+      "Active__c": true,
+      "Sort_Order__c": 40,
+      "Text_Value__c": "",
+      "Rich_Value__c": "Every enterprise migration starts the same way.",
+      "JSON_Value__c": "",
+      "Label__c": "Opening line",
+      "Help_Text__c": "The first line making the case that something is broken."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row5"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "problem",
+      "Field_Key__c": "chips",
+      "Field_Type__c": "json",
+      "Content_Address__c": "migration-accelerator::story::problem::chips",
+      "Active__c": true,
+      "Sort_Order__c": 50,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "[\"A platform nobody fully trusts\", \"A decade of undocumented campaigns\", \"A go-live date that won't move\"]",
+      "Label__c": "Pain points",
+      "Help_Text__c": "One chip per entry."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row6"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "problem",
+      "Field_Key__c": "close",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::problem::close",
+      "Active__c": true,
+      "Sort_Order__c": 60,
+      "Text_Value__c": "",
+      "Rich_Value__c": "Migration Accelerator starts working before the rebuild, before the plan, at the part everyone dreads: finding out what's actually there.",
+      "JSON_Value__c": "",
+      "Label__c": "Closing line",
+      "Help_Text__c": "Wraps up the problem before the pitch."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row7"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "head",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::mechanism::head",
+      "Active__c": true,
+      "Sort_Order__c": 70,
+      "Text_Value__c": "",
+      "Rich_Value__c": "Point it at the platform.<br>Get a plan you can act on.",
+      "JSON_Value__c": "",
+      "Label__c": "Section heading",
+      "Help_Text__c": "<br> starts a new line."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row8"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "sub",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::mechanism::sub",
+      "Active__c": true,
+      "Sort_Order__c": 80,
+      "Text_Value__c": "",
+      "Rich_Value__c": "Eloqua or Salesforce Marketing Cloud, in, a build-ready plan out, and for the pieces it's confident about, a finished migration.",
+      "JSON_Value__c": "",
+      "Label__c": "Opening line",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row9"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "routeSteps",
+      "Field_Type__c": "json",
+      "Content_Address__c": "migration-accelerator::story::mechanism::routeSteps",
+      "Active__c": true,
+      "Sort_Order__c": 90,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "[{\"stepLabel\": \"Ingest\", \"stepDesc\": \"Every asset, read directly\"}, {\"stepLabel\": \"Audit\", \"stepDesc\": \"A live health score\"}, {\"stepLabel\": \"Decide\", \"stepDesc\": \"Port, rework, retire, logged\"}, {\"stepLabel\": \"Plan\", \"stepDesc\": \"Dependencies pulled automatically\"}, {\"stepLabel\": \"Execute\", \"stepDesc\": \"Dry run, then live, rollback ready\"}]",
+      "Label__c": "Process steps",
+      "Help_Text__c": "Step label and description for each stage."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row10"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "proofCtaText",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::mechanism::proofCtaText",
+      "Active__c": true,
+      "Sort_Order__c": 100,
+      "Text_Value__c": "",
+      "Rich_Value__c": "A snapshot of what the platform reads from an environment, automatically, on day one.",
+      "JSON_Value__c": "",
+      "Label__c": "Proof panel copy",
+      "Help_Text__c": "Sits above the See it work button."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row11"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "proofDemoRoot",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::mechanism::proofDemoRoot",
+      "Active__c": true,
+      "Sort_Order__c": 110,
+      "Text_Value__c": "APAC Onboarding",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Demo root asset",
+      "Help_Text__c": "The root asset name in the live demo."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row12"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "proofDemoDeps",
+      "Field_Type__c": "json",
+      "Content_Address__c": "migration-accelerator::story::mechanism::proofDemoDeps",
+      "Active__c": true,
+      "Sort_Order__c": 120,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "[\"Welcome email\", \"Shared data extension\", \"Brand header\"]",
+      "Label__c": "Demo dependencies",
+      "Help_Text__c": "Assets shown hanging off the root."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row13"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "capabilities",
+      "Field_Key__c": "cards",
+      "Field_Type__c": "json",
+      "Content_Address__c": "migration-accelerator::story::capabilities::cards",
+      "Active__c": true,
+      "Sort_Order__c": 130,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "[{\"icon\": \"In\", \"cardTitle\": \"Ingestion & inventory\", \"cardDesc\": \"Automatic, for Eloqua and Salesforce Marketing Cloud (Content Builder).\", \"isNew\": false}, {\"icon\": \"Au\", \"cardTitle\": \"Automated audit\", \"cardDesc\": \"A health score plus an exportable report, generated on demand.\", \"isNew\": true}, {\"icon\": \"De\", \"cardTitle\": \"Disposition & audit trail\", \"cardDesc\": \"Port, rework, or retire, on every object, with full history.\", \"isNew\": false}, {\"icon\": \"Pl\", \"cardTitle\": \"Dependency-aware planning\", \"cardDesc\": \"Assigning one object pulls in everything it needs, automatically.\", \"isNew\": false}, {\"icon\": \"Sp\", \"cardTitle\": \"AI-drafted build specs\", \"cardDesc\": \"Human-reviewed requirements per object, down to Journey Builder specs.\", \"isNew\": false}, {\"icon\": \"Ex\", \"cardTitle\": \"Live execution & rollback\", \"cardDesc\": \"Dry run, then live, with a verification pass once it finishes.\", \"isNew\": true}]",
+      "Label__c": "Capability cards",
+      "Help_Text__c": "Badge, title and description per card."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row14"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "capabilities",
+      "Field_Key__c": "bonusCard",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::capabilities::bonusCard",
+      "Active__c": true,
+      "Sort_Order__c": 140,
+      "Text_Value__c": "",
+      "Rich_Value__c": "<strong>Also in the toolkit:</strong> a design-to-email pipeline. An approved Figma layout becomes a built, publishable email, no separate rebuild.",
+      "JSON_Value__c": "",
+      "Label__c": "Bonus card",
+      "Help_Text__c": "Highlighted note under the card grid."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row15"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "clientProfile",
+      "Field_Key__c": "statBig",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::clientProfile::statBig",
+      "Active__c": true,
+      "Sort_Order__c": 150,
+      "Text_Value__c": "500–2,000+",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Big stat",
+      "Help_Text__c": "The large accent number."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row16"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "clientProfile",
+      "Field_Key__c": "statDesc",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::clientProfile::statDesc",
+      "Active__c": true,
+      "Sort_Order__c": 160,
+      "Text_Value__c": "",
+      "Rich_Value__c": "objects is where this offering's advantage is largest, enterprise accounts migrating between major marketing automation platforms, carrying a sizable, under-documented environment.",
+      "JSON_Value__c": "",
+      "Label__c": "Stat description",
+      "Help_Text__c": "What the number means."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row17"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "clientProfile",
+      "Field_Key__c": "note",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::clientProfile::note",
+      "Active__c": true,
+      "Sort_Order__c": 170,
+      "Text_Value__c": "",
+      "Rich_Value__c": "Today, this runs through us, in working sessions, not a self-serve portal, and that's exactly how it should work for now.",
+      "JSON_Value__c": "",
+      "Label__c": "Client note",
+      "Help_Text__c": "The honest caveat under the stat."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row18"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "bd",
+      "Field_Key__c": "head",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::bd::head",
+      "Active__c": true,
+      "Sort_Order__c": 180,
+      "Text_Value__c": "One story. Here's how to run it.",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Section heading",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row19"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "bd",
+      "Field_Key__c": "lede",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::bd::lede",
+      "Active__c": true,
+      "Sort_Order__c": 190,
+      "Text_Value__c": "",
+      "Rich_Value__c": "This is the pitch, the same one a client hears. The job is fluency in it, plus the tools to make it specific to whoever's in the room.",
+      "JSON_Value__c": "",
+      "Label__c": "Opening line",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row20"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "bd",
+      "Field_Key__c": "useCases",
+      "Field_Type__c": "json",
+      "Content_Address__c": "migration-accelerator::story::bd::useCases",
+      "Active__c": true,
+      "Sort_Order__c": 200,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "[{\"caseTitle\": \"Presales\", \"caseDesc\": \"Run a prospect's export before the SOW. Walk in with a real health score, not a guess.\"}, {\"caseTitle\": \"Delivery\", \"caseDesc\": \"Run the full engagement through it, start to finish, and increasingly, the cutover itself.\"}, {\"caseTitle\": \"The pitch\", \"caseDesc\": \"A real environment becoming a real plan, live, in the room, not described afterward.\"}]",
+      "Label__c": "Use cases",
+      "Help_Text__c": "Title and description per card."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row21"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "bd",
+      "Field_Key__c": "pitchOldChips",
+      "Field_Type__c": "json",
+      "Content_Address__c": "migration-accelerator::story::bd::pitchOldChips",
+      "Active__c": true,
+      "Sort_Order__c": 210,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "[\"A promise to figure out scope after signature\", \"An estimate built on intuition\", \"A plan that ends in a manual handoff\"]",
+      "Label__c": "Old pitch",
+      "Help_Text__c": "One chip per entry."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row22"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "bd",
+      "Field_Key__c": "pitchNewChips",
+      "Field_Type__c": "json",
+      "Content_Address__c": "migration-accelerator::story::bd::pitchNewChips",
+      "Active__c": true,
+      "Sort_Order__c": 220,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "[\"A real health score, produced live, in the room\", \"Scope set from the actual environment\", \"A dry run, and where it applies, a finished cutover\"]",
+      "Label__c": "This pitch",
+      "Help_Text__c": "One chip per entry."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "canon1"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "faq",
+      "Field_Key__c": "items",
+      "Field_Type__c": "json",
+      "Content_Address__c": "migration-accelerator::story::faq::items",
+      "Active__c": true,
+      "Sort_Order__c": 230,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "[{\"question\": \"Does it let us run a migration with fewer people?\", \"verdict\": \"Yes\", \"answer\": \"The platform drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.\"}, {\"question\": \"Does it let us do it faster?\", \"verdict\": \"Yes\", \"answer\": \"Assessment runs in about an hour instead of weeks. A full plan for a mid-size environment fits inside a single sprint.\"}, {\"question\": \"Can it actually execute the migration, or just plan it?\", \"verdict\": \"Yes\", \"answer\": \"For supported objects, the platform previews the change with a dry run, executes it live, and keeps rollback ready if anything doesn't land clean.\"}, {\"question\": \"Does it mean fewer defects?\", \"verdict\": \"Yes\", \"answer\": \"Dependency-aware planning won't let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely.\"}, {\"question\": \"Does it give us better scoping, less risk?\", \"verdict\": \"Yes\", \"answer\": \"The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.\"}, {\"question\": \"Does it let us scale without deep platform specialists on every deal?\", \"verdict\": \"Qualified yes\", \"answer\": \"Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve.\"}]",
+      "Label__c": "Questions",
+      "Help_Text__c": "Verdict, question and answer per entry."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row24"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "closing",
+      "Field_Key__c": "head",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::closing::head",
+      "Active__c": true,
+      "Sort_Order__c": 240,
+      "Text_Value__c": "",
+      "Rich_Value__c": "This is Migration Accelerator today: an offering built on evidence, moving toward a finished migration instead of a plan for one.",
+      "JSON_Value__c": "",
+      "Label__c": "Closing headline",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row25"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "closing",
+      "Field_Key__c": "sub",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::closing::sub",
+      "Active__c": true,
+      "Sort_Order__c": 250,
+      "Text_Value__c": "",
+      "Rich_Value__c": "The next step is putting a name and an industry behind it.",
+      "JSON_Value__c": "",
+      "Label__c": "Closing subheading",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row26"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "eyebrow",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::mechanism::eyebrow",
+      "Active__c": true,
+      "Sort_Order__c": 260,
+      "Text_Value__c": "The mechanism",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Eyebrow",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row27"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "capabilities",
+      "Field_Key__c": "eyebrow",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::capabilities::eyebrow",
+      "Active__c": true,
+      "Sort_Order__c": 270,
+      "Text_Value__c": "The capabilities",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Eyebrow",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row28"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "capabilities",
+      "Field_Key__c": "head",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::capabilities::head",
+      "Active__c": true,
+      "Sort_Order__c": 280,
+      "Text_Value__c": "What's actually built.",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Section heading",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row29"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "clientProfile",
+      "Field_Key__c": "eyebrow",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::clientProfile::eyebrow",
+      "Active__c": true,
+      "Sort_Order__c": 290,
+      "Text_Value__c": "The client profile",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Eyebrow",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row30"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "clientProfile",
+      "Field_Key__c": "head",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::clientProfile::head",
+      "Active__c": true,
+      "Sort_Order__c": 300,
+      "Text_Value__c": "Who this fits.",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Section heading",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row31"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "bd",
+      "Field_Key__c": "eyebrow",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::bd::eyebrow",
+      "Active__c": true,
+      "Sort_Order__c": 310,
+      "Text_Value__c": "For Business Development and Industry Leaders",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Eyebrow",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row32"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "faq",
+      "Field_Key__c": "eyebrow",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::faq::eyebrow",
+      "Active__c": true,
+      "Sort_Order__c": 320,
+      "Text_Value__c": "FAQ",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Eyebrow",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row33"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "faq",
+      "Field_Key__c": "head",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::faq::head",
+      "Active__c": true,
+      "Sort_Order__c": 330,
+      "Text_Value__c": "The questions this needs to survive.",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Section heading",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row34"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "closing",
+      "Field_Key__c": "ctaLabel",
+      "Field_Type__c": "icontext",
+      "Content_Address__c": "migration-accelerator::story::closing::ctaLabel",
+      "Active__c": true,
+      "Sort_Order__c": 340,
+      "Rich_Value__c": "",
+      "JSON_Value__c": "{\"label\": \"Build a client-specific version\", \"icon\": \"arrow\"}",
+      "Label__c": "Button label",
+      "Help_Text__c": "Text on the call-to-action button."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row35"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "problem",
+      "Field_Key__c": "eyebrow",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::problem::eyebrow",
+      "Active__c": true,
+      "Sort_Order__c": 350,
+      "Text_Value__c": "",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Eyebrow",
+      "Help_Text__c": "Optional. This section has none on the live page."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row36"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "header",
+      "Field_Key__c": "brandLabel",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::header::brandLabel",
+      "Active__c": true,
+      "Sort_Order__c": 360,
+      "Text_Value__c": "Migration Accelerator",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Brand name",
+      "Help_Text__c": "Shown in the masthead, top left."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row37"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "header",
+      "Field_Key__c": "brandTag",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::header::brandTag",
+      "Active__c": true,
+      "Sort_Order__c": 370,
+      "Text_Value__c": "/ the story",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Masthead tag",
+      "Help_Text__c": "The small mono label beside the brand name."
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row38"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "footer",
+      "Field_Key__c": "footerLeft",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::footer::footerLeft",
+      "Active__c": true,
+      "Sort_Order__c": 380,
+      "Text_Value__c": "Migration Accelerator — positioning working draft",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Footer, left",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row39"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "footer",
+      "Field_Key__c": "footerRight",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::footer::footerRight",
+      "Active__c": true,
+      "Sort_Order__c": 390,
+      "Text_Value__c": "Grounded against ma-migrator + project-conduit, August 2026",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Footer, right",
+      "Help_Text__c": ""
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row40"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "proofObjectsCount",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::mechanism::proofObjectsCount",
+      "Active__c": true,
+      "Sort_Order__c": 270,
+      "Text_Value__c": "1284"
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row41"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "proofDepsCount",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::mechanism::proofDepsCount",
+      "Active__c": true,
+      "Sort_Order__c": 280,
+      "Text_Value__c": "3140"
+    },
+    {
+      "attributes": {
+        "type": "MA_Page_Content__c",
+        "referenceId": "row42"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "mechanism",
+      "Field_Key__c": "proofHealthScore",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::mechanism::proofHealthScore",
+      "Active__c": true,
+      "Sort_Order__c": 290,
+      "Text_Value__c": "84"
+    }
+  ]
 }
