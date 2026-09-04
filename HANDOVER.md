@@ -81,17 +81,27 @@ _Last verified against the org on 2026-09-04. The three items that used to sit
 here (deploy the contrast fix, fix a `/gtmstory/s/` CTA, verify public access)
 are done or moot — the CTA they named no longer exists in the code._
 
-### 1. Delete the GTM Framework site (manual)
-`gtmframework` is `DownForMaintenance`, and its published Home page still
-carries `c:gtmAppShell`. That pins the component: the org refuses to delete
-`gtmAppShell` while a published instance references it, and the site cannot be
-published to clear it while it is deactivated. Delete the site in Setup →
-Digital Experiences → All Sites, then:
+### 1. ~~Delete the GTM Framework site~~ — resolved; the method is worth keeping
 
-```bash
-# destructiveChanges.xml naming LightningComponentBundle gtmAppShell
-sf project deploy start --metadata-dir <dir>
-```
+Salesforce **never** deletes an Experience Cloud site: `destructiveChanges` on
+the bundle returns *"You can't delete an Experience Cloud site."* Archiving is
+not enough either — an archived site keeps a **published snapshot**, and a
+component referenced by that snapshot cannot be deleted.
+
+What actually clears it, when a component has to go:
+
+1. Unarchive the site (UI only — there is no API path: `Network` is not
+   updatable from Apex, and `PATCH /connect/communities/{id}` returns
+   `METHOD_NOT_ALLOWED`).
+2. Deploy the site's `Network` metadata with `<status>UnderConstruction</status>`.
+   `Live` is rejected with a misleading *"still active … before you archive"*;
+   `UnderConstruction` is accepted.
+3. Deploy the edited `ExperienceBundle` so the Development instance no longer
+   references the component.
+4. `sf community publish --name "<site>"` — this is what replaces the published
+   snapshot. It fails with `INSUFFICIENT_ACCESS` while the site is inactive.
+5. Run the destructive deploy. It now succeeds.
+6. Put the site back with `<status>DownForMaintenance</status>`.
 
 ### 2. Duplicate FlexiPages in the org
 The org has three `Assessment_Request_Record_Page` FlexiPages (`_1`, `_2` are
