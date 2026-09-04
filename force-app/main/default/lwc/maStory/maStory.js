@@ -1,6 +1,9 @@
 import { LightningElement, api, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
+// The layout vocabulary is shared with the editor, which has to know what
+// fields a section needs before that section exists. See c/gtmPageLayouts.
+import { CHROME_LAYOUT, LAYOUT_FIELDS } from 'c/gtmPageLayouts';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
@@ -107,29 +110,6 @@ const DEFAULTS = {
         'Scope set from the actual environment',
         'A dry run, and where it applies, a finished cutover'
     ]
-};
-
-
-// The field vocabulary of each layout type, bucketed by how the value is
-// stored and rendered. This is the contract between the renderer and
-// MA_Page_Content__c: scripts/check-content-contract.py reads it to assert
-// the seeded records match, and the sections getter resolves from it, so the
-// two cannot drift apart. Adding a field to a layout means adding it here.
-// Page chrome (masthead + footer) is declared as a layout so the contract
-// check validates it, but it renders outside the section loop rather than in
-// sequence with the beats.
-const CHROME_LAYOUT = 'page-chrome';
-
-const LAYOUT_FIELDS = {
-    'page-chrome': { text: ['brandLabel', 'brandTag', 'footerLeft', 'footerRight'], rich: [], json: [] },
-    'hero':        { text: ['eyebrow'],                      rich: ['headline', 'subhead'],        json: [] },
-    'lede-chips':  { text: ['eyebrow'],                      rich: ['lede', 'close'],              json: ['chips'] },
-    'route-proof': { text: ['eyebrow', 'proofDemoRoot'],     rich: ['head', 'sub', 'proofCtaText'], json: ['routeSteps', 'proofDemoDeps'] },
-    'card-grid':   { text: ['eyebrow', 'head'],              rich: ['bonusCard'],                  json: ['cards'] },
-    'stat':        { text: ['eyebrow', 'head', 'statBig'],   rich: ['statDesc', 'note'],           json: [] },
-    'use-pitch':   { text: ['eyebrow', 'head'],              rich: ['lede'],                       json: ['useCases', 'pitchOldChips', 'pitchNewChips'] },
-    'faq':         { text: ['eyebrow', 'head'],              rich: [],                             json: ['items'] },
-    'closing':     { text: ['ctaLabel'],                     rich: ['head', 'sub'],                json: [] }
 };
 
 
@@ -261,6 +241,25 @@ export default class MaStory extends LightningElement {
         if (!value || !Object.keys(value).length) return;
         this._preview = true;
         this._cms = value;
+    }
+
+    /**
+     * Where each section currently sits, in viewport coordinates.
+     *
+     * Viewport-relative rather than offsetTop because in the editor this
+     * component is inside a scaled container: offsetTop reports untransformed
+     * layout pixels, and the caller would scroll to the wrong place by exactly
+     * the scale factor. getBoundingClientRect is measured after the transform,
+     * so the caller can diff it against its own rect and get a real answer.
+     */
+    @api
+    getSectionRects() {
+        const out = [];
+        this.template.querySelectorAll('[data-section]').forEach((el) => {
+            const r = el.getBoundingClientRect();
+            out.push({ sectionKey: el.dataset.section, top: r.top, bottom: r.bottom });
+        });
+        return out;
     }
 
     _observer;

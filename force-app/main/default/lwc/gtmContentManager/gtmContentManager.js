@@ -9,6 +9,11 @@ import publishPage from '@salesforce/apex/MaPageContentController.publishPage';
 import discardDrafts from '@salesforce/apex/MaPageContentController.discardDrafts';
 import saveSectionOrder from '@salesforce/apex/MaPageContentController.saveSectionOrder';
 import setSectionActive from '@salesforce/apex/MaPageContentController.setSectionActive';
+import createSection from '@salesforce/apex/MaPageContentController.createSection';
+import deleteSection from '@salesforce/apex/MaPageContentController.deleteSection';
+import createField from '@salesforce/apex/MaPageContentController.createField';
+// One definition of what a layout is made of, shared with the renderer.
+import { addableLayouts, fieldsFor } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
 // MaPageContentController.resolveValue.
@@ -19,6 +24,10 @@ const COLUMN = { text: 'textValue', rich: 'richValue', json: 'jsonValue' };
 // than narrowing is deliberate: it keeps the proportions of the published page
 // instead of showing a tablet breakpoint and calling it a preview.
 const PREVIEW_WIDTH = 1280;
+
+// A one-line input clips anything past its width with no scrollbar and no
+// hint that there is more, so a value this long gets a box it fits in.
+const LONG_TEXT_CHARS = 48;
 
 const TEMPLATE_LABELS = {
     story: 'Story',
@@ -64,7 +73,16 @@ export default class GtmContentManager extends LightningElement {
     _dragKey = '';
     _saveTimer;
     _fitObserver;
+    _syncTimer;
+    _suppressScrollSync = false;
+    _scrollQueued = false;
     @track _scalePct = 100;
+
+    // add / delete section
+    @track addOpen = false;
+    @track addLayout = '';
+    @track addLabel = '';
+    @track deleteTarget = null;
 
     // Set when the home page deep-links into a specific page. Without this the
     // editor would always open on its own guess, which is the "landed somewhere
@@ -188,7 +206,16 @@ export default class GtmContentManager extends LightningElement {
         ])
             .then(([sections, records]) => {
                 this.sections = (sections || []).map((s) => ({ ...s }));
-                this.records = (records || []).map((r) => ({ ...r }));
+                // renderLong is decided here and never recomputed while typing.
+                // Deriving it from the live value would swap an input for a
+                // textarea the moment you crossed the threshold, taking focus
+                // out of the box mid-word.
+                this.records = (records || []).map((r) => {
+                    const loaded = r.isDraft
+                        ? (r.draftValue || '')
+                        : (r[COLUMN[r.fieldType || 'text']] || '');
+                    return { ...r, renderLong: loaded.length > LONG_TEXT_CHARS };
+                });
                 if (this.sections.length) this.activeKey = this.sections[0].sectionKey;
                 this.dirtyKeys = [];
             })
@@ -215,7 +242,75 @@ export default class GtmContentManager extends LightningElement {
 
     get sectionCount() { return this.sections.length; }
 
-    handleSelectSection(event) { this.activeKey = event.currentTarget.dataset.key; }
+    handleSelectSection(event) {
+        this.activeKey = event.currentTarget.dataset.key;
+        // Picking a section in the rail moves the preview to it. Without this
+        // the two halves of the editor describe the same page but never agree
+        // on where you are in it.
+        this.scrollPreviewTo(this.activeKey);
+    }
+
+    // ─── rail ↔ preview sync ──────────────────────────────────────────────────
+
+    scrollPreviewTo(sectionKey) {
+        const pane = this.template.querySelector('.gcm-preview-body');
+        const story = this.template.querySelector('c-ma-story');
+        if (!pane || !story || typeof story.getSectionRects !== 'function') return;
+        const paneTop = pane.getBoundingClientRect().top;
+        const hit = story.getSectionRects().find((r) => r.sectionKey === sectionKey);
+        // Page chrome renders around the page rather than in the sequence, so
+        // it has no rect of its own; the top of the page is where it lives.
+        const target = hit ? pane.scrollTop + (hit.top - paneTop) - 8 : 0;
+        this._suppressScrollSync = true;
+        pane.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        clearTimeout(this._syncTimer);
+        // Released once the smooth scroll has settled, so the scroll it just
+        // caused does not bounce the rail selection back.
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._syncTimer = setTimeout(() => { this._suppressScrollSync = false; }, 500);
+    }
+
+    handlePreviewScroll() {
+        if (this._suppressScrollSync || this._scrollQueued) return;
+        this._scrollQueued = true;
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        requestAnimationFrame(() => {
+            this._scrollQueued = false;
+            this.syncRailToPreview();
+        });
+    }
+
+    syncRailToPreview() {
+        const pane = this.template.querySelector('.gcm-preview-body');
+        const story = this.template.querySelector('c-ma-story');
+        if (!pane || !story || typeof story.getSectionRects !== 'function') return;
+        const paneTop = pane.getBoundingClientRect().top;
+        // The section covering the top of the pane is the one you are reading.
+        let current = '';
+        story.getSectionRects().forEach((r) => {
+            if (r.top - paneTop <= 24) current = r.sectionKey;
+        });
+        if (current && current !== this.activeKey) {
+            this.activeKey = current;
+            this.scrollRailTo(current);
+        }
+    }
+
+    // Keeps the highlighted section visible when the preview drives the
+    // selection; otherwise the rail highlights a row that is scrolled off.
+    scrollRailTo(sectionKey) {
+        const row = this.template.querySelector(`.sec[data-key="${sectionKey}"]`);
+        const body = this.template.querySelector('.gcm-rail-body');
+        if (!row || !body) return;
+        const rowRect = row.getBoundingClientRect();
+        const bodyRect = body.getBoundingClientRect();
+        if (rowRect.top < bodyRect.top) {
+            body.scrollTop += rowRect.top - bodyRect.top - 4;
+        } else if (rowRect.bottom > bodyRect.bottom) {
+            body.scrollTop += rowRect.bottom - bodyRect.bottom + 4;
+        }
+    }
 
     handleToggleReorder() { this.reorderMode = !this.reorderMode; }
 
@@ -311,6 +406,8 @@ export default class GtmContentManager extends LightningElement {
                     hasHelp: !!r.helpText,
                     column: COLUMN[type],
                     isText: type === 'text',
+                    isTextLong: type === 'text' && r.renderLong === true,
+                    isTextShort: type === 'text' && r.renderLong !== true,
                     isRich: type === 'rich',
                     isJson: type === 'json',
                     statusClass: r.isDraft ? 'fld-status fld-status--draft' : 'fld-status',
@@ -535,6 +632,176 @@ export default class GtmContentManager extends LightningElement {
 
     handleDismissError() { this.loadError = ''; }
 
+    // ─── add / delete sections ────────────────────────────────────────────────
+
+    get layoutOptions() {
+        return addableLayouts();
+    }
+
+    get addLayoutHint() {
+        const chosen = this.layoutOptions.find((l) => l.value === this.addLayout);
+        if (!chosen) return 'Pick a layout. It decides what the section can hold.';
+        const n = chosen.fieldCount;
+        return `${chosen.hint} Creates ${n} field${n === 1 ? '' : 's'}.`;
+    }
+
+    // The section key is derived from the label rather than asked for
+    // separately: it is an address, not a name, and one fewer box to fill in
+    // is one fewer way to create a section whose key says something different
+    // from its heading.
+    get addKeyPreview() {
+        const key = this.slugify(this.addLabel);
+        return key ? `${this.selectedOffering}::${this.selectedTemplate}::${key}` : '';
+    }
+
+    // The template binds the disabled attribute, so the negation lives here
+    // rather than in markup, which cannot express it.
+    get canAddSectionDisabled() {
+        return !this.addLayout || !this.slugify(this.addLabel) || this.isSaving;
+    }
+
+    slugify(raw) {
+        return String(raw || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 80);
+    }
+
+    handleOpenAdd() {
+        this.addOpen = true;
+        this.addLayout = '';
+        this.addLabel = '';
+    }
+
+    handleCloseAdd() { this.addOpen = false; }
+    handleAddLayoutChange(event) { this.addLayout = event.detail.value; }
+    handleAddLabelChange(event) { this.addLabel = event.target.value; }
+
+    handleCreateSection() {
+        const key = this.slugify(this.addLabel);
+        if (!this.addLayout || !key) return;
+        this.isSaving = true;
+        this.saveMessage = 'Adding section…';
+        this.addOpen = false;
+        createSection({
+            offeringKey: this.selectedOffering,
+            templateType: this.selectedTemplate,
+            sectionKey: key,
+            label: this.addLabel.trim(),
+            layoutType: this.addLayout,
+            width: 'standard',
+            fields: fieldsFor(this.addLayout)
+        })
+            .then(() => {
+                this.saveMessage = 'Section added';
+                // Land on the new section: adding one and then having to hunt
+                // for it in the rail is the kind of thing that makes an editor
+                // feel like a database form.
+                this.activeKey = key;
+                return this.loadPage();
+            })
+            .then(() => { this.activeKey = key; })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'The section could not be added.';
+            })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    handleAskDelete(event) {
+        const key = event.currentTarget.dataset.key;
+        const section = this.sections.find((s) => s.sectionKey === key);
+        if (!section) return;
+        this.deleteTarget = {
+            id: section.id,
+            sectionKey: section.sectionKey,
+            label: section.label || section.sectionKey,
+            fieldCount: this.records.filter((r) => r.sectionKey === section.sectionKey).length
+        };
+    }
+
+    get deleteOpen() { return !!this.deleteTarget; }
+
+    get deleteSummary() {
+        if (!this.deleteTarget) return '';
+        const n = this.deleteTarget.fieldCount;
+        return `"${this.deleteTarget.label}" and its ${n} field${n === 1 ? '' : 's'}`;
+    }
+
+    handleCancelDelete() { this.deleteTarget = null; }
+
+    handleConfirmDelete() {
+        const target = this.deleteTarget;
+        if (!target) return;
+        this.deleteTarget = null;
+        this.isSaving = true;
+        this.saveMessage = 'Deleting…';
+        deleteSection({ sectionId: target.id })
+            .then((removed) => {
+                this.saveMessage = removed === 1
+                    ? 'Section and 1 field deleted'
+                    : `Section and ${removed} fields deleted`;
+                if (this.activeKey === target.sectionKey) this.activeKey = '';
+                return this.loadPage();
+            })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'The section could not be deleted.';
+            })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    // ─── missing fields ───────────────────────────────────────────────────────
+    // A field the layout declares but the section has no record for. The page
+    // falls back to a built-in default for these, which looks like content
+    // nobody can edit; offering them here is how that gets fixed.
+
+    get missingFields() {
+        const section = this.activeSection;
+        if (!section) return [];
+        const present = new Set(
+            this.records
+                .filter((r) => r.sectionKey === this.activeKey)
+                .map((r) => r.fieldKey)
+        );
+        return fieldsFor(section.layoutType)
+            .filter((f) => !present.has(f.fieldKey))
+            .map((f) => ({ ...f, id: `${this.activeKey}-${f.fieldKey}` }));
+    }
+
+    get hasMissingFields() { return this.missingFields.length > 0; }
+
+    get missingSummary() {
+        const n = this.missingFields.length;
+        return n === 1
+            ? '1 field this layout supports has no record yet.'
+            : `${n} fields this layout supports have no record yet.`;
+    }
+
+    handleAddField(event) {
+        const fieldKey = event.currentTarget.dataset.field;
+        const spec = this.missingFields.find((f) => f.fieldKey === fieldKey);
+        if (!spec) return;
+        this.isSaving = true;
+        this.saveMessage = 'Adding field…';
+        createField({
+            offeringKey: this.selectedOffering,
+            templateType: this.selectedTemplate,
+            sectionKey: this.activeKey,
+            fieldKey: spec.fieldKey,
+            fieldType: spec.fieldType,
+            label: spec.label
+        })
+            .then(() => { this.saveMessage = 'Field added'; return this.loadPage(); })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'The field could not be added.';
+            })
+            .finally(() => { this.isSaving = false; });
+    }
+
     // ─── live preview ─────────────────────────────────────────────────────────
     // The preview is the real <c-ma-story> renderer fed from this component's
     // working copy, not a second implementation of the page. It is driven by
@@ -576,9 +843,12 @@ export default class GtmContentManager extends LightningElement {
         const stage = this.template.querySelector('.gcm-stage');
         const shell = this.template.querySelector('.gcm-stage-shell');
         if (!pane || !stage || !shell) return;
-        // The pane's own padding is the only thing between the frame and the
-        // rail; subtract it or the scaled page sits under the scrollbar.
-        const available = pane.clientWidth - 24;
+        // clientWidth includes the pane's padding, so read the real value
+        // rather than assuming it: the padding tightens at narrow widths, and
+        // a stale constant here would push the scaled page under the scrollbar.
+        const cs = window.getComputedStyle(pane);
+        const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+        const available = pane.clientWidth - pad;
         if (available <= 0) return;
         const scale = Math.min(1, available / PREVIEW_WIDTH);
         stage.style.transform = `scale(${scale})`;
@@ -609,6 +879,7 @@ export default class GtmContentManager extends LightningElement {
             this._fitObserver = undefined;
         }
         clearTimeout(this._saveTimer);
+        clearTimeout(this._syncTimer);
     }
 
     // Resolved by Apex from the offering's configured site path, not built

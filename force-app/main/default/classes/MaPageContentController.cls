@@ -204,6 +204,215 @@ public without sharing class MaPageContentController {
         }
     }
 
+    /**
+     * Creates a section and, in the same transaction, the content rows its
+     * layout declares. The field list comes from the client because the layout
+     * vocabulary is defined once, in c/gtmPageLayouts, and shared by the
+     * renderer and the editor; duplicating it here is how the two would drift.
+     * Everything in it is validated below rather than trusted.
+     *
+     * A section without its rows would render built-in fallbacks and look
+     * broken, so the two are created together or not at all.
+     */
+    @AuraEnabled
+    public static String createSection(
+        String offeringKey,
+        String templateType,
+        String sectionKey,
+        String label,
+        String layoutType,
+        String width,
+        List<FieldSeed> fields
+    ) {
+        if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
+            throw new AuraHandledException('An offering and a page are both required.');
+        }
+        String key = normaliseKey(sectionKey);
+        if (String.isBlank(key)) {
+            throw new AuraHandledException(
+                'A section needs a name made of letters or numbers.'
+            );
+        }
+        if (String.isBlank(layoutType)) {
+            throw new AuraHandledException('A section needs a layout.');
+        }
+        // The key is the address of every field under it, so a collision would
+        // silently merge two sections' content.
+        if (![
+            SELECT Id FROM MA_Page_Section__c
+            WHERE Offering_Key__c = :offeringKey
+            AND   Template_Type__c = :templateType
+            AND   Section_Key__c = :key
+            LIMIT 1
+        ].isEmpty()) {
+            throw new AuraHandledException(
+                'This page already has a section called "' + key + '". Pick another name.'
+            );
+        }
+
+        MA_Page_Section__c sec = new MA_Page_Section__c();
+        sec.Section_Address__c = offeringKey + '::' + templateType + '::' + key;
+        sec.Offering_Key__c    = offeringKey;
+        sec.Template_Type__c   = templateType;
+        sec.Section_Key__c     = key;
+        sec.Label__c           = String.isBlank(label) ? key : label;
+        sec.Layout_Type__c     = layoutType;
+        sec.Width__c           = String.isBlank(width) ? 'standard' : width;
+        sec.Active__c          = true;
+        sec.Sort_Order__c      = nextSortOrder(offeringKey, templateType);
+
+        List<MA_Page_Content__c> rows = new List<MA_Page_Content__c>();
+        Integer position = 0;
+        for (FieldSeed f : (fields == null ? new List<FieldSeed>() : fields)) {
+            if (f == null || String.isBlank(f.fieldKey)) continue;
+            position += 10;
+            MA_Page_Content__c row = new MA_Page_Content__c();
+            row.Content_Address__c = contentAddress(offeringKey, templateType, key, f.fieldKey);
+            row.Offering_Key__c    = offeringKey;
+            row.Template_Type__c   = templateType;
+            row.Section_Key__c     = key;
+            row.Field_Key__c       = f.fieldKey;
+            row.Field_Type__c      = String.isBlank(f.fieldType) ? 'text' : f.fieldType;
+            row.Label__c           = f.label;
+            row.Sort_Order__c      = position;
+            row.Active__c          = true;
+            // A json field with no value is not an empty string, it is an
+            // empty list; the editor parses this column to build its repeater.
+            if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
+            rows.add(row);
+        }
+
+        Savepoint sp = Database.setSavepoint();
+        try {
+            insert sec;
+            if (!rows.isEmpty()) insert rows;
+        } catch (DmlException e) {
+            Database.rollback(sp);
+            throw new AuraHandledException('The section could not be created: ' + e.getMessage());
+        }
+        return sec.Id;
+    }
+
+    /**
+     * Deletes a section and every content row addressed under it. Content rows
+     * are matched by offering + template + section key rather than by a lookup,
+     * because the address is what ties them together.
+     *
+     * This is the destructive counterpart to setSectionActive: hiding a section
+     * keeps its content, deleting it does not.
+     */
+    @AuraEnabled
+    public static Integer deleteSection(String sectionId) {
+        if (String.isBlank(sectionId)) {
+            throw new AuraHandledException('A section id is required.');
+        }
+        List<MA_Page_Section__c> found = [
+            SELECT Id, Offering_Key__c, Template_Type__c, Section_Key__c
+            FROM   MA_Page_Section__c
+            WHERE  Id = :sectionId
+            LIMIT  1
+        ];
+        if (found.isEmpty()) {
+            throw new AuraHandledException('That section no longer exists.');
+        }
+        MA_Page_Section__c sec = found[0];
+        List<MA_Page_Content__c> rows = [
+            SELECT Id FROM MA_Page_Content__c
+            WHERE  Offering_Key__c  = :sec.Offering_Key__c
+            AND    Template_Type__c = :sec.Template_Type__c
+            AND    Section_Key__c   = :sec.Section_Key__c
+            LIMIT  2000
+        ];
+        Savepoint sp = Database.setSavepoint();
+        try {
+            if (!rows.isEmpty()) delete rows;
+            delete sec;
+        } catch (DmlException e) {
+            Database.rollback(sp);
+            throw new AuraHandledException('The section could not be deleted: ' + e.getMessage());
+        }
+        return rows.size();
+    }
+
+    /**
+     * Creates a single content row for a field the section's layout declares
+     * but has no record for. This is a repair action, not a way to invent
+     * fields: a field the renderer does not know about would never appear on
+     * the page, so the editor only offers the layout's own vocabulary.
+     */
+    @AuraEnabled
+    public static String createField(
+        String offeringKey,
+        String templateType,
+        String sectionKey,
+        String fieldKey,
+        String fieldType,
+        String label
+    ) {
+        if (String.isBlank(offeringKey) || String.isBlank(templateType)
+            || String.isBlank(sectionKey) || String.isBlank(fieldKey)) {
+            throw new AuraHandledException('An offering, page, section and field are all required.');
+        }
+        String address = contentAddress(offeringKey, templateType, sectionKey, fieldKey);
+        if (![SELECT Id FROM MA_Page_Content__c WHERE Content_Address__c = :address LIMIT 1].isEmpty()) {
+            throw new AuraHandledException('That field already exists on this section.');
+        }
+        MA_Page_Content__c row = new MA_Page_Content__c();
+        row.Content_Address__c = address;
+        row.Offering_Key__c    = offeringKey;
+        row.Template_Type__c   = templateType;
+        row.Section_Key__c     = sectionKey;
+        row.Field_Key__c       = fieldKey;
+        row.Field_Type__c      = String.isBlank(fieldType) ? 'text' : fieldType;
+        row.Label__c           = label;
+        row.Active__c          = true;
+        row.Sort_Order__c      = 0;
+        if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
+        try {
+            insert row;
+        } catch (DmlException e) {
+            throw new AuraHandledException('The field could not be added: ' + e.getMessage());
+        }
+        return row.Id;
+    }
+
+    /**
+     * Sort order for a section appended to the end of a page. Steps of 10 so a
+     * later reorder has room to move one section between two others without
+     * rewriting every row.
+     */
+    private static Decimal nextSortOrder(String offeringKey, String templateType) {
+        AggregateResult[] top = [
+            SELECT MAX(Sort_Order__c) top
+            FROM   MA_Page_Section__c
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
+        ];
+        Decimal current = (top.isEmpty() || top[0].get('top') == null)
+            ? 0
+            : (Decimal) top[0].get('top');
+        return current + 10;
+    }
+
+    /**
+     * A section key is part of a content address, so it has to survive being
+     * concatenated and split on "::". Anything that is not a letter, a digit or
+     * an internal hyphen is dropped rather than escaped.
+     */
+    private static String normaliseKey(String raw) {
+        if (String.isBlank(raw)) return null;
+        String cleaned = raw.trim().toLowerCase().replaceAll('[^a-z0-9]+', '-');
+        cleaned = cleaned.replaceAll('^-+', '').replaceAll('-+$', '');
+        return String.isBlank(cleaned) ? null : cleaned.left(80);
+    }
+
+    /** One field to create alongside a new section. */
+    public class FieldSeed {
+        @AuraEnabled public String fieldKey  { get; set; }
+        @AuraEnabled public String fieldType { get; set; }
+        @AuraEnabled public String label     { get; set; }
+    }
+
     public class EditorSection {
         @AuraEnabled public String  id          { get; set; }
         @AuraEnabled public String  sectionKey  { get; set; }

@@ -29,10 +29,14 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# The layout vocabulary is shared between the renderer and the editor, so the
+# contract is read from the shared module rather than from either consumer.
+LAYOUTS_JS = "force-app/main/default/lwc/gtmPageLayouts/gtmPageLayouts.js"
+
 TEMPLATES = [
     {
         "name": "story",
-        "js": "force-app/main/default/lwc/maStory/maStory.js",
+        "js": LAYOUTS_JS,
         "html": "force-app/main/default/lwc/maStory/maStory.html",
         "sections": "data/seed/migration-accelerator.story.sections.json",
         "content": "data/seed/migration-accelerator.story.records.json",
@@ -49,7 +53,11 @@ def parse_layout_fields(js):
     """Pull LAYOUT_FIELDS out of the component as {layout: {bucket: [fields]}}."""
     block = re.search(r"const LAYOUT_FIELDS = \{(.*?)\n\};", js, re.S)
     if not block:
-        raise SystemExit("LAYOUT_FIELDS not found in component")
+        raise SystemExit(
+            "LAYOUT_FIELDS not found in %s. The layout vocabulary moved to the "
+            "shared c/gtmPageLayouts module; if it moved again, update "
+            "LAYOUTS_JS in this script." % LAYOUTS_JS
+        )
     out = {}
     for name, body in re.findall(r"'([\w-]+)':\s*\{(.*?)\}", block.group(1), re.S):
         spec = {}

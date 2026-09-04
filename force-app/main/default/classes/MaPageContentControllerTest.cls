@@ -520,4 +520,154 @@ private class MaPageContentControllerTest {
             [SELECT Text_Value__c FROM MA_Page_Content__c WHERE Id = :other.Id].Text_Value__c,
             'Another page keeps its unpublished draft');
     }
+
+    // ─── createSection / deleteSection / createField ──────────────────────────
+
+    private static List<MaPageContentController.FieldSeed> seeds() {
+        List<MaPageContentController.FieldSeed> out = new List<MaPageContentController.FieldSeed>();
+        MaPageContentController.FieldSeed a = new MaPageContentController.FieldSeed();
+        a.fieldKey = 'eyebrow'; a.fieldType = 'text'; a.label = 'Eyebrow';
+        MaPageContentController.FieldSeed b = new MaPageContentController.FieldSeed();
+        b.fieldKey = 'cards'; b.fieldType = 'json'; b.label = 'Cards';
+        out.add(a); out.add(b);
+        return out;
+    }
+
+    @IsTest
+    static void createSection_createsSectionAndItsFields() {
+        Test.startTest();
+        String id = MaPageContentController.createSection(
+            OFFERING, TMPL, 'new-beat', 'New Beat', 'card-grid', 'standard', seeds());
+        Test.stopTest();
+
+        MA_Page_Section__c sec = [
+            SELECT Section_Key__c, Section_Address__c, Layout_Type__c, Width__c, Active__c
+            FROM MA_Page_Section__c WHERE Id = :id];
+        System.assertEquals('new-beat', sec.Section_Key__c, 'Section key should be stored as given');
+        System.assertEquals(OFFERING + '::' + TMPL + '::new-beat', sec.Section_Address__c,
+            'Section address should be offering::template::key');
+        System.assertEquals(true, sec.Active__c, 'A new section should be visible');
+
+        List<MA_Page_Content__c> rows = [
+            SELECT Field_Key__c, Field_Type__c, JSON_Value__c FROM MA_Page_Content__c
+            WHERE Offering_Key__c = :OFFERING AND Section_Key__c = 'new-beat' ORDER BY Field_Key__c];
+        System.assertEquals(2, rows.size(), 'Both declared fields should get a record');
+        // A json field with no value is an empty list, not an empty string: the
+        // editor parses this column to build its repeater.
+        for (MA_Page_Content__c r : rows) {
+            if (r.Field_Type__c == 'json') {
+                System.assertEquals('[]', r.JSON_Value__c, 'A new json field should seed an empty list');
+            }
+        }
+    }
+
+    @IsTest
+    static void createSection_normalisesKeyForUseInAnAddress() {
+        Test.startTest();
+        String id = MaPageContentController.createSection(
+            OFFERING, TMPL, '  The Mechanism!! ', 'The Mechanism', 'hero', 'standard', seeds());
+        Test.stopTest();
+
+        MA_Page_Section__c sec = [SELECT Section_Key__c FROM MA_Page_Section__c WHERE Id = :id];
+        System.assertEquals('the-mechanism', sec.Section_Key__c,
+            'Punctuation and case should be stripped so the key survives an address');
+    }
+
+    @IsTest
+    static void createSection_refusesADuplicateKey() {
+        MaPageContentController.createSection(
+            OFFERING, TMPL, 'beat', 'Beat', 'hero', 'standard', seeds());
+        Boolean blocked = false;
+        Test.startTest();
+        try {
+            MaPageContentController.createSection(
+                OFFERING, TMPL, 'beat', 'Beat again', 'hero', 'standard', seeds());
+        } catch (AuraHandledException e) {
+            blocked = true;
+        }
+        Test.stopTest();
+        // The key addresses every field under it, so a collision would merge
+        // two sections' content rather than fail loudly.
+        System.assert(blocked, 'A duplicate section key should be refused');
+        System.assertEquals(1, [SELECT COUNT() FROM MA_Page_Section__c
+            WHERE Offering_Key__c = :OFFERING AND Section_Key__c = 'beat'],
+            'The duplicate should not have been inserted');
+    }
+
+    @IsTest
+    static void createSection_refusesAKeyThatNormalisesToNothing() {
+        Boolean blocked = false;
+        Test.startTest();
+        try {
+            MaPageContentController.createSection(
+                OFFERING, TMPL, '!!!', '!!!', 'hero', 'standard', seeds());
+        } catch (AuraHandledException e) {
+            blocked = true;
+        }
+        Test.stopTest();
+        System.assert(blocked, 'A key with no usable characters should be refused');
+    }
+
+    @IsTest
+    static void deleteSection_removesTheSectionAndItsContent() {
+        String id = MaPageContentController.createSection(
+            OFFERING, TMPL, 'doomed', 'Doomed', 'card-grid', 'standard', seeds());
+
+        Test.startTest();
+        Integer removed = MaPageContentController.deleteSection(id);
+        Test.stopTest();
+
+        System.assertEquals(2, removed, 'Both content rows should be reported deleted');
+        System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Section__c WHERE Id = :id],
+            'The section should be gone');
+        System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Content__c
+            WHERE Offering_Key__c = :OFFERING AND Section_Key__c = 'doomed'],
+            'Deleting a section must not leave its content rows orphaned');
+    }
+
+    @IsTest
+    static void deleteSection_rejectsAnUnknownId() {
+        Boolean blocked = false;
+        Test.startTest();
+        try {
+            MaPageContentController.deleteSection('a0000000000000AAAA');
+        } catch (Exception e) {
+            blocked = true;
+        }
+        Test.stopTest();
+        System.assert(blocked, 'Deleting a section that does not exist should fail loudly');
+    }
+
+    @IsTest
+    static void createField_addsOneMissingRow() {
+        MaPageContentController.createSection(
+            OFFERING, TMPL, 'partial', 'Partial', 'card-grid', 'standard', seeds());
+
+        Test.startTest();
+        String id = MaPageContentController.createField(
+            OFFERING, TMPL, 'partial', 'head', 'text', 'Head');
+        Test.stopTest();
+
+        MA_Page_Content__c row = [SELECT Content_Address__c, Field_Type__c, Label__c
+            FROM MA_Page_Content__c WHERE Id = :id];
+        System.assertEquals(OFFERING + '::' + TMPL + '::partial::head', row.Content_Address__c,
+            'The address should be offering::template::section::field');
+        System.assertEquals('Head', row.Label__c, 'The supplied label should be stored');
+    }
+
+    @IsTest
+    static void createField_refusesAFieldThatAlreadyExists() {
+        MaPageContentController.createSection(
+            OFFERING, TMPL, 'dupefield', 'Dupe Field', 'card-grid', 'standard', seeds());
+        Boolean blocked = false;
+        Test.startTest();
+        try {
+            MaPageContentController.createField(
+                OFFERING, TMPL, 'dupefield', 'eyebrow', 'text', 'Eyebrow');
+        } catch (AuraHandledException e) {
+            blocked = true;
+        }
+        Test.stopTest();
+        System.assert(blocked, 'Adding a field that already has a record should be refused');
+    }
 }

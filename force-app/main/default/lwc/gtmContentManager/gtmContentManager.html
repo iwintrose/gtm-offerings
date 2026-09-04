@@ -134,12 +134,19 @@
                               disabled={s.isLast} title="Move down">&darr;</button>
                       <button class="mv" data-key={s.sectionKey} onclick={handleToggleActive}
                               title={s.toggleLabel}>&#9679;</button>
+                      <button class="mv mv--danger" data-key={s.sectionKey} onclick={handleAskDelete}
+                              title="Delete this section">&times;</button>
                     </span>
                   </template>
                 </div>
               </template>
             </div>
-            <p class="gcm-hint">{railHint}</p>
+            <div class="gcm-rail-foot">
+              <button class="gcm-add" onclick={handleOpenAdd} disabled={isSaving}>
+                <span class="gcm-add-plus">+</span> Add section
+              </button>
+              <p class="gcm-hint">{railHint}</p>
+            </div>
           </aside>
 
           <section class="gcm-fields">
@@ -160,10 +167,16 @@
                   </div>
 
                   <!-- plain text -->
-                  <template if:true={f.isText}>
+                  <template if:true={f.isTextShort}>
                     <lightning-input variant="label-hidden" value={f.value}
                                      data-id={f.id} data-column={f.column}
                                      onchange={handleTextChange}></lightning-input>
+                  </template>
+                  <template if:true={f.isTextLong}>
+                    <lightning-textarea variant="label-hidden" value={f.value}
+                                        class="fld-area"
+                                        data-id={f.id} data-column={f.column}
+                                        onchange={handleTextChange}></lightning-textarea>
                   </template>
 
                   <!-- rich text: a real editor, so no markup shows in the box -->
@@ -227,6 +240,23 @@
                   </template>
                 </div>
               </template>
+          <template if:true={hasMissingFields}>
+                <div class="gcm-missing">
+                  <p class="gcm-missing-h">{missingSummary}</p>
+                  <p class="gcm-missing-sub">
+                    Until a field has a record the page falls back to a built-in
+                    default, which looks like content nobody can edit.
+                  </p>
+                  <div class="gcm-missing-list">
+                    <template for:each={missingFields} for:item="m">
+                      <button key={m.id} class="gcm-missing-add" data-field={m.fieldKey}
+                              onclick={handleAddField} disabled={isSaving}>
+                        + {m.label} <span class="gcm-missing-key">{m.fieldKey}</span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </template>
             </div>
           </section>
 
@@ -235,7 +265,7 @@
               <span>Preview</span>
               <span class="gcm-count">{previewScaleLabel}</span>
             </div>
-            <div class="gcm-preview-body">
+            <div class="gcm-preview-body" onscroll={handlePreviewScroll}>
               <div class="gcm-stage-shell">
                 <div class="gcm-stage">
                   <c-ma-story
@@ -257,6 +287,56 @@
         </div>
       </template>
     </template>
+    <template if:true={addOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="addTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="addTitle">Add a section</h2>
+            <p>A layout decides what the section can hold. Its fields are created with it.</p>
+          </header>
+          <div class="modal-b">
+            <lightning-combobox label="Layout" value={addLayout} options={layoutOptions}
+                                placeholder="Choose a layout"
+                                onchange={handleAddLayoutChange}></lightning-combobox>
+            <p class="modal-note">{addLayoutHint}</p>
+            <lightning-input label="Heading" value={addLabel} placeholder="For example: The mechanism"
+                             onchange={handleAddLabelChange}></lightning-input>
+            <template if:true={addKeyPreview}>
+              <p class="modal-addr">{addKeyPreview}</p>
+            </template>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseAdd}></lightning-button>
+            <lightning-button label="Add section" variant="brand" disabled={canAddSectionDisabled}
+                              onclick={handleCreateSection}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <template if:true={deleteOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="delTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="delTitle">Delete this section?</h2>
+            <p>This deletes {deleteSummary}.</p>
+          </header>
+          <div class="modal-b">
+            <p class="modal-note">
+              The content goes with it and there is no version to roll back to.
+              To take a section off the page but keep what is in it, hide it
+              instead.
+            </p>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCancelDelete}></lightning-button>
+            <lightning-button label="Delete section" class="modal-danger"
+                              onclick={handleConfirmDelete}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
     <template if:true={exitOpen}>
       <section role="dialog" aria-modal="true" aria-labelledby="pubTitle" class="scrim">
         <div class="modal">
