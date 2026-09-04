@@ -58,7 +58,20 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     // made a moment ago — so it is called rather than wired. @wire refuses a
     // method that is not cacheable, which is what left this page's offerings
     // empty behind a platform error.
-    connectedCallback() { this.loadOfferings(); }
+    connectedCallback() {
+        // NavigationMixin contributes its own connectedCallback; overriding it
+        // without chaining leaves the navigation context unwired, which fails
+        // at connect rather than at the click that needs it.
+        if (super.connectedCallback) super.connectedCallback();
+        try {
+            this.loadOfferings();
+        } catch (e) {
+            // A landing page that cannot load its offerings should say so, not
+            // take the whole page down with it.
+            this.loadError = (e && e.message) || 'Offerings could not be loaded.';
+            this.offeringsLoaded = true;
+        }
+    }
 
     loadOfferings() {
         return getHomeSummary()
