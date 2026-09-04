@@ -29,7 +29,20 @@
                                                 <a class="sl-link-record" href={link.recordUrl} target="_blank" rel="noopener">{link.recordNumber}</a>
                                                 <span>·</span>
                                                 <span>{link.date}</span>
+                                                <template if:true={link.contactName}>
+                                                    <span>·</span>
+                                                    <span>{link.contactName}</span>
+                                                </template>
                                             </div>
+                                            <!-- Two links for one client is
+                                                 allowed, but it should not be
+                                                 something you have to notice
+                                                 by reading the whole list. -->
+                                            <template if:true={link.shared}>
+                                                <span class="sl-dupe" title="Same account, more than one link">
+                                                    {link.sharedLabel}
+                                                </span>
+                                            </template>
                                         </div>
                                         <div class="sl-link-actions">
                                             <button

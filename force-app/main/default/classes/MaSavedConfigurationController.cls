@@ -243,8 +243,13 @@ public with sharing class MaSavedConfigurationController {
      */
     @AuraEnabled
     public static List<MA_Saved_Configuration__c> getMyConfigurations() {
+        // The account comes back so the list can say when one client has
+        // more than one link. Company__c is free text a rep typed and two
+        // links for the same client can spell it differently; the account is
+        // the thing that actually joins them.
         return [
             SELECT Id, Name, Offering__c, Industry__c, Company__c,
+                   Account__c, Account__r.Name, Contact__c, Contact__r.Name,
                    Generated_URL__c, Active__c, CreatedDate, OwnerId, Owner.Name
             FROM MA_Saved_Configuration__c
             ORDER BY CreatedDate DESC

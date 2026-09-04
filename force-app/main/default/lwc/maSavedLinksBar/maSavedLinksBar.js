@@ -193,6 +193,19 @@ export default class MaSavedLinksBar extends LightningElement {
     groupRecords(records) {
         const byOffering = new Map();
 
+        // How many links each client already has. Two links for one account is
+        // legitimate -- a second contact, a second pitch -- but it was
+        // invisible: the list groups by offering and industry, so they sat
+        // apart with nothing saying they were the same client. Counting by
+        // account rather than by the typed company name, because the name is
+        // free text and the same client can be spelled two ways.
+        const linksPerAccount = new Map();
+        records.forEach((rec) => {
+            const acct = rec.Account__c;
+            if (!acct) return;
+            linksPerAccount.set(acct, (linksPerAccount.get(acct) || 0) + 1);
+        });
+
         records.forEach((rec) => {
             const offeringKey = rec.Offering__c || 'Other';
             if (!byOffering.has(offeringKey)) {
@@ -204,9 +217,14 @@ export default class MaSavedLinksBar extends LightningElement {
                 byIndustry.set(industryKey, []);
             }
             const active = rec.Active__c !== false;
+            const siblings = rec.Account__c ? (linksPerAccount.get(rec.Account__c) || 1) : 1;
             byIndustry.get(industryKey).push({
                 id: rec.Id,
                 label: rec.Company__c || rec.Name,
+                accountName: rec.Account__r ? rec.Account__r.Name : '',
+                contactName: rec.Contact__r ? rec.Contact__r.Name : '',
+                shared: siblings > 1,
+                sharedLabel: siblings > 1 ? `${siblings} links for this client` : '',
                 recordNumber: rec.Name,
                 url: appendCfgId(rec.Generated_URL__c, rec.Id),
                 owner: rec.Owner ? rec.Owner.Name : '',
