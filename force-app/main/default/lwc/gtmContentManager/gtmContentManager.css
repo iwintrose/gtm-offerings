@@ -108,32 +108,6 @@
     font-size: 10.5px; color: #747474; line-height: 1.5; margin: 0;
 }
 
-/* ── fields ──────────────────────────────────────────────────────────────── */
-.gcm-fields-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0.75rem; }
-.gcm-sechead { padding-bottom: 0.6rem; border-bottom: 1px solid #e5e5e5; margin-bottom: 0.75rem; }
-.gcm-sechead h2 { margin: 0 0 0.15rem; font-size: 15px; font-weight: 700; }
-.gcm-sechead p { margin: 0; font-size: 11.5px; color: #444; line-height: 1.5; }
-.gcm-addr-chip {
-    display: inline-block; margin-top: 0.45rem;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 10px; color: #747474;
-    background: #fafaf9; border: 1px solid #e5e5e5;
-    border-radius: 3px; padding: 0.1rem 0.35rem;
-    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.fld { margin-bottom: 0.8rem; }
-.fld-top { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.2rem; }
-.fld-label {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.03em; color: #444;
-}
-.fld-type {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 9.5px; color: #747474;
-    border: 1px solid #e5e5e5; border-radius: 3px; padding: 0 0.25rem;
-}
-.fld-json textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
-
 /* ── preview ─────────────────────────────────────────────────────────────── */
 .gcm-preview-body {
     flex: 1; min-height: 0; overflow: auto;
@@ -279,19 +253,6 @@
 }
 .rep-add:hover { border-color: #0176d3; color: #0176d3; background: #eef4ff; }
 
-/* ── draft state ─────────────────────────────────────────────────────────── */
-.gcm-drafts {
-    font-size: 11.5px; color: #8c6a1a;
-    background: #fef5ec; border: 1px solid #fe9339;
-    border-radius: 4px; padding: .15rem .4rem; white-space: nowrap;
-}
-.fld-status { font-size: 0; }
-.fld-status--draft {
-    font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em;
-    color: #8c6a1a; background: #fef5ec; border: 1px solid #fe9339;
-    border-radius: 3px; padding: 0 .28rem;
-}
-
 /* ── publish dialog ──────────────────────────────────────────────────────── */
 .scrim {
     position: fixed; inset: 0; z-index: 100;
@@ -423,25 +384,3 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 10px; color: #969696;
 }
-
-/* ── per-field tools ─────────────────────────────────────────────────────── */
-.fld-tools {
-    display: flex; gap: 0.2rem; margin-top: 0.45rem;
-    opacity: 0; transition: opacity 0.12s;
-}
-.fld:hover .fld-tools, .fld:focus-within .fld-tools { opacity: 1; }
-.fldbtn {
-    border: 1px solid #e5e5e5; border-radius: 3px; background: #fff;
-    color: #747474; font-size: 11px; line-height: 1;
-    padding: 0.18rem 0.34rem; cursor: pointer;
-}
-.fldbtn:hover:not(:disabled) { border-color: #0176d3; color: #0176d3; }
-.fldbtn:disabled { color: #d8d8d8; cursor: default; }
-.fldbtn--danger:hover:not(:disabled) { border-color: #ba0517; color: #ba0517; }
-.fldbtn--undo { color: #0176d3; }
-
-.fld--doomed { opacity: 0.55; }
-.fld--doomed .fld-label { text-decoration: line-through; }
-.fld-status--doomed { color: #ba0517; }
-
-.gcm-add--field { margin-top: 0.9rem; }

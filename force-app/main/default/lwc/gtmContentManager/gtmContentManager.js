@@ -11,11 +11,7 @@ import saveSectionOrder from '@salesforce/apex/MaPageSectionController.saveSecti
 import setSectionActive from '@salesforce/apex/MaPageSectionController.setSectionActive';
 import createSection from '@salesforce/apex/MaPageSectionController.createSection';
 import deleteSection from '@salesforce/apex/MaPageSectionController.deleteSection';
-import createField from '@salesforce/apex/MaPageSectionController.createField';
 import restoreSection from '@salesforce/apex/MaPageSectionController.restoreSection';
-import deleteField from '@salesforce/apex/MaPageSectionController.deleteField';
-import restoreField from '@salesforce/apex/MaPageSectionController.restoreField';
-import saveFieldOrder from '@salesforce/apex/MaPageSectionController.saveFieldOrder';
 // One definition of what a layout is made of, shared with the renderer.
 import { addableLayouts, fieldsFor } from 'c/gtmPageLayouts';
 
@@ -93,14 +89,6 @@ export default class GtmContentManager extends LightningElement {
     @track addLayout = '';
     @track addLabel = '';
     @track deleteTarget = null;
-
-    // add field
-    @track addFieldOpen = false;
-    @track nfLabel = '';
-    @track nfKey = '';
-    @track nfType = 'text';
-    @track nfHelp = '';
-    @track nfKeyTouched = false;
 
     // column splitter
     @track fieldsWidth = 0;
@@ -380,185 +368,6 @@ export default class GtmContentManager extends LightningElement {
             .finally(() => { this.isSaving = false; });
     }
 
-    // ─── field editor ─────────────────────────────────────────────────────────
-
-    get activeSection() { return this.sections.find((s) => s.sectionKey === this.activeKey); }
-    get activeSectionLabel() { const s = this.activeSection; return s ? (s.label || s.sectionKey) : ''; }
-    get activeSectionHelp() { const s = this.activeSection; return s ? (s.helpText || '') : ''; }
-    get activeAddress() {
-        return `${this.selectedOffering}::${this.selectedTemplate}::${this.activeKey}`;
-    }
-
-    /**
-     * Builds the editable shape for each field. JSON payloads become repeaters:
-     * the item shape is read from the data itself, so a list of strings gets one
-     * input per entry and a list of objects gets one labelled input per key.
-     * Nothing here knows what a capability card or an FAQ entry is.
-     */
-    get activeFields() {
-        return this.records
-            .filter((r) => r.sectionKey === this.activeKey)
-            .map((r) => {
-                const type = r.fieldType || 'text';
-                // Show the working copy where one exists; the published value
-                // otherwise. The live page always reads the published column.
-                const value = r.isDraft ? (r.draftValue || '') : (r[COLUMN[type]] || '');
-                const base = {
-                    ...r,
-                    value,
-                    displayLabel: r.label || r.fieldKey,
-                    hasHelp: !!r.helpText,
-                    column: COLUMN[type],
-                    isText: type === 'text',
-                    isTextLong: type === 'text' && r.renderLong === true,
-                    isTextShort: type === 'text' && r.renderLong !== true,
-                    isRich: type === 'rich',
-                    isJson: type === 'json',
-                    statusClass: r.isDraft ? 'fld-status fld-status--draft' : 'fld-status',
-                    statusLabel: r.isDraft ? 'Draft' : ''
-                };
-                if (base.isJson) base.items = this.buildItems(r.id, value);
-                return base;
-            })
-            .map((f, i, all) => ({
-                ...f,
-                isFirst: i === 0,
-                isLast: i === all.length - 1,
-                statusClass: f.pendingDelete
-                    ? 'fld-status fld-status--doomed'
-                    : (f.isDraft ? 'fld-status fld-status--draft' : 'fld-status'),
-                statusLabel: f.pendingDelete ? 'Delete on publish' : (f.isDraft ? 'Draft' : ''),
-                fieldClass: f.pendingDelete ? 'fld fld--doomed' : 'fld'
-            }));
-    }
-
-    buildItems(recordId, raw) {
-        let parsed;
-        try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
-        if (!Array.isArray(parsed)) return [];
-        return parsed.map((entry, index) => {
-            const isScalar = typeof entry !== 'object' || entry === null;
-            const fields = isScalar
-                ? [{ key: '__value', label: 'Value', value: String(entry), isLong: String(entry).length > 60 }]
-                : Object.keys(entry).map((k) => ({
-                    key: k,
-                    label: this.humanise(k),
-                    value: typeof entry[k] === 'boolean' ? String(entry[k]) : (entry[k] || ''),
-                    isBool: typeof entry[k] === 'boolean',
-                    checked: entry[k] === true,
-                    isLong: !(typeof entry[k] === 'boolean') && String(entry[k] || '').length > 60
-                }));
-            return {
-                id: `${recordId}-${index}`,
-                recordId,
-                index,
-                position: index + 1,
-                isFirst: index === 0,
-                isLast: index === parsed.length - 1,
-                isScalar,
-                fields
-            };
-        });
-    }
-
-    humanise(key) {
-        return key
-            .replace(/([A-Z])/g, ' $1')
-            .replace(/^./, (c) => c.toUpperCase())
-            .trim();
-    }
-
-    get fieldCountLabel() {
-        const n = this.activeFields.length;
-        return `${n} field${n === 1 ? '' : 's'}`;
-    }
-
-    // ─── edits ────────────────────────────────────────────────────────────────
-
-    handleTextChange(event) {
-        this.writeValue(event.currentTarget.dataset.id, event.target.value);
-    }
-
-    handleRichChange(event) {
-        this.writeValue(event.currentTarget.dataset.id, event.target.value);
-    }
-
-    handleItemChange(event) {
-        const { id, key, index } = event.currentTarget.dataset;
-        const raw = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
-        this.mutateJson(id, Number(index), (entry) => {
-            if (key === '__value') return raw;
-            return { ...entry, [key]: raw };
-        });
-    }
-
-    handleItemMove(event) {
-        const { id, index, dir } = event.currentTarget.dataset;
-        const from = Number(index);
-        const to = from + (dir === 'up' ? -1 : 1);
-        this.reorderJson(id, from, to);
-    }
-
-    handleItemDelete(event) {
-        const { id, index } = event.currentTarget.dataset;
-        this.spliceJson(id, Number(index));
-    }
-
-    handleItemAdd(event) {
-        const id = event.currentTarget.dataset.id;
-        this.appendJson(id);
-    }
-
-    // JSON helpers — each reads the record, edits the parsed array, writes back.
-
-    parseOf(recordId) {
-        const rec = this.records.find((r) => r.id === recordId);
-        if (!rec) return null;
-        const raw = rec.isDraft ? (rec.draftValue || '[]') : (rec.jsonValue || '[]');
-        try {
-            const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? parsed : null;
-        } catch (e) { return null; }
-    }
-
-    commitJson(recordId, list) {
-        this.writeValue(recordId, JSON.stringify(list));
-    }
-
-    mutateJson(recordId, index, fn) {
-        const list = this.parseOf(recordId);
-        if (!list || index < 0 || index >= list.length) return;
-        list[index] = fn(list[index]);
-        this.commitJson(recordId, list);
-    }
-
-    reorderJson(recordId, from, to) {
-        const list = this.parseOf(recordId);
-        if (!list || to < 0 || to >= list.length) return;
-        list.splice(to, 0, list.splice(from, 1)[0]);
-        this.commitJson(recordId, list);
-    }
-
-    spliceJson(recordId, index) {
-        const list = this.parseOf(recordId);
-        if (!list || list.length <= 1) return;
-        list.splice(index, 1);
-        this.commitJson(recordId, list);
-    }
-
-    appendJson(recordId) {
-        const list = this.parseOf(recordId);
-        if (!list) return;
-        const template = list.length && typeof list[0] === 'object' && list[0] !== null
-            ? Object.keys(list[0]).reduce((acc, k) => {
-                acc[k] = typeof list[0][k] === 'boolean' ? false : '';
-                return acc;
-            }, {})
-            : '';
-        list.push(template);
-        this.commitJson(recordId, list);
-    }
-
     // Edits land on draftValue, never on the published column, so the public
     // page is unaffected until Publish runs.
     writeValue(recordId, value) {
@@ -834,161 +643,6 @@ export default class GtmContentManager extends LightningElement {
             .finally(() => { this.isSaving = false; });
     }
 
-    // ─── add a field ──────────────────────────────────────────────────────────
-    // Unlike "add section", this is not limited to what a layout declares: the
-    // renderer draws fields it does not recognise generically, so an editor can
-    // put something on a page that nobody designed a slot for.
-
-    get fieldTypeOptions() {
-        return [
-            { label: 'Plain text', value: 'text' },
-            { label: 'Rich text', value: 'rich' },
-            { label: 'List', value: 'json' }
-        ];
-    }
-
-    get nfTypeHint() {
-        if (this.nfType === 'rich') return 'A formatted paragraph, with bold, italic and links.';
-        if (this.nfType === 'json') {
-            return 'A repeating list. Its shape is read from what you put in it: '
-                 + 'plain entries become chips, two-part entries a titled paragraph, '
-                 + 'three-part entries cards.';
-        }
-        return 'A single line or paragraph of unformatted text.';
-    }
-
-    get nfAddress() {
-        const key = this.camelKey(this.nfKey || this.nfLabel);
-        return key
-            ? `${this.selectedOffering}::${this.selectedTemplate}::${this.activeKey}::${key}`
-            : '';
-    }
-
-    get addFieldDisabled() {
-        return !this.camelKey(this.nfKey || this.nfLabel) || !this.nfLabel.trim() || this.isSaving;
-    }
-
-    /**
-     * A field key is an address segment, so it has to survive being joined and
-     * split on "::". camelCase rather than hyphens, to match the keys the
-     * layouts already use.
-     */
-    camelKey(raw) {
-        const words = String(raw || '').trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-        if (!words.length) return '';
-        return words
-            .map((w, i) => (i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
-            .join('')
-            .slice(0, 60);
-    }
-
-    handleOpenAddField() {
-        if (!this.activeKey) return;
-        this.addFieldOpen = true;
-        this.nfLabel = '';
-        this.nfKey = '';
-        this.nfType = 'text';
-        this.nfHelp = '';
-        this.nfKeyTouched = false;
-    }
-
-    handleCloseAddField() { this.addFieldOpen = false; }
-
-    handleNfLabel(event) {
-        this.nfLabel = event.target.value;
-        // The key follows the label until someone edits the key themselves;
-        // after that it is theirs and we stop overwriting it.
-        if (!this.nfKeyTouched) this.nfKey = this.camelKey(this.nfLabel);
-    }
-
-    handleNfKey(event) {
-        this.nfKeyTouched = true;
-        this.nfKey = event.target.value;
-    }
-
-    handleNfType(event) { this.nfType = event.detail.value; }
-    handleNfHelp(event) { this.nfHelp = event.target.value; }
-
-    handleCreateField() {
-        const key = this.camelKey(this.nfKey || this.nfLabel);
-        if (!key) return;
-        this.addFieldOpen = false;
-        this.isSaving = true;
-        this.saveMessage = 'Adding field…';
-        createField({
-            offeringKey: this.selectedOffering,
-            templateType: this.selectedTemplate,
-            sectionKey: this.activeKey,
-            fieldKey: key,
-            fieldType: this.nfType,
-            label: this.nfLabel.trim(),
-            helpText: this.nfHelp.trim() || null
-        })
-            .then(() => { this.saveMessage = 'Field added'; return this.loadPage(); })
-            .catch((err) => {
-                this.saveMessage = '';
-                this.loadError = this.messageFrom(err) || 'The field could not be added.';
-            })
-            .finally(() => { this.isSaving = false; });
-    }
-
-    // ─── field order and removal ──────────────────────────────────────────────
-
-    handleFieldUp(event) { this.moveField(event.currentTarget.dataset.id, -1); }
-    handleFieldDown(event) { this.moveField(event.currentTarget.dataset.id, 1); }
-
-    /**
-     * Field order is the order of the boxes in this editor. The renderer
-     * resolves a layout's fields by name, not position, so this changes nothing
-     * on the page and needs no publish — which is why it saves straight away
-     * while section order does not.
-     */
-    moveField(recordId, delta) {
-        const inSection = this.records.filter((r) => r.sectionKey === this.activeKey);
-        const from = inSection.findIndex((r) => r.id === recordId);
-        const to = from + delta;
-        if (from < 0 || to < 0 || to >= inSection.length) return;
-        const reordered = [...inSection];
-        reordered.splice(to, 0, reordered.splice(from, 1)[0]);
-
-        const rank = {};
-        reordered.forEach((r, i) => { rank[r.id] = i; });
-        this.records = [...this.records].sort((a, b) => {
-            if (a.sectionKey !== b.sectionKey) return 0;
-            if (a.sectionKey !== this.activeKey) return 0;
-            return rank[a.id] - rank[b.id];
-        });
-
-        this.isSaving = true;
-        saveFieldOrder({ recordIds: reordered.map((r) => r.id) })
-            .then(() => { this.saveMessage = 'Field order saved'; })
-            .catch((err) => { this.loadError = this.messageFrom(err) || 'The field order could not be saved.'; })
-            .finally(() => { this.isSaving = false; });
-    }
-
-    handleFieldDelete(event) {
-        const id = event.currentTarget.dataset.id;
-        this.isSaving = true;
-        deleteField({ recordId: id })
-            .then((removedNow) => {
-                this.saveMessage = removedNow
-                    ? 'Field removed'
-                    : 'Marked for deletion — publish to remove it';
-                return this.loadPage();
-            })
-            .catch((err) => { this.loadError = this.messageFrom(err) || 'The field could not be deleted.'; })
-            .finally(() => { this.isSaving = false; });
-    }
-
-    handleFieldRestore(event) {
-        const id = event.currentTarget.dataset.id;
-        this.isSaving = true;
-        restoreField({ recordId: id })
-            .then(() => { this.saveMessage = 'Delete undone'; return this.loadPage(); })
-            .catch((err) => { this.loadError = this.messageFrom(err) || 'The field could not be restored.'; })
-            .finally(() => { this.isSaving = false; });
-    }
-
     // ─── column splitter ──────────────────────────────────────────────────────
 
     handleSplitDown(event) {
@@ -1013,59 +667,34 @@ export default class GtmContentManager extends LightningElement {
         window.addEventListener('pointerup', up);
     }
 
-    // ─── missing fields ───────────────────────────────────────────────────────
-    // A field the layout declares but the section has no record for. The page
-    // falls back to a built-in default for these, which looks like content
-    // nobody can edit; offering them here is how that gets fixed.
+    // ─── field editor bridge ──────────────────────────────────────────────────
+    // c/gtmFieldEditor owns how a field is presented and what fields exist.
+    // The working copy of their values stays here, because it is what the
+    // preview renders and what autosave writes.
 
-    get missingFields() {
-        const section = this.activeSection;
-        if (!section) return [];
-        const present = new Set(
-            this.records
-                .filter((r) => r.sectionKey === this.activeKey)
-                .map((r) => r.fieldKey)
-        );
-        return fieldsFor(section.layoutType)
-            .filter((f) => !present.has(f.fieldKey))
-            .map((f) => ({ ...f, id: `${this.activeKey}-${f.fieldKey}` }));
+    get activeSection() { return this.sections.find((s) => s.sectionKey === this.activeKey); }
+    get activeSectionLabel() { const s = this.activeSection; return s ? (s.label || s.sectionKey) : ''; }
+    get activeSectionHelp() { const s = this.activeSection; return s ? (s.helpText || '') : ''; }
+    get activeLayoutType() { const s = this.activeSection; return s ? s.layoutType : ''; }
+    get activeAddress() {
+        return `${this.selectedOffering}::${this.selectedTemplate}::${this.activeKey}`;
     }
 
-    get hasMissingFields() { return this.missingFields.length > 0; }
-
-    get missingSummary() {
-        const n = this.missingFields.length;
-        return n === 1
-            ? '1 field this layout supports has no record yet.'
-            : `${n} fields this layout supports have no record yet.`;
+    handleFieldValueChange(event) {
+        this.writeValue(event.detail.recordId, event.detail.value);
     }
 
-    handleAddField(event) {
-        const fieldKey = event.currentTarget.dataset.field;
-        const spec = this.missingFields.find((f) => f.fieldKey === fieldKey);
-        if (!spec) return;
-        this.isSaving = true;
-        this.saveMessage = 'Adding field…';
-        createField({
-            offeringKey: this.selectedOffering,
-            templateType: this.selectedTemplate,
-            sectionKey: this.activeKey,
-            fieldKey: spec.fieldKey,
-            fieldType: spec.fieldType,
-            label: spec.label,
-            helpText: null
-        })
-            .then(() => { this.saveMessage = 'Field added'; return this.loadPage(); })
-            .catch((err) => {
-                this.saveMessage = '';
-                this.loadError = this.messageFrom(err) || 'The field could not be added.';
-            })
-            .finally(() => { this.isSaving = false; });
+    // Adding, removing or reordering a field changes what the page is made of,
+    // so reload rather than trying to patch the copy held here.
+    handleFieldsChanged(event) {
+        if (event.detail.message) this.saveMessage = event.detail.message;
+        this.loadPage();
     }
 
-    // Resolved by Apex from the offering's configured site path, not built
-    // here: a relative link would resolve against the Lightning domain, where
-    // Experience Cloud sites do not exist.
+    handleChildError(event) {
+        this.loadError = event.detail.message || 'Something went wrong.';
+    }
+
     // ─── preview data ─────────────────────────────────────────────────────────
     // The preview renders from this component's working copy, so every
     // keystroke redraws it: the draft is visible here before anyone else sees

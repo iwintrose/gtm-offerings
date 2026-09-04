@@ -1,0 +1,164 @@
+<template>
+  <section class="fe">
+    <div class="gcm-colhead"><span>Content</span><span class="gcm-count">{fieldCountLabel}</span></div>
+    <div class="gcm-fields-body">
+      <div class="gcm-sechead">
+        <h2>{sectionLabel}</h2>
+        <p>{sectionHelp}</p>
+        <span class="gcm-addr-chip">{sectionAddress}</span>
+      </div>
+
+      <template for:each={activeFields} for:item="f">
+        <div key={f.id} class={f.fieldClass}>
+          <div class="fld-top">
+            <span class="fld-label">{f.displayLabel}</span>
+            <span class="fld-key">{f.fieldKey}</span>
+            <span class={f.statusClass}>{f.statusLabel}</span>
+          </div>
+
+          <!-- plain text -->
+          <template if:true={f.isTextShort}>
+            <lightning-input variant="label-hidden" value={f.value}
+                             data-id={f.id} data-column={f.column}
+                             onchange={handleTextChange}></lightning-input>
+          </template>
+          <template if:true={f.isTextLong}>
+            <lightning-textarea variant="label-hidden" value={f.value}
+                                class="fld-area"
+                                data-id={f.id} data-column={f.column}
+                                onchange={handleTextChange}></lightning-textarea>
+          </template>
+
+          <!-- rich text: a real editor, so no markup shows in the box -->
+          <template if:true={f.isRich}>
+            <lightning-input-rich-text
+              value={f.value}
+              data-id={f.id}
+              formats="bold,italic,underline,link,clean"
+              message-when-bad-input="Check the formatting"
+              onchange={handleRichChange}>
+            </lightning-input-rich-text>
+          </template>
+
+          <!-- structured list: one control per item, shape read from the data -->
+          <template if:true={f.isJson}>
+            <div class="rep">
+              <template for:each={f.items} for:item="item">
+                <div key={item.id} class="rep-item">
+                  <div class="rep-head">
+                    <span class="rep-n">{item.position}</span>
+                    <span class="rep-acts">
+                      <button class="mv" data-id={item.recordId} data-index={item.index} data-dir="up"
+                              onclick={handleItemMove} disabled={item.isFirst} title="Move up">&uarr;</button>
+                      <button class="mv" data-id={item.recordId} data-index={item.index} data-dir="down"
+                              onclick={handleItemMove} disabled={item.isLast} title="Move down">&darr;</button>
+                      <button class="mv mv--del" data-id={item.recordId} data-index={item.index}
+                              onclick={handleItemDelete} title="Delete">&times;</button>
+                    </span>
+                  </div>
+                  <template for:each={item.fields} for:item="sub">
+                    <div key={sub.key} class="rep-sub">
+                      <template if:true={sub.isBool}>
+                        <lightning-input type="checkbox" label={sub.label} checked={sub.checked}
+                                         data-id={item.recordId} data-index={item.index} data-key={sub.key}
+                                         onchange={handleItemChange}></lightning-input>
+                      </template>
+                      <template if:false={sub.isBool}>
+                        <template if:true={sub.isLong}>
+                          <lightning-textarea label={sub.label} value={sub.value}
+                                              data-id={item.recordId} data-index={item.index} data-key={sub.key}
+                                              onchange={handleItemChange}></lightning-textarea>
+                        </template>
+                        <template if:false={sub.isLong}>
+                          <lightning-input label={sub.label} value={sub.value}
+                                           data-id={item.recordId} data-index={item.index} data-key={sub.key}
+                                           onchange={handleItemChange}></lightning-input>
+                        </template>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <button class="rep-add" data-id={f.id} onclick={handleItemAdd}>
+                <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon> Add item
+              </button>
+            </div>
+          </template>
+
+          <template if:true={f.hasHelp}>
+            <p class="fld-help">{f.helpText}</p>
+          </template>
+
+          <div class="fld-tools">
+            <button class="fldbtn" data-id={f.id} onclick={handleFieldUp}
+                    disabled={f.isFirst} title="Move up">&uarr;</button>
+            <button class="fldbtn" data-id={f.id} onclick={handleFieldDown}
+                    disabled={f.isLast} title="Move down">&darr;</button>
+            <template if:true={f.pendingDelete}>
+              <button class="fldbtn fldbtn--undo" data-id={f.id} onclick={handleFieldRestore}
+                      title="Undo the pending delete">&#8630;</button>
+            </template>
+            <template if:false={f.pendingDelete}>
+              <button class="fldbtn fldbtn--danger" data-id={f.id} onclick={handleFieldDelete}
+                      title="Delete this field">&times;</button>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <button class="gcm-add gcm-add--field" onclick={handleOpenAddField} disabled={isSaving}
+              title="Add a field to this section">
+        <span class="gcm-add-plus">+</span> Add field
+      </button>
+
+  <template if:true={hasMissingFields}>
+        <div class="gcm-missing">
+          <p class="gcm-missing-h">{missingSummary}</p>
+          <p class="gcm-missing-sub">
+            Until a field has a record the page falls back to a built-in
+            default, which looks like content nobody can edit.
+          </p>
+          <div class="gcm-missing-list">
+            <template for:each={missingFields} for:item="m">
+              <button key={m.id} class="gcm-missing-add" data-field={m.fieldKey}
+                      onclick={handleAddField} disabled={isSaving}>
+                + {m.label} <span class="gcm-missing-key">{m.fieldKey}</span>
+              </button>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+  </section>
+
+  <template if:true={addFieldOpen}>
+    <section role="dialog" aria-modal="true" aria-labelledby="afTitle" class="scrim">
+      <div class="modal">
+        <header class="modal-h">
+          <h2 id="afTitle">Add a field</h2>
+          <p>Adds one record to {sectionLabel}. The type decides which column it writes to.</p>
+        </header>
+        <div class="modal-b">
+          <lightning-input label="Label" value={nfLabel} placeholder="For example: Supporting note"
+                           onchange={handleNfLabel}></lightning-input>
+          <lightning-input label="Field key" value={nfKey} class="mono"
+                           placeholder="supportingNote" onchange={handleNfKey}></lightning-input>
+          <template if:true={nfAddress}>
+            <p class="modal-addr">{nfAddress}</p>
+          </template>
+          <lightning-combobox label="Type" value={nfType} options={fieldTypeOptions}
+                              onchange={handleNfType}></lightning-combobox>
+          <p class="modal-note">{nfTypeHint}</p>
+          <lightning-input label="Help text (optional)" value={nfHelp}
+                           placeholder="Shown under the field in this editor"
+                           onchange={handleNfHelp}></lightning-input>
+        </div>
+        <footer class="modal-f">
+          <lightning-button label="Cancel" onclick={handleCloseAddField}></lightning-button>
+          <lightning-button label="Add field" variant="brand" disabled={addFieldDisabled}
+                            onclick={handleCreateField}></lightning-button>
+        </footer>
+      </div>
+    </section>
+  </template>
+</template>
