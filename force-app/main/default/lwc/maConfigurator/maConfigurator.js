@@ -1,5 +1,5 @@
 import { LightningElement, api, track, wire } from 'lwc';
-import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isConfigManager';
+import isRep from '@salesforce/apex/MaViewerContext.isRep';
 import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
@@ -134,7 +134,7 @@ export default class MaConfigurator extends LightningElement {
      * links). Guests can't call this at all -- no class access -- so the
      * wire errors and this stays false. Whether the URL happens to carry
      * a company/industry param is irrelevant to who's allowed to edit. */
-    @wire(isConfigManager)
+    @wire(isRep)
     wiredIsConfigManager({ data, error }) {
         this.isConfigManager = !!data;
         if (error) {

@@ -331,15 +331,25 @@ public with sharing class MaSavedConfigurationController {
     }
 
     /**
-     * Lets a component gate rep-only UI (the Customize panel, the saved
-     * links bar) on real authentication rather than guessing from URL
-     * params. Guests -- and anyone without this permission -- can't even
-     * call it, since the guest permission set is never granted class
-     * access here; that failure is what a caller should treat as "false".
+     * Whether the current user is a rep, and so may see rep-only UI: Gus,
+     * the saved links bar, the wizard.
+     *
+     * This used to return true unconditionally and rely on guests being
+     * unable to call it at all -- the guest permission set granted no access,
+     * the wire errored, and the caller read that failure as false. That works
+     * until you want the site to tell a rep from a prospect, at which point
+     * the only signal is an exception, and an exception is indistinguishable
+     * from any other reason a call might fail. A rep on the public site was
+     * therefore shown the prospect's view.
+     *
+     * So the answer is computed rather than implied. Guests are the site's
+     * own guest user; a prospect who has somehow authenticated is a portal
+     * user, not a rep. Only an internal Salesforce user -- someone with a
+     * seat in this org -- is a rep.
      */
     @AuraEnabled(cacheable=true)
     public static Boolean isConfigManager() {
-        return true;
+        return UserInfo.getUserType() == 'Standard';
     }
 
     /** Returns true when the saved record currently has a password set.
