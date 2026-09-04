@@ -1,5 +1,4 @@
 import { LightningElement, api, track } from 'lwc';
-import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 // The layout vocabulary is shared with the editor, which has to know what
 // fields a section needs before that section exists. See c/gtmPageLayouts.
@@ -13,14 +12,6 @@ const FONTS_HREF =
 
 const OFFERING_KEY = 'migration-accelerator';
 
-function buildBuilderUrl(orgUrl) {
-    // The previous per-site deep link (/apex/networkbranding) pointed at a
-    // page that does not exist in this org. Digital Experiences > All Sites
-    // is the one Setup route guaranteed to exist; from there "Builder" opens
-    // the right site in one more click.
-    if (!orgUrl) return '#';
-    return `${orgUrl}/lightning/setup/SetupNetworks/home`;
-}
 
 // Hardcoded fallbacks shown until CMS data loads (keeps the page usable if a
 // CMS record hasn't been created yet or a callout fails).
@@ -199,18 +190,11 @@ export default class MaStory extends LightningElement {
     @track openFaqId = null;
     @track theme = null;
     @track proofOn = false;
-    @track _editMode = false;
     @track objectsText = '0';
     @track depsText = '0';
     @track gaugeValue = 0;
     @track scrollPct = 0;
 
-    @track _page = null;
-    @track _body = null;
-    @track _faqData = [];
-    @track _proofObjectsCount = null;
-    @track _proofDepsCount = null;
-    @track _proofHealthScore = null;
     // MA_Page_Content__c flat map: key = 'section::field', value = resolved string
     @track _cms = {};
     // Structure of the page, ordered. Empty until getPageLayout returns, at
@@ -289,13 +273,9 @@ export default class MaStory extends LightningElement {
     _revealed = new Set();
     _observed = new WeakSet();
     _scrollHandler;
-    _editModeHandler;
-    _orgUrl = '';
-    _lightningUrl = '';
-    _sites = [];
 
     // ─── CMS resolution helpers ────────────────────────────────────────────────
-    // Priority: MA_Page_Content__c (_cms map) → legacy CMS (_page/_body) → DEFAULTS
+    // Priority: MA_Page_Content__c (_cms map) → the built-in DEFAULTS
 
     _ct(key) { return this._cms[key] || null; }
 
@@ -481,9 +461,7 @@ export default class MaStory extends LightningElement {
     }
 
     _buildFaqs(fromRecords) {
-        const source = fromRecords.length
-            ? fromRecords
-            : (this._faqData && this._faqData.length) ? this._faqData : DEFAULTS.faqs;
+        const source = fromRecords.length ? fromRecords : DEFAULTS.faqs;
         return source.map((f, index) => {
             const id = 'q' + (index + 1);
             const qualified = f.verdict !== 'Yes';
@@ -538,25 +516,18 @@ export default class MaStory extends LightningElement {
     get progressStyle() { return `width: ${this.scrollPct}%;`; }
 
 
-    get builderUrl() { return buildBuilderUrl(this._orgUrl); }
-    get contentManagerUrl() {
-        return this._orgUrl ? `${this._orgUrl}/lightning/o/MA_Page_Content__c/list` : '#';
-    }
 
     // ---- lifecycle ----
 
     connectedCallback() {
         this.loadFonts();
-        // Phase 1 — MA_Page_Content__c is the primary CMS; falls back to legacy getStoryContent.
         // In preview mode the parent owns the data; fetching would overwrite the
         // draft. The window-level listeners are skipped too: inside the editor
         // this component sits in a scaled, scrolling container, so window scroll
         // is not this page's scroll and the progress bar would read as noise.
         if (this._preview) return;
         this._scrollHandler = this.handleScroll.bind(this);
-        this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
-        window.addEventListener('maadminedit', this._editModeHandler);
         getPageLayout({ offeringKey: this.offeringKey, templateType: 'story', industryKey: null })
             .then((layout) => {
                 if (!layout) return;
@@ -571,31 +542,11 @@ export default class MaStory extends LightningElement {
                 // eslint-disable-next-line no-console
                 console.error('[maStory] getPageLayout failed:', JSON.stringify(err));
             });
-        getStoryContent({ offeringKey: OFFERING_KEY })
-            .then((data) => {
-                if (!data) return;
-                this._faqData = data.faqs || [];
-                this._orgUrl = data.orgUrl || '';
-                this._lightningUrl = data.lightningUrl || '';
-                if (data.page) {
-                    this._page = data.page;
-                    this._proofObjectsCount = data.page.proofObjectsCount;
-                    this._proofDepsCount = data.page.proofDepsCount;
-                    this._proofHealthScore = data.page.proofHealthScore;
-                }
-                if (data.body) this._body = data.body;
-                this._sites = data.sites || [];
-            })
-            // eslint-disable-next-line no-console
-            .catch((err) => { console.error('[maStory] getStoryContent:', JSON.stringify(err)); });
     }
 
     disconnectedCallback() {
         if (this._scrollHandler) {
             window.removeEventListener('scroll', this._scrollHandler);
-        }
-        if (this._editModeHandler) {
-            window.removeEventListener('maadminedit', this._editModeHandler);
         }
         if (this._observer) {
             this._observer.disconnect();
@@ -695,9 +646,12 @@ export default class MaStory extends LightningElement {
         if (this.proofOn) return;
         this.proofOn = true;
 
-        const objects = parseInt(this._proofObjectsCount, 10) || 1284;
-        const deps = parseInt(this._proofDepsCount, 10) || 3140;
-        const health = parseInt(this._proofHealthScore, 10) || 84;
+        // These are content: they live on the mechanism section like every
+        // other field on this page, rather than on a custom setting read
+        // through the retired story CMS controller.
+        const objects = parseInt(this._ct('mechanism::proofObjectsCount'), 10) || 1284;
+        const deps = parseInt(this._ct('mechanism::proofDepsCount'), 10) || 3140;
+        const health = parseInt(this._ct('mechanism::proofHealthScore'), 10) || 84;
 
         if (this.reducedMotion) {
             this.objectsText = objects.toLocaleString();

@@ -19,11 +19,6 @@
 
     <div class="wrap" data-section="intro">
       <div class="eyebrow"><span class="bead"></span> {eyebrow}</div>
-      <template if:true={_editMode}>
-        <a href={builderUrl} target="_blank" rel="noopener" class="hd-edit-chip">
-          Edit page layout in Experience Builder ↗
-        </a>
-      </template>
       <h1>{headline}</h1>
       <p class="sub">{subhead}</p>
 
@@ -35,26 +30,6 @@
               <div class="tile-desc">{ind.desc}</div>
               <div class="tile-go">Configure for this industry →</div>
             </a>
-            <template if:true={_editMode}>
-              <button class="cedit-btn" data-id={ind.key} onclick={handleChipClick}>✎ Edit</button>
-              <div class={ind.popClass} onclick={handlePopClick}>
-                <div class="pop-hd">
-                  <div class="pop-name">{ind.label}</div>
-                  <div class="pop-id">{ind.address}</div>
-                </div>
-                <div class="pop-acts">
-                  <a href={ind.cmsUrl} target="_blank" rel="noopener" class="pop-act pop-act--cms">
-                    <span class="picon"></span>Edit this industry ↗
-                  </a>
-                  <a href={ind.builderUrl} target="_blank" rel="noopener" class="pop-act pop-act--bld">
-                    <span class="picon"></span>Edit page layout ↗
-                  </a>
-                  <a href={ind.indexUrl} target="_blank" rel="noopener" class="pop-act pop-act--rec">
-                    <span class="picon"></span>Open Content Manager ↗
-                  </a>
-                </div>
-              </div>
-            </template>
           </div>
         </template>
 

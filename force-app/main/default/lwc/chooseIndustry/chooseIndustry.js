@@ -106,8 +106,6 @@ export default class ChooseIndustry extends LightningElement {
     @track theme = null;
     @track _loadError = '';
     @track _industries = [];
-    @track _editMode = false;
-    @track _openEditId = null;
     @track _orgUrl = '';
     _lightningUrl = '';
     _sites = [];
@@ -178,7 +176,6 @@ export default class ChooseIndustry extends LightningElement {
                 : '#';
             const indexUrl = cmsUrl;
             const builderUrl = this.builderUrl;
-            const isOpen = this._openEditId === key;
             return {
                 key,
                 sectionKey: `industry-${key}`,
@@ -190,8 +187,7 @@ export default class ChooseIndustry extends LightningElement {
                 cmsUrl,
                 indexUrl,
                 builderUrl,
-                wrapClass: 'tile-wrap' + (this._editMode ? ' tile-wrap--edit' : ''),
-                popClass: 'tile-pop' + (isOpen ? ' open' : '')
+                wrapClass: 'tile-wrap'
             };
         });
     }
@@ -200,16 +196,9 @@ export default class ChooseIndustry extends LightningElement {
 
     connectedCallback() {
         this.loadFonts();
-        this._editModeHandler = (evt) => {
-            this._editMode = evt.detail.active;
-            this._openEditId = null;
-        };
-        this._winClickHandler = () => { this._openEditId = null; };
 
         // Industries are a shared taxonomy, so this page and the profiles
         // behind it belong to the framework, not to one offering.
-        window.addEventListener('maadminedit', this._editModeHandler);
-        window.addEventListener('click', this._winClickHandler);
 
         // Org URL and site list drive the edit-mode chrome only. This used to
         // come from getStoryContent, which also returned an industry list from
@@ -256,24 +245,8 @@ export default class ChooseIndustry extends LightningElement {
             });
     }
 
-    disconnectedCallback() {
-        if (this._editModeHandler) {
-            window.removeEventListener('maadminedit', this._editModeHandler);
-        }
-        if (this._winClickHandler) {
-            window.removeEventListener('click', this._winClickHandler);
-        }
-    }
 
-    handleChipClick(event) {
-        event.stopPropagation();
-        const id = event.currentTarget.dataset.id;
-        this._openEditId = this._openEditId === id ? null : id;
-    }
 
-    handlePopClick(event) {
-        event.stopPropagation();
-    }
 
     loadFonts() {
         try {

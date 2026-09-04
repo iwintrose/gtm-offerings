@@ -1,9 +1,12 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
+import setConfigActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
 import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
 import getConfiguratorPageUrl from '@salesforce/apex/MaSavedConfigurationController.getConfiguratorPageUrl';
 import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
-import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
+import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
+import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 import USER_ID from '@salesforce/user/Id';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import USER_NAME_FIELD from '@salesforce/schema/User.Name';
@@ -49,8 +52,12 @@ export default class MaConfigWizard extends LightningElement {
         this._savedRecordId = value || '';
         if (value) {
             this._knownRecordId = value;
+            this._replacing = false;
             this._path = 'full';
             this._step = TOTAL_STEPS;
+            // The URL the rep already sent, captured before any edit in this
+            // session changes what _buildUrl() would produce.
+            this._existingUrl = this._buildUrl();
         }
     }
     _savedRecordId = '';
@@ -60,7 +67,6 @@ export default class MaConfigWizard extends LightningElement {
     @track _path = 'choose'; // 'choose' | 'quick' | 'full'
     @track _step = 1;        // 1-8, full walkthrough only
     @track _quickStep = 1;   // 1-2, quick link only
-    @track _useLegacyForm = false;
 
     @track _company = '';
     @track _industry = '';
@@ -98,6 +104,12 @@ export default class MaConfigWizard extends LightningElement {
     @track _copyFeedback = 'Copy link';
 
     _knownRecordId = '';
+    // The link that already exists, and whether the rep has chosen to leave it
+    // alone and build another.
+    @track _existingUrl = '';
+    @track _existingActive = true;
+    @track _replacing = false;
+    @track _existingCopyLabel = 'Copy link';
     _siteBaseUrl = '';
     _currentUser = null;
 
@@ -156,22 +168,29 @@ export default class MaConfigWizard extends LightningElement {
         // eslint-disable-next-line @lwc/lwc/no-async-operation
         setTimeout(() => this._measureChromeOffset(), 0);
 
-        getStoryContent({ offeringKey: OFFERING })
-            .then((data) => {
-                if (!data) return;
-                this._industries = data.industries || [];
-                this._swatches = data.setting
-                    ? data.setting.swatches.map((s) => ({ name: s.name, hex: s.hex, style: `background:#${s.hex}` }))
-                    : [];
-                if (data.setting) {
-                    this._cmsDefaults = {
-                        SOURCE_PLATFORM: data.setting.defaultSourcePlatform,
-                        TARGET_PLATFORM: data.setting.defaultTargetPlatform
-                    };
-                }
+        // The industry list is the framework's shared taxonomy.
+        getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: 'industry-chooser' })
+            .then((rows) => { this._industries = rows || []; })
+            // eslint-disable-next-line no-console
+            .catch((err) => console.warn('[maConfigWizard] getIndustryProfiles:', JSON.stringify(err)));
+
+        // The swatches and the platforms a link starts from are content on the
+        // configurator's own defaults section, not a custom setting.
+        getPageLayout({ offeringKey: OFFERING, templateType: 'configurator', industryKey: null })
+            .then((layout) => {
+                const c = (layout && layout.content) || {};
+                let swatches = [];
+                try { swatches = JSON.parse(c['defaults::swatches'] || '[]'); } catch (e) { swatches = []; }
+                this._swatches = swatches.map((sw) => ({
+                    name: sw.name, hex: sw.hex, style: `background:#${sw.hex}`
+                }));
+                this._cmsDefaults = {
+                    SOURCE_PLATFORM: c['defaults::defaultSourcePlatform'],
+                    TARGET_PLATFORM: c['defaults::defaultTargetPlatform']
+                };
             })
             // eslint-disable-next-line no-console
-            .catch((err) => console.warn('[maConfigWizard] getStoryContent:', JSON.stringify(err)));
+            .catch((err) => console.warn('[maConfigWizard] getPageLayout:', JSON.stringify(err)));
 
         if (this.standalone) {
             getConfiguratorPageUrl()
@@ -688,36 +707,6 @@ export default class MaConfigWizard extends LightningElement {
 
     handleFinish() {
         this.handleClose();
-    }
-
-    // -------------------------------------------------------------- legacy
-
-    get legacyToggleLabel() {
-        return this._useLegacyForm ? 'Back to the wizard' : 'Prefer the classic form?';
-    }
-
-    handleLegacyToggle() {
-        this._useLegacyForm = !this._useLegacyForm;
-    }
-
-    /** The classic form's own × dispatches 'close' -- here that means
-     * "leave the classic form", not "close the whole wizard", so it
-     * returns to the wizard's own chrome instead of closing outright. */
-    handleLegacyClose() {
-        this._useLegacyForm = false;
-    }
-
-    handleLegacyFieldChange(event) {
-        const { key, value } = event.detail;
-        this._state = { ...this._state, [key]: value };
-    }
-    handleLegacyCompanyChange(event)  { this._company = event.detail.value; }
-    handleLegacyIndustryChange(event) { this._industry = event.detail.value || ''; }
-    handleLegacyAccentChange(event)   { this._accent = event.detail.value; }
-    handleLegacyLoadExample() { this._state = { ...EXAMPLE }; }
-    handleLegacyClearAll()    { this._state = { ...this._cmsDefaults }; }
-    handleLegacyConfigSaved(event) {
-        this.dispatchEvent(new CustomEvent('configsaved', { detail: event.detail }));
     }
 
     // -------------------------------------------------------------- close

@@ -118,11 +118,9 @@ export default class OfferingChooser extends LightningElement {
     // MA_Page_Content__c flat map: 'section::field' -> resolved string.
     @track _cms = {};
     @track _tiles = [];
-    @track _editMode = false;
     _orgUrl = '';
     _lightningUrl = '';
     _sites = [];
-    _editModeHandler;
 
     get rootClass() {
         if (this.theme === 'dark') return 'oc-root dark';
@@ -188,8 +186,6 @@ export default class OfferingChooser extends LightningElement {
 
     connectedCallback() {
         this.loadFonts();
-        this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
-        window.addEventListener('maadminedit', this._editModeHandler);
 
         getOfferingTiles()
             .then((rows) => { if (rows) this._tiles = rows; })
@@ -247,11 +243,6 @@ export default class OfferingChooser extends LightningElement {
         }
     }
 
-    disconnectedCallback() {
-        if (this._editModeHandler) {
-            window.removeEventListener('maadminedit', this._editModeHandler);
-        }
-    }
 
     handleThemeToggle() {
         if (this.theme === 'dark') {

@@ -77,15 +77,6 @@
     </objectPermissions>
     <objectPermissions>
         <allowCreate>true</allowCreate>
-        <allowDelete>true</allowDelete>
-        <allowEdit>true</allowEdit>
-        <allowRead>true</allowRead>
-        <modifyAllRecords>false</modifyAllRecords>
-        <object>MA_CMS_Content_Index__c</object>
-        <viewAllRecords>false</viewAllRecords>
-    </objectPermissions>
-    <objectPermissions>
-        <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
         <allowEdit>false</allowEdit>
         <allowRead>true</allowRead>
@@ -433,16 +424,6 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
-        <field>MA_CMS_Content_Index__c.Display_Order__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_CMS_Content_Index__c.Active__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
         <field>MA_Link_Event__c.Saved_Configuration__c</field>
         <readable>true</readable>
         <editable>false</editable>
@@ -472,10 +453,6 @@
     </tabSettings>
     <tabSettings>
         <tab>MA_Assessment_Request__c</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>MA_CMS_Content_Index__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>

@@ -52,6 +52,7 @@ export default class MaConfigurator extends LightningElement {
     // this renders that instead of fetching, so the editor previews the page
     // itself rather than a stand-in for it.
     _preview = false;
+    _agentToken = '';
 
     @api
     get previewContent() { return this._cms; }
@@ -114,9 +115,7 @@ export default class MaConfigurator extends LightningElement {
     _revealed = new Set();
     _scrollHandler;
     _keyHandler;
-    _editModeHandler;
     _visibilityHandler;
-    _editMode = false;
     _orgUrl = '';
     _lightningUrl = '';
     _sites = [];
@@ -274,7 +273,6 @@ export default class MaConfigurator extends LightningElement {
 
         this._scrollHandler = this.handleScroll.bind(this);
         this._keyHandler = this.handleKeydown.bind(this);
-        this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
         this._visibilityHandler = () => {
             if (document.visibilityState === 'hidden' && this._formOpened && !this._formSubmitted) {
                 this._logEvent('Drop-off');
@@ -284,7 +282,6 @@ export default class MaConfigurator extends LightningElement {
             passive: true
         });
         window.addEventListener('keydown', this._keyHandler);
-        window.addEventListener('maadminedit', this._editModeHandler);
         document.addEventListener('visibilitychange', this._visibilityHandler);
     }
 
@@ -311,8 +308,9 @@ export default class MaConfigurator extends LightningElement {
 
 
     // This page is client-facing. The failure is always logged, but the banner
-    // only shows to an internal user in edit mode, never to a prospect.
-    get showLoadError() { return !!this._loadError && this._editMode; }
+    // only shows to the rep, never to a prospect on a shared link. It used to
+    // key off admin edit mode, which no longer exists.
+    get showLoadError() { return !!this._loadError && this.showCustomizeButton; }
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl); }
     get contentManagerUrl() {
@@ -325,9 +323,6 @@ export default class MaConfigurator extends LightningElement {
         }
         if (this._keyHandler) {
             window.removeEventListener('keydown', this._keyHandler);
-        }
-        if (this._editModeHandler) {
-            window.removeEventListener('maadminedit', this._editModeHandler);
         }
         if (this._visibilityHandler) {
             document.removeEventListener('visibilitychange', this._visibilityHandler);
@@ -596,6 +591,34 @@ export default class MaConfigurator extends LightningElement {
 
     get bookingUrl() {
         return this.tokenValue('BOOKING_URL');
+    }
+
+    // ---------------------------------------------------------- the assistant
+
+    /** One token per visit, so the agent's replies can be matched to this tab. */
+    get agentSessionToken() {
+        if (!this._agentToken) {
+            this._agentToken = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : String(Date.now()) + Math.random().toString(16).slice(2);
+        }
+        return this._agentToken;
+    }
+
+    /**
+     * A change the assistant proposes is applied through the same handlers the
+     * form inputs use, so there is one path into the page's state rather than
+     * a second one that can drift from it.
+     */
+    handleAgentDelta(event) {
+        const delta = (event.detail && event.detail.changes) || null;
+        if (!delta || typeof delta !== 'object') return;
+        if ('company' in delta) this.handleCompanyChange({ detail: { value: String(delta.company) } });
+        if ('industry' in delta) this.handleIndustryChange({ detail: { value: String(delta.industry) } });
+        if ('accent' in delta) this.handleAccentChange({ detail: { value: String(delta.accent) } });
+        ['objectsCount', 'depsCount', 'healthScore', 'note'].forEach((k) => {
+            if (k in delta) this.handleFieldChange({ detail: { key: k, value: String(delta[k]) } });
+        });
     }
 
     // ------------------------------------------------------- industry engine

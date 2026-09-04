@@ -4,9 +4,9 @@ import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import setActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
 import getOrgBaseUrl from '@salesforce/apex/MaSavedConfigurationController.getOrgBaseUrl';
-import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
+import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
-const OFFERING = 'migration-accelerator';
 
 export default class MaSavedLinksBar extends LightningElement {
     _industryLabels = {};
@@ -29,11 +29,11 @@ export default class MaSavedLinksBar extends LightningElement {
         }
         this.loadConfigurations();
         // Best-effort: load industry labels for display; falls back to formatLabel(key).
-        getStoryContent({ offeringKey: OFFERING })
-            .then((data) => {
-                if (!data) return;
+        // The list is the framework's shared taxonomy, not this offering's.
+        getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: 'industry-chooser' })
+            .then((rows) => {
                 const map = {};
-                data.industries.forEach((ind) => { map[ind.industryKey] = ind.industryLabel; });
+                (rows || []).forEach((ind) => { map[ind.industryKey] = ind.industryLabel; });
                 this._industryLabels = map;
             })
             .catch(() => { /* industry labels are display-only; safe to skip */ });

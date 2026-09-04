@@ -1253,3 +1253,15 @@ b {
     font-size: 0.82rem;
     line-height: 1.5;
 }
+
+/* Gus in the top bar. Same pill as the other bar buttons, with room for the
+   character; the label stays so the control is still readable as a control. */
+.tbtn-gus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  padding: 3px 12px 3px 4px;
+  border-radius: 999px;
+}
+.tbtn-gus .tbtn-gus-lbl { font-size: 12.5px; font-weight: 600; letter-spacing: .01em; }

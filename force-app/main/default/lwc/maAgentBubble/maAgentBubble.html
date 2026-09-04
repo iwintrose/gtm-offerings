@@ -1,0 +1,34 @@
+<template>
+  <div class="ab-root">
+    <!-- Collapsed: a character in the corner. Expanded: the assistant, in a
+         panel that sits above the page rather than inside a form. -->
+    <template if:true={isOpen}>
+      <section class="ab-panel" role="dialog" aria-label="GTM assistant">
+        <header class="ab-head">
+          <c-gtm-mascot size="sm" mood={mood} class="on-dark"></c-gtm-mascot>
+          <div class="ab-id">
+            <span class="ab-name">Gus</span>
+            <span class="ab-role">{statusLabel}</span>
+          </div>
+          <button type="button" class="ab-x" aria-label="Close the assistant"
+                  onclick={handleToggle}>&times;</button>
+        </header>
+        <div class="ab-body">
+          <c-ma-agent-chat
+            session-token={sessionToken}
+            config-id={configId}
+            onagentdelta={handleAgentDelta}
+          ></c-ma-agent-chat>
+        </div>
+      </section>
+    </template>
+
+    <button type="button" class={fabClass} onclick={handleToggle}
+            aria-expanded={isOpen} title={fabTitle}>
+      <c-gtm-mascot size="md" mood={mood}></c-gtm-mascot>
+      <template if:false={isOpen}>
+        <span class="ab-fab-lbl">{fabLabel}</span>
+      </template>
+    </button>
+  </div>
+</template>

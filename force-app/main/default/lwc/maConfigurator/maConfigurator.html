@@ -16,8 +16,13 @@
           <span class="cta-long">Book an&nbsp;</span>environment assessment →
         </button>
         <template if:true={showCustomizeButton}>
-          <button class="tbtn tbtn-wide" title="Fill in client details" onclick={handleOpenCustomize}>
-            Customize
+          <!-- Gus is the way in now. "Customize" named a panel; this names
+               who you are asking, and it is the same character as the
+               assistant in the corner. -->
+          <button class="tbtn tbtn-gus" title="Fill in client details with Gus"
+                  onclick={handleOpenCustomize}>
+            <c-gtm-mascot size="sm"></c-gtm-mascot>
+            <span class="tbtn-gus-lbl">Gus</span>
           </button>
         </template>
         <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
@@ -56,13 +61,6 @@
             </template>
           </span>
         </template>
-      </div>
-    </template>
-
-    <template if:true={_editMode}>
-      <div class="admin-edit-strip">
-        <a href={builderUrl} target="_blank" rel="noopener" class="aes-chip aes-chip--bld">Edit page layout in Experience Builder ↗</a>
-        <a href={contentManagerUrl} target="_blank" rel="noopener" class="aes-chip aes-chip--cms">Edit content ↗</a>
       </div>
     </template>
 
@@ -512,6 +510,17 @@
       onaccentchange={handleAccentChange}
       onconfigsaved={handleConfigSaved}
     ></c-ma-config-wizard>
+
+    <!-- The assistant sits in the corner, not inside the Customize form. It
+         only appears for the rep, the same rule the Customize button follows:
+         a prospect on a shared link has nothing to configure. -->
+    <template if:true={showCustomizeButton}>
+      <c-ma-agent-bubble
+        session-token={agentSessionToken}
+        config-id={savedRecordId}
+        onagentdelta={handleAgentDelta}
+      ></c-ma-agent-bubble>
+    </template>
 
     <c-ma-config-booking
       is-open={bookingOpen}

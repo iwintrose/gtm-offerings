@@ -402,3 +402,28 @@
   color: var(--ink-faint);
   background: #faf8f6;
 }
+
+/* ── the link that already exists ──────────────────────────────────────────
+   Same tokens as the rest of the sheet; it reads as a notice at the top of
+   the form rather than a second design. */
+.mw-existing {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-left: 3px solid var(--coral, #e8542f);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .04);
+}
+.mw-existing-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.mw-existing-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #4bb543; flex: none;
+}
+.mw-existing-dot--off { background: #8a8a8a; }
+.mw-existing-title { font-size: 13px; font-weight: 700; }
+.mw-existing-state {
+  margin-left: auto; font-size: 10.5px; letter-spacing: .06em;
+  text-transform: uppercase; opacity: .6;
+}
+.mw-existing-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.mw-existing-note { margin: 8px 0 0; font-size: 11.5px; line-height: 1.5; opacity: .65; }
