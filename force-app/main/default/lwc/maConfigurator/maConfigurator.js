@@ -2,6 +2,7 @@ import { LightningElement, api, track, wire } from 'lwc';
 import isRep from '@salesforce/apex/MaViewerContext.isRep';
 import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
+import getConfiguration from '@salesforce/apex/MaSavedConfigurationController.getConfiguration';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
 import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
@@ -143,6 +144,7 @@ export default class MaConfigurator extends LightningElement {
         this.maybePrefillContact();
         this.checkPasswordGate();
         this.loadOverviewCrmData();
+        this.loadSavedConfiguration();
         this.maybeAutoOpenWizard();
     }
 
@@ -446,6 +448,45 @@ export default class MaConfigurator extends LightningElement {
         // ran (a warm cache can deliver a wired value synchronously during
         // init, ahead of this method's own place in connectedCallback).
         this.maybePrefillContact();
+    }
+
+    /**
+     * Refill the page from the record, for a rep who already built this link.
+     *
+     * The URL parameters were the only thing repopulating the page, so
+     * reopening a link with anything missing from the query string meant
+     * retyping values the record already held. The record is the source of
+     * truth: it is what the rep last saved, and it is newer than any URL that
+     * was generated before the last edit.
+     *
+     * Rep-only. The method behind it is on the rep controller, which the guest
+     * permission set is never granted, so a prospect's page is unaffected and
+     * still reads its own link.
+     */
+    async loadSavedConfiguration() {
+        if (!this.savedRecordId || !this.isConfigManager) return;
+        try {
+            const rec = await getConfiguration({ recordId: this.savedRecordId });
+            if (!rec) return;
+
+            if (rec.company) this.company = rec.company;
+            if (rec.industry) this.industryKey = rec.industry;
+
+            let saved = {};
+            try { saved = JSON.parse(rec.configPayload || '{}'); } catch (e) { saved = {}; }
+            if (saved && typeof saved === 'object') {
+                // The record wins over the URL: the link in someone's inbox
+                // was generated before the last edit, the record was not.
+                this.tokenState = { ...this.tokenState, ...saved };
+                if (saved.ACCENT && !this.accent) this.accent = saved.ACCENT;
+            }
+            this.setPageTitle();
+        } catch (e) {
+            // The URL still carries enough to render; a failed refill should
+            // not blank a page that was about to work.
+            // eslint-disable-next-line no-console
+            console.warn('[maConfigurator] getConfiguration:', JSON.stringify(e));
+        }
     }
 
     /** A rep can flip a saved config to inactive without deleting or

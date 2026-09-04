@@ -352,6 +352,60 @@ public with sharing class MaSavedConfigurationController {
         return UserInfo.getUserType() == 'Standard';
     }
 
+    /**
+     * The whole saved configuration, for a rep reopening their own link.
+     *
+     * The record already holds everything -- Config_Payload__c is the same
+     * JSON the wizard writes -- but nothing read it back, so a rep opening a
+     * link they built got an empty wizard and had to retype what was already
+     * stored. The URL parameters were the only thing repopulating the page,
+     * which is why they had to carry every value in the first place.
+     *
+     * This lives on the rep-only controller on purpose: it is `with sharing`
+     * and the guest permission set is never granted this class, so the payload
+     * cannot leak to a prospect through it. The password is deliberately not
+     * returned -- knowing a link is protected is MaLinkAuthController's job,
+     * and reading the value is nobody's.
+     */
+    @AuraEnabled(cacheable=false)
+    public static SavedConfigView getConfiguration(String recordId) {
+        if (String.isBlank(recordId)) return null;
+        Id parsedId;
+        try { parsedId = Id.valueOf(recordId); } catch (System.StringException e) { return null; }
+
+        List<MA_Saved_Configuration__c> rows = [
+            SELECT Id, Company__c, Industry__c, Industry_Label__c, Offering__c,
+                   Config_Payload__c, Generated_URL__c, Active__c
+            FROM   MA_Saved_Configuration__c
+            WHERE  Id = :parsedId
+            LIMIT  1
+        ];
+        if (rows.isEmpty()) return null;
+
+        MA_Saved_Configuration__c r = rows[0];
+        SavedConfigView v = new SavedConfigView();
+        v.recordId      = String.valueOf(r.Id);
+        v.company       = r.Company__c;
+        v.industry      = r.Industry__c;
+        v.industryLabel = r.Industry_Label__c;
+        v.offering      = r.Offering__c;
+        v.configPayload = r.Config_Payload__c;
+        v.generatedUrl  = r.Generated_URL__c;
+        v.isActive      = r.Active__c;
+        return v;
+    }
+
+    public class SavedConfigView {
+        @AuraEnabled public String  recordId      { get; set; }
+        @AuraEnabled public String  company       { get; set; }
+        @AuraEnabled public String  industry      { get; set; }
+        @AuraEnabled public String  industryLabel { get; set; }
+        @AuraEnabled public String  offering      { get; set; }
+        @AuraEnabled public String  configPayload { get; set; }
+        @AuraEnabled public String  generatedUrl  { get; set; }
+        @AuraEnabled public Boolean isActive      { get; set; }
+    }
+
     /** Returns true when the saved record currently has a password set.
      *  Used by the Customize panel to show the rep whether password
      *  protection is active without exposing the password value itself. */

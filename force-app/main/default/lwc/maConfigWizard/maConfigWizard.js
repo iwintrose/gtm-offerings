@@ -685,7 +685,11 @@ export default class MaConfigWizard extends LightningElement {
                     industry: this._industry,
                     company: (this._company || '').trim(),
                     generatedUrl: url,
-                    configPayload: JSON.stringify(this._state),
+                    // The accent is part of what this link looks like, but it
+                    // lived only in the generated URL -- so a record could not
+                    // rebuild its own page without the query string. It rides
+                    // in the payload now, alongside everything else.
+                    configPayload: JSON.stringify({ ...this._state, ACCENT: this._accent || '' }),
                     clientContactName: this._selectedContact ? this._selectedContact.name : null,
                     contactId: this._selectedContact ? this._selectedContact.id : null,
                     accountId: this._selectedContact ? this._selectedContact.accountId : null,
