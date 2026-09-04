@@ -29,6 +29,15 @@ const OFFERING_LABEL = 'Migration Accelerator';
 const DEFAULT_OFFERING_KEY = 'migration-accelerator';
 
 export default class MaConfigurator extends LightningElement {
+    /** Which modelled page this reads. One template, many offerings. */
+    @api templateType = 'configurator';
+
+    // MA_Page_Content__c flat map: 'section::field' -> resolved string.
+    // Only the parts of this page that are the same for every client come
+    // from here. The hero is assembled from the company, industry and source
+    // platform at render time, so it is not flat content and is not modelled:
+    // a record cannot hold "<company>'s migration should have taken months".
+    @track _cms = {};
     @api offeringKey = DEFAULT_OFFERING_KEY;
 
     /** Back links, shown only for the internal/self-serve flow — hidden on
@@ -178,6 +187,21 @@ export default class MaConfigurator extends LightningElement {
     // -------------------------------------------------------------- lifecycle
 
     connectedCallback() {
+        // Only the parts that are the same for every client; the hero is
+        // assembled from runtime values and stays in the component.
+        getPageLayout({
+            offeringKey: this.offeringKey,
+            templateType: this.templateType,
+            industryKey: null
+        })
+            .then((layout) => {
+                if (layout && layout.content) this._cms = layout.content;
+            })
+            .catch((err) => {
+                // eslint-disable-next-line no-console
+                console.error('[maConfigurator] getPageLayout failed:', JSON.stringify(err));
+            });
+
         this._sessionId = this._makeSessionId();
         this.tokenState = this.loadState();
         this.readUrlParams();
@@ -591,8 +615,22 @@ export default class MaConfigurator extends LightningElement {
         return this.industry ? this.industry.whyLine : '';
     }
 
+    _ct(key) { return this._cms[key] || null; }
+
     get whyHead() {
-        return this.industry ? this.industry.whyHead : GENERIC_WHY_HEAD;
+        // An industry-specific heading still wins: it is more specific than
+        // the page-level one, which is the generic case.
+        if (this.industry) return this.industry.whyHead;
+        return this._ct('why::head') || GENERIC_WHY_HEAD;
+    }
+
+    get footerLeft() {
+        return this._ct('footer::footerLeft') || 'Publicis Sapient';
+    }
+
+    get footerRight() {
+        return this._ct('footer::footerRight')
+            || 'Migration Accelerator, prepared with the Publicis Sapient Marketing Automation practice.';
     }
 
     get chips() {

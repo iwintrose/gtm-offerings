@@ -7,8 +7,8 @@
 
     <div class="bar">
       <div class="bar-wm">
-        <span class="tick"></span> Migration Accelerator
-        <span class="bar-tag mono">/ choose your industry</span>
+        <span class="tick"></span> {brandLabel}
+        <span class="bar-tag mono">{brandTag}</span>
       </div>
       <div class="bar-right">
         <a class="bar-back mono" href={offeringsUrl}>← offerings</a>
@@ -18,18 +18,14 @@
     </div>
 
     <div class="wrap">
-      <div class="eyebrow"><span class="bead"></span> Step 2 of 2</div>
+      <div class="eyebrow"><span class="bead"></span> {eyebrow}</div>
       <template if:true={_editMode}>
         <a href={builderUrl} target="_blank" rel="noopener" class="hd-edit-chip">
           Edit page layout in Experience Builder ↗
         </a>
       </template>
-      <h1>Choose your industry.</h1>
-      <p class="sub">
-        Migrations look different in every sector. Pick one and the
-        client-facing page reframes around what actually matters for that
-        business, not a generic pitch.
-      </p>
+      <h1>{headline}</h1>
+      <p class="sub">{subhead}</p>
 
       <div class="grid">
         <template for:each={industries} for:item="ind">
@@ -80,8 +76,8 @@
     </div>
 
     <footer class="pf">
-      <span>migration-accelerator — offering-scoped</span>
-      <span>Publicis Sapient · internal</span>
+      <span>{footerLeft}</span>
+      <span>{footerRight}</span>
     </footer>
   </div>
 </template>

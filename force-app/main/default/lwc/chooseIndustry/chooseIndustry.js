@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 
 const FONTS_HREF =
     'https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap';
@@ -45,7 +46,25 @@ const HARDCODED_INDUSTRIES = [
     { industryKey: 'government', industryLabel: 'Government & Public Sector' }
 ];
 
+// The floor: what the page says before any record exists.
+const CHROME_DEFAULTS = {
+    brandLabel: 'Migration Accelerator',
+    brandTag: '/ choose your industry',
+    eyebrow: 'Step 2 of 2',
+    headline: 'Choose your industry.',
+    subhead: 'Migrations look different in every sector. Pick one and the '
+        + 'client-facing page reframes around what actually matters for that '
+        + 'business, not a generic pitch.',
+    footerLeft: 'migration-accelerator — offering-scoped',
+    footerRight: 'Publicis Sapient · internal'
+};
+
 export default class ChooseIndustry extends LightningElement {
+    /** Which modelled page this reads. One template, many offerings. */
+    @api templateType = 'industry-chooser';
+
+    // MA_Page_Content__c flat map: 'section::field' -> resolved string.
+    @track _cms = {};
     @api offeringKey = DEFAULT_OFFERING_KEY;
 
     /** Back link target. Set in Experience Builder. */
@@ -83,6 +102,16 @@ export default class ChooseIndustry extends LightningElement {
         const joiner = url.indexOf('?') === -1 ? '?' : '&';
         return `${url}${joiner}wizard=1`;
     }
+
+    _ct(key) { return this._cms[key] || null; }
+
+    get brandLabel() { return this._ct('header::brandLabel') || CHROME_DEFAULTS.brandLabel; }
+    get brandTag() { return this._ct('header::brandTag') || CHROME_DEFAULTS.brandTag; }
+    get eyebrow() { return this._ct('intro::eyebrow') || CHROME_DEFAULTS.eyebrow; }
+    get headline() { return this._ct('intro::headline') || CHROME_DEFAULTS.headline; }
+    get subhead() { return this._ct('intro::subhead') || CHROME_DEFAULTS.subhead; }
+    get footerLeft() { return this._ct('footer::footerLeft') || CHROME_DEFAULTS.footerLeft; }
+    get footerRight() { return this._ct('footer::footerRight') || CHROME_DEFAULTS.footerRight; }
 
     get industries() {
         const base = this._withWizardParam(this.configuratorUrl || '/configurator');
@@ -123,6 +152,20 @@ export default class ChooseIndustry extends LightningElement {
             this._openEditId = null;
         };
         this._winClickHandler = () => { this._openEditId = null; };
+
+        getPageLayout({
+            offeringKey: this.offeringKey,
+            templateType: this.templateType,
+            industryKey: null
+        })
+            .then((layout) => {
+                if (layout && layout.content) this._cms = layout.content;
+            })
+            .catch((err) => {
+                this._loadError = 'Page content could not be loaded; showing built-in defaults.';
+                // eslint-disable-next-line no-console
+                console.error('[chooseIndustry] getPageLayout failed:', JSON.stringify(err));
+            });
         window.addEventListener('maadminedit', this._editModeHandler);
         window.addEventListener('click', this._winClickHandler);
         getStoryContent({ offeringKey: this.offeringKey })
