@@ -14,7 +14,7 @@ import createSection from '@salesforce/apex/MaPageSectionController.createSectio
 import deleteSection from '@salesforce/apex/MaPageSectionController.deleteSection';
 import restoreSection from '@salesforce/apex/MaPageSectionController.restoreSection';
 // One definition of what a layout is made of, shared with the renderer.
-import { addableLayouts, fieldsFor } from 'c/gtmPageLayouts';
+import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
 // MaPageContentController.resolveValue.
@@ -29,13 +29,6 @@ const PREVIEW_WIDTH = 1280;
 // A one-line input clips anything past its width with no scrollbar and no
 // hint that there is more, so a value this long gets a box it fits in.
 const LONG_TEXT_CHARS = 48;
-
-const TEMPLATE_LABELS = {
-    story: 'Story',
-    configurator: 'Configurator',
-    'offerings-listing': 'Offerings Listing',
-    'industry-chooser': 'Industry Chooser'
-};
 
 // Every name here must exist in the SLDS utility set. An invalid one renders
 // as blank space with no console error, which is how utility:brand_engagement
@@ -220,6 +213,13 @@ export default class GtmContentManager extends LightningElement {
         ])
             .then(([sections, records]) => {
                 this.sections = (sections || []).map((s) => ({ ...s }));
+                // The selected section belongs to the page you just left. Keep
+                // it only if this page has one by that name, or the fields
+                // column renders an address that no longer exists.
+                const stillHere = this.sections.some((x) => x.sectionKey === this.activeKey);
+                if (!stillHere) {
+                    this.activeKey = this.sections.length ? this.sections[0].sectionKey : '';
+                }
                 // renderLong is decided here and never recomputed while typing.
                 // Deriving it from the live value would swap an input for a
                 // textarea the moment you crossed the threshold, taking focus
@@ -230,7 +230,6 @@ export default class GtmContentManager extends LightningElement {
                         : (r[COLUMN[r.fieldType || 'text']] || '');
                     return { ...r, renderLong: loaded.length > LONG_TEXT_CHARS };
                 });
-                if (this.sections.length) this.activeKey = this.sections[0].sectionKey;
                 this.dirtyKeys = [];
             })
             .catch((err) => { this.loadError = this.messageFrom(err) || 'Content could not be loaded.'; })

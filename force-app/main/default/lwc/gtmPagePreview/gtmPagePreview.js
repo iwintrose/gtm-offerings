@@ -29,6 +29,9 @@ export default class GtmPagePreview extends LightningElement {
     @api pageUrl = '';
     @api hasDrafts = false;
 
+    /** Which page is being edited. Decides which renderer to preview with. */
+    @api templateType = 'story';
+
     // The section the editor has selected. Setting it scrolls the canvas.
     @api
     get activeKey() { return this._activeKey; }
@@ -52,6 +55,32 @@ export default class GtmPagePreview extends LightningElement {
     _suppress = false;
     _suppressTimer;
     _queued = false;
+
+    // ─── which renderer ───────────────────────────────────────────────────────
+    // Only the story renders inside the editor today. The other pages are
+    // Experience Cloud pages whose components read live per-visitor state — a
+    // chosen industry, a company from the query string — so rendering them
+    // here would show a version of the page nobody ever sees. Saying so is
+    // more useful than previewing the wrong page, which is what it did.
+
+    get isStory() { return this.templateType === 'story'; }
+    get isUnpreviewable() { return !this.isStory; }
+
+    get unpreviewableTitle() {
+        return 'No in-editor preview for this page.';
+    }
+
+    get unpreviewableHint() {
+        if (this.templateType === 'configurator') {
+            return 'The configurator is built per prospect from the link they were sent, '
+                 + 'so there is no single version of it to show here.';
+        }
+        if (this.templateType === 'offerings-page') {
+            return 'The offerings page is assembled from every offering, not from this '
+                 + 'page alone.';
+        }
+        return 'Your edits are saved and appear on the live page once published.';
+    }
 
     // ─── head ─────────────────────────────────────────────────────────────────
 

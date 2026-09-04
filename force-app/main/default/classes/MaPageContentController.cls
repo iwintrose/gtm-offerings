@@ -12,6 +12,29 @@
 public without sharing class MaPageContentController {
 
     /**
+     * Pages that belong to the framework rather than to any one offering.
+     * Mirrors FRAMEWORK_KEY in c/gtmPageLayouts; the two must agree, because
+     * one addresses the records and the other reads them.
+     */
+    public static final String FRAMEWORK_KEY = 'gtm';
+    public static final String FRAMEWORK_LABEL = 'Framework (all offerings)';
+
+    /**
+     * Which pages exist under a given owner. Mirrors templatesFor() in
+     * c/gtmPageLayouts: the framework owns the page that lists offerings, an
+     * offering owns the pages that describe it.
+     */
+    private static List<String> templatesFor(String offeringKey) {
+        // Industries are a shared taxonomy, so the chooser and the profiles
+        // behind it are framework-level; every offering's configurator reads
+        // the same set.
+        return offeringKey == FRAMEWORK_KEY
+            ? new List<String>{ 'offerings-page', 'industry-chooser' }
+            : new List<String>{ 'story', 'configurator', 'offerings-listing' };
+    }
+
+
+    /**
      * Returns all active content records for the given offering + template as a flat map.
      * Key = Section_Key__c + '::' + Field_Key__c  (+ '::' + Industry_Key__c when set)
      * Value = the resolved value string (Text_Value__c | Rich_Value__c | JSON_Value__c)
@@ -190,6 +213,14 @@ public without sharing class MaPageContentController {
     public static List<OfferingOption> getOfferings() {
         List<OfferingOption> out = new List<OfferingOption>();
         String host = siteHost();
+        // The framework is not an offering, but it owns pages — the offerings
+        // front door above them all — and the editor is the only place to edit
+        // them. It leads the list because it sits above what follows.
+        OfferingOption fw = new OfferingOption();
+        fw.offeringKey = FRAMEWORK_KEY;
+        fw.label       = FRAMEWORK_LABEL;
+        out.add(fw);
+
         for (MA_Offering__mdt off : [
             SELECT Offering_Key__c, Label__c, Site_Path__c FROM MA_Offering__mdt
             ORDER BY Label__c ASC
@@ -248,6 +279,16 @@ public without sharing class MaPageContentController {
         if (String.isBlank(offeringKey)) {
             return byTemplate.values();
         }
+        // Seed every page this owner can have, so one with nothing in it is
+        // still listed and can be built. Counting only what exists made an
+        // empty page invisible, which is why there was no way to create one.
+        for (String t : templatesFor(offeringKey)) {
+            TemplateSummary ts = new TemplateSummary();
+            ts.templateType = t;
+            ts.sectionCount = 0;
+            ts.fieldCount   = 0;
+            byTemplate.put(t, ts);
+        }
         for (AggregateResult ar : [
             SELECT Template_Type__c t, COUNT(Id) c
             FROM   MA_Page_Section__c
@@ -305,6 +346,13 @@ public without sharing class MaPageContentController {
 
         Map<String, OfferingSummary> byKey = new Map<String, OfferingSummary>();
         String host = siteHost();
+
+        OfferingSummary fwSummary = new OfferingSummary();
+        fwSummary.offeringKey = FRAMEWORK_KEY;
+        fwSummary.label       = FRAMEWORK_LABEL;
+        byKey.put(FRAMEWORK_KEY, fwSummary);
+        home.offerings.add(fwSummary);
+
         for (MA_Offering__mdt off : [
             SELECT Offering_Key__c, Label__c, Site_Path__c FROM MA_Offering__mdt ORDER BY Label__c
         ]) {

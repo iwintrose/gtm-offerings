@@ -1,19 +1,12 @@
 import { LightningElement, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import createPage from '@salesforce/apex/MaPageSectionController.createPage';
-import { starterFor } from 'c/gtmPageLayouts';
+import { starterFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
 
-const TEMPLATE_LABELS = {
-    story: 'Story',
-    configurator: 'Configurator',
-    'offerings-listing': 'Offerings Listing',
-    'industry-chooser': 'Industry Chooser'
-};
 
 // Every template the picklist allows, so the home can show what an offering
 // has NOT built yet rather than only what it has.
-const ALL_TEMPLATES = ['story', 'configurator', 'industry-chooser', 'offerings-listing'];
 
 export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track offerings = [];
@@ -56,7 +49,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                 summary: built.length === 1
                     ? '1 page ready to edit'
                     : `${built.length} pages ready to edit`,
-                pages: ALL_TEMPLATES.map((t) => {
+                pages: templatesFor(o.offeringKey).map((t) => {
                     const p = byType[t];
                     const sections = p ? (p.sectionCount || 0) : 0;
                     const fields = p ? (p.fieldCount || 0) : 0;
@@ -132,7 +125,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     }
 
     get templateOptions() {
-        return ALL_TEMPLATES.map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
+        return templatesFor(this.npOffering).map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
     }
 
     get npDisabled() { return !this.npOffering || !this.npTemplate; }

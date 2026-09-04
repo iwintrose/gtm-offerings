@@ -1,6 +1,8 @@
 import { LightningElement, api, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
+import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
+import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 const FONTS_HREF =
     'https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap';
@@ -153,8 +155,17 @@ export default class ChooseIndustry extends LightningElement {
         };
         this._winClickHandler = () => { this._openEditId = null; };
 
+        // Industries are a shared taxonomy, so this page and the profiles
+        // behind it belong to the framework, not to one offering.
+        getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: this.templateType })
+            .then((rows) => { if (rows && rows.length) this._industries = rows; })
+            .catch((err) => {
+                // eslint-disable-next-line no-console
+                console.error('[chooseIndustry] getIndustryProfiles failed:', JSON.stringify(err));
+            });
+
         getPageLayout({
-            offeringKey: this.offeringKey,
+            offeringKey: FRAMEWORK_KEY,
             templateType: this.templateType,
             industryKey: null
         })

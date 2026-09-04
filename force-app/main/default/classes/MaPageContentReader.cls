@@ -225,4 +225,117 @@ public without sharing class MaPageContentReader {
         }
         return out;
     }
+
+    public class IndustryProfile {
+        @AuraEnabled public String industryKey     { get; set; }
+        @AuraEnabled public String industryLabel   { get; set; }
+        @AuraEnabled public String pickerBlurb     { get; set; }
+        @AuraEnabled public String coverSub        { get; set; }
+        @AuraEnabled public String problem         { get; set; }
+        @AuraEnabled public String useCase         { get; set; }
+        @AuraEnabled public String solution        { get; set; }
+        @AuraEnabled public List<String> uniquePoints = new List<String>();
+        @AuraEnabled public String proofLine       { get; set; }
+        @AuraEnabled public String whyLine         { get; set; }
+        @AuraEnabled public String whyHead         { get; set; }
+        @AuraEnabled public String demoRoot        { get; set; }
+        @AuraEnabled public List<String> demoDeps  = new List<String>();
+    }
+
+    /**
+     * Every industry profile modelled for a page, keyed by which section
+     * carries it.
+     *
+     * An industry is not a section in the sequence the way a beat is — it is
+     * one of several alternate profiles a visitor picks between — so each
+     * lives under its own section key (industry-<key>) rather than sharing one
+     * the way declared fields normally do. This is the enumeration query
+     * the industry picker needs; a single industry's profile for the
+     * configurator is one entry in this same list, matched by key.
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<IndustryProfile> getIndustryProfiles(String offeringKey, String templateType) {
+        List<IndustryProfile> out = new List<IndustryProfile>();
+        if (String.isBlank(offeringKey) || String.isBlank(templateType)) return out;
+
+        Map<String, IndustryProfile> bySection = new Map<String, IndustryProfile>();
+        for (MA_Page_Content__c rec : [
+            SELECT Section_Key__c, Field_Key__c, Field_Type__c,
+                   Text_Value__c, Rich_Value__c, JSON_Value__c
+            FROM   MA_Page_Content__c
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
+            AND    Active__c        = true
+            AND    Section_Key__c LIKE 'industry-%'
+            ORDER BY Section_Key__c
+            LIMIT  2000
+        ]) {
+            IndustryProfile p = bySection.get(rec.Section_Key__c);
+            if (p == null) {
+                p = new IndustryProfile();
+                // 'industry-' is 9 characters; strip it to recover the key.
+                p.industryKey = rec.Section_Key__c.substring(9);
+                bySection.put(rec.Section_Key__c, p);
+                out.add(p);
+            }
+            String value = resolveValue(rec);
+            if (String.isBlank(value)) continue;
+            if (rec.Field_Key__c == 'industryLabel')     { p.industryLabel = value; }
+            else if (rec.Field_Key__c == 'pickerBlurb')  { p.pickerBlurb = value; }
+            else if (rec.Field_Key__c == 'coverSub')     { p.coverSub = value; }
+            else if (rec.Field_Key__c == 'problem')      { p.problem = value; }
+            else if (rec.Field_Key__c == 'useCase')      { p.useCase = value; }
+            else if (rec.Field_Key__c == 'solution')     { p.solution = value; }
+            else if (rec.Field_Key__c == 'proofLine')    { p.proofLine = value; }
+            else if (rec.Field_Key__c == 'whyLine')      { p.whyLine = value; }
+            else if (rec.Field_Key__c == 'whyHead')      { p.whyHead = value; }
+            else if (rec.Field_Key__c == 'demoRoot')     { p.demoRoot = value; }
+            else if (rec.Field_Key__c == 'uniquePoints') {
+                try { p.uniquePoints = (List<String>) JSON.deserialize(value, List<String>.class); }
+                catch (Exception e) { /* malformed row, leave empty rather than fail the page */ }
+            } else if (rec.Field_Key__c == 'demoDeps') {
+                try { p.demoDeps = (List<String>) JSON.deserialize(value, List<String>.class); }
+                catch (Exception e) { /* malformed row, leave empty rather than fail the page */ }
+            }
+        }
+        return out;
+    }
+
+    public class SiteInfo {
+        @AuraEnabled public String orgUrl;
+        @AuraEnabled public String lightningUrl;
+        @AuraEnabled public List<NetworkSite> sites = new List<NetworkSite>();
+    }
+
+    public class NetworkSite {
+        @AuraEnabled public String networkId;
+        @AuraEnabled public String urlPathPrefix;
+    }
+
+    /**
+     * The org and Experience Cloud site URLs the "Edit in Builder" chip needs.
+     * Split out from what used to be part of the CMS-backed getStoryContent so
+     * that call can be retired without losing the one thing every public page
+     * still needs from it: none of this reads MA_CMS_Content_Index__c or the
+     * CMS delivery API.
+     */
+    @AuraEnabled(cacheable=true)
+    public static SiteInfo getSiteInfo() {
+        SiteInfo info = new SiteInfo();
+        String orgDomainUrl = URL.getOrgDomainUrl().toExternalForm();
+        info.orgUrl = orgDomainUrl;
+        info.lightningUrl = orgDomainUrl.replace('.my.salesforce.com', '.lightning.force.com');
+        try {
+            for (Network net : [SELECT Id, UrlPathPrefix FROM Network ORDER BY UrlPathPrefix]) {
+                NetworkSite si = new NetworkSite();
+                si.networkId = String.valueOf(net.Id);
+                si.urlPathPrefix = net.UrlPathPrefix;
+                info.sites.add(si);
+            }
+        } catch (Exception e) {
+            // Builder deep-link is progressive enhancement; a page still works
+            // without the site list.
+        }
+        return info;
+    }
 }

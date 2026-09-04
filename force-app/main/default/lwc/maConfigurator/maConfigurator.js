@@ -189,6 +189,15 @@ export default class MaConfigurator extends LightningElement {
     connectedCallback() {
         // Only the parts that are the same for every client; the hero is
         // assembled from runtime values and stays in the component.
+        // One shared industry taxonomy, read from the framework, so every
+        // offering's configurator personalizes off the same set.
+        getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: 'industry-chooser' })
+            .then((rows) => { if (rows && rows.length) this._industries = rows; })
+            .catch((err) => {
+                // eslint-disable-next-line no-console
+                console.error('[maConfigurator] getIndustryProfiles failed:', JSON.stringify(err));
+            });
+
         getPageLayout({
             offeringKey: this.offeringKey,
             templateType: this.templateType,
@@ -221,7 +230,6 @@ export default class MaConfigurator extends LightningElement {
                 this._orgUrl = data.orgUrl || '';
                 this._lightningUrl = data.lightningUrl || '';
                 this._sites = data.sites || [];
-                this._industries = data.industries;
                 this._storySetting = data.setting;
                 if (data.setting) {
                     const cmsDefaults = {

@@ -38,11 +38,27 @@
         <div class="dev-slot">
           <div class="device" onscroll={handleScroll} onwheel={handleIntent}
                onpointerdown={handleIntent} onkeydown={handleIntent}>
-            <c-ma-story
-              offering-key={offeringKey}
-              preview-sections={sections}
-              preview-content={content}
-              preview-field-meta={fieldMeta}></c-ma-story>
+            <!-- The renderer follows the page being edited. Previewing the
+                 story component while editing the offerings page showed the
+                 wrong page's content and made the preview actively misleading. -->
+            <template if:true={isStory}>
+              <c-ma-story
+                offering-key={offeringKey}
+                preview-sections={sections}
+                preview-content={content}
+                preview-field-meta={fieldMeta}></c-ma-story>
+            </template>
+            <template if:true={isUnpreviewable}>
+              <div class="pv-none">
+                <p class="pv-none-h">{unpreviewableTitle}</p>
+                <p class="pv-none-sub">{unpreviewableHint}</p>
+                <template if:true={pageUrl}>
+                  <a class="pv-none-link" href={pageUrl} target="_blank" rel="noopener">
+                    Open the live page &#8599;
+                  </a>
+                </template>
+              </div>
+            </template>
           </div>
           <button class="grip" aria-label="Drag to resize the viewport"
                   title="Drag to resize the viewport" onpointerdown={handleGripDown}></button>

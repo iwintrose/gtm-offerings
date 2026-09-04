@@ -65,6 +65,11 @@
                 <default>false</default>
                 <label>offering-tile</label>
             </value>
+            <value>
+                <fullName>industry-profile</fullName>
+                <default>false</default>
+                <label>industry-profile</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

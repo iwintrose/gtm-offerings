@@ -36,7 +36,14 @@ const LAYOUT_FIELDS = {
     'faq':         { text: ['eyebrow', 'head'],              rich: [],                             json: ['items'] },
     'closing':     { text: [], rich: ['head', 'sub'], json: [], icontext: ['ctaLabel'] },
     // One offering's entry on the offerings page: how it introduces itself.
-    'offering-tile': { text: ['mark', 'name'], rich: ['description'], json: [] }
+    'offering-tile': { text: ['mark', 'name'], rich: ['description'], json: [] },
+    // One industry's full configurator content: the picker-facing blurb plus
+    // everything the configurator personalizes once that industry is chosen.
+    'industry-profile': {
+        text: ['industryLabel', 'whyHead', 'demoRoot'],
+        rich: ['pickerBlurb', 'coverSub', 'problem', 'useCase', 'solution', 'proofLine', 'whyLine'],
+        json: ['uniquePoints', 'demoDeps']
+    }
 };
 
 // What each layout is for, in the words an editor would use. Shown in the
@@ -52,7 +59,8 @@ const LAYOUT_LABELS = {
     'use-pitch': 'Use cases and pitch',
     'faq': 'FAQ',
     'closing': 'Closing call to action',
-    'offering-tile': 'Offering tile'
+    'offering-tile': 'Offering tile',
+    'industry-profile': 'Industry profile'
 };
 
 const LAYOUT_HINTS = {
@@ -66,7 +74,8 @@ const LAYOUT_HINTS = {
     'use-pitch': 'Use cases, plus a before/after chip comparison.',
     'faq': 'A list of questions and answers.',
     'closing': 'Final headline, subhead, and a call-to-action button.',
-    'offering-tile': 'The short badge, name and description shown on the offerings page.'
+    'offering-tile': 'The short badge, name and description shown on the offerings page.',
+    'industry-profile': 'One industry\'s full configurator content: picker blurb, problem, solution, proof and demo.'
 };
 
 /**
@@ -188,7 +197,39 @@ function starterFor(templateType) {
 }
 
 
+/**
+ * Which pages exist under a given owner.
+ *
+ * The framework owns the page that lists offerings; an offering owns the pages
+ * that describe it. Offering a framework a "story" or an offering an
+ * "offerings page" would both be nonsense, so the picker asks this rather than
+ * showing one fixed list.
+ */
+// Industries are a shared taxonomy — fintech and medtech are not facts about
+// Migration Accelerator — so the industry chooser and the industry profiles
+// behind it belong to the framework, and every offering's configurator reads
+// the same set. Only the pages that describe one offering belong to it.
+const OFFERING_TEMPLATES = ['story', 'configurator', 'offerings-listing'];
+const FRAMEWORK_TEMPLATES = ['offerings-page', 'industry-chooser'];
+
+function templatesFor(offeringKey) {
+    return offeringKey === FRAMEWORK_KEY ? FRAMEWORK_TEMPLATES : OFFERING_TEMPLATES;
+}
+
+const TEMPLATE_LABELS = {
+    story: 'Story',
+    configurator: 'Configurator',
+    'industry-chooser': 'Industry Chooser',
+    'offerings-listing': 'Offerings Listing',
+    'offerings-page': 'Offerings Page'
+};
+
+
 export {
+    OFFERING_TEMPLATES,
+    FRAMEWORK_TEMPLATES,
+    TEMPLATE_LABELS,
+    templatesFor,
     FRAMEWORK_KEY,
     STARTER_PAGES,
     starterFor,
