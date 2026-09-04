@@ -3,14 +3,8 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>gtmOfferingsSnapshot</componentName>
-                <identifier>c_gtmOfferingsSnapshot1</identifier>
-            </componentInstance>
-        </itemInstances>
-        <itemInstances>
-            <componentInstance>
-                <componentName>gtmOfferingsNeedsAttention</componentName>
-                <identifier>c_gtmOfferingsNeedsAttention1</identifier>
+                <componentName>gtmOverview</componentName>
+                <identifier>c_gtmOverview1</identifier>
             </componentInstance>
         </itemInstances>
         <name>main</name>
