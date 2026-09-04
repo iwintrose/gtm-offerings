@@ -4,7 +4,9 @@ import getOfferings from '@salesforce/apex/MaPageContentController.getOfferings'
 import getTemplateSummary from '@salesforce/apex/MaPageContentController.getTemplateSummary';
 import getEditorSections from '@salesforce/apex/MaPageContentController.getEditorSections';
 import getAllContent from '@salesforce/apex/MaPageContentController.getAllContent';
-import saveContentRecords from '@salesforce/apex/MaPageContentController.saveContentRecords';
+import saveDrafts from '@salesforce/apex/MaPageContentController.saveDrafts';
+import publishPage from '@salesforce/apex/MaPageContentController.publishPage';
+import discardDrafts from '@salesforce/apex/MaPageContentController.discardDrafts';
 import saveSectionOrder from '@salesforce/apex/MaPageContentController.saveSectionOrder';
 import setSectionActive from '@salesforce/apex/MaPageContentController.setSectionActive';
 
@@ -50,6 +52,7 @@ export default class GtmContentManager extends LightningElement {
     @track loadError = '';
     @track saveMessage = '';
     @track reorderMode = false;
+    @track exitOpen = false;
     @track dirtyKeys = [];
 
     _dragKey = '';
@@ -290,7 +293,9 @@ export default class GtmContentManager extends LightningElement {
             .filter((r) => r.sectionKey === this.activeKey)
             .map((r) => {
                 const type = r.fieldType || 'text';
-                const value = r[COLUMN[type]] || '';
+                // Show the working copy where one exists; the published value
+                // otherwise. The live page always reads the published column.
+                const value = r.isDraft ? (r.draftValue || '') : (r[COLUMN[type]] || '');
                 const base = {
                     ...r,
                     value,
@@ -299,7 +304,9 @@ export default class GtmContentManager extends LightningElement {
                     column: COLUMN[type],
                     isText: type === 'text',
                     isRich: type === 'rich',
-                    isJson: type === 'json'
+                    isJson: type === 'json',
+                    statusClass: r.isDraft ? 'fld-status fld-status--draft' : 'fld-status',
+                    statusLabel: r.isDraft ? 'Draft' : ''
                 };
                 if (base.isJson) base.items = this.buildItems(r.id, value);
                 return base;
@@ -350,11 +357,11 @@ export default class GtmContentManager extends LightningElement {
     // ─── edits ────────────────────────────────────────────────────────────────
 
     handleTextChange(event) {
-        this.writeValue(event.currentTarget.dataset.id, event.currentTarget.dataset.column, event.target.value);
+        this.writeValue(event.currentTarget.dataset.id, event.target.value);
     }
 
     handleRichChange(event) {
-        this.writeValue(event.currentTarget.dataset.id, 'richValue', event.target.value);
+        this.writeValue(event.currentTarget.dataset.id, event.target.value);
     }
 
     handleItemChange(event) {
@@ -388,14 +395,15 @@ export default class GtmContentManager extends LightningElement {
     parseOf(recordId) {
         const rec = this.records.find((r) => r.id === recordId);
         if (!rec) return null;
+        const raw = rec.isDraft ? (rec.draftValue || '[]') : (rec.jsonValue || '[]');
         try {
-            const parsed = JSON.parse(rec.jsonValue || '[]');
+            const parsed = JSON.parse(raw);
             return Array.isArray(parsed) ? parsed : null;
         } catch (e) { return null; }
     }
 
     commitJson(recordId, list) {
-        this.writeValue(recordId, 'jsonValue', JSON.stringify(list));
+        this.writeValue(recordId, JSON.stringify(list));
     }
 
     mutateJson(recordId, index, fn) {
@@ -432,9 +440,11 @@ export default class GtmContentManager extends LightningElement {
         this.commitJson(recordId, list);
     }
 
-    writeValue(recordId, column, value) {
+    // Edits land on draftValue, never on the published column, so the public
+    // page is unaffected until Publish runs.
+    writeValue(recordId, value) {
         this.records = this.records.map((r) =>
-            r.id === recordId ? { ...r, [column]: value } : r);
+            r.id === recordId ? { ...r, draftValue: value, isDraft: true, status: 'Draft' } : r);
         const rec = this.records.find((r) => r.id === recordId);
         if (rec && this.dirtyKeys.indexOf(rec.sectionKey) === -1) {
             this.dirtyKeys = [...this.dirtyKeys, rec.sectionKey];
@@ -451,15 +461,61 @@ export default class GtmContentManager extends LightningElement {
     }
 
     saveDraft() {
-        const dirty = this.records.filter((r) => this.dirtyKeys.indexOf(r.sectionKey) > -1);
-        if (!dirty.length) return;
+        const edits = this.records
+            .filter((r) => r.isDraft)
+            .map((r) => ({ id: r.id, value: r.draftValue || '' }));
+        if (!edits.length) return;
         this.isSaving = true;
         this.saveMessage = 'Saving…';
-        saveContentRecords({ payloads: dirty })
-            .then(() => { this.saveMessage = 'Saved'; this.dirtyKeys = []; })
+        saveDrafts({ edits })
+            .then(() => { this.saveMessage = 'Draft saved'; this.dirtyKeys = []; })
             .catch((err) => {
                 this.saveMessage = '';
-                this.loadError = this.messageFrom(err) || 'Changes could not be saved.';
+                this.loadError = this.messageFrom(err) || 'The draft could not be saved.';
+            })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    // ─── publish ──────────────────────────────────────────────────────────────
+
+    get draftCount() { return this.records.filter((r) => r.isDraft).length; }
+    get hasDrafts() { return this.draftCount > 0; }
+    get draftSummary() {
+        const n = this.draftCount;
+        return n === 1 ? '1 unpublished change' : `${n} unpublished changes`;
+    }
+
+    handleOpenExit() { this.exitOpen = true; }
+    handleCloseExit() { this.exitOpen = false; }
+
+    handlePublish() {
+        this.isSaving = true;
+        this.saveMessage = 'Publishing…';
+        this.exitOpen = false;
+        publishPage({ offeringKey: this.selectedOffering, templateType: this.selectedTemplate })
+            .then((count) => {
+                this.saveMessage = count === 1 ? '1 field published' : `${count} fields published`;
+                return this.loadPage();
+            })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'Publish failed.';
+            })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    handleDiscard() {
+        this.isSaving = true;
+        this.saveMessage = 'Discarding…';
+        this.exitOpen = false;
+        discardDrafts({ offeringKey: this.selectedOffering, templateType: this.selectedTemplate })
+            .then(() => {
+                this.saveMessage = 'Changes discarded';
+                return this.loadPage();
+            })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'Changes could not be discarded.';
             })
             .finally(() => { this.isSaving = false; });
     }

@@ -68,7 +68,7 @@ public without sharing class MaPageContentController {
                    Text_Value__c, Rich_Value__c, JSON_Value__c,
                    Industry_Key__c, Sort_Order__c, Active__c,
                    Content_Address__c, Offering_Key__c, Template_Type__c,
-                   Label__c, Help_Text__c
+                   Label__c, Help_Text__c, Draft_Value__c, Status__c
             FROM   MA_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -388,6 +388,121 @@ public without sharing class MaPageContentController {
         @AuraEnabled public Datetime modified     { get; set; }
     }
 
+    /**
+     * Saves a working copy without touching what the public page shows.
+     *
+     * The live page reads Text_Value__c / Rich_Value__c / JSON_Value__c, so a
+     * draft is written to Draft_Value__c instead and the row is marked Draft.
+     * Nothing an editor types reaches the site until publishPage runs.
+     */
+    @AuraEnabled
+    public static void saveDrafts(List<DraftEdit> edits) {
+        if (edits == null || edits.isEmpty()) {
+            return;
+        }
+        Map<Id, MA_Page_Content__c> updates = new Map<Id, MA_Page_Content__c>();
+        for (DraftEdit e : edits) {
+            if (String.isBlank(e.id)) { continue; }
+            updates.put(e.id, new MA_Page_Content__c(
+                Id             = e.id,
+                Draft_Value__c = e.value,
+                Status__c      = 'Draft'
+            ));
+        }
+        if (updates.isEmpty()) { return; }
+        try {
+            update updates.values();
+        } catch (DmlException ex) {
+            throw new AuraHandledException('Draft could not be saved: ' + ex.getMessage());
+        }
+    }
+
+    /**
+     * Publishes every draft on a page: snapshots the value being replaced into
+     * MA_Page_Content_Version__c, moves the draft into the column the page
+     * reads, clears the draft and marks the row Published.
+     *
+     * The snapshot holds the OUTGOING value, so a version is what you roll back
+     * to, not what you just published.
+     */
+    @AuraEnabled
+    public static Integer publishPage(String offeringKey, String templateType) {
+        // Draft_Value__c is a long text area, which SOQL cannot filter on, so
+        // the "has a draft" test happens in Apex.
+        List<MA_Page_Content__c> drafts = new List<MA_Page_Content__c>();
+        for (MA_Page_Content__c rec : [
+            SELECT Id, Field_Type__c, Text_Value__c, Rich_Value__c, JSON_Value__c,
+                   Draft_Value__c, Version_Number__c, Section_Key__c, Field_Key__c
+            FROM   MA_Page_Content__c
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
+            AND    Status__c        = 'Draft'
+            LIMIT 2000
+        ]) {
+            if (rec.Draft_Value__c != null) { drafts.add(rec); }
+        }
+        if (drafts.isEmpty()) { return 0; }
+
+        List<MA_Page_Content_Version__c> versions = new List<MA_Page_Content_Version__c>();
+        for (MA_Page_Content__c rec : drafts) {
+            Decimal next = (rec.Version_Number__c == null ? 0 : rec.Version_Number__c) + 1;
+            versions.add(new MA_Page_Content_Version__c(
+                Content__c        = rec.Id,
+                Version_Number__c = next,
+                Snapshot__c       = resolveValue(rec),
+                Change_Summary__c = 'Replaced by publish of ' + rec.Section_Key__c + '::' + rec.Field_Key__c
+            ));
+
+            String draft = rec.Draft_Value__c;
+            if (rec.Field_Type__c == 'rich')      { rec.Rich_Value__c = draft; }
+            else if (rec.Field_Type__c == 'json') { rec.JSON_Value__c = draft; }
+            else                                  { rec.Text_Value__c = draft; }
+
+            rec.Draft_Value__c        = null;
+            rec.Status__c             = 'Published';
+            rec.Version_Number__c     = next;
+            rec.Last_Published_Date__c = System.now();
+        }
+        try {
+            insert versions;
+            update drafts;
+        } catch (DmlException ex) {
+            throw new AuraHandledException('Publish failed: ' + ex.getMessage());
+        }
+        return drafts.size();
+    }
+
+    /**
+     * Throws away unpublished edits on a page. The published value is untouched
+     * because it was never overwritten.
+     */
+    @AuraEnabled
+    public static Integer discardDrafts(String offeringKey, String templateType) {
+        List<MA_Page_Content__c> drafts = [
+            SELECT Id FROM MA_Page_Content__c
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
+            AND    Status__c        = 'Draft'
+            LIMIT 2000
+        ];
+        if (drafts.isEmpty()) { return 0; }
+        for (MA_Page_Content__c rec : drafts) {
+            rec.Draft_Value__c = null;
+            rec.Status__c      = 'Published';
+        }
+        try {
+            update drafts;
+        } catch (DmlException ex) {
+            throw new AuraHandledException('Changes could not be discarded: ' + ex.getMessage());
+        }
+        return drafts.size();
+    }
+
+    public class DraftEdit {
+        @AuraEnabled public String id    { get; set; }
+        @AuraEnabled public String value { get; set; }
+    }
+
     private static String resolveValue(MA_Page_Content__c rec) {
         if (rec.Field_Type__c == 'rich')   return rec.Rich_Value__c;
         if (rec.Field_Type__c == 'json')   return rec.JSON_Value__c;
@@ -410,6 +525,9 @@ public without sharing class MaPageContentController {
         @AuraEnabled public String fieldType        { get; set; }
         @AuraEnabled public String label            { get; set; }
         @AuraEnabled public String helpText         { get; set; }
+        @AuraEnabled public String draftValue       { get; set; }
+        @AuraEnabled public String status           { get; set; }
+        @AuraEnabled public Boolean isDraft         { get; set; }
         @AuraEnabled public String textValue        { get; set; }
         @AuraEnabled public String richValue        { get; set; }
         @AuraEnabled public String jsonValue        { get; set; }
@@ -437,6 +555,9 @@ public without sharing class MaPageContentController {
             this.contentAddress    = rec.Content_Address__c;
             this.label             = rec.Label__c;
             this.helpText          = rec.Help_Text__c;
+            this.draftValue        = rec.Draft_Value__c;
+            this.status            = rec.Status__c;
+            this.isDraft           = rec.Status__c == 'Draft' && rec.Draft_Value__c != null;
         }
 
         public MA_Page_Content__c toSObject() {

@@ -232,3 +232,35 @@
     background: transparent; color: #444; cursor: pointer; font-size: 12px; font-weight: 600;
 }
 .rep-add:hover { border-color: #0176d3; color: #0176d3; background: #eef4ff; }
+
+/* ── draft state ─────────────────────────────────────────────────────────── */
+.gcm-drafts {
+    font-size: 11.5px; color: #8c6a1a;
+    background: #fef5ec; border: 1px solid #fe9339;
+    border-radius: 4px; padding: .15rem .4rem; white-space: nowrap;
+}
+.fld-status { font-size: 0; }
+.fld-status--draft {
+    font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em;
+    color: #8c6a1a; background: #fef5ec; border: 1px solid #fe9339;
+    border-radius: 3px; padding: 0 .28rem;
+}
+
+/* ── publish dialog ──────────────────────────────────────────────────────── */
+.scrim {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,20,24,.5); display: grid; place-items: center; padding: 1rem;
+}
+.modal {
+    width: min(30rem, 100%); background: #fff; border-radius: 8px;
+    box-shadow: 0 10px 34px rgba(0,0,0,.22); overflow: hidden;
+}
+.modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid #e5e5e5; }
+.modal-h h2 { margin: 0 0 .2rem; font-size: 16px; font-weight: 700; }
+.modal-h p { margin: 0; font-size: 12.5px; color: #444; }
+.modal-b { padding: .9rem 1.15rem; }
+.modal-note { margin: 0; font-size: 12.5px; color: #444; line-height: 1.55; }
+.modal-f {
+    padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
+    display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
+}

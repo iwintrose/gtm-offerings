@@ -104,6 +104,26 @@
     </objectPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>MA_Page_Content__c.Draft_Value__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>MA_Page_Content__c.Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>MA_Page_Content__c.Version_Number__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>MA_Page_Content__c.Last_Published_Date__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>MA_Page_Content__c.Label__c</field>
         <readable>true</readable>
     </fieldPermissions>

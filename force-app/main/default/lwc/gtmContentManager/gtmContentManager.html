@@ -40,6 +40,15 @@
           </lightning-button>
         </template>
         <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh}></lightning-button>
+        <template if:true={hasDrafts}>
+          <span class="gcm-drafts" title="Not yet on the live page">{draftSummary}</span>
+          <lightning-button
+            label="Publish"
+            variant="brand"
+            icon-name="utility:upload"
+            onclick={handleOpenExit}>
+          </lightning-button>
+        </template>
       </div>
     </header>
 
@@ -147,6 +156,7 @@
                   <div class="fld-top">
                     <span class="fld-label">{f.displayLabel}</span>
                     <span class="fld-key">{f.fieldKey}</span>
+                    <span class={f.statusClass}>{f.statusLabel}</span>
                   </div>
 
                   <!-- plain text -->
@@ -238,6 +248,28 @@
 
         </div>
       </template>
+    </template>
+    <template if:true={exitOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="pubTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="pubTitle">Publish to the live page?</h2>
+            <p>{draftSummary} on this page. The published page has not changed yet.</p>
+          </header>
+          <div class="modal-b">
+            <p class="modal-note">
+              Publishing replaces what visitors see and keeps the previous value
+              as a version you can roll back to. Discarding throws the edits away
+              and leaves the live page exactly as it is.
+            </p>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Discard changes" class="modal-danger" onclick={handleDiscard}></lightning-button>
+            <lightning-button label="Keep editing" onclick={handleCloseExit}></lightning-button>
+            <lightning-button label="Publish" variant="brand" onclick={handlePublish}></lightning-button>
+          </footer>
+        </div>
+      </section>
     </template>
   </div>
 </template>

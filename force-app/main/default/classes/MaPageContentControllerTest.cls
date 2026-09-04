@@ -357,4 +357,167 @@ private class MaPageContentControllerTest {
         Test.stopTest();
         System.assert(threw, 'A blank section id is rejected');
     }
+
+    // ─── draft / publish ──────────────────────────────────────────────────────
+
+    private static MA_Page_Content__c published(String section, String field, String type, String value) {
+        MA_Page_Content__c rec = makeRecord(
+            OFFERING, TMPL, section, field, type,
+            type == 'text' ? value : null,
+            type == 'rich' ? value : null,
+            type == 'json' ? value : null,
+            null, 1);
+        rec.Status__c = 'Published';
+        return rec;
+    }
+
+    @IsTest
+    static void draftDoesNotChangeWhatThePageReads() {
+        MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
+        insert rec;
+
+        MaPageContentController.DraftEdit edit = new MaPageContentController.DraftEdit();
+        edit.id = rec.Id;
+        edit.value = 'Edited but unpublished';
+
+        Test.startTest();
+        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ edit });
+        Map<String, String> live = MaPageContentReader.getPageContent(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        System.assertEquals('Live copy', live.get('hero::eyebrow'),
+            'The public page still shows the published value while a draft exists');
+        MA_Page_Content__c after = [SELECT Status__c, Draft_Value__c FROM MA_Page_Content__c WHERE Id = :rec.Id];
+        System.assertEquals('Draft', after.Status__c, 'The row is marked Draft');
+        System.assertEquals('Edited but unpublished', after.Draft_Value__c, 'The draft is held separately');
+    }
+
+    @IsTest
+    static void publishMovesDraftIntoTheColumnThePageReads() {
+        MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
+        insert rec;
+        MaPageContentController.DraftEdit edit = new MaPageContentController.DraftEdit();
+        edit.id = rec.Id;
+        edit.value = 'New copy';
+        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ edit });
+
+        Test.startTest();
+        Integer count = MaPageContentController.publishPage(OFFERING, TMPL);
+        Test.stopTest();
+
+        System.assertEquals(1, count, 'One field published');
+        MA_Page_Content__c after = [
+            SELECT Text_Value__c, Draft_Value__c, Status__c, Version_Number__c, Last_Published_Date__c
+            FROM MA_Page_Content__c WHERE Id = :rec.Id];
+        System.assertEquals('New copy', after.Text_Value__c, 'The page now reads the new value');
+        System.assertEquals(null, after.Draft_Value__c, 'The draft is cleared');
+        System.assertEquals('Published', after.Status__c, 'The row is Published');
+        System.assertEquals(2, after.Version_Number__c,
+            'Version_Number__c defaults to 1 on insert, so the first publish makes 2');
+        System.assertNotEquals(null, after.Last_Published_Date__c, 'Publish time recorded');
+    }
+
+    @IsTest
+    static void publishSnapshotsTheOutgoingValue() {
+        MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Original');
+        insert rec;
+        MaPageContentController.DraftEdit edit = new MaPageContentController.DraftEdit();
+        edit.id = rec.Id;
+        edit.value = 'Replacement';
+        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ edit });
+
+        Test.startTest();
+        MaPageContentController.publishPage(OFFERING, TMPL);
+        Test.stopTest();
+
+        MA_Page_Content_Version__c v = [
+            SELECT Snapshot__c, Version_Number__c FROM MA_Page_Content_Version__c
+            WHERE Content__c = :rec.Id];
+        System.assertEquals('Original', v.Snapshot__c,
+            'The snapshot holds what was replaced, so it is what you roll back to');
+        System.assertEquals(2, v.Version_Number__c,
+            'The version carries the number the record moved to');
+    }
+
+    @IsTest
+    static void publishRoutesEachTypeToItsOwnColumn() {
+        MA_Page_Content__c richRec = published('hero', 'headline', 'rich', '<b>old</b>');
+        MA_Page_Content__c jsonRec = published('problem', 'chips', 'json', '["old"]');
+        insert new List<MA_Page_Content__c>{ richRec, jsonRec };
+
+        MaPageContentController.DraftEdit a = new MaPageContentController.DraftEdit();
+        a.id = richRec.Id; a.value = '<b>new</b>';
+        MaPageContentController.DraftEdit b = new MaPageContentController.DraftEdit();
+        b.id = jsonRec.Id; b.value = '["new"]';
+        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ a, b });
+
+        Test.startTest();
+        MaPageContentController.publishPage(OFFERING, TMPL);
+        Test.stopTest();
+
+        System.assertEquals('<b>new</b>',
+            [SELECT Rich_Value__c FROM MA_Page_Content__c WHERE Id = :richRec.Id].Rich_Value__c,
+            'rich publishes into Rich_Value__c');
+        System.assertEquals('["new"]',
+            [SELECT JSON_Value__c FROM MA_Page_Content__c WHERE Id = :jsonRec.Id].JSON_Value__c,
+            'json publishes into JSON_Value__c');
+    }
+
+    @IsTest
+    static void discardLeavesThePublishedValueAlone() {
+        MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
+        insert rec;
+        MaPageContentController.DraftEdit edit = new MaPageContentController.DraftEdit();
+        edit.id = rec.Id;
+        edit.value = 'Throw me away';
+        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ edit });
+
+        Test.startTest();
+        Integer count = MaPageContentController.discardDrafts(OFFERING, TMPL);
+        Test.stopTest();
+
+        System.assertEquals(1, count, 'One draft discarded');
+        MA_Page_Content__c after = [
+            SELECT Text_Value__c, Draft_Value__c, Status__c FROM MA_Page_Content__c WHERE Id = :rec.Id];
+        System.assertEquals('Live copy', after.Text_Value__c, 'The published value survives a discard');
+        System.assertEquals(null, after.Draft_Value__c, 'The draft is gone');
+        System.assertEquals('Published', after.Status__c, 'Back to Published');
+        System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Content_Version__c],
+            'Discarding does not create a version');
+    }
+
+    @IsTest
+    static void publishWithNoDraftsIsANoOp() {
+        insert published('hero', 'eyebrow', 'text', 'Live copy');
+        Test.startTest();
+        Integer count = MaPageContentController.publishPage(OFFERING, TMPL);
+        Test.stopTest();
+        System.assertEquals(0, count, 'Nothing to publish');
+        System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Content_Version__c],
+            'No version written when nothing changed');
+    }
+
+    @IsTest
+    static void publishIgnoresOtherPages() {
+        MA_Page_Content__c mine = published('hero', 'eyebrow', 'text', 'Mine');
+        MA_Page_Content__c other = published('hero', 'eyebrow', 'text', 'Theirs');
+        other.Template_Type__c = 'configurator';
+        other.Content_Address__c = OFFERING + '::configurator::hero::eyebrow';
+        insert new List<MA_Page_Content__c>{ mine, other };
+
+        MaPageContentController.DraftEdit a = new MaPageContentController.DraftEdit();
+        a.id = mine.Id; a.value = 'Mine edited';
+        MaPageContentController.DraftEdit b = new MaPageContentController.DraftEdit();
+        b.id = other.Id; b.value = 'Theirs edited';
+        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ a, b });
+
+        Test.startTest();
+        Integer count = MaPageContentController.publishPage(OFFERING, TMPL);
+        Test.stopTest();
+
+        System.assertEquals(1, count, 'Only this page publishes');
+        System.assertEquals('Theirs',
+            [SELECT Text_Value__c FROM MA_Page_Content__c WHERE Id = :other.Id].Text_Value__c,
+            'Another page keeps its unpublished draft');
+    }
 }
