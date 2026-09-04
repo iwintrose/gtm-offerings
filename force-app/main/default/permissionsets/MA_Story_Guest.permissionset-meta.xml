@@ -10,6 +10,10 @@
         <apexClass>MaViewerContext</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>MaConfigurationReader</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <customMetadataTypeAccesses>
         <enabled>true</enabled>
         <name>MA_Offering__mdt</name>

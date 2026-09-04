@@ -3,6 +3,7 @@ import isRep from '@salesforce/apex/MaViewerContext.isRep';
 import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
 import getConfiguration from '@salesforce/apex/MaSavedConfigurationController.getConfiguration';
+import getPublicConfiguration from '@salesforce/apex/MaConfigurationReader.getPublicConfiguration';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
 import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
@@ -464,21 +465,31 @@ export default class MaConfigurator extends LightningElement {
      * still reads its own link.
      */
     async loadSavedConfiguration() {
-        if (!this.savedRecordId || !this.isConfigManager) return;
+        if (!this.savedRecordId) return;
         try {
-            const rec = await getConfiguration({ recordId: this.savedRecordId });
+            // A rep reads through the rep controller, which the guest is never
+            // granted. Everyone else reads the public view, which returns no
+            // password and nothing at all for a link that has been switched
+            // off. Same record either way.
+            const rec = this.isConfigManager
+                ? await getConfiguration({ recordId: this.savedRecordId })
+                : await getPublicConfiguration({ recordId: this.savedRecordId });
             if (!rec) return;
+            if (rec.isActive === false) { this.inactive = true; return; }
 
             if (rec.company) this.company = rec.company;
             if (rec.industry) this.industryKey = rec.industry;
 
             let saved = {};
             try { saved = JSON.parse(rec.configPayload || '{}'); } catch (e) { saved = {}; }
+            if (rec.industryLabel && !this.industryKey) this.industryKey = rec.industry;
             if (saved && typeof saved === 'object') {
                 // The record wins over the URL: the link in someone's inbox
                 // was generated before the last edit, the record was not.
+                // This is what makes an edit show up on the next page load
+                // rather than needing a freshly generated link.
                 this.tokenState = { ...this.tokenState, ...saved };
-                if (saved.ACCENT && !this.accent) this.accent = saved.ACCENT;
+                if (saved.ACCENT) this.accent = saved.ACCENT;
             }
             this.setPageTitle();
         } catch (e) {

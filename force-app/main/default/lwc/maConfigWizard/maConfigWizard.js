@@ -722,10 +722,27 @@ export default class MaConfigWizard extends LightningElement {
         }
     }
 
+    /**
+     * The link a rep sends.
+     *
+     * Once the record exists the link is just its id. The page asks Salesforce
+     * for the rest, which keeps the client's company, numbers and brand colour
+     * out of browser history, referrer headers and forwarded messages -- and
+     * means an edit made afterwards shows up on the prospect's next load
+     * instead of needing a newly generated link.
+     *
+     * Before the first save there is no record to point at, so the long form
+     * is still built: it is what the preview and the pre-save state need. Old
+     * long links keep working, because the page still reads these parameters
+     * and only lets the record override them.
+     */
     _buildUrl() {
         let base = this._siteBaseUrl;
         if (!base) {
             try { base = window.location.origin + window.location.pathname; } catch (e) { base = ''; }
+        }
+        if (this._knownRecordId) {
+            return `${base}?cfgId=${encodeURIComponent(this._knownRecordId)}`;
         }
         const params = [];
         const push = (k, v) => { if (v) params.push(`${k}=${encodeURIComponent(v)}`); };
@@ -741,7 +758,6 @@ export default class MaConfigWizard extends LightningElement {
         push('deps', this._state.DEPENDENCY_COUNT);
         push('health', this._state.HEALTH_SCORE);
         push('note', this._state.CUSTOM_NOTE);
-        if (this._knownRecordId) push('cfgId', this._knownRecordId);
         return params.length ? `${base}?${params.join('&')}` : base;
     }
 
