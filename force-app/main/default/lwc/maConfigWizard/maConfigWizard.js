@@ -54,7 +54,11 @@ export default class MaConfigWizard extends LightningElement {
             this._knownRecordId = value;
             this._replacing = false;
             this._path = 'full';
-            this._step = TOTAL_STEPS;
+            // A link that exists is finished. Opening on the last input step
+            // made a completed link look half-built and made saving read as
+            // "generate", when it is an update.
+            this._step = TOTAL_STEPS + 1;
+            this._existed = true;
             // The URL the rep already sent, captured before any edit in this
             // session changes what _buildUrl() would produce.
             this._existingUrl = this._buildUrl();
@@ -104,6 +108,9 @@ export default class MaConfigWizard extends LightningElement {
     @track _copyFeedback = 'Copy link';
 
     _knownRecordId = '';
+    _autoSaveTimer;
+    // True when this wizard opened on a link that already existed.
+    @track _existed = false;
     // The link that already exists, and whether the rep has chosen to leave it
     // alone and build another.
     @track _existingUrl = '';
@@ -539,6 +546,7 @@ export default class MaConfigWizard extends LightningElement {
         this._step = n;
         this._markVisited(n);
         if (n === 7) this._ensureGeneratedPassword();
+        this._autoSave();
     }
 
     handleFullNext() {
@@ -546,6 +554,7 @@ export default class MaConfigWizard extends LightningElement {
             this._step += 1;
             this._markVisited(this._step);
             if (this._step === 7) this._ensureGeneratedPassword();
+            this._autoSave();
         } else {
             if (!this.canGenerateLink) {
                 this._companyInvalid = !(this._company || '').trim();
@@ -560,6 +569,7 @@ export default class MaConfigWizard extends LightningElement {
         if (this._step > 1) {
             this._step -= 1;
             this._markVisited(this._step);
+            this._autoSave();
         }
     }
 
@@ -568,8 +578,33 @@ export default class MaConfigWizard extends LightningElement {
     }
 
     get nextLabel() {
-        if (this._step === TOTAL_STEPS) return this._saving ? 'Saving…' : 'Save & generate link';
-        return 'Next →';
+        if (this._step !== TOTAL_STEPS) return 'Next →';
+        if (this._saving) return 'Saving…';
+        // Updating a link someone already has is a different promise from
+        // generating one, so the button says which it is.
+        return this._knownRecordId ? 'Save changes' : 'Save & generate link';
+    }
+
+    // ─── the done screen, for a link that already existed ─────────────────────
+
+    get doneHeadline() {
+        if (!this._existed) return `Link generated ${this.doneCompanyLine}`;
+        const who = (this._company || '').trim();
+        return who ? `${who}'s link is live` : 'This link is live';
+    }
+
+    get doneSubline() {
+        return this._existed
+            ? 'Edit any of the details and save — whoever has this link sees the change on their next load. The link itself does not change.'
+            : '';
+    }
+
+    get showEditDetails() { return this._existed && this.isDone; }
+
+    /** Back into the form on the link that already exists. */
+    handleEditDetails() {
+        this._step = 1;
+        this._markVisited(1);
     }
 
     get nextDisabled() {
@@ -614,7 +649,27 @@ export default class MaConfigWizard extends LightningElement {
 
     // ------------------------------------------------------------- save
 
-    async _save() {
+    /**
+     * Save what has been filled in so far, without leaving the step.
+     *
+     * A wizard that only writes at the end loses everything to a closed tab,
+     * and the first save is what creates the record the link points at — so
+     * progressing a step is the natural moment to commit. Quiet on failure:
+     * the rep is mid-form, and the real save at the end reports properly.
+     */
+    _autoSave() {
+        // Nothing to save a link against until there is a company on it.
+        if (this._saving || !(this._company || '').trim()) return;
+        clearTimeout(this._autoSaveTimer);
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._autoSaveTimer = setTimeout(() => { this._save(false); }, 400);
+    }
+
+    /**
+     * @param {boolean} advance  Move to the done screen. False for the
+     *   step-by-step autosave, which must leave the rep where they are.
+     */
+    async _save(advance = true) {
         this._saving = true;
         this._saveError = '';
         try {
@@ -642,10 +697,17 @@ export default class MaConfigWizard extends LightningElement {
             });
             this._knownRecordId = recordId;
             this._generatedUrl = this._buildUrl();
-            if (this._path === 'full') this._step = TOTAL_STEPS + 1; // "done" screen
+            if (advance && this._path === 'full') {
+                this._step = TOTAL_STEPS + 1; // "done" screen
+                this._existed = true;
+            }
             this.dispatchEvent(new CustomEvent('configsaved', { detail: { recordId } }));
         } catch (e) {
-            this._saveError = e?.body?.message || 'That link did not save. Please try again.';
+            // An autosave failing mid-form is not something to interrupt for;
+            // the explicit save at the end surfaces it.
+            if (advance) {
+                this._saveError = e?.body?.message || 'That link did not save. Please try again.';
+            }
         } finally {
             this._saving = false;
         }

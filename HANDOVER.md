@@ -77,25 +77,42 @@ sf project deploy start --source-dir force-app/main/default/lwc/<component>
 
 ## What's Still Outstanding
 
-### 1. Deploy maConfigurator contrast fix to org
-User ran `git pull gtm-offerings lwc-scaffold-import` and needs to deploy:
+_Last verified against the org on 2026-09-04. The three items that used to sit
+here (deploy the contrast fix, fix a `/gtmstory/s/` CTA, verify public access)
+are done or moot — the CTA they named no longer exists in the code._
+
+### 1. Delete the GTM Framework site (manual)
+`gtmframework` is `DownForMaintenance`, and its published Home page still
+carries `c:gtmAppShell`. That pins the component: the org refuses to delete
+`gtmAppShell` while a published instance references it, and the site cannot be
+published to clear it while it is deactivated. Delete the site in Setup →
+Digital Experiences → All Sites, then:
+
 ```bash
-sf project deploy start --source-dir force-app/main/default/lwc/maConfigurator
+# destructiveChanges.xml naming LightningComponentBundle gtmAppShell
+sf project deploy start --metadata-dir <dir>
 ```
 
-### 2. Fix maStory CTA Link
-**Issue:** Links to `/gtmstory/s/` — should be `/gtmaccelerator`
-```bash
-grep -r "gtmstory\|/s/" force-app/main/default/lwc/maStory/
-```
-Update the URL, commit to `lwc-scaffold-import`, push, deploy.
+### 2. Duplicate FlexiPages in the org
+The org has three `Assessment_Request_Record_Page` FlexiPages (`_1`, `_2` are
+duplicates); this repo has one. Harmless, but the extras should be deleted so
+the org and the branch agree.
 
-### 3. Verify Public Access on maStory
-- Setup → Digital Experiences → All Sites → Activate
-- Experience Builder → Settings → General → "Public can access the site" ✓
-- Publish site
+### 3. Match Gus to the Betty/Dex character sheet
+`c/gtmMascot` is built from chibi principles rather than from the existing
+character designs, because those were not available. Line weight, eye shape and
+palette should be reconciled against them.
 
 ---
+
+## Before deleting any component
+
+`scripts/check-references.py` scans **this branch**. Experience Builder keeps
+page layouts in the org, and they do not reliably round-trip through the site
+bundles in source — `maAdminBar` and `gtmAppShell` both read as orphans here
+while the org had them on four live pages. Confirm against the org first
+(the script prints the commands), or let the destructive deploy refuse: it
+names the exact pages, which is the authoritative answer.
 
 ## Key Working Agreement
 

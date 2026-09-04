@@ -38,7 +38,7 @@ export default class MaAgentBubble extends LightningElement {
         return this.isOpen ? 'Hide the assistant' : 'Ask Gus about this page';
     }
     get statusLabel() {
-        return this.busy ? 'Working on it…' : 'GTM assistant';
+        return this.busy ? 'Working on it…' : 'GTM Utility Sidekick';
     }
 
     connectedCallback() {

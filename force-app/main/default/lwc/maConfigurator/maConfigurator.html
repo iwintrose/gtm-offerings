@@ -12,8 +12,10 @@
           <a class="backlink" href={offeringsUrl}>← Offerings</a>
         </template>
         <c-ma-saved-links-bar lwc:ref="savedLinksBar"></c-ma-saved-links-bar>
+        <!-- The gap on .cta already separates these two flex items; the
+             &nbsp; that used to be here doubled it. -->
         <button class="cta" onclick={handleOpenBooking}>
-          <span class="cta-long">Book an&nbsp;</span>environment assessment →
+          <span class="cta-long">Get an</span>environment assessment →
         </button>
         <template if:true={showCustomizeButton}>
           <!-- Gus is the way in now. "Customize" named a panel; this names

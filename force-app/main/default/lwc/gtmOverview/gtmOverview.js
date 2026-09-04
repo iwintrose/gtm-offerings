@@ -127,9 +127,27 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     get hasRequests() { return this.requests.length > 0; }
     get showEmptyRequests() { return this.requestsLoaded && !this.hasRequests; }
 
-    // ─── right column ─────────────────────────────────────────────────────────
+    // ─── header ───────────────────────────────────────────────────────────────
+
+    /** What this page is, in one line under the title. */
+    get headerMeta() {
+        const offerings = this.offerings.length;
+        const waiting = this.requests.length;
+        const parts = [offerings === 1 ? '1 offering' : `${offerings} offerings`];
+        parts.push(waiting === 1 ? '1 request waiting' : `${waiting} requests waiting`);
+        return parts.join(' · ');
+    }
 
     get contentManagerUrl() { return '/lightning/n/GTM_Content_Home'; }
+
+    // The Content Manager is a tab in this app's sibling app, so it opens
+    // there rather than as a stranded browser tab.
+    handleOpenContentManager() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__app',
+            attributes: { appTarget: 'standard__GTM_Content_Manager' }
+        });
+    }
 
     get showEmptyOfferings() { return this.offeringsLoaded && !this.offerings.length; }
 

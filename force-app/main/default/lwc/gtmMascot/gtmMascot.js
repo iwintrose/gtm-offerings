@@ -1,12 +1,13 @@
 import { LightningElement, api } from 'lwc';
 
 /**
- * Gus — the GTM Offerings character.
+ * Gus — the GTM Utility Sidekick.
  *
- * A stack of pages with a face: the framework manages pages, so the character
- * is made of what it manages. Kept as its own component because it appears in
- * more than one place (the assistant bubble, empty states, the overview) and
- * should be the same character in all of them.
+ * Chibi proportions, holding a page: the framework makes pages, so the
+ * character carries one rather than being a mascot that could belong to any
+ * product. Kept as its own component because he appears in more than one
+ * place -- the top bar, the assistant bubble, empty states -- and has to be
+ * the same character in all of them.
  */
 export default class GtmMascot extends LightningElement {
     /** 'sm' 28px · 'md' 44px · 'lg' 72px. */

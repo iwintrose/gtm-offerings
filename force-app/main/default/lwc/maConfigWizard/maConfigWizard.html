@@ -281,7 +281,10 @@
         <!-- ══════════ DONE ══════════ -->
         <template if:true={isDone}>
           <div class="mw-step mw-done">
-            <p class="mw-q">Link generated {doneCompanyLine}</p>
+            <p class="mw-q">{doneHeadline}</p>
+            <template if:true={doneSubline}>
+              <p class="mw-done-sub">{doneSubline}</p>
+            </template>
             <div class="mw-linkbox">
               <input class="mw-url" readonly value={previewUrl} />
               <button type="button" class="mw-btn primary" onclick={handleCopyLink}>{_copyFeedback}</button>
@@ -290,6 +293,9 @@
               <a class="mw-mini-link" href={previewUrl} target="_blank" rel="noopener">Preview the page ↗</a>
             </template>
             <div class="mw-actions">
+              <template if:true={showEditDetails}>
+                <button type="button" class="mw-btn" onclick={handleEditDetails}>Edit the details</button>
+              </template>
               <button type="button" class="mw-btn primary" onclick={handleFinish}>Done</button>
             </div>
           </div>

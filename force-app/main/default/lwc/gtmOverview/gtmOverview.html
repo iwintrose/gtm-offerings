@@ -1,13 +1,42 @@
 <template>
   <div class="ov">
+    <!-- Salesforce's own record-header proportions, so this reads as a page in
+         the app rather than a page inside it. Same shape as the Content
+         Manager home, because they are siblings. -->
+    <div class="slds-page-header ov-head">
+      <div class="slds-page-header__row">
+        <div class="slds-page-header__col-title">
+          <lightning-icon icon-name="standard:portal" size="medium"></lightning-icon>
+          <div class="slds-media__body">
+            <p class="ov-eyebrow">Overview</p>
+            <h1 class="ov-title">GTM Offerings</h1>
+            <p class="ov-meta">{headerMeta}</p>
+          </div>
+        </div>
+        <div class="slds-page-header__col-actions">
+          <lightning-button-group>
+            <lightning-button label="New prospect page" icon-name="utility:new"
+                              variant="brand" disabled={navBusy}
+                              onclick={handleNewProspectPage}></lightning-button>
+            <lightning-button label="Content Manager" icon-name="utility:edit"
+                              onclick={handleOpenContentManager}></lightning-button>
+          </lightning-button-group>
+        </div>
+      </div>
+    </div>
+
     <template if:true={loadError}>
       <div class="ov-err">{loadError}</div>
     </template>
 
     <div class="ov-cols">
       <!-- left: the numbers, stacked, because they are read down not across -->
-      <section class="ov-col ov-col--stats">
-        <h2 class="ov-h">Snapshot</h2>
+      <article class="slds-card ov-card ov-col--stats">
+        <div class="slds-card__header ov-card-h">
+          <lightning-icon icon-name="standard:metrics" size="small"></lightning-icon>
+          <h2 class="ov-h">Snapshot</h2>
+        </div>
+        <div class="slds-card__body ov-card-b">
         <template for:each={tiles} for:item="t">
           <div key={t.key} class="tile">
             <div class="tile-top">
@@ -17,11 +46,16 @@
             <div class={t.valueClass}>{t.value}</div>
           </div>
         </template>
-      </section>
+        </div>
+      </article>
 
       <!-- middle: the work waiting on someone -->
-      <section class="ov-col ov-col--work">
-        <h2 class="ov-h">New assessment requests</h2>
+      <article class="slds-card ov-card ov-col--work">
+        <div class="slds-card__header ov-card-h">
+          <lightning-icon icon-name="standard:question_feed" size="small"></lightning-icon>
+          <h2 class="ov-h">New assessment requests</h2>
+        </div>
+        <div class="slds-card__body ov-card-b">
         <template if:true={hasRequests}>
           <div class="rows">
             <template for:each={requests} for:item="r">
@@ -38,36 +72,23 @@
         <template if:true={showEmptyRequests}>
           <p class="ov-empty">Nothing waiting. New requests from the public pages land here.</p>
         </template>
-      </section>
+        </div>
+      </article>
 
-      <!-- right: what a rep comes here to do -->
-      <section class="ov-col ov-col--act">
-        <h2 class="ov-h">Create</h2>
-        <button class="act" onclick={handleNewProspectPage} disabled={navBusy}>
-          <span class="act-plus">+</span>
-          <span class="act-main">
-            <span class="act-label">New Prospect Page</span>
-            <span class="act-sub">Pick an industry and build a client configurator</span>
-          </span>
-        </button>
-        <a class="act act--quiet" href={contentManagerUrl}>
-          <span class="act-main">
-            <span class="act-label">Open the Content Manager</span>
-            <span class="act-sub">Edit the pages behind these offerings</span>
-          </span>
-        </a>
-      </section>
     </div>
 
     <!-- offerings, each linking to its own story -->
     <section class="ov-offerings">
-      <h2 class="ov-h">Offerings</h2>
+      <h2 class="ov-h ov-h--section">Offerings</h2>
       <div class="cards">
         <template for:each={offerings} for:item="o">
-          <div key={o.offeringKey} class="ocard">
-            <div class="ocard-top">
-              <span class="ocard-name">{o.label}</span>
-              <span class="ocard-key">{o.offeringKey}</span>
+          <article key={o.offeringKey} class="slds-card ocard">
+            <div class="slds-card__header ocard-top">
+              <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
+              <div class="ocard-id">
+                <span class="ocard-name">{o.label}</span>
+                <span class="ocard-key">{o.offeringKey}</span>
+              </div>
             </div>
             <p class="ocard-sum">{o.summary}</p>
             <div class="ocard-acts">
@@ -78,7 +99,7 @@
               <button class="ocard-btn" data-offering={o.offeringKey}
                       onclick={handleEditOffering}>Edit pages</button>
             </div>
-          </div>
+          </article>
         </template>
       </div>
       <template if:true={showEmptyOfferings}>

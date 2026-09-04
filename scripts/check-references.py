@@ -119,7 +119,12 @@ def main():
     for name in apex:
         if name.endswith("Test"):
             continue
-        hits = refs_to([f"apex/{name}.", f"<apexClass>{name}</apexClass>"])
+        # An Apex class called only by other Apex, or wired to an Agentforce
+        # action, is not unreferenced. Counting only LWC imports and grants
+        # reported MaContentAddress and the MaAgent* classes as dead.
+        hits = refs_to([f"apex/{name}.", f"<apexClass>{name}</apexClass>",
+                        f"{name}.", f"<invocationTarget>{name}</invocationTarget>"],
+                       own_dir=None)
         where = ", ".join(f"{k}({len(v)})" for k, v in sorted(hits.items())) or "NOTHING"
         print(f"  {name:<32} <- {where}")
 
@@ -150,6 +155,23 @@ def main():
 
     print()
     print(f"Orphaned components: {', '.join(orphans) if orphans else 'none'}")
+    if orphans:
+        # This scans the branch, and the branch is not the org. maAdminBar and
+        # gtmAppShell both read as orphans here while the org had them placed
+        # on live Experience Cloud pages -- the delete failed and said so.
+        print()
+        print("  These are unreferenced IN THIS BRANCH. Experience Builder keeps its")
+        print("  own page layouts in the org, and a deploy of the site bundles does")
+        print("  not always round-trip them. Before deleting any of these, confirm")
+        print("  against the org:")
+        print()
+        print("      sf project retrieve start --metadata ExperienceBundle \\")
+        print("        --target-metadata-dir /tmp/exp")
+        print("      unzip -o /tmp/exp/unpackaged.zip -d /tmp/exp")
+        print("      grep -rl '<NAME>' /tmp/exp/unpackaged/experiences/")
+        print()
+        print("  A destructive deploy also refuses and names the pages, which is the")
+        print("  authoritative answer.")
     return 1 if dangling else 0
 
 
