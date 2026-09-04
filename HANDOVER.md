@@ -115,6 +115,34 @@ palette should be reconciled against them.
 
 ---
 
+## Why a rep sees the rep experience on the public site
+
+Two things have to be true, and both were false at different times:
+
+**1. The site must authenticate internal users.** `Network.allowInternalUserLogin`
+was `false` on GTM Accelerator and GTM Story, so an internal user opening a
+`my.site.com` link was served as the site's **guest user** even while logged
+into the org. Everything gated on "is this a rep" then failed closed: Gus and
+the saved links bar were hidden, and a prospect link demanded its password from
+the person who created it. It is `true` on both sites now.
+
+This is org configuration and is deliberately **not** in this repo — a full
+`Network` file would replace live site settings on any future deploy, which is
+the drift problem that has already cost this project real UI. To change it:
+
+```bash
+sf project retrieve start --metadata "Network:GTM Accelerator" --target-metadata-dir /tmp/n
+# edit allowInternalUserLogin, then deploy that one file back
+```
+
+**2. The page must be able to ask who is looking.** See `MaViewerContext.isRep()`
+— an internal Salesforce user is a rep, the site guest user is not. It lives in
+its own class because Apex access is granted per class: asking this through
+`MaSavedConfigurationController` would have exposed `saveConfiguration`,
+`deleteConfiguration` and `searchContacts` to the public.
+
+---
+
 ## Before deleting any component
 
 `scripts/check-references.py` scans **this branch**. Experience Builder keeps
