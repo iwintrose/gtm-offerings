@@ -168,22 +168,26 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     // Deep-links the editor rather than dropping you on its first page, which
     // is the "landed somewhere I did not choose" problem the home page exists
     /**
-     * Opens the editor in the Content Manager app, not as a lone tab inside
-     * this one. The editor has its own tabs — home, editor, records — and
-     * landing on it stranded from them is disorienting.
+     * Opens the editor in the Content Manager app, in this tab.
      *
-     * standard__navItemPage stays inside the current app, so this navigates by
-     * URL: /lightning/app/<app>/n/<tab> is the documented way to cross apps.
+     * standard__navItemPage stays inside the current app, so it landed the
+     * editor as a stranded tab here. standard__webPage crosses apps but opens
+     * a browser tab, which is worse. standard__app is the one that does both:
+     * switch app, stay put, and carry the deep link through as a nested page
+     * reference so the editor still opens on the page that was asked for.
      */
     openEditor(offeringKey, templateType) {
-        const params = [];
-        if (offeringKey) params.push(`c__offering=${encodeURIComponent(offeringKey)}`);
-        if (templateType) params.push(`c__template=${encodeURIComponent(templateType)}`);
-        const query = params.length ? `?${params.join('&')}` : '';
+        const state = { c__offering: offeringKey };
+        if (templateType) state.c__template = templateType;
         this[NavigationMixin.Navigate]({
-            type: 'standard__webPage',
-            attributes: {
-                url: `/lightning/app/c__GTM_Content_Manager/n/GTM_Content_Manager${query}`
+            type: 'standard__app',
+            attributes: { appTarget: 'c__GTM_Content_Manager' },
+            state: {
+                pageRef: JSON.stringify({
+                    type: 'standard__navItemPage',
+                    attributes: { apiName: 'GTM_Content_Manager' },
+                    state
+                })
             }
         });
     }
