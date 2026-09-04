@@ -1,34 +1,44 @@
 <template>
   <div class="gcm">
 
-    <!-- toolbar -->
+    <!-- toolbar: offering is the top of the hierarchy, page sits under it -->
     <header class="gcm-bar">
       <span class="gcm-brand">
         <lightning-icon icon-name="utility:page" size="x-small"></lightning-icon>
         GTM Content Manager
       </span>
       <span class="gcm-sep"></span>
+
       <lightning-combobox
-        label="Template"
+        label="Offering"
         variant="label-hidden"
-        value={templateType}
-        options={templateTypeOptions}
-        onchange={handleTemplateChange}
-        class="gcm-tmpl">
+        placeholder="Choose an offering"
+        value={selectedOffering}
+        options={offeringOptions}
+        onchange={handleOfferingChange}
+        class="gcm-pick">
       </lightning-combobox>
-      <span class="gcm-addr">{offeringKey}</span>
+
+      <template if:true={hasTemplate}>
+        <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
+        <button class="gcm-crumb" onclick={handleBackToPages}>All pages</button>
+        <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
+        <span class="gcm-crumb-current">{selectedTemplate}</span>
+      </template>
 
       <template if:true={saveMessage}>
         <span class="gcm-save">{saveMessage}</span>
       </template>
 
       <div class="gcm-bar-right">
-        <lightning-button
-          label={reorderLabel}
-          icon-name="utility:drag_and_drop"
-          onclick={handleToggleReorder}
-          variant={reorderVariant}>
-        </lightning-button>
+        <template if:true={hasSections}>
+          <lightning-button
+            label={reorderLabel}
+            icon-name="utility:drag_and_drop"
+            variant={reorderVariant}
+            onclick={handleToggleReorder}>
+          </lightning-button>
+        </template>
         <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh}></lightning-button>
       </div>
     </header>
@@ -42,143 +52,192 @@
     </template>
 
     <template if:true={isLoading}>
-      <div class="gcm-loading">
-        <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
-      </div>
+      <div class="gcm-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
     </template>
 
-    <template if:true={isEmpty}>
-      <div class="gcm-empty">
-        <p>No sections defined for <b>{templateType}</b> yet.</p>
-        <p class="gcm-empty-sub">
-          A page's structure lives in Page Section records. Add one to start
-          building this template.
+    <!-- no offering chosen yet -->
+    <template if:false={hasOffering}>
+      <template if:false={isLoading}>
+        <div class="gcm-empty">
+          <p><b>Choose an offering to begin.</b></p>
+          <p class="gcm-empty-sub">
+            Each offering has its own pages, sections and content. Offerings come
+            from MA_Offering__mdt, so adding one is a metadata record.
+          </p>
+        </div>
+      </template>
+    </template>
+
+    <!-- offering chosen: pick a page -->
+    <template if:true={showPagePicker}>
+      <div class="gcm-pages">
+        <h2 class="gcm-pages-h">Pages in {offeringLabel}</h2>
+        <div class="pg-grid">
+          <template for:each={templates} for:item="t">
+            <button key={t.templateType} class={t.cardClass}
+                    data-template={t.templateType} onclick={handlePickTemplate}>
+              <span class="pg-name">{t.label}</span>
+              <span class="pg-sum">{t.summary}</span>
+              <template if:false={t.isBuilt}>
+                <span class="pg-flag">Not editable yet</span>
+              </template>
+            </button>
+          </template>
+        </div>
+        <p class="gcm-empty-sub gcm-pages-note">
+          A page becomes editable once its structure exists as Page Section
+          records. Pages showing no sections still render from their component's
+          built-in defaults.
         </p>
       </div>
     </template>
 
-    <template if:true={hasSections}>
-      <div class="gcm-cols">
+    <!-- page chosen: the editor -->
+    <template if:true={showEditor}>
+      <template if:true={noSections}>
+        <div class="gcm-empty">
+          <p><b>No sections modelled for this page yet.</b></p>
+          <p class="gcm-empty-sub">Its structure still lives in the component rather than in records.</p>
+        </div>
+      </template>
 
-        <!-- section rail -->
-        <aside class="gcm-rail">
-          <div class="gcm-colhead">
-            <span>Sections</span><span class="gcm-count">{sectionCount}</span>
-          </div>
-          <div class="gcm-rail-body">
-            <template for:each={railSections} for:item="s">
-              <div key={s.sectionKey}
-                   class={s.itemClass}
-                   data-key={s.sectionKey}
-                   draggable={reorderMode}
-                   onclick={handleSelectSection}
-                   ondragstart={handleDragStart}
-                   ondragover={handleDragOver}
-                   ondrop={handleDrop}>
-                <div class="sec-main">
-                  <span class="sec-name">{s.label}</span>
-                  <span class="sec-meta">{s.layoutType} · {s.fieldCount} fields</span>
+      <template if:true={hasSections}>
+        <div class="gcm-cols">
+
+          <aside class="gcm-rail">
+            <div class="gcm-colhead"><span>Sections</span><span class="gcm-count">{sectionCount}</span></div>
+            <div class="gcm-rail-body">
+              <template for:each={railSections} for:item="s">
+                <div key={s.sectionKey} class={s.itemClass} data-key={s.sectionKey}
+                     draggable={reorderMode} onclick={handleSelectSection}
+                     ondragstart={handleDragStart} ondragover={handleDragOver} ondrop={handleDrop}>
+                  <lightning-icon icon-name={s.icon} size="x-small" class="sec-icon"></lightning-icon>
+                  <div class="sec-main">
+                    <span class="sec-name">{s.label}</span>
+                    <span class="sec-meta">{s.layoutType} &middot; {s.fieldCount} fields</span>
+                  </div>
+                  <template if:true={s.isDirty}><span class="sec-dot" title="Unsaved"></span></template>
+                  <template if:true={reorderMode}>
+                    <span class="sec-move">
+                      <button class="mv" data-key={s.sectionKey} onclick={handleMoveUp}
+                              disabled={s.isFirst} title="Move up">&uarr;</button>
+                      <button class="mv" data-key={s.sectionKey} onclick={handleMoveDown}
+                              disabled={s.isLast} title="Move down">&darr;</button>
+                      <button class="mv" data-key={s.sectionKey} onclick={handleToggleActive}
+                              title={s.toggleLabel}>&#9679;</button>
+                    </span>
+                  </template>
                 </div>
-                <template if:true={s.isDirty}>
-                  <span class="sec-dot" title="Unsaved changes"></span>
-                </template>
-                <template if:true={reorderMode}>
-                  <span class="sec-move">
-                    <button class="mv" data-key={s.sectionKey} onclick={handleMoveUp}
-                            disabled={s.isFirst} title="Move up">&uarr;</button>
-                    <button class="mv" data-key={s.sectionKey} onclick={handleMoveDown}
-                            disabled={s.isLast} title="Move down">&darr;</button>
-                    <button class="mv" data-key={s.sectionKey} onclick={handleToggleActive}
-                            title={s.toggleLabel}>&#9679;</button>
-                  </span>
-                </template>
-              </div>
-            </template>
-          </div>
-          <p class="gcm-hint">{railHint}</p>
-        </aside>
-
-        <!-- field editor -->
-        <section class="gcm-fields">
-          <div class="gcm-colhead">
-            <span>Content</span><span class="gcm-count">{fieldCountLabel}</span>
-          </div>
-          <div class="gcm-fields-body">
-            <div class="gcm-sechead">
-              <h2>{activeSectionLabel}</h2>
-              <p>{activeSectionHelp}</p>
-              <span class="gcm-addr-chip">{activeAddress}</span>
+              </template>
             </div>
+            <p class="gcm-hint">{railHint}</p>
+          </aside>
 
-            <template for:each={activeFields} for:item="f">
-              <div key={f.id} class="fld">
-                <div class="fld-top">
-                  <span class="fld-label">{f.displayLabel}</span>
-                  <span class="fld-key">{f.fieldKey}</span>
-                  <span class="fld-type">{f.fieldType}</span>
+          <section class="gcm-fields">
+            <div class="gcm-colhead"><span>Content</span><span class="gcm-count">{fieldCountLabel}</span></div>
+            <div class="gcm-fields-body">
+              <div class="gcm-sechead">
+                <h2>{activeSectionLabel}</h2>
+                <p>{activeSectionHelp}</p>
+                <span class="gcm-addr-chip">{activeAddress}</span>
+              </div>
+
+              <template for:each={activeFields} for:item="f">
+                <div key={f.id} class="fld">
+                  <div class="fld-top">
+                    <span class="fld-label">{f.displayLabel}</span>
+                    <span class="fld-key">{f.fieldKey}</span>
+                  </div>
+
+                  <!-- plain text -->
+                  <template if:true={f.isText}>
+                    <lightning-input variant="label-hidden" value={f.value}
+                                     data-id={f.id} data-column={f.column}
+                                     onchange={handleTextChange}></lightning-input>
+                  </template>
+
+                  <!-- rich text: a real editor, so no markup shows in the box -->
+                  <template if:true={f.isRich}>
+                    <lightning-input-rich-text
+                      value={f.value}
+                      data-id={f.id}
+                      formats="bold,italic,underline,link,clean"
+                      message-when-bad-input="Check the formatting"
+                      onchange={handleRichChange}>
+                    </lightning-input-rich-text>
+                  </template>
+
+                  <!-- structured list: one control per item, shape read from the data -->
+                  <template if:true={f.isJson}>
+                    <div class="rep">
+                      <template for:each={f.items} for:item="item">
+                        <div key={item.id} class="rep-item">
+                          <div class="rep-head">
+                            <span class="rep-n">{item.position}</span>
+                            <span class="rep-acts">
+                              <button class="mv" data-id={item.recordId} data-index={item.index} data-dir="up"
+                                      onclick={handleItemMove} disabled={item.isFirst} title="Move up">&uarr;</button>
+                              <button class="mv" data-id={item.recordId} data-index={item.index} data-dir="down"
+                                      onclick={handleItemMove} disabled={item.isLast} title="Move down">&darr;</button>
+                              <button class="mv mv--del" data-id={item.recordId} data-index={item.index}
+                                      onclick={handleItemDelete} title="Delete">&times;</button>
+                            </span>
+                          </div>
+                          <template for:each={item.fields} for:item="sub">
+                            <div key={sub.key} class="rep-sub">
+                              <template if:true={sub.isBool}>
+                                <lightning-input type="checkbox" label={sub.label} checked={sub.checked}
+                                                 data-id={item.recordId} data-index={item.index} data-key={sub.key}
+                                                 onchange={handleItemChange}></lightning-input>
+                              </template>
+                              <template if:false={sub.isBool}>
+                                <template if:true={sub.isLong}>
+                                  <lightning-textarea label={sub.label} value={sub.value}
+                                                      data-id={item.recordId} data-index={item.index} data-key={sub.key}
+                                                      onchange={handleItemChange}></lightning-textarea>
+                                </template>
+                                <template if:false={sub.isLong}>
+                                  <lightning-input label={sub.label} value={sub.value}
+                                                   data-id={item.recordId} data-index={item.index} data-key={sub.key}
+                                                   onchange={handleItemChange}></lightning-input>
+                                </template>
+                              </template>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                      <button class="rep-add" data-id={f.id} onclick={handleItemAdd}>
+                        <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon> Add item
+                      </button>
+                    </div>
+                  </template>
+
+                  <template if:true={f.hasHelp}>
+                    <p class="fld-help">{f.helpText}</p>
+                  </template>
                 </div>
-                <template if:true={f.isShort}>
-                  <lightning-input
-                    variant="label-hidden"
-                    value={f.value}
-                    data-id={f.id}
-                    data-column={f.column}
-                    onchange={handleFieldChange}>
-                  </lightning-input>
-                </template>
-                <template if:true={f.isLong}>
-                  <lightning-textarea
-                    variant="label-hidden"
-                    class="fld-area"
-                    value={f.value}
-                    data-id={f.id}
-                    data-column={f.column}
-                    onchange={handleFieldChange}>
-                  </lightning-textarea>
-                </template>
-                <template if:true={f.isJson}>
-                  <lightning-textarea
-                    variant="label-hidden"
-                    class="fld-json fld-area"
-                    value={f.value}
-                    data-id={f.id}
-                    data-column={f.column}
-                    onchange={handleFieldChange}>
-                  </lightning-textarea>
-                </template>
-                <template if:true={f.hasHelp}>
-                  <p class="fld-help">{f.helpText}</p>
-                </template>
-              </div>
-            </template>
-          </div>
-        </section>
-
-        <!-- live preview, rendered by the real page component -->
-        <section class="gcm-preview">
-          <div class="gcm-colhead">
-            <span>Preview</span><span class="gcm-count">opens in a tab</span>
-          </div>
-          <div class="gcm-preview-body">
-            <!-- The in-page preview is temporarily out. It embedded c-ma-story
-                 so the draft rendered through the real page component; that is
-                 still the right design and previewSections / previewContent
-                 remain wired for it. It is disabled while the blank-tab problem
-                 is isolated, so the editor itself is usable meanwhile. -->
-            <div class="gcm-nopreview">
-              <p><b>Preview opens in a new tab while it is being fixed.</b></p>
-              <p class="gcm-empty-sub">
-                Edits save as you type. Open the live page to see them, or use
-                Rearrange to change section order.
-              </p>
-              <p class="gcm-preview-link">
-                <a href={livePageUrl} target="_blank" rel="noopener">Open the live page &#8599;</a>
-              </p>
+              </template>
             </div>
-          </div>
-        </section>
+          </section>
 
-      </div>
+          <section class="gcm-preview">
+            <div class="gcm-colhead"><span>Preview</span><span class="gcm-count">opens in a tab</span></div>
+            <div class="gcm-preview-body">
+              <div class="gcm-nopreview">
+                <p><b>Preview opens in a new tab.</b></p>
+                <p class="gcm-empty-sub">
+                  Edits save as you type. Open the live page to see them, or use
+                  Rearrange to change section order.
+                </p>
+                <p class="gcm-preview-link">
+                  <a href={livePageUrl} target="_blank" rel="noopener">Open the live page &#8599;</a>
+                </p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </template>
     </template>
   </div>
 </template>

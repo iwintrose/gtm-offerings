@@ -215,6 +215,79 @@ public without sharing class MaPageContentController {
         @AuraEnabled public Boolean active      { get; set; }
     }
 
+    /**
+     * The offerings this org knows about, from MA_Offering__mdt. The editor
+     * asks for these rather than assuming one, so adding an offering is a
+     * metadata record and never a code change.
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<OfferingOption> getOfferings() {
+        List<OfferingOption> out = new List<OfferingOption>();
+        for (MA_Offering__mdt off : [
+            SELECT Offering_Key__c, Label__c FROM MA_Offering__mdt
+            ORDER BY Label__c ASC
+        ]) {
+            OfferingOption o = new OfferingOption();
+            o.offeringKey = off.Offering_Key__c;
+            o.label       = off.Label__c;
+            out.add(o);
+        }
+        return out;
+    }
+
+    /**
+     * Per template: how many sections are modelled and how many content rows
+     * exist. Lets the editor say which pages are actually built for an
+     * offering instead of offering four picklist values, three of which
+     * silently resolve to nothing.
+     */
+    @AuraEnabled(cacheable=false)
+    public static List<TemplateSummary> getTemplateSummary(String offeringKey) {
+        Map<String, TemplateSummary> byTemplate = new Map<String, TemplateSummary>();
+        if (String.isBlank(offeringKey)) {
+            return byTemplate.values();
+        }
+        for (AggregateResult ar : [
+            SELECT Template_Type__c t, COUNT(Id) c
+            FROM   MA_Page_Section__c
+            WHERE  Offering_Key__c = :offeringKey AND Active__c = true
+            GROUP BY Template_Type__c
+        ]) {
+            TemplateSummary ts = new TemplateSummary();
+            ts.templateType  = (String) ar.get('t');
+            ts.sectionCount  = (Integer) ar.get('c');
+            byTemplate.put(ts.templateType, ts);
+        }
+        for (AggregateResult ar : [
+            SELECT Template_Type__c t, COUNT(Id) c
+            FROM   MA_Page_Content__c
+            WHERE  Offering_Key__c = :offeringKey AND Active__c = true
+            GROUP BY Template_Type__c
+        ]) {
+            String t = (String) ar.get('t');
+            TemplateSummary ts = byTemplate.get(t);
+            if (ts == null) {
+                ts = new TemplateSummary();
+                ts.templateType = t;
+                ts.sectionCount = 0;
+                byTemplate.put(t, ts);
+            }
+            ts.fieldCount = (Integer) ar.get('c');
+        }
+        return byTemplate.values();
+    }
+
+    public class OfferingOption {
+        @AuraEnabled public String offeringKey { get; set; }
+        @AuraEnabled public String label       { get; set; }
+    }
+
+    public class TemplateSummary {
+        @AuraEnabled public String  templateType { get; set; }
+        @AuraEnabled public Integer sectionCount { get; set; }
+        @AuraEnabled public Integer fieldCount   { get; set; }
+    }
+
     private static String resolveValue(MA_Page_Content__c rec) {
         if (rec.Field_Type__c == 'rich')   return rec.Rich_Value__c;
         if (rec.Field_Type__c == 'json')   return rec.JSON_Value__c;
