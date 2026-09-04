@@ -38,6 +38,11 @@ public with sharing class MaSavedConfigurationController {
          * resolveContact's fuzzy by-email match below, since this is exact. */
         @AuraEnabled
         public String contactId { get; set; }
+        /** The deal this link is for, when the rep picked one of the account's
+         * existing opportunities. Blank means "a new deal", which is what the
+         * wizard used to do every single time without asking. */
+        @AuraEnabled
+        public String opportunityId { get; set; }
         /** The selected Contact's own Account, when it has one -- takes
          * priority over resolveAccount's by-name match against the typed
          * Company field, so the Contact is attached to the Account it
@@ -79,6 +84,60 @@ public with sharing class MaSavedConfigurationController {
         @AuraEnabled public String estimatedValue;
         @AuraEnabled public Id opportunityId;
         @AuraEnabled public String opportunityName;
+    }
+
+    /**
+     * The open deals on an account, and whether each already has a link.
+     *
+     * A client can legitimately have several deals at once -- different parts
+     * of the business, or one that closed and restarted months later -- so the
+     * rep is asked which deal a link is for rather than the system guessing
+     * and creating a new one every time.
+     */
+    @AuraEnabled(cacheable=false)
+    public static List<DealOption> getAccountDeals(String accountId) {
+        List<DealOption> out = new List<DealOption>();
+        if (!isValidId(accountId, Account.SObjectType)) return out;
+        Id acct = (Id) accountId;
+
+        Map<Id, Integer> linkCount = new Map<Id, Integer>();
+        for (AggregateResult ar : [
+            SELECT Opportunity__c oppId, COUNT(Id) c
+            FROM   MA_Saved_Configuration__c
+            WHERE  Account__c = :acct AND Opportunity__c != null
+            GROUP BY Opportunity__c
+        ]) {
+            linkCount.put((Id) ar.get('oppId'), (Integer) ar.get('c'));
+        }
+
+        for (Opportunity o : [
+            SELECT Id, Name, StageName, CloseDate, Amount, IsClosed
+            FROM   Opportunity
+            WHERE  AccountId = :acct
+            ORDER BY IsClosed ASC, CloseDate DESC
+            LIMIT  50
+        ]) {
+            DealOption d = new DealOption();
+            d.opportunityId = o.Id;
+            d.name          = o.Name;
+            d.stage         = o.StageName;
+            d.closeDate     = o.CloseDate;
+            d.isClosed      = o.IsClosed;
+            d.linkCount     = linkCount.containsKey(o.Id) ? linkCount.get(o.Id) : 0;
+            out.add(d);
+        }
+        return out;
+    }
+
+    public class DealOption {
+        @AuraEnabled public Id      opportunityId { get; set; }
+        @AuraEnabled public String  name          { get; set; }
+        @AuraEnabled public String  stage         { get; set; }
+        @AuraEnabled public Date    closeDate     { get; set; }
+        @AuraEnabled public Boolean isClosed      { get; set; }
+        // How many links already point at this deal. One is normal -- it is
+        // this deal's link. More than one is usually an accident.
+        @AuraEnabled public Integer linkCount     { get; set; }
     }
 
     public class ContactSearchResult {
@@ -153,7 +212,8 @@ public with sharing class MaSavedConfigurationController {
             input.recordId,
             accountId,
             trimTo(input.company, MAX_COMPANY),
-            parseDecimal(input.estimatedValue)
+            parseDecimal(input.estimatedValue),
+            input.opportunityId
         );
         // Same rule as the client-submission flow: an Opportunity never
         // sits without the Contact it's known to belong to.
@@ -548,8 +608,25 @@ public with sharing class MaSavedConfigurationController {
      * gets a fresh one. Only runs when an Account is resolved -- no
      * Account, no Opportunity.
      */
-    private static Id resolveOpportunity(String recordId, Id accountId, String company, Decimal amount) {
+    private static Id resolveOpportunity(String recordId, Id accountId, String company,
+                                         Decimal amount, String chosenOpportunityId) {
         if (accountId == null) return null;
+
+        // The rep's own choice wins. Without this the wizard could only ever
+        // mint a new opportunity, so a rep building a second link for a client
+        // who already had a live deal got a competing one created underneath
+        // them -- which is how one account ended up with two deals nobody had
+        // asked for. It is checked against the account so a stray id cannot
+        // attach a link to another client's deal.
+        if (isValidId(chosenOpportunityId, Opportunity.SObjectType)) {
+            List<Opportunity> chosen = [
+                SELECT Id FROM Opportunity
+                WHERE Id = :(Id) chosenOpportunityId AND AccountId = :accountId
+                LIMIT 1
+            ];
+            if (!chosen.isEmpty()) return chosen[0].Id;
+        }
+
         if (isValidId(recordId, MA_Saved_Configuration__c.SObjectType)) {
             List<MA_Saved_Configuration__c> existingLink = [
                 SELECT Opportunity__c

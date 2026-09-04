@@ -2,6 +2,7 @@ import { LightningElement, api, track, wire } from 'lwc';
 import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
 import setConfigActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
 import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
+import getAccountDeals from '@salesforce/apex/MaSavedConfigurationController.getAccountDeals';
 import getConfiguratorPageUrl from '@salesforce/apex/MaSavedConfigurationController.getConfiguratorPageUrl';
 import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
@@ -82,6 +83,14 @@ export default class MaConfigWizard extends LightningElement {
     _cmsDefaults = {};
 
     @track _selectedContact = null;
+
+    // Which deal this link is for. A client can have several at once --
+    // different parts of the business, or one that closed and restarted --
+    // so the rep says which rather than the system minting a new one every
+    // time, which is what it used to do.
+    @track _deals = [];
+    @track _dealId = '';
+    @track _dealsLoading = false;
     @track _contactSearchTerm = '';
     @track _contactResults = [];
     @track _contactSearchBusy = false;
@@ -312,10 +321,77 @@ export default class MaConfigWizard extends LightningElement {
         };
         if (match.accountName) this._company = match.accountName;
         this._contactResults = [];
+        this.loadDeals(match.accountId);
+    }
+
+    // ---------------------------------------------------------------- deals
+
+    async loadDeals(accountId) {
+        this._deals = [];
+        this._dealId = '';
+        if (!accountId) return;
+        this._dealsLoading = true;
+        try {
+            this._deals = (await getAccountDeals({ accountId })) || [];
+        } catch (e) {
+            // Not being able to list the deals is not a reason to block the
+            // link: leaving the choice empty still creates a new one, which is
+            // the behaviour that existed before there was a choice at all.
+            // eslint-disable-next-line no-console
+            console.warn('[maConfigWizard] getAccountDeals:', JSON.stringify(e));
+        } finally {
+            this._dealsLoading = false;
+        }
+    }
+
+    get dealOptions() {
+        return this._deals.map((d) => {
+            const chosen = this._dealId === d.opportunityId;
+            const bits = [d.stage];
+            if (d.isClosed) bits.push('closed');
+            if (d.linkCount > 0) {
+                bits.push(d.linkCount === 1 ? 'already has a link' : `${d.linkCount} links already`);
+            }
+            return {
+                id: d.opportunityId,
+                name: d.name,
+                meta: bits.filter(Boolean).join(' · '),
+                // A closed deal is offered but not encouraged: a restarted
+                // engagement is usually a new deal, not the old one reopened.
+                cls: 'mw-deal' + (chosen ? ' sel' : '') + (d.isClosed ? ' closed' : ''),
+                warn: d.linkCount > 0
+            };
+        });
+    }
+
+    get hasDeals() { return this._deals.length > 0; }
+    get newDealClass() { return 'mw-deal' + (this._dealId ? '' : ' sel'); }
+
+    /** The warning only matters once they have actually chosen that deal. */
+    get dealAlreadyLinked() {
+        if (!this._dealId) return false;
+        const hit = this._deals.find((d) => d.opportunityId === this._dealId);
+        return !!hit && hit.linkCount > 0;
+    }
+
+    get dealWarning() {
+        if (!this.dealAlreadyLinked) return '';
+        return 'This deal already has a link. Saving here makes a second one — '
+             + 'open the existing link instead if you meant to change it.';
+    }
+
+    handlePickDeal(event) {
+        this._dealId = event.currentTarget.dataset.id;
+    }
+
+    handlePickNewDeal() {
+        this._dealId = '';
     }
 
     handleChangeContact() {
         this._selectedContact = null;
+        this._deals = [];
+        this._dealId = '';
     }
 
     // ------------------------------------------------------------ industry
@@ -692,6 +768,9 @@ export default class MaConfigWizard extends LightningElement {
                     configPayload: JSON.stringify({ ...this._state, ACCENT: this._accent || '' }),
                     clientContactName: this._selectedContact ? this._selectedContact.name : null,
                     contactId: this._selectedContact ? this._selectedContact.id : null,
+                    // Blank means "a new deal" -- which is what this always
+                    // did, silently, whether or not the client already had one.
+                    opportunityId: this._dealId || null,
                     accountId: this._selectedContact ? this._selectedContact.accountId : null,
                     linkPassword,
                     clearLinkPassword: this._passwordMode === 'off',

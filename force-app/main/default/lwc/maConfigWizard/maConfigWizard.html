@@ -122,6 +122,28 @@
                     {selectedContactSummary}
                     <button type="button" class="mw-mini-link" onclick={handleChangeContact}>Change</button>
                   </div>
+
+                  <!-- Which deal. A client can have several at once, so this
+                       asks instead of quietly creating another one. -->
+                  <template if:true={hasDeals}>
+                    <p class="mw-q mw-q--sub">Which deal is this link for?</p>
+                    <div class="mw-deals">
+                      <template for:each={dealOptions} for:item="d">
+                        <button key={d.id} type="button" class={d.cls}
+                                data-id={d.id} onclick={handlePickDeal}>
+                          <span class="mw-deal-name">{d.name}</span>
+                          <span class="mw-deal-meta">{d.meta}</span>
+                        </button>
+                      </template>
+                      <button type="button" class={newDealClass} onclick={handlePickNewDeal}>
+                        <span class="mw-deal-name">A new deal</span>
+                        <span class="mw-deal-meta">Creates one for this client</span>
+                      </button>
+                    </div>
+                    <template if:true={dealWarning}>
+                      <p class="mw-deal-warn" role="status">{dealWarning}</p>
+                    </template>
+                  </template>
                 </template>
               </div>
             </template>

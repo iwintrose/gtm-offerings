@@ -428,3 +428,37 @@
 .mw-existing-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .mw-existing-note { margin: 8px 0 0; font-size: 11.5px; line-height: 1.5; opacity: .65; }
 .mw-done-sub { margin: -4px 0 14px; font-size: 12px; line-height: 1.55; opacity: .65; }
+
+/* Which deal this link belongs to. A client with several deals at once is
+   normal; the wizard used to create another one rather than ask. */
+.mw-q--sub { margin-top: 18px; }
+.mw-deals { display: flex; flex-direction: column; gap: 6px; }
+.mw-deal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .03);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mw-deal:hover { border-color: rgba(255, 255, 255, .34); }
+.mw-deal.sel { border-color: var(--coral, #e8542f); background: rgba(232, 84, 47, .12); }
+/* A restarted engagement is usually a new deal, not the old one reopened, so
+   a closed deal is offered but not encouraged. */
+.mw-deal.closed { opacity: .55; }
+.mw-deal-name { font-size: 12.5px; font-weight: 600; }
+.mw-deal-meta { font-size: 11px; opacity: .65; }
+.mw-deal-warn {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-left: 2px solid #b8892b;
+  background: rgba(184, 137, 43, .1);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
