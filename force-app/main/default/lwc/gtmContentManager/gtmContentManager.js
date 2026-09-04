@@ -263,6 +263,12 @@ export default class GtmContentManager extends LightningElement {
         // Page chrome renders around the page rather than in the sequence, so
         // it has no rect of its own; the top of the page is where it lives.
         const target = hit ? pane.scrollTop + (hit.top - paneTop) - 8 : 0;
+        // A scroll this code started is not the reader scrolling. Clearing the
+        // intent flag as well as suppressing matters for the last section,
+        // where the pane cannot scroll far enough to honour the request and
+        // settles at its maximum — which the scroll-spy would otherwise read
+        // as "you are looking at the section above".
+        this._previewDriven = false;
         this._suppressScrollSync = true;
         pane.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
         // eslint-disable-next-line @lwc/lwc/no-async-operation
@@ -300,12 +306,24 @@ export default class GtmContentManager extends LightningElement {
         const pane = this.template.querySelector('.gcm-preview-body');
         const story = this.template.querySelector('c-ma-story');
         if (!pane || !story || typeof story.getSectionRects !== 'function') return;
-        const paneTop = pane.getBoundingClientRect().top;
-        // The section covering the top of the pane is the one you are reading.
-        let current = '';
-        story.getSectionRects().forEach((r) => {
-            if (r.top - paneTop <= 24) current = r.sectionKey;
-        });
+        const rects = story.getSectionRects();
+        if (!rects.length) return;
+
+        // The last section can never cover the top of the pane: the pane runs
+        // out of scroll while the section before it is still up there. Reading
+        // the top alone therefore made the final section unselectable and
+        // snapped the rail back to the one above it. At the bottom of the
+        // scroll, the last section is what you are looking at.
+        const atBottom = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - 4;
+        let current = atBottom ? rects[rects.length - 1].sectionKey : '';
+
+        if (!current) {
+            const paneTop = pane.getBoundingClientRect().top;
+            // Otherwise: the last section whose top has passed the pane's top.
+            rects.forEach((r) => {
+                if (r.top - paneTop <= 24) current = r.sectionKey;
+            });
+        }
         if (current && current !== this.activeKey) {
             this.activeKey = current;
             this.scrollRailTo(current);
