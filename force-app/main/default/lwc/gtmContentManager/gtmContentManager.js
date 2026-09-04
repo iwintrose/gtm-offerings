@@ -170,13 +170,15 @@ export default class GtmContentManager extends LightningElement {
                     isBuilt: (t.sectionCount || 0) > 0,
                     summary: (t.sectionCount || 0) > 0
                         ? `${t.sectionCount} sections · ${t.fieldCount || 0} fields`
-                        : `${t.fieldCount || 0} fields · no sections modelled yet`,
+                        : 'Empty — open it to add the first section',
                     cardClass: (t.sectionCount || 0) > 0 ? 'pg-card' : 'pg-card pg-card--unbuilt'
                 }));
                 // Open the page the home page asked for. Otherwise show the
                 // picker, unless exactly one page is built.
                 const built = this.templates.filter((t) => t.isBuilt);
-                const asked = built.find((t) => t.templateType === this._requestedTemplate);
+                // A deep link opens whatever page it names, built or not: an
+                // empty page is where its first section gets added.
+                const asked = this.templates.find((t) => t.templateType === this._requestedTemplate);
                 if (asked) {
                     this._requestedTemplate = '';
                     this.selectedTemplate = asked.templateType;
@@ -195,7 +197,7 @@ export default class GtmContentManager extends LightningElement {
     handlePickTemplate(event) {
         const t = event.currentTarget.dataset.template;
         const chosen = this.templates.find((x) => x.templateType === t);
-        if (!chosen || !chosen.isBuilt) return;
+        if (!chosen) return;
         this.selectedTemplate = t;
         this.activeKey = '';
         this.loadPage();

@@ -111,8 +111,14 @@
     <template if:true={showEditor}>
       <template if:true={noSections}>
         <div class="gcm-empty">
-          <p><b>No sections modelled for this page yet.</b></p>
-          <p class="gcm-empty-sub">Its structure still lives in the component rather than in records.</p>
+          <p><b>This page has no sections yet.</b></p>
+          <p class="gcm-empty-sub">
+            A page is its sections. Add the first one and the editor opens on it;
+            nothing is public until you publish.
+          </p>
+          <lightning-button label="Add the first section" variant="brand"
+                            icon-name="utility:add" class="gcm-empty-cta"
+                            onclick={handleOpenAdd}></lightning-button>
         </div>
       </template>
 

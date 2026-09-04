@@ -54,30 +54,37 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
         this.requestsLoaded = true;
     }
 
-    @wire(getHomeSummary)
-    wiredHome({ data, error }) {
-        if (data) {
-            this.offerings = (data.offerings || []).map((o) => {
-                const built = (o.pages || []).filter((p) => (p.sectionCount || 0) > 0);
-                const story = built.find((p) => p.templateType === 'story');
-                const fields = (o.pages || []).reduce((n, p) => n + (p.fieldCount || 0), 0);
-                return {
-                    offeringKey: o.offeringKey,
-                    label: o.label,
-                    // A story link only appears when the page is actually
-                    // modelled and the offering has a live site; a dead link
-                    // is worse than no link.
-                    hasStory: !!story && !!o.storyUrl,
-                    storyUrl: o.storyUrl || '',
-                    summary: built.length
-                        ? `${built.length} page${built.length === 1 ? '' : 's'} built · ${fields} fields`
-                        : 'No pages modelled yet'
-                };
-            });
-        } else if (error) {
-            this.loadError = this.messageFrom(error) || 'Offerings could not be loaded.';
-        }
-        this.offeringsLoaded = true;
+    // getHomeSummary is deliberately not cacheable — it has to reflect an edit
+    // made a moment ago — so it is called rather than wired. @wire refuses a
+    // method that is not cacheable, which is what left this page's offerings
+    // empty behind a platform error.
+    connectedCallback() { this.loadOfferings(); }
+
+    loadOfferings() {
+        return getHomeSummary()
+            .then((data) => {
+                this.offerings = ((data && data.offerings) || []).map((o) => {
+                    const built = (o.pages || []).filter((p) => (p.sectionCount || 0) > 0);
+                    const fields = (o.pages || []).reduce((n, p) => n + (p.fieldCount || 0), 0);
+                    const story = built.find((p) => p.templateType === 'story');
+                    return {
+                        offeringKey: o.offeringKey,
+                        label: o.label,
+                        // A story link only appears when the page is modelled
+                        // and the offering has a live site; a dead link is
+                        // worse than no link.
+                        hasStory: !!story && !!o.storyUrl,
+                        storyUrl: o.storyUrl || '',
+                        summary: built.length
+                            ? `${built.length} page${built.length === 1 ? '' : 's'} built · ${fields} fields`
+                            : 'No pages modelled yet'
+                    };
+                });
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'Offerings could not be loaded.';
+            })
+            .finally(() => { this.offeringsLoaded = true; });
     }
 
     messageFrom(err) {

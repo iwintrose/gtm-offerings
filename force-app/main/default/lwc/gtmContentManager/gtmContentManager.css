@@ -384,3 +384,5 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 10px; color: #969696;
 }
+
+.gcm-empty-cta { display: inline-block; margin-top: 0.9rem; }

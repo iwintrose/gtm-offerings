@@ -62,7 +62,11 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                         isBuilt,
                         detail: isBuilt
                             ? `${sections} sections · ${fields} fields`
-                            : 'Structure not modelled yet',
+                            : 'No sections yet — open it to build the first one',
+                        // "Not editable" was wrong: an empty page is exactly
+                        // where you go to build it. It has nothing in it, which
+                        // is a different thing from being closed.
+                        badge: isBuilt ? '' : 'Empty',
                         rowClass: isBuilt ? 'pg' : 'pg pg--unbuilt'
                     };
                 })
@@ -88,8 +92,10 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     // Opening the editor carries the choice with it, so nobody lands on a page
     // they did not pick.
     handleOpenPage(event) {
+        // An empty page opens too. It is where its first section gets built,
+        // and refusing to open it was why the only way to model a page was in
+        // code.
         const { offering, template } = event.currentTarget.dataset;
-        if (event.currentTarget.dataset.built !== 'true') return;
         this.openEditor(offering, template);
     }
 

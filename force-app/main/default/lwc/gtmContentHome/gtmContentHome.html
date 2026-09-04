@@ -58,12 +58,10 @@
                         <span class="pg-name">{p.label}</span>
                         <span class="pg-detail">{p.detail}</span>
                       </span>
-                      <template if:true={p.isBuilt}>
-                        <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
-                      </template>
                       <template if:false={p.isBuilt}>
-                        <span class="pg-flag">Not editable</span>
+                        <span class="pg-flag">{p.badge}</span>
                       </template>
+                      <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
                     </button>
                   </li>
                 </template>
