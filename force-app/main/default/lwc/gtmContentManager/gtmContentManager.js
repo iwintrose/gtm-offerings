@@ -37,9 +37,12 @@ const TEMPLATE_LABELS = {
     'industry-chooser': 'Industry Chooser'
 };
 
+// Every name here must exist in the SLDS utility set. An invalid one renders
+// as blank space with no console error, which is how utility:brand_engagement
+// — a name that does not exist — sat on the hero row unnoticed.
 const SECTION_ICONS = {
     'page-chrome': 'utility:page',
-    hero: 'utility:brand_engagement',
+    hero: 'utility:display_text',
     'lede-chips': 'utility:warning',
     'route-proof': 'utility:flow',
     'card-grid': 'utility:tile_card_list',
