@@ -1132,8 +1132,13 @@ b {
   border-bottom: 1px solid var(--coral);
 }
 
+/* The assistant bubble is fixed in the bottom-right corner, so the footer
+   reserves room for it rather than being sat on. Costs a prospect, who never
+   sees the bubble, a little space at the end of the page. */
 .pf {
   padding: 2rem clamp(1.4rem, 6vw, 5rem);
+  /* after the shorthand, or the shorthand resets it */
+  padding-bottom: 72px;
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
@@ -1254,14 +1259,21 @@ b {
     line-height: 1.5;
 }
 
-/* Gus in the top bar. Same pill as the other bar buttons, with room for the
-   character; the label stays so the control is still readable as a control. */
+/* Gus in the top bar. Same 32px pill as the other bar buttons, with room for
+   the character; the label stays so the control is still readable as a
+   control. The padding is 2px because .tbtn is 32px tall and the character is
+   28px: at 3px he was 34px of content in a 32px box and overflowed the pill
+   onto its neighbours. */
 .tbtn-gus {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   width: auto;
-  padding: 3px 12px 3px 4px;
+  height: 32px;
+  padding: 0 12px 0 2px;
   border-radius: 999px;
+  line-height: 1;
 }
+.tbtn-gus c-gtm-mascot { display: inline-flex; flex: none; }
 .tbtn-gus .tbtn-gus-lbl { font-size: 12.5px; font-weight: 600; letter-spacing: .01em; }
