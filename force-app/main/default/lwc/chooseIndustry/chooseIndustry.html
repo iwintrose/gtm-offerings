@@ -1,5 +1,10 @@
 <template>
   <div class={rootClass}>
+    <template if:true={_loadError}>
+      <div class="load-error" role="status">{_loadError}</div>
+    </template>
+
+
     <div class="bar">
       <div class="bar-wm">
         <span class="tick"></span> Migration Accelerator

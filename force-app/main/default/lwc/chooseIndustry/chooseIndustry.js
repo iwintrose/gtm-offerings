@@ -50,6 +50,7 @@ export default class ChooseIndustry extends LightningElement {
     @api configuratorUrl = '/configurator';
 
     @track theme = null;
+    @track _loadError = '';
     @track _industries = [];
     @track _editMode = false;
     @track _openEditId = null;
@@ -120,6 +121,9 @@ export default class ChooseIndustry extends LightningElement {
                 }
             })
             .catch((err) => {
+                // Surfaced, not swallowed: a console-only failure here is
+                // indistinguishable from the page simply having no content.
+                this._loadError = 'Industry content could not be loaded; showing built-in defaults.';
                 // eslint-disable-next-line no-console
                 console.error('[chooseIndustry] getStoryContent:', JSON.stringify(err));
                 this._industries = HARDCODED_INDUSTRIES;

@@ -19,6 +19,7 @@ export default class OfferingChooser extends LightningElement {
     /** Where the Migration Accelerator tile points. Set in Experience Builder. */
     @api industryUrl = '/choose-industry';
 
+    @track _loadError = '';
     @track theme = null;
     @track _tileDescription = null;
     @track _editMode = false;
@@ -51,8 +52,11 @@ export default class OfferingChooser extends LightningElement {
                 this._lightningUrl = (data && data.lightningUrl) || '';
                 this._sites = (data && data.sites) || [];
             })
-            // eslint-disable-next-line no-console
-            .catch((err) => { console.error('[offeringChooser] getStoryContent:', JSON.stringify(err)); });
+            .catch((err) => {
+                this._loadError = 'Offering content could not be loaded; showing built-in defaults.';
+                // eslint-disable-next-line no-console
+                console.error('[offeringChooser] getStoryContent:', JSON.stringify(err));
+            });
     }
 
     loadFonts() {
