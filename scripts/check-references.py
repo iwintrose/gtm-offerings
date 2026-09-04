@@ -103,6 +103,7 @@ def main():
         #   c:maStory           FlexiPage and Experience Cloud view JSON
         #   <lwcComponent>      Custom Tab
         hits = refs_to([f"c-{kebab(name)}", f"c/{name}", f"c:{name}",
+                        f"<componentName>{name}</componentName>",
                         f"<lwcComponent>{name}</lwcComponent>"], own_dir=name)
         if hits:
             where = ", ".join(f"{k}({len(v)})" for k, v in sorted(hits.items()))

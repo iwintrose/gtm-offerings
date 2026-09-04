@@ -282,6 +282,8 @@ export default class GtmContentManager extends LightningElement {
 
     get isStoryTemplate() { return this.templateType === 'story'; }
 
+    get livePageUrl() { return '/gtmstory/s/'; }
+
     get hasSections() { return !this.isLoading && this.sections.length > 0; }
 
     get isEmpty() { return !this.isLoading && this.sections.length === 0; }

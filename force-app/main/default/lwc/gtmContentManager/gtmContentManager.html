@@ -152,24 +152,24 @@
         <!-- live preview, rendered by the real page component -->
         <section class="gcm-preview">
           <div class="gcm-colhead">
-            <span>Preview</span><span class="gcm-count">live</span>
+            <span>Preview</span><span class="gcm-count">opens in a tab</span>
           </div>
           <div class="gcm-preview-body">
-            <template if:true={isStoryTemplate}>
-              <c-ma-story
-                offering-key={offeringKey}
-                preview-sections={previewSections}
-                preview-content={previewContent}>
-              </c-ma-story>
-            </template>
-            <template if:false={isStoryTemplate}>
-              <div class="gcm-nopreview">
-                <p>No renderer wired for <b>{templateType}</b> yet.</p>
-                <p class="gcm-empty-sub">
-                  Editing still saves; only the preview is unavailable for this template.
-                </p>
-              </div>
-            </template>
+            <!-- The in-page preview is temporarily out. It embedded c-ma-story
+                 so the draft rendered through the real page component; that is
+                 still the right design and previewSections / previewContent
+                 remain wired for it. It is disabled while the blank-tab problem
+                 is isolated, so the editor itself is usable meanwhile. -->
+            <div class="gcm-nopreview">
+              <p><b>Preview opens in a new tab while it is being fixed.</b></p>
+              <p class="gcm-empty-sub">
+                Edits save as you type. Open the live page to see them, or use
+                Rearrange to change section order.
+              </p>
+              <p class="gcm-preview-link">
+                <a href={livePageUrl} target="_blank" rel="noopener">Open the live page &#8599;</a>
+              </p>
+            </div>
           </div>
         </section>
 
