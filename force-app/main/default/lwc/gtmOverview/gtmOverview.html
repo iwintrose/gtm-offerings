@@ -40,20 +40,20 @@
         </template>
       </section>
 
-      <!-- right: the one thing you come here to start -->
+      <!-- right: what a rep comes here to do -->
       <section class="ov-col ov-col--act">
         <h2 class="ov-h">Create</h2>
-        <button class="act" onclick={handleOpenNewPage}>
+        <button class="act" onclick={handleNewProspectPage} disabled={navBusy}>
           <span class="act-plus">+</span>
           <span class="act-main">
-            <span class="act-label">New Offering Page</span>
-            <span class="act-sub">Model a page for an offering and start editing it</span>
+            <span class="act-label">New Prospect Page</span>
+            <span class="act-sub">Pick an industry and build a client configurator</span>
           </span>
         </button>
         <a class="act act--quiet" href={contentManagerUrl}>
           <span class="act-main">
             <span class="act-label">Open the Content Manager</span>
-            <span class="act-sub">Edit an existing page</span>
+            <span class="act-sub">Edit the pages behind these offerings</span>
           </span>
         </a>
       </section>
@@ -86,27 +86,5 @@
       </template>
     </section>
 
-    <template if:true={newPageOpen}>
-      <section role="dialog" aria-modal="true" aria-labelledby="npTitle" class="scrim">
-        <div class="modal">
-          <header class="modal-h">
-            <h2 id="npTitle">New offering page</h2>
-            <p>Pick the offering and which of its pages to build.</p>
-          </header>
-          <div class="modal-b">
-            <lightning-combobox label="Offering" value={npOffering} options={offeringOptions}
-                                onchange={handleNpOffering}></lightning-combobox>
-            <lightning-combobox label="Page" value={npTemplate} options={templateOptions}
-                                onchange={handleNpTemplate}></lightning-combobox>
-            <p class="modal-note">{npHint}</p>
-          </div>
-          <footer class="modal-f">
-            <lightning-button label="Cancel" onclick={handleCloseNewPage}></lightning-button>
-            <lightning-button label="Open in Content Manager" variant="brand"
-                              disabled={npDisabled} onclick={handleGoToPage}></lightning-button>
-          </footer>
-        </div>
-      </section>
-    </template>
   </div>
 </template>

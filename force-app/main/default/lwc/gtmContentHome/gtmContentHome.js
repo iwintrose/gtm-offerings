@@ -16,6 +16,11 @@ const ALL_TEMPLATES = ['story', 'configurator', 'industry-chooser', 'offerings-l
 export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track offerings = [];
     @track activity = [];
+
+    // new page
+    @track newPageOpen = false;
+    @track npOffering = '';
+    @track npTemplate = 'story';
     @track isLoading = false;
     @track loadError = '';
 
@@ -107,6 +112,42 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     handleOpenRecent(event) {
         const { offering, template } = event.currentTarget.dataset;
         this.openEditor(offering, template);
+    }
+
+    // ─── new page ─────────────────────────────────────────────────────────────
+    // Building a page for an offering belongs here, with the pages, rather
+    // than on the GTM Offerings overview — that page is a rep's, and its
+    // create action starts the configurator wizard, not a CMS page.
+
+    get offeringOptions() {
+        return this.offerings.map((o) => ({ label: o.label, value: o.offeringKey }));
+    }
+
+    get templateOptions() {
+        return ALL_TEMPLATES.map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
+    }
+
+    get npDisabled() { return !this.npOffering || !this.npTemplate; }
+
+    get npHint() {
+        if (this.npDisabled) return 'Both are needed to open the editor on the right page.';
+        return 'The editor opens on this page. If it has no sections yet, add the first one there.';
+    }
+
+    handleOpenNewPage() {
+        this.newPageOpen = true;
+        this.npOffering = this.offerings.length === 1 ? this.offerings[0].offeringKey : '';
+        this.npTemplate = 'story';
+    }
+
+    handleCloseNewPage() { this.newPageOpen = false; }
+    handleNpOffering(event) { this.npOffering = event.detail.value; }
+    handleNpTemplate(event) { this.npTemplate = event.detail.value; }
+
+    handleGoToPage() {
+        if (this.npDisabled) return;
+        this.newPageOpen = false;
+        this.openEditor(this.npOffering, this.npTemplate);
     }
 
     // This page already lives in the Content Manager app, so the editor is a

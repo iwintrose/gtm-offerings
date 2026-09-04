@@ -3,6 +3,10 @@ import { NavigationMixin } from 'lightning/navigation';
 import getSnapshot from '@salesforce/apex/MaHomeSnapshotController.getSnapshot';
 import getRecentNewAssessmentRequests from '@salesforce/apex/MaHomeSnapshotController.getRecentNewAssessmentRequests';
 import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
+// Owned by the prospect-page-wizard branch, which is deployed to this org.
+// Do not add a local copy of MaSavedConfigurationController without merging
+// that branch first — this branch's copy of that class is far behind it.
+import getSiteHomePageUrl from '@salesforce/apex/MaSavedConfigurationController.getSiteHomePageUrl';
 
 const TEMPLATE_LABELS = {
     story: 'Story',
@@ -28,9 +32,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     @track requestsLoaded = false;
     @track offeringsLoaded = false;
 
-    @track newPageOpen = false;
-    @track npOffering = '';
-    @track npTemplate = '';
+    @track navBusy = false;
 
     @wire(getSnapshot)
     wiredSnapshot({ data, error }) {
@@ -131,34 +133,32 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
 
     get showEmptyOfferings() { return this.offeringsLoaded && !this.offerings.length; }
 
-    get offeringOptions() {
-        return this.offerings.map((o) => ({ label: o.label, value: o.offeringKey }));
-    }
-
-    get templateOptions() {
-        return Object.keys(TEMPLATE_LABELS).map((k) => ({ label: TEMPLATE_LABELS[k], value: k }));
-    }
-
-    get npDisabled() { return !this.npOffering || !this.npTemplate; }
-
-    get npHint() {
-        if (this.npDisabled) return 'Both are needed to open the editor on the right page.';
-        return 'The Content Manager opens on this page. If it has no sections yet, add the first one there.';
-    }
-
-    handleOpenNewPage() {
-        this.newPageOpen = true;
-        this.npOffering = this.offerings.length === 1 ? this.offerings[0].offeringKey : '';
-        this.npTemplate = 'story';
-    }
-
-    handleCloseNewPage() { this.newPageOpen = false; }
-    handleNpOffering(event) { this.npOffering = event.detail.value; }
-    handleNpTemplate(event) { this.npTemplate = event.detail.value; }
-
-    handleGoToPage() {
-        this.newPageOpen = false;
-        this.openEditor(this.npOffering, this.npTemplate);
+    /**
+     * The rep's entry point, and the reason this button is on this page: it
+     * sends them to the site's own "Choose your industry" page with ?wizard=1,
+     * so picking an industry drops them straight into the configurator wizard.
+     * Building a page for an offering is a different job for a different
+     * person, and lives in the Content Manager.
+     */
+    handleNewProspectPage() {
+        if (this.navBusy) return;
+        this.navBusy = true;
+        getSiteHomePageUrl()
+            .then((url) => {
+                if (!url) {
+                    this.loadError = 'The Accelerator site could not be found, so the wizard cannot be opened.';
+                    return;
+                }
+                const sep = url.indexOf('?') > -1 ? '&' : '?';
+                this[NavigationMixin.Navigate]({
+                    type: 'standard__webPage',
+                    attributes: { url: `${url}${sep}wizard=1` }
+                });
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The wizard could not be opened.';
+            })
+            .finally(() => { this.navBusy = false; });
     }
 
     handleEditOffering(event) {

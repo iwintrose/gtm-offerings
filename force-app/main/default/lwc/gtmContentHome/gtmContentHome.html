@@ -71,7 +71,16 @@
         </section>
 
         <aside class="side">
-          <h2 class="side-h">Activity</h2>
+          <h2 class="side-h">Create</h2>
+          <button class="side-new" onclick={handleOpenNewPage}>
+            <span class="side-new-plus">+</span>
+            <span class="side-new-main">
+              <span class="side-new-label">New Accelerator Page</span>
+              <span class="side-new-sub">Build a page for an offering</span>
+            </span>
+          </button>
+
+          <h2 class="side-h side-h--spaced">Activity</h2>
           <template if:false={hasActivity}>
             <p class="side-empty">
               Nothing published yet. Publishing a page records what changed and
@@ -97,4 +106,27 @@
       </div>
     </template>
   </div>
+
+    <template if:true={newPageOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="npTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="npTitle">New Accelerator page</h2>
+            <p>Pick the offering and which of its pages to build.</p>
+          </header>
+          <div class="modal-b">
+            <lightning-combobox label="Offering" value={npOffering} options={offeringOptions}
+                                onchange={handleNpOffering}></lightning-combobox>
+            <lightning-combobox label="Page" value={npTemplate} options={templateOptions}
+                                onchange={handleNpTemplate}></lightning-combobox>
+            <p class="modal-note">{npHint}</p>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseNewPage}></lightning-button>
+            <lightning-button label="Open in the editor" variant="brand"
+                              disabled={npDisabled} onclick={handleGoToPage}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
 </template>
