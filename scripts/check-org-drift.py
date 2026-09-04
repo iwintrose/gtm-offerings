@@ -66,9 +66,18 @@ def retrieve(components, into):
     return True
 
 
+# Elements the platform adds to a retrieve whether or not the source declares
+# them. They are not another branch's work, so flagging them is noise.
+PLATFORM_NOISE = {
+    "hasActivationRequired", "userLicense",
+    "isNavTabPersistenceDisabled", "isOmniPinnedViewEnabled",
+    "shouldOverrideOrgTheme", "isServiceCloudConsole",
+}
+
+
 def meaningful(text):
     """Comparable content: identifiers, not whitespace or attribute order."""
-    return set(t for t in re.findall(r"[A-Za-z_][A-Za-z0-9_]{2,}", text))
+    return set(re.findall(r"[A-Za-z_][A-Za-z0-9_]{2,}", text)) - PLATFORM_NOISE
 
 
 def main():
