@@ -33,6 +33,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # contract is read from the shared module rather than from either consumer.
 LAYOUTS_JS = "force-app/main/default/lwc/gtmPageLayouts/gtmPageLayouts.js"
 
+# The value buckets a layout may declare. Each is both the key in LAYOUT_FIELDS
+# and the Field_Type__c the seeded record must carry, so adding a field type
+# means adding it here and nowhere else in this script.
+BUCKETS = ("text", "rich", "json", "icontext")
+
 TEMPLATES = [
     {
         "name": "story",
@@ -61,7 +66,7 @@ def parse_layout_fields(js):
     out = {}
     for name, body in re.findall(r"'([\w-]+)':\s*\{(.*?)\}", block.group(1), re.S):
         spec = {}
-        for bucket in ("text", "rich", "json"):
+        for bucket in BUCKETS:
             m = re.search(bucket + r":\s*\[(.*?)\]", body, re.S)
             spec[bucket] = re.findall(r"'([\w]+)'", m.group(1)) if m else []
         out[name] = spec
@@ -110,7 +115,7 @@ def main():
                     "%s: layout '%s' is declared but no branch in the template draws it"
                     % (name, layout)
                 )
-            for bucket, field_type in (("text", "text"), ("rich", "rich"), ("json", "json")):
+            for bucket, field_type in ((b, b) for b in BUCKETS):
                 for field in layouts[layout][bucket]:
                     expected["%s::%s" % (sec["Section_Key__c"], field)] = field_type
 

@@ -3,7 +3,7 @@ import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryC
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 // The layout vocabulary is shared with the editor, which has to know what
 // fields a section needs before that section exists. See c/gtmPageLayouts.
-import { FRAME_LAYOUTS, LAYOUT_FIELDS } from 'c/gtmPageLayouts';
+import { FRAME_LAYOUTS, LAYOUT_FIELDS, ctaGlyph } from 'c/gtmPageLayouts';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
@@ -173,7 +173,7 @@ const SECTION_FALLBACKS = {
     'closing': {
         head: DEFAULTS.closingHead,
         sub: DEFAULTS.closingSub,
-        ctaLabel: 'Build a client-specific version \u2192'
+        ctaLabel: { label: 'Build a client-specific version', icon: 'arrow' }
     }
 };
 
@@ -307,6 +307,23 @@ export default class MaStory extends LightningElement {
      * anything wider becomes a card. Nothing here knows what a capability or
      * an FAQ entry is, which is what keeps it general.
      */
+    /**
+     * The class, id and inline style an editor set on a field, keyed by
+     * "section::field". LWC cannot compute an attribute inside a template, so
+     * every field that can carry presentation resolves it here.
+     */
+    _pres(sectionKey, fieldKey) {
+        const m = this._fieldMeta.find(
+            (x) => x.sectionKey === sectionKey && x.fieldKey === fieldKey
+        );
+        if (!m) return { cls: '', id: null, style: null };
+        return {
+            cls: m.cssClass ? ' ' + m.cssClass : '',
+            id: m.htmlId || null,
+            style: m.inlineStyle || null
+        };
+    }
+
     _extrasFor(sectionKey, spec) {
         const declared = new Set(
             (spec.text || []).concat(spec.rich || [], spec.json || [])
@@ -319,6 +336,9 @@ export default class MaStory extends LightningElement {
                 const out = {
                     key: m.fieldKey,
                     label: m.label || '',
+                    cls: 'extra' + (m.cssClass ? ' ' + m.cssClass : ''),
+                    htmlId: m.htmlId || null,
+                    style: m.inlineStyle || null,
                     hasLabel: !!m.label,
                     isText: m.fieldType === 'text',
                     isRich: m.fieldType === 'rich',
@@ -405,9 +425,23 @@ export default class MaStory extends LightningElement {
             spec.text.concat(spec.rich).forEach((f) => {
                 s[f] = this._ct(k + '::' + f) || fb[f] || '';
             });
+            // A button carries a label and an icon in one JSON object, so it
+            // resolves to two values the template can place separately.
+            (spec.icontext || []).forEach((f) => {
+                const parsed = this._cj(k + '::' + f) || {};
+                const fbv = fb[f] || {};
+                s[f] = parsed.label || fbv.label || '';
+                s[f + 'Icon'] = ctaGlyph(parsed.icon || fbv.icon || '');
+            });
             spec.json.forEach((f) => {
                 const fromRecord = this._cj(k + '::' + f);
                 s[f] = (fromRecord && fromRecord.length) ? fromRecord : (fb[f] || []);
+            });
+
+            // Presentation an editor set on any of this section's fields.
+            s.pres = {};
+            ['text', 'rich', 'json', 'icontext'].forEach((bucket) => {
+                (spec[bucket] || []).forEach((f) => { s.pres[f] = this._pres(k, f); });
             });
 
             // Fields nobody declared. A layout is a shape the page knows how to

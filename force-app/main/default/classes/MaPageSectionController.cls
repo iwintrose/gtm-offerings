@@ -187,7 +187,10 @@ public with sharing class MaPageSectionController {
             row.Active__c          = true;
             // A json field with no value is not an empty string, it is an
             // empty list; the editor parses this column to build its repeater.
-            if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
+            // A list starts as an empty list and a button as an empty button; the
+        // editor parses this column to build its controls, and null is neither.
+        if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
+        if (row.Field_Type__c == 'icontext') row.JSON_Value__c = '{"label":"","icon":""}';
             rows.add(row);
         }
 
@@ -326,7 +329,10 @@ public with sharing class MaPageSectionController {
         row.Help_Text__c       = helpText;
         row.Active__c          = true;
         row.Sort_Order__c      = nextFieldSortOrder(offeringKey, templateType, sectionKey);
+        // A list starts as an empty list and a button as an empty button; the
+        // editor parses this column to build its controls, and null is neither.
         if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
+        if (row.Field_Type__c == 'icontext') row.JSON_Value__c = '{"label":"","icon":""}';
         try {
             insert row;
         } catch (DmlException e) {
@@ -442,7 +448,9 @@ public with sharing class MaPageSectionController {
     }
 
     /** The value columns a field can resolve from. */
-    private static final Set<String> VALUE_TYPES = new Set<String>{ 'text', 'rich', 'json' };
+    private static final Set<String> VALUE_TYPES = new Set<String>{
+        'text', 'rich', 'json', 'icontext'
+    };
 
     private static Decimal nextFieldSortOrder(String offeringKey, String templateType, String sectionKey) {
         AggregateResult[] top = [

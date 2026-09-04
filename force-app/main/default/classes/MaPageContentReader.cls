@@ -102,6 +102,10 @@ public without sharing class MaPageContentReader {
         @AuraEnabled public String fieldKey;
         @AuraEnabled public String fieldType;
         @AuraEnabled public String label;
+        // Presentation, applied to the element on render.
+        @AuraEnabled public String cssClass;
+        @AuraEnabled public String htmlId;
+        @AuraEnabled public String inlineStyle;
     }
 
     public class SectionDto {
@@ -114,8 +118,11 @@ public without sharing class MaPageContentReader {
     }
 
     private static String resolveValue(MA_Page_Content__c rec) {
+        // icontext keeps a label and an icon together, so it stores where the
+        // other structured type does. Anything unrecognised reads as text,
+        // which is the one column every field has.
         if (rec.Field_Type__c == 'rich') return rec.Rich_Value__c;
-        if (rec.Field_Type__c == 'json') return rec.JSON_Value__c;
+        if (rec.Field_Type__c == 'json' || rec.Field_Type__c == 'icontext') return rec.JSON_Value__c;
         return rec.Text_Value__c;
     }
 
@@ -131,7 +138,8 @@ public without sharing class MaPageContentReader {
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) return out;
         Set<String> seen = new Set<String>();
         for (MA_Page_Content__c rec : [
-            SELECT Section_Key__c, Field_Key__c, Field_Type__c, Label__c
+            SELECT Section_Key__c, Field_Key__c, Field_Type__c, Label__c,
+                   Css_Class__c, Html_Id__c, Inline_Style__c
             FROM   MA_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -150,6 +158,9 @@ public without sharing class MaPageContentReader {
             m.fieldKey   = rec.Field_Key__c;
             m.fieldType  = rec.Field_Type__c;
             m.label      = rec.Label__c;
+            m.cssClass    = rec.Css_Class__c;
+            m.htmlId      = rec.Html_Id__c;
+            m.inlineStyle = rec.Inline_Style__c;
             out.add(m);
         }
         return out;

@@ -28,7 +28,7 @@ const LAYOUT_FIELDS = {
     'stat':        { text: ['eyebrow', 'head', 'statBig'],   rich: ['statDesc', 'note'],           json: [] },
     'use-pitch':   { text: ['eyebrow', 'head'],              rich: ['lede'],                       json: ['useCases', 'pitchOldChips', 'pitchNewChips'] },
     'faq':         { text: ['eyebrow', 'head'],              rich: [],                             json: ['items'] },
-    'closing':     { text: ['ctaLabel'],                     rich: ['head', 'sub'],                json: [] }
+    'closing':     { text: [], rich: ['head', 'sub'], json: [], icontext: ['ctaLabel'] }
 };
 
 // What each layout is for, in the words an editor would use. Shown in the
@@ -68,7 +68,7 @@ function fieldsFor(layoutType) {
     const spec = LAYOUT_FIELDS[layoutType];
     if (!spec) return [];
     const out = [];
-    ['text', 'rich', 'json'].forEach((fieldType) => {
+    ['text', 'rich', 'json', 'icontext'].forEach((fieldType) => {
         (spec[fieldType] || []).forEach((fieldKey) => {
             out.push({ fieldKey, fieldType, label: humaniseFieldKey(fieldKey) });
         });
@@ -103,7 +103,32 @@ function addableLayouts() {
         }));
 }
 
+/**
+ * The icons a call-to-action button may carry, and the glyph each one draws.
+ *
+ * One list, shared by the editor's picker and the renderer, for the same
+ * reason the layout vocabulary is shared: a picker offering an icon the page
+ * cannot draw is worse than no picker at all.
+ */
+const CTA_ICONS = [
+    { value: '',         label: 'None',          glyph: '' },
+    { value: 'arrow',    label: 'Arrow',         glyph: '→' },
+    { value: 'external', label: 'External link', glyph: '↗' },
+    { value: 'play',     label: 'Play',          glyph: '▶' },
+    { value: 'calendar', label: 'Calendar',      glyph: '🗓︎' },
+    { value: 'preview',  label: 'Preview',       glyph: '◉' },
+    { value: 'check',    label: 'Check',         glyph: '✓' }
+];
+
+function ctaGlyph(value) {
+    const hit = CTA_ICONS.find((i) => i.value === value);
+    return hit ? hit.glyph : '';
+}
+
+
 export {
+    CTA_ICONS,
+    ctaGlyph,
     FRAME_LAYOUTS,
     LAYOUT_FIELDS,
     LAYOUT_LABELS,

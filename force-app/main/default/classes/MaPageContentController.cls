@@ -68,7 +68,8 @@ public without sharing class MaPageContentController {
                    Text_Value__c, Rich_Value__c, JSON_Value__c,
                    Industry_Key__c, Sort_Order__c, Active__c,
                    Content_Address__c, Offering_Key__c, Template_Type__c,
-                   Label__c, Help_Text__c, Draft_Value__c, Status__c, Pending_Delete__c
+                   Label__c, Help_Text__c, Draft_Value__c, Status__c, Pending_Delete__c,
+                   Css_Class__c, Html_Id__c, Inline_Style__c
             FROM   MA_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -466,9 +467,13 @@ public without sharing class MaPageContentController {
             ));
 
             String draft = rec.Draft_Value__c;
-            if (rec.Field_Type__c == 'rich')      { rec.Rich_Value__c = draft; }
-            else if (rec.Field_Type__c == 'json') { rec.JSON_Value__c = draft; }
-            else                                  { rec.Text_Value__c = draft; }
+            if (rec.Field_Type__c == 'rich') {
+                rec.Rich_Value__c = draft;
+            } else if (rec.Field_Type__c == 'json' || rec.Field_Type__c == 'icontext') {
+                rec.JSON_Value__c = draft;
+            } else {
+                rec.Text_Value__c = draft;
+            }
 
             rec.Draft_Value__c        = null;
             rec.Status__c             = 'Published';
@@ -631,8 +636,11 @@ public without sharing class MaPageContentController {
     }
 
     private static String resolveValue(MA_Page_Content__c rec) {
+        // icontext keeps a label and an icon together, so it stores where the
+        // other structured type does. Anything unrecognised reads as text,
+        // which is the one column every field has.
         if (rec.Field_Type__c == 'rich')   return rec.Rich_Value__c;
-        if (rec.Field_Type__c == 'json')   return rec.JSON_Value__c;
+        if (rec.Field_Type__c == 'json' || rec.Field_Type__c == 'icontext')   return rec.JSON_Value__c;
         return rec.Text_Value__c;
     }
 
@@ -653,6 +661,9 @@ public without sharing class MaPageContentController {
         @AuraEnabled public String status           { get; set; }
         @AuraEnabled public Boolean isDraft         { get; set; }
         @AuraEnabled public Boolean pendingDelete   { get; set; }
+        @AuraEnabled public String cssClass         { get; set; }
+        @AuraEnabled public String htmlId           { get; set; }
+        @AuraEnabled public String inlineStyle      { get; set; }
         @AuraEnabled public String textValue        { get; set; }
         @AuraEnabled public String richValue        { get; set; }
         @AuraEnabled public String jsonValue        { get; set; }
@@ -679,6 +690,9 @@ public without sharing class MaPageContentController {
             this.active            = rec.Active__c;
             this.contentAddress    = rec.Content_Address__c;
             this.pendingDelete     = rec.Pending_Delete__c == true;
+            this.cssClass          = rec.Css_Class__c;
+            this.htmlId            = rec.Html_Id__c;
+            this.inlineStyle       = rec.Inline_Style__c;
             this.label             = rec.Label__c;
             this.helpText          = rec.Help_Text__c;
             this.draftValue        = rec.Draft_Value__c;
@@ -745,5 +759,30 @@ public without sharing class MaPageContentController {
             throw new AuraHandledException('Changes could not be discarded: ' + ex.getMessage());
         }
         return marked.size();
+    }
+
+    /**
+     * Per-field presentation: the class, id and inline style applied to the
+     * element on render. Saved immediately rather than held as a draft — it
+     * changes how a field is drawn, not what it says, and holding it back
+     * would mean a draft that cannot be seen in the preview it is for.
+     */
+    @AuraEnabled
+    public static void savePresentation(String recordId, String key, String value) {
+        if (String.isBlank(recordId) || String.isBlank(key)) {
+            throw new AuraHandledException('A field and a property are both required.');
+        }
+        MA_Page_Content__c rec = new MA_Page_Content__c(Id = recordId);
+        if (key == 'cssClass')          { rec.Css_Class__c = value; }
+        else if (key == 'htmlId')       { rec.Html_Id__c = value; }
+        else if (key == 'inlineStyle')  { rec.Inline_Style__c = value; }
+        else {
+            throw new AuraHandledException('Unknown presentation property: ' + key);
+        }
+        try {
+            update rec;
+        } catch (DmlException e) {
+            throw new AuraHandledException('That could not be saved: ' + e.getMessage());
+        }
     }
 }

@@ -119,23 +119,117 @@
 }
 
 /* ── per-field tools ─────────────────────────────────────────────────────── */
-.fld-tools {
-    display: flex; gap: 0.2rem; margin-top: 0.45rem;
-    opacity: 0; transition: opacity 0.12s;
-}
-.fld:hover .fld-tools, .fld:focus-within .fld-tools { opacity: 1; }
-.fldbtn {
-    border: 1px solid #e5e5e5; border-radius: 3px; background: #fff;
-    color: #747474; font-size: 11px; line-height: 1;
-    padding: 0.18rem 0.34rem; cursor: pointer;
-}
-.fldbtn:hover:not(:disabled) { border-color: #0176d3; color: #0176d3; }
-.fldbtn:disabled { color: #d8d8d8; cursor: default; }
-.fldbtn--danger:hover:not(:disabled) { border-color: #ba0517; color: #ba0517; }
-.fldbtn--undo { color: #0176d3; }
 
 .fld--doomed { opacity: 0.55; }
 .fld--doomed .fld-label { text-decoration: line-through; }
 .fld-status--doomed { color: #ba0517; }
 
 .gcm-add--field { margin-top: 0.9rem; }
+
+
+/* ── controls ────────────────────────────────────────────────────────────────
+   Ported from the design: one control vocabulary, so a text box, a repeater
+   cell and a modal input are recognisably the same object. */
+.ctl {
+    width: 100%; padding: 0.42rem 0.5rem;
+    border: 1px solid #c9c9c9; border-radius: 4px; background: #fff;
+    font: inherit; font-size: 12.5px; color: #181818;
+}
+.ctl:focus { outline: 0; border-color: #0176d3; box-shadow: 0 0 0 2px rgba(1,118,211,.2); }
+.ctl.tiny { padding: 0.3rem 0.4rem; font-size: 12px; }
+.ctl.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+textarea.ctl { resize: vertical; line-height: 1.5; }
+
+.fld-type {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 9.5px; color: #969696;
+    border: 1px solid #e5e5e5; border-radius: 3px; padding: 0 0.25rem;
+}
+.fld-acts { margin-left: auto; display: flex; gap: 1px; }
+.fa {
+    width: 22px; height: 22px; display: grid; place-items: center;
+    border: 0; border-radius: 3px; background: none;
+    color: #969696; cursor: pointer; font-size: 12px; line-height: 1;
+}
+.fa:hover:not(:disabled) { background: #f3f3f3; color: #0176d3; }
+.fa--on { background: #eef4ff; color: #0176d3; }
+.fa:disabled { opacity: 0.25; cursor: default; }
+.fa.del:hover { background: rgba(234,0,30,.1); color: #ba0517; }
+.fa--undo { color: #0176d3; }
+
+/* ── rich text ───────────────────────────────────────────────────────────── */
+.rt { border: 1px solid #c9c9c9; border-radius: 4px; background: #fff; overflow: hidden; }
+.rt:focus-within { border-color: #0176d3; box-shadow: 0 0 0 2px rgba(1,118,211,.2); }
+.rt-bar {
+    display: flex; align-items: center; gap: 1px;
+    padding: 0.18rem; border-bottom: 1px solid #e5e5e5; background: #f7f7f7;
+}
+.rt-b {
+    width: 24px; height: 22px; display: grid; place-items: center;
+    border: 0; border-radius: 3px; background: none;
+    color: #747474; cursor: pointer; font-size: 12px; line-height: 1;
+}
+.rt-b:hover { background: #fff; color: #0176d3; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.rt-b b { font-weight: 800; }
+.rt-b i { font-style: italic; font-family: Georgia, serif; }
+.rt-b--accent { color: #5b4fa3; font-weight: 800; }
+.rt-sep { width: 1px; height: 15px; background: #e5e5e5; margin: 0 0.18rem; }
+.rt-in { padding: 0.45rem 0.5rem; font-size: 12.5px; line-height: 1.55; min-height: 44px; outline: 0; }
+.rt-in:empty::before { content: attr(data-ph); color: #969696; }
+.rt-in .accent { color: #5b4fa3; }
+
+/* ── repeaters ───────────────────────────────────────────────────────────── */
+.rep { display: flex; flex-direction: column; gap: 0.35rem; }
+.item { border: 1px solid #e5e5e5; border-radius: 4px; background: #f7f7f7; padding: 0.4rem; }
+.item:focus-within { border-color: #0176d3; background: #fff; }
+.item-top { display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem; }
+.item-n {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px; color: #969696;
+}
+.item-acts { margin-left: auto; display: flex; gap: 1px; }
+.item-grid { display: flex; flex-direction: column; gap: 0.3rem; }
+.sub { display: flex; flex-direction: column; gap: 0.15rem; }
+.sub-l {
+    font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #969696; font-weight: 600;
+}
+.row2 { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem; align-items: end; }
+.badge-in { width: 58px; text-align: center; font-weight: 700; }
+
+.hi-toggle {
+    display: flex; align-items: center; gap: 0.3rem;
+    font-size: 10.5px; color: #747474; cursor: pointer;
+    border: 1px solid #e5e5e5; border-radius: 3px; padding: 0.1rem 0.3rem;
+}
+.hi-toggle input { margin: 0; accent-color: #0176d3; }
+.hi-toggle--on { border-color: #0176d3; color: #0176d3; background: #eef4ff; }
+
+.addbtn {
+    display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+    width: 100%; padding: 0.45rem;
+    border: 1px dashed #c9c9c9; border-radius: 4px; background: #fff;
+    color: #747474; font-size: 12px; cursor: pointer;
+}
+.addbtn:hover { border-color: #0176d3; color: #0176d3; background: #f3f8fd; }
+.addbtn-plus { font-size: 14px; line-height: 1; }
+
+/* ── icon picker ─────────────────────────────────────────────────────────── */
+.pickrow { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.pick {
+    width: 32px; height: 30px; display: grid; place-items: center;
+    border: 1px solid #c9c9c9; border-radius: 4px; background: #fff;
+    color: #444; cursor: pointer; font-size: 14px; line-height: 1;
+}
+.pick:hover { border-color: #0176d3; color: #0176d3; }
+.pick--on { border-color: #0176d3; background: #eef4ff; color: #0176d3; box-shadow: 0 0 0 1px #0176d3; }
+.pick .none { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* ── per-field presentation ──────────────────────────────────────────────── */
+.adv {
+    margin-top: 0.35rem; padding: 0.45rem;
+    border: 1px solid #e5e5e5; border-radius: 4px; background: #f7f7f7;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem;
+}
+.adv .sub:last-of-type { grid-column: 1 / -1; }
+.adv-note { grid-column: 1 / -1; font-size: 10px; color: #969696; line-height: 1.5; margin: 0; }

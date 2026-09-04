@@ -3,11 +3,25 @@ import createField from '@salesforce/apex/MaPageSectionController.createField';
 import deleteField from '@salesforce/apex/MaPageSectionController.deleteField';
 import restoreField from '@salesforce/apex/MaPageSectionController.restoreField';
 import saveFieldOrder from '@salesforce/apex/MaPageSectionController.saveFieldOrder';
-import { fieldsFor } from 'c/gtmPageLayouts';
+import { fieldsFor, CTA_ICONS } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
 // MaPageContentController.resolveValue.
-const COLUMN = { text: 'textValue', rich: 'richValue', json: 'jsonValue' };
+const COLUMN = {
+    text: 'textValue',
+    rich: 'richValue',
+    json: 'jsonValue',
+    // A button is a label and an icon, so it needs somewhere to keep two
+    // things: the JSON column, same as a list.
+    icontext: 'jsonValue'
+};
+
+const VALUE_COLUMN_LABEL = {
+    text: 'Text_Value__c',
+    rich: 'Rich_Value__c',
+    json: 'JSON_Value__c',
+    icontext: 'JSON_Value__c'
+};
 
 /**
  * The middle column: the fields of one section, and everything that changes
@@ -37,6 +51,9 @@ export default class GtmFieldEditor extends LightningElement {
     @track nfType = 'text';
     @track nfHelp = '';
     @track nfKeyTouched = false;
+    // Which fields have their presentation panel open. Per field, not global:
+    // opening one to check a class should not open all of them.
+    @track advOpen = new Set();
 
     get isSaving() { return this.busy; }
 
@@ -81,6 +98,13 @@ export default class GtmFieldEditor extends LightningElement {
                     hasHelp: !!r.helpText,
                     column: COLUMN[type],
                     isText: type === 'text',
+                    isIconText: type === 'icontext',
+                    typeTitle: `Field_Type__c — ${VALUE_COLUMN_LABEL[type] || 'Text_Value__c'}`,
+                    advOpen: this.advOpen.has(r.id),
+                    advClass: this.advOpen.has(r.id) ? 'fa fa--on' : 'fa',
+                    cssClass: r.cssClass || '',
+                    htmlId: r.htmlId || '',
+                    inlineStyle: r.inlineStyle || '',
                     isTextLong: type === 'text' && r.renderLong === true,
                     isTextShort: type === 'text' && r.renderLong !== true,
                     isRich: type === 'rich',
@@ -89,6 +113,7 @@ export default class GtmFieldEditor extends LightningElement {
                     statusLabel: r.isDraft ? 'Draft' : ''
                 };
                 if (base.isJson) base.items = this.buildItems(r.id, value);
+                if (base.isIconText) base.button = this.buildButton(value);
                 return base;
             })
             .map((f, i, all) => ({
@@ -103,23 +128,35 @@ export default class GtmFieldEditor extends LightningElement {
             }));
     }
 
+    /**
+     * Turns a JSON payload into editable items.
+     *
+     * The shape is read from the data, not configured: a list of strings is one
+     * input per entry; two string keys are a labelled pair side by side; three
+     * or more put the first two side by side and give the rest room to breathe.
+     * Boolean keys are flags on the item rather than fields in it, so they sit
+     * in the item's header where flags belong. A first column whose values are
+     * all a few characters long is a badge, and gets a badge-sized box.
+     *
+     * Nothing here knows what a capability card or an FAQ entry is, which is
+     * what lets the same editor handle a payload it has never seen.
+     */
     buildItems(recordId, raw) {
         let parsed;
         try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
         if (!Array.isArray(parsed)) return [];
+
+        const objectRows = parsed.filter((e) => typeof e === 'object' && e !== null);
+        const stringKeys = objectRows.length
+            ? Object.keys(objectRows[0]).filter((k) => typeof objectRows[0][k] !== 'boolean')
+            : [];
+        const badgeKey = stringKeys.length > 2 && objectRows.every(
+            (e) => String(e[stringKeys[0]] || '').length <= 3
+        ) ? stringKeys[0] : null;
+
         return parsed.map((entry, index) => {
             const isScalar = typeof entry !== 'object' || entry === null;
-            const fields = isScalar
-                ? [{ key: '__value', label: 'Value', value: String(entry), isLong: String(entry).length > 60 }]
-                : Object.keys(entry).map((k) => ({
-                    key: k,
-                    label: this.humanise(k),
-                    value: typeof entry[k] === 'boolean' ? String(entry[k]) : (entry[k] || ''),
-                    isBool: typeof entry[k] === 'boolean',
-                    checked: entry[k] === true,
-                    isLong: !(typeof entry[k] === 'boolean') && String(entry[k] || '').length > 60
-                }));
-            return {
+            const base = {
                 id: `${recordId}-${index}`,
                 recordId,
                 index,
@@ -127,8 +164,43 @@ export default class GtmFieldEditor extends LightningElement {
                 isFirst: index === 0,
                 isLast: index === parsed.length - 1,
                 isScalar,
-                fields
+                value: isScalar ? String(entry) : '',
+                flags: [],
+                pair: [],
+                rest: []
             };
+            if (isScalar) return base;
+
+            Object.keys(entry).forEach((k) => {
+                if (typeof entry[k] === 'boolean') {
+                    base.flags.push({
+                        key: k,
+                        label: this.humanise(k),
+                        checked: entry[k] === true,
+                        toggleClass: entry[k] === true ? 'hi-toggle hi-toggle--on' : 'hi-toggle'
+                    });
+                }
+            });
+
+            stringKeys.forEach((k, ki) => {
+                const text = String(entry[k] == null ? '' : entry[k]);
+                const cell = {
+                    key: k,
+                    label: this.humanise(k),
+                    value: text,
+                    isBadge: k === badgeKey,
+                    // The last column of a three-part item is the prose one, so
+                    // it gets a textarea whatever it currently happens to hold.
+                    isLong: ki >= 2 || text.length > 70,
+                    inputClass: k === badgeKey ? 'ctl tiny badge-in' : 'ctl tiny'
+                };
+                if (base.pair.length < 2 && !cell.isLong) base.pair.push(cell);
+                else base.rest.push(cell);
+            });
+            base.hasPair = base.pair.length > 0;
+            base.hasRest = base.rest.length > 0;
+            base.hasFlags = base.flags.length > 0;
+            return base;
         });
     }
 
@@ -151,8 +223,52 @@ export default class GtmFieldEditor extends LightningElement {
         this.emitValue(event.currentTarget.dataset.id, event.target.value);
     }
 
+    // ─── rich text ────────────────────────────────────────────────────────────
+    // A contenteditable rather than a stock editor, because the toolbar this
+    // page needs includes an accent command that tints a selection with the
+    // page's own colour — not something a general-purpose editor offers.
+
     handleRichChange(event) {
-        this.emitValue(event.currentTarget.dataset.id, event.target.value);
+        this.emitValue(event.currentTarget.dataset.id, event.currentTarget.innerHTML);
+    }
+
+    // Toolbar buttons steal focus on mousedown, which collapses the selection
+    // before the command can act on it. Suppressing the default keeps it.
+    handleRtGuard(event) { event.preventDefault(); }
+
+    handleRtCommand(event) {
+        const { id, cmd } = event.currentTarget.dataset;
+        const box = this.template.querySelector(`.rt-in[data-id="${id}"]`);
+        if (!box) return;
+        box.focus();
+        if (cmd === 'bold' || cmd === 'italic') {
+            document.execCommand(cmd, false, null);
+        } else if (cmd === 'br') {
+            document.execCommand('insertHTML', false, '<br>');
+        } else if (cmd === 'clear') {
+            document.execCommand('removeFormat', false, null);
+        } else if (cmd === 'accent') {
+            const sel = window.getSelection();
+            const text = sel && String(sel);
+            if (!text) return;
+            document.execCommand('insertHTML', false, `<span class="accent">${text}</span>`);
+        }
+        this.emitValue(id, box.innerHTML);
+    }
+
+    /**
+     * contenteditable is written to once per field rather than bound, because
+     * re-rendering it from its own value on every keystroke moves the caret to
+     * the end of the box. lwc:dom="manual" is what makes that legal.
+     */
+    renderedCallback() {
+        this.template.querySelectorAll('.rt-in').forEach((box) => {
+            const id = box.dataset.id;
+            const field = this.activeFields.find((f) => f.id === id);
+            if (!field) return;
+            if (box === this.template.activeElement) return;
+            if (box.innerHTML !== field.value) box.innerHTML = field.value || '';
+        });
     }
 
     handleItemChange(event) {
@@ -231,6 +347,63 @@ export default class GtmFieldEditor extends LightningElement {
         this.commitJson(recordId, list);
     }
 
+
+    /**
+     * A call-to-action button: its label, and which icon sits after it. Stored
+     * as one JSON object rather than two records because they are one thing on
+     * the page, and a label without its icon is a half-edited button.
+     */
+    buildButton(raw) {
+        let v = {};
+        try { const parsed = JSON.parse(raw); if (parsed && typeof parsed === 'object') v = parsed; }
+        catch (e) { v = { label: raw || '' }; }
+        return {
+            label: v.label || '',
+            icons: CTA_ICONS.map((i) => ({
+                ...i,
+                isNone: !i.value,
+                pickClass: (v.icon || '') === i.value ? 'pick pick--on' : 'pick'
+            }))
+        };
+    }
+
+    handleButtonLabel(event) {
+        this.writeButton(event.currentTarget.dataset.id, { label: event.target.value });
+    }
+
+    handleButtonIcon(event) {
+        this.writeButton(event.currentTarget.dataset.id, { icon: event.currentTarget.dataset.icon });
+    }
+
+    writeButton(recordId, patch) {
+        const rec = this.records.find((r) => r.id === recordId);
+        if (!rec) return;
+        const raw = rec.isDraft ? (rec.draftValue || '{}') : (rec.jsonValue || '{}');
+        let current = {};
+        try { const parsed = JSON.parse(raw); if (parsed && typeof parsed === 'object') current = parsed; }
+        catch (e) { current = {}; }
+        this.emitValue(recordId, JSON.stringify({ ...current, ...patch }));
+    }
+
+    // ─── per-field presentation ───────────────────────────────────────────────
+
+    handleToggleAdv(event) {
+        const id = event.currentTarget.dataset.id;
+        const next = new Set(this.advOpen);
+        if (next.has(id)) { next.delete(id); } else { next.add(id); }
+        this.advOpen = next;
+    }
+
+    handleAdvChange(event) {
+        this.dispatchEvent(new CustomEvent('presentationchange', {
+            detail: {
+                recordId: event.currentTarget.dataset.id,
+                key: event.currentTarget.dataset.adv,
+                value: event.target.value
+            }
+        }));
+    }
+
     // ─── add a field ──────────────────────────────────────────────────────────
     // Unlike "add section", this is not limited to what a layout declares: the
     // renderer draws fields it does not recognise generically, so an editor can
@@ -240,12 +413,16 @@ export default class GtmFieldEditor extends LightningElement {
         return [
             { label: 'Plain text', value: 'text' },
             { label: 'Rich text', value: 'rich' },
-            { label: 'List', value: 'json' }
+            { label: 'List', value: 'json' },
+            { label: 'Button (label + icon)', value: 'icontext' }
         ];
     }
 
     get nfTypeHint() {
         if (this.nfType === 'rich') return 'A formatted paragraph, with bold, italic and links.';
+        if (this.nfType === 'icontext') {
+            return 'A call-to-action button: its text, and which icon sits after it.';
+        }
         if (this.nfType === 'json') {
             return 'A repeating list. Its shape is read from what you put in it: '
                  + 'plain entries become chips, two-part entries a titled paragraph, '

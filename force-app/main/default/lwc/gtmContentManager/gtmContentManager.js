@@ -7,6 +7,7 @@ import getAllContent from '@salesforce/apex/MaPageContentController.getAllConten
 import saveDrafts from '@salesforce/apex/MaPageContentController.saveDrafts';
 import publishPage from '@salesforce/apex/MaPageContentController.publishPage';
 import discardDrafts from '@salesforce/apex/MaPageContentController.discardDrafts';
+import savePresentation from '@salesforce/apex/MaPageContentController.savePresentation';
 import saveSectionOrder from '@salesforce/apex/MaPageSectionController.saveSectionOrder';
 import setSectionActive from '@salesforce/apex/MaPageSectionController.setSectionActive';
 import createSection from '@salesforce/apex/MaPageSectionController.createSection';
@@ -76,6 +77,7 @@ export default class GtmContentManager extends LightningElement {
 
     _dragKey = '';
     _saveTimer;
+    _presentationTimer;
     _fitObserver;
     _syncTimer;
     _intentTimer;
@@ -301,6 +303,7 @@ export default class GtmContentManager extends LightningElement {
 
     disconnectedCallback() {
         clearTimeout(this._saveTimer);
+        clearTimeout(this._presentationTimer);
     }
 
 
@@ -689,6 +692,21 @@ export default class GtmContentManager extends LightningElement {
     handleFieldsChanged(event) {
         if (event.detail.message) this.saveMessage = event.detail.message;
         this.loadPage();
+    }
+
+    // Presentation changes how a field is drawn, not what it says, so they
+    // save straight away: holding one back would mean a draft you cannot see
+    // in the preview it exists for.
+    handleFieldPresentationChange(event) {
+        const { recordId, key, value } = event.detail;
+        this.records = this.records.map((r) => (r.id === recordId ? { ...r, [key]: value } : r));
+        clearTimeout(this._presentationTimer);
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._presentationTimer = setTimeout(() => {
+            savePresentation({ recordId, key, value })
+                .then(() => { this.saveMessage = 'Saved'; })
+                .catch((err) => { this.loadError = this.messageFrom(err) || 'That could not be saved.'; });
+        }, 600);
     }
 
     handleChildError(event) {

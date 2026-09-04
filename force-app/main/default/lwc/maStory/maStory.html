@@ -229,7 +229,7 @@
             <lightning-formatted-rich-text value={s.sub}></lightning-formatted-rich-text>
           </p>
           <p class="rv d1 cta-line">
-            <a class="btn" href={acceleratorUrl} target="_blank" rel="noopener">{s.ctaLabel}</a>
+            <a class="btn" href={acceleratorUrl} target="_blank" rel="noopener">{s.ctaLabel} <span class="btn-ico">{s.ctaLabelIcon}</span></a>
           </p>
         </template>
 
@@ -239,7 +239,7 @@
         <template if:true={s.hasExtras}>
           <div class="extras rv d2">
             <template for:each={s.extras} for:item="x">
-              <div key={x.key} class="extra">
+              <div key={x.key} class={x.cls} id={x.htmlId} style={x.style}>
                 <template if:true={x.hasLabel}>
                   <h3 class="extra-h">{x.label}</h3>
                 </template>
