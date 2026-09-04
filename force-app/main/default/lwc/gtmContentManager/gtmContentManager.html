@@ -265,7 +265,9 @@
               <span>Preview</span>
               <span class="gcm-count">{previewScaleLabel}</span>
             </div>
-            <div class="gcm-preview-body" onscroll={handlePreviewScroll}>
+            <div class="gcm-preview-body" onscroll={handlePreviewScroll}
+                 onwheel={handlePreviewIntent} onpointerdown={handlePreviewIntent}
+                 onkeydown={handlePreviewIntent}>
               <div class="gcm-stage-shell">
                 <div class="gcm-stage">
                   <c-ma-story

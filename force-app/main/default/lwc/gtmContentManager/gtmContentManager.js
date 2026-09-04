@@ -74,8 +74,10 @@ export default class GtmContentManager extends LightningElement {
     _saveTimer;
     _fitObserver;
     _syncTimer;
+    _intentTimer;
     _suppressScrollSync = false;
     _scrollQueued = false;
+    _previewDriven = false;
     @track _scalePct = 100;
 
     // add / delete section
@@ -271,7 +273,20 @@ export default class GtmContentManager extends LightningElement {
         this._syncTimer = setTimeout(() => { this._suppressScrollSync = false; }, 500);
     }
 
+    // Only a scroll the reader caused moves the rail. Typing re-renders the
+    // preview, which reflows it, which fires scroll — and syncing on that
+    // reassigned the active section mid-keystroke and took the cursor with it.
+    // A wheel, a drag or a key on the preview is the reader; a reflow is not.
+    handlePreviewIntent() {
+        this._previewDriven = true;
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        clearTimeout(this._intentTimer);
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._intentTimer = setTimeout(() => { this._previewDriven = false; }, 1200);
+    }
+
     handlePreviewScroll() {
+        if (!this._previewDriven) return;
         if (this._suppressScrollSync || this._scrollQueued) return;
         this._scrollQueued = true;
         // eslint-disable-next-line @lwc/lwc/no-async-operation
@@ -702,7 +717,14 @@ export default class GtmContentManager extends LightningElement {
                 this.activeKey = key;
                 return this.loadPage();
             })
-            .then(() => { this.activeKey = key; })
+            .then(() => {
+                this.activeKey = key;
+                // A section appended to a rail that already scrolls is created
+                // below the fold; bring it into view rather than making the
+                // editor hunt for what it just added.
+                this.scrollRailTo(key);
+                this.scrollPreviewTo(key);
+            })
             .catch((err) => {
                 this.saveMessage = '';
                 this.loadError = this.messageFrom(err) || 'The section could not be added.';
@@ -880,6 +902,7 @@ export default class GtmContentManager extends LightningElement {
         }
         clearTimeout(this._saveTimer);
         clearTimeout(this._syncTimer);
+        clearTimeout(this._intentTimer);
     }
 
     // Resolved by Apex from the offering's configured site path, not built

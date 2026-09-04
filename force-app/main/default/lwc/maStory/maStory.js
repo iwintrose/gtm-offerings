@@ -264,6 +264,7 @@ export default class MaStory extends LightningElement {
 
     _observer;
     _revealed = new Set();
+    _observed = new WeakSet();
     _scrollHandler;
     _editModeHandler;
     _orgUrl = '';
@@ -464,7 +465,12 @@ export default class MaStory extends LightningElement {
 
     renderedCallback() {
         this.reapplyRevealed();
-        if (this._observer) return;
+        // Deliberately not guarded on "have we set up yet". Sections arrive in
+        // two waves — the built-in defaults, then the records — and a section
+        // added in the editor is a DOM node that did not exist on the first
+        // render. Bailing out here once the observer existed left those nodes
+        // unobserved and therefore permanently at opacity 0: the section took
+        // up its full height on the page and drew nothing.
         this.setupReveal();
     }
 
@@ -498,18 +504,26 @@ export default class MaStory extends LightningElement {
             nodes.forEach((el) => { el.classList.add('in'); this._revealed.add(el); });
             return;
         }
-        this._observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (!entry.isIntersecting) return;
-                    entry.target.classList.add('in');
-                    this._revealed.add(entry.target);
-                    this._observer.unobserve(entry.target);
-                });
-            },
-            { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
-        );
-        nodes.forEach((el) => this._observer.observe(el));
+        if (!this._observer) {
+            this._observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (!entry.isIntersecting) return;
+                        entry.target.classList.add('in');
+                        this._revealed.add(entry.target);
+                        this._observer.unobserve(entry.target);
+                    });
+                },
+                { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
+            );
+        }
+        // Observing a node twice is harmless, but tracking what has already
+        // been handed over keeps this cheap on every re-render.
+        nodes.forEach((el) => {
+            if (this._observed.has(el)) return;
+            this._observed.add(el);
+            this._observer.observe(el);
+        });
     }
 
     reapplyRevealed() {

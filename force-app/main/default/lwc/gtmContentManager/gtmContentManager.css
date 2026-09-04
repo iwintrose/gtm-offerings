@@ -73,7 +73,9 @@
 .gcm-count { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 11px; }
 
 /* ── rail ────────────────────────────────────────────────────────────────── */
-.gcm-rail-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0.3rem; }
+/* The trailing padding keeps the last section clear of the Add-section
+   footer; without it the active row's border sits under the button edge. */
+.gcm-rail-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0.3rem 0.3rem 0.6rem; }
 .sec {
     display: flex; align-items: center; gap: 0.4rem;
     padding: 0.45rem 0.5rem; border-radius: 4px; cursor: pointer;
@@ -316,6 +318,7 @@
     flex: none;
     border-top: 1px solid #e5e5e5;
     padding: 0.4rem 0.5rem 0.5rem;
+    background: #fff;
 }
 .gcm-add {
     display: flex; align-items: center; gap: 0.4rem;
