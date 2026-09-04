@@ -39,6 +39,13 @@
             onclick={handleToggleReorder}>
           </lightning-button>
         </template>
+        <template if:true={hasSections}>
+          <lightning-button
+            label={previewToggleLabel}
+            icon-name={previewToggleIcon}
+            onclick={handleTogglePreview}>
+          </lightning-button>
+        </template>
         <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh}></lightning-button>
       </div>
     </header>
@@ -221,18 +228,33 @@
           </section>
 
           <section class="gcm-preview">
-            <div class="gcm-colhead"><span>Preview</span><span class="gcm-count">opens in a tab</span></div>
+            <div class="gcm-colhead">
+              <span>Preview</span>
+              <span class="gcm-count">live</span>
+            </div>
             <div class="gcm-preview-body">
-              <div class="gcm-nopreview">
-                <p><b>Preview opens in a new tab.</b></p>
-                <p class="gcm-empty-sub">
-                  Edits save as you type. Open the live page to see them, or use
-                  Rearrange to change section order.
-                </p>
-                <p class="gcm-preview-link">
-                  <a href={livePageUrl} target="_blank" rel="noopener">Open the live page &#8599;</a>
-                </p>
-              </div>
+              <!-- The draft renders through the real page component rather than
+                   a copy of it, so the preview cannot drift from what the site
+                   serves. -->
+              <template if:true={showLivePreview}>
+                <c-ma-story
+                  offering-key={selectedOffering}
+                  preview-sections={previewSections}
+                  preview-content={previewContent}>
+                </c-ma-story>
+              </template>
+              <template if:false={showLivePreview}>
+                <div class="gcm-nopreview">
+                  <p><b>Preview is off.</b></p>
+                  <p class="gcm-empty-sub">
+                    Turn it back on from the toolbar, or open the published page
+                    in a new tab.
+                  </p>
+                  <p class="gcm-preview-link">
+                    <a href={livePageUrl} target="_blank" rel="noopener">Open the live page &#8599;</a>
+                  </p>
+                </div>
+              </template>
             </div>
           </section>
 

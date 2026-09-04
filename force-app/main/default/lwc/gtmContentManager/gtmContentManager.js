@@ -50,6 +50,9 @@ export default class GtmContentManager extends LightningElement {
     @track loadError = '';
     @track saveMessage = '';
     @track reorderMode = false;
+    // Preview is a toggle so it can be turned off without a deploy, and so a
+    // narrow window can reclaim the column.
+    @track previewOn = true;
     @track dirtyKeys = [];
 
     _dragKey = '';
@@ -470,6 +473,43 @@ export default class GtmContentManager extends LightningElement {
     }
 
     handleDismissError() { this.loadError = ''; }
+
+    // What the embedded page renders: the draft, not what is saved. Only
+    // sections that are switched on, in current rail order.
+    get previewSections() {
+        return this.sections
+            .filter((s) => s.active !== false)
+            .map((s) => ({
+                sectionKey: s.sectionKey,
+                label: s.label,
+                layoutType: s.layoutType,
+                width: s.width
+            }));
+    }
+
+    get previewContent() {
+        const map = {};
+        this.records.forEach((r) => {
+            const type = r.fieldType || 'text';
+            map[`${r.sectionKey}::${r.fieldKey}`] = r[COLUMN[type]] || '';
+        });
+        return map;
+    }
+
+    handleTogglePreview() { this.previewOn = !this.previewOn; }
+
+    get previewToggleLabel() { return this.previewOn ? 'Hide preview' : 'Show preview'; }
+    get previewToggleIcon() { return this.previewOn ? 'utility:preview' : 'utility:hide'; }
+
+    // Only render the embedded page when there is something for it to draw.
+    // Passing an empty list would put maStory into preview mode with no
+    // sections, and it would sit there showing nothing.
+    get showLivePreview() {
+        return this.previewOn
+            && this.selectedTemplate === 'story'
+            && this.sections.length > 0
+            && this.records.length > 0;
+    }
 
     get livePageUrl() { return '/gtmstory/s/'; }
     get hasSections() { return !this.isLoading && this.sections.length > 0; }
