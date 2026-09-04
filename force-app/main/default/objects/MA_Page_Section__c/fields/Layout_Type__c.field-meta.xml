@@ -60,6 +60,11 @@
                 <default>false</default>
                 <label>closing</label>
             </value>
+            <value>
+                <fullName>offering-tile</fullName>
+                <default>false</default>
+                <label>offering-tile</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

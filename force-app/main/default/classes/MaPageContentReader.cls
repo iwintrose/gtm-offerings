@@ -165,4 +165,64 @@ public without sharing class MaPageContentReader {
         }
         return out;
     }
+
+    public class OfferingTile {
+        @AuraEnabled public String offeringKey  { get; set; }
+        @AuraEnabled public String mark         { get; set; }
+        @AuraEnabled public String name         { get; set; }
+        @AuraEnabled public String description  { get; set; }
+        @AuraEnabled public Boolean isLive      { get; set; }
+    }
+
+    /**
+     * Every offering's own entry for the offerings page.
+     *
+     * The offerings page sits above offerings and lists them, so its tiles are
+     * not its own content — each offering supplies its entry, under its own
+     * offerings-listing page. Adding the second offering is then a metadata
+     * record plus its tile copy, and the front door picks it up with no edit
+     * of its own.
+     *
+     * An offering with no tile content yet is returned as a placeholder rather
+     * than skipped, so the page shows the shape of what is coming.
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<OfferingTile> getOfferingTiles() {
+        List<OfferingTile> out = new List<OfferingTile>();
+        Map<String, OfferingTile> byKey = new Map<String, OfferingTile>();
+        for (MA_Offering__mdt off : [
+            SELECT Offering_Key__c, Label__c FROM MA_Offering__mdt ORDER BY Label__c
+        ]) {
+            if (String.isBlank(off.Offering_Key__c)) continue;
+            OfferingTile t = new OfferingTile();
+            t.offeringKey = off.Offering_Key__c;
+            t.name        = off.Label__c;
+            t.isLive      = false;
+            byKey.put(t.offeringKey, t);
+            out.add(t);
+        }
+        if (byKey.isEmpty()) return out;
+
+        for (MA_Page_Content__c rec : [
+            SELECT Offering_Key__c, Field_Key__c, Field_Type__c,
+                   Text_Value__c, Rich_Value__c, JSON_Value__c
+            FROM   MA_Page_Content__c
+            WHERE  Template_Type__c = 'offerings-listing'
+            AND    Section_Key__c   = 'tile'
+            AND    Active__c        = true
+            AND    Offering_Key__c IN :byKey.keySet()
+            LIMIT  500
+        ]) {
+            OfferingTile t = byKey.get(rec.Offering_Key__c);
+            if (t == null) continue;
+            String value = resolveValue(rec);
+            if (String.isBlank(value)) continue;
+            if (rec.Field_Key__c == 'mark')             { t.mark = value; }
+            else if (rec.Field_Key__c == 'name')        { t.name = value; }
+            else if (rec.Field_Key__c == 'description') { t.description = value; }
+            // A tile counts as live once it says something about itself.
+            t.isLive = String.isNotBlank(t.description);
+        }
+        return out;
+    }
 }

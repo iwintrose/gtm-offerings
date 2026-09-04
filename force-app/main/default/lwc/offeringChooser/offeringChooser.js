@@ -1,6 +1,8 @@
 import { LightningElement, api, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
+import getOfferingTiles from '@salesforce/apex/MaPageContentReader.getOfferingTiles';
+import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 const FONTS_HREF =
     'https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap';
@@ -29,34 +31,39 @@ const DEFAULTS = {
         + "it's for, and the story reframes around them.",
     footerLeft: 'gtm-offerings — shared front door',
     footerRight: 'Publicis Sapient · internal',
+    placeholder: 'Space reserved for the next practice offering added to this framework.',
     cards: [
         {
+            offeringKey: 'migration-accelerator',
             mark: 'MA',
             name: 'Migration Accelerator',
             description: "Reads a client's marketing platform directly, turns it into an "
                 + 'audited plan, and where it applies, a finished migration.',
-            comingSoon: false
-        },
-        {
-            mark: '?',
-            name: 'Next offering',
-            description: 'Space reserved for the next practice offering added to this framework.',
-            comingSoon: true
-        },
-        {
-            mark: '?',
-            name: 'Next offering',
-            description: 'Space reserved for the next practice offering added to this framework.',
-            comingSoon: true
+            isLive: true
         }
     ]
 };
 
+/** Initials, so an offering without a mark of its own still gets a badge. */
+function markFor(name) {
+    if (!name) return '';
+    return String(name)
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w.charAt(0).toUpperCase())
+        .join('');
+}
+
 export default class OfferingChooser extends LightningElement {
     @api offeringKey = DEFAULT_OFFERING_KEY;
 
-    /** Which modelled page this reads. One template, many offerings. */
-    @api templateType = 'offerings-listing';
+    /**
+     * This page sits above offerings and lists them, so its own content is
+     * framework-level, not offering-level. The tiles come from each offering's
+     * offerings-listing page instead.
+     */
+    @api templateType = 'offerings-page';
 
     /** Where the Migration Accelerator tile points. Set in Experience Builder. */
     @api industryUrl = '/choose-industry';
@@ -66,6 +73,7 @@ export default class OfferingChooser extends LightningElement {
     @track _tileDescription = null;
     // MA_Page_Content__c flat map: 'section::field' -> resolved string.
     @track _cms = {};
+    @track _tiles = [];
     @track _editMode = false;
     _orgUrl = '';
     _lightningUrl = '';
@@ -102,20 +110,24 @@ export default class OfferingChooser extends LightningElement {
      * offering and links onward; the rest are placeholders. Which is which is
      * content, not code, so adding the second offering is an edit.
      */
+    /**
+     * One tile per offering, each supplied by that offering. An offering with
+     * no tile copy yet still appears, as a placeholder — the page shows the
+     * shape of what is coming rather than hiding it.
+     */
     get tiles() {
-        const cards = this._cj('tiles::cards');
-        const source = (cards && cards.length) ? cards : DEFAULTS.cards;
+        const source = this._tiles.length ? this._tiles : DEFAULTS.cards;
         return source.map((c, i) => {
-            const soon = c.comingSoon === true || c.comingSoon === 'true';
+            const live = c.isLive === true;
             return {
-                id: `${i}-${c.name || c.mark || ''}`,
-                mark: c.mark || '?',
-                name: c.name || '',
-                description: c.description || '',
-                isLive: !soon,
+                id: `${i}-${c.offeringKey || c.name || ''}`,
+                mark: c.mark || markFor(c.name) || '?',
+                name: c.name || 'Next offering',
+                description: c.description || DEFAULTS.placeholder,
+                isLive: live,
                 // A placeholder gets no href, so it is not a link.
-                href: soon ? undefined : this.industryUrl,
-                tileClass: soon ? 'tile soon' : 'tile live'
+                href: live ? this.industryUrl : undefined,
+                tileClass: live ? 'tile live' : 'tile soon'
             };
         });
     }
@@ -132,8 +144,15 @@ export default class OfferingChooser extends LightningElement {
         this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
         window.addEventListener('maadminedit', this._editModeHandler);
 
+        getOfferingTiles()
+            .then((rows) => { if (rows) this._tiles = rows; })
+            .catch((err) => {
+                // eslint-disable-next-line no-console
+                console.error('[offeringChooser] getOfferingTiles failed:', JSON.stringify(err));
+            });
+
         getPageLayout({
-            offeringKey: this.offeringKey,
+            offeringKey: FRAMEWORK_KEY,
             templateType: this.templateType,
             industryKey: null
         })

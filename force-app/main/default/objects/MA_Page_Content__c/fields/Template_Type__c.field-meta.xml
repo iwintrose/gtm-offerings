@@ -21,6 +21,11 @@
                 <label>Offerings Listing</label>
             </value>
             <value>
+                <fullName>offerings-page</fullName>
+                <default>false</default>
+                <label>Offerings Page</label>
+            </value>
+            <value>
                 <fullName>industry-chooser</fullName>
                 <default>false</default>
                 <label>Industry Chooser</label>

@@ -18,6 +18,12 @@
 // editing the brand name or the footer.
 const FRAME_LAYOUTS = ['page-header', 'page-footer'];
 
+// Pages that belong to the framework rather than to any one offering. The
+// offerings front door is the example: it sits above offerings and lists them,
+// so it cannot be owned by one. Keyed like an offering so one schema, one
+// reader and one editor cover both.
+const FRAMEWORK_KEY = 'gtm';
+
 const LAYOUT_FIELDS = {
     'page-header': { text: ['brandLabel', 'brandTag'],       rich: [], json: [] },
     'page-footer': { text: ['footerLeft', 'footerRight'],     rich: [], json: [] },
@@ -28,7 +34,9 @@ const LAYOUT_FIELDS = {
     'stat':        { text: ['eyebrow', 'head', 'statBig'],   rich: ['statDesc', 'note'],           json: [] },
     'use-pitch':   { text: ['eyebrow', 'head'],              rich: ['lede'],                       json: ['useCases', 'pitchOldChips', 'pitchNewChips'] },
     'faq':         { text: ['eyebrow', 'head'],              rich: [],                             json: ['items'] },
-    'closing':     { text: [], rich: ['head', 'sub'], json: [], icontext: ['ctaLabel'] }
+    'closing':     { text: [], rich: ['head', 'sub'], json: [], icontext: ['ctaLabel'] },
+    // One offering's entry on the offerings page: how it introduces itself.
+    'offering-tile': { text: ['mark', 'name'], rich: ['description'], json: [] }
 };
 
 // What each layout is for, in the words an editor would use. Shown in the
@@ -43,7 +51,8 @@ const LAYOUT_LABELS = {
     'stat': 'Big statistic',
     'use-pitch': 'Use cases and pitch',
     'faq': 'FAQ',
-    'closing': 'Closing call to action'
+    'closing': 'Closing call to action',
+    'offering-tile': 'Offering tile'
 };
 
 const LAYOUT_HINTS = {
@@ -56,7 +65,8 @@ const LAYOUT_HINTS = {
     'stat': 'One large number with a description and a note.',
     'use-pitch': 'Use cases, plus a before/after chip comparison.',
     'faq': 'A list of questions and answers.',
-    'closing': 'Final headline, subhead, and a call-to-action button.'
+    'closing': 'Final headline, subhead, and a call-to-action button.',
+    'offering-tile': 'The short badge, name and description shown on the offerings page.'
 };
 
 /**
@@ -145,16 +155,19 @@ const STARTER_PAGES = {
         { sectionKey: 'footer',  label: 'Footer',        layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
     ],
     'offerings-listing': [
-        { sectionKey: 'header',   label: 'Header',   layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
-        { sectionKey: 'intro',    label: 'Intro',    layoutType: 'hero',        width: 'standard', helpText: 'Step label, heading and the line under it.' },
-        { sectionKey: 'tiles',    label: 'Offerings', layoutType: 'card-grid',  width: 'standard', helpText: 'One card per offering. The badge is the short mark shown on the tile.' },
-        { sectionKey: 'footer',   label: 'Footer',   layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
+        { sectionKey: 'tile', label: 'Offerings page entry', layoutType: 'offering-tile', width: 'standard', helpText: 'How this offering introduces itself on the offerings page that lists them all.' }
     ],
     'industry-chooser': [
         { sectionKey: 'header',     label: 'Header',     layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
         { sectionKey: 'intro',      label: 'Intro',      layoutType: 'hero',        width: 'standard', helpText: 'Step label, heading and the line under it.' },
         { sectionKey: 'industries', label: 'Industries', layoutType: 'card-grid',   width: 'standard', helpText: 'One card per industry offered.' },
         { sectionKey: 'footer',     label: 'Footer',     layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
+    ],
+    // Framework-level, not offering-level: the page above the offerings.
+    'offerings-page': [
+        { sectionKey: 'header', label: 'Header', layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
+        { sectionKey: 'intro',  label: 'Intro',  layoutType: 'hero',        width: 'standard', helpText: 'Step label, heading and the line under it. The tiles below come from each offering.' },
+        { sectionKey: 'footer', label: 'Footer', layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
     ],
     'configurator': [
         { sectionKey: 'header',   label: 'Header',       layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
@@ -176,6 +189,7 @@ function starterFor(templateType) {
 
 
 export {
+    FRAMEWORK_KEY,
     STARTER_PAGES,
     starterFor,
     CTA_ICONS,
