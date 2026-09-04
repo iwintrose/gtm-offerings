@@ -9,12 +9,20 @@
     font-size: 13px;
 }
 
+/* Salesforce's own record-header proportions, so this reads as a page in the
+   app rather than a page inside it. */
 .home-head {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 1rem; margin-bottom: 1.1rem; flex-wrap: wrap;
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: .75rem 1rem; margin-bottom: 1rem;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
 }
-.home-head h1 { margin: 0 0 .15rem; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
-.home-sub { margin: 0; color: #444; font-size: 13px; max-width: 34rem; line-height: 1.5; }
+.home-head .slds-page-header__row { display: flex; align-items: center; gap: 1rem; }
+.home-head .slds-page-header__col-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.home-head .slds-page-header__col-actions { margin-left: auto; }
+.home-head-icon { flex: none; }
+.home-eyebrow { font-size: 12px; color: #444; margin: 0; }
+.home-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+.home-meta { margin: .1rem 0 0; font-size: 12px; color: #747474; }
 
 .home-error {
     display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem;
@@ -27,27 +35,65 @@
 .home-empty { padding: 2.5rem 1rem; text-align: center; color: #444; }
 .home-empty-sub { color: #747474; font-size: 12px; max-width: 26rem; margin: .3rem auto 0; line-height: 1.5; }
 
-.home-cols { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: 1rem; align-items: start; }
-@media (max-width: 1024px) { .home-cols { grid-template-columns: minmax(0, 1fr); } }
+.home-body { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1rem; align-items: start; }
+@media (max-width: 1100px) { .home-body { grid-template-columns: minmax(0, 1fr); } }
 
-/* ── offering cards ──────────────────────────────────────────────────────── */
-.off-col { display: flex; flex-direction: column; gap: .75rem; }
+/* ── offering cards ──────────────────────────────────────────────────────────
+   Two columns, so a second offering sits beside the first rather than below
+   it. The framework holds the first cell: the pages it owns sit above every
+   offering, so it leads rather than queues. */
+.off-grid {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem; align-items: start;
+}
+@media (max-width: 780px) { .off-grid { grid-template-columns: minmax(0, 1fr); } }
+
 .off {
-    border: 1px solid #e5e5e5; border-radius: 6px; background: #fff;
-    box-shadow: 0 1px 2px rgba(0,0,0,.06); overflow: hidden;
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
+    display: flex; flex-direction: column;
 }
-.off-head {
-    display: flex; align-items: baseline; justify-content: space-between; gap: .75rem;
-    padding: .8rem .9rem .6rem; border-bottom: 1px solid #e5e5e5; flex-wrap: wrap;
+/* The one card that is not an offering says so with an edge, not a colour
+   wash: it is a different kind of thing, not a more important one. */
+.off--framework { border-top: 3px solid #0176d3; }
+
+.off-head { padding: .75rem .75rem .5rem; border-bottom: 1px solid #f3f3f3; }
+.off-head .slds-media { display: flex; align-items: center; gap: .6rem; }
+.off-head .slds-media__body { min-width: 0; flex: 1 1 auto; }
+.off-name {
+    margin: 0; font-size: 15px; font-weight: 700; line-height: 1.25;
+    display: flex; align-items: center; gap: .3rem; min-width: 0;
 }
-.off-id { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
-.off-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+.off-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.off-rename {
+    border: 0; background: none; padding: .1rem; cursor: pointer; color: #747474;
+    border-radius: 3px; line-height: 0; opacity: 0; transition: opacity .12s;
+}
+.off:hover .off-rename, .off-rename:focus { opacity: 1; }
+.off-rename:hover { background: #f3f3f3; color: #0176d3; }
 .off-key {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 11px; color: #747474;
-    background: #fafaf9; border: 1px solid #e5e5e5; border-radius: 3px; padding: 0 .3rem;
+    margin: .1rem 0 0; font-size: 11px; color: #747474;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.off-stat { font-size: 11.5px; color: #747474; }
+.off-stat { flex: none; }
+.off-rename-row { display: flex; align-items: center; gap: .35rem; }
+.off-rename-in { flex: 1 1 auto; min-width: 0; }
+
+.off-body { flex: 1 1 auto; }
+
+.off-foot { padding: .4rem .5rem; border-top: 1px solid #f3f3f3; background: #fafaf9; }
+.off-foot-btn {
+    display: flex; align-items: center; gap: .35rem; width: 100%;
+    border: 0; background: none; cursor: pointer; padding: .3rem .35rem;
+    font: inherit; font-size: 12px; color: #0176d3; border-radius: 3px;
+}
+.off-foot-btn:hover { background: #eef4ff; }
+
+.pg-icon { flex: none; --sds-c-icon-color-foreground-default: #747474; }
+.side-card { border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+             box-shadow: 0 1px 1px rgba(0,0,0,.05); }
+.side-card .slds-card__header { padding: .75rem .75rem .5rem; border-bottom: 1px solid #f3f3f3; }
+.side-card .slds-media { display: flex; align-items: center; gap: .6rem; }
 
 .pg-list { list-style: none; margin: 0; padding: .3rem; display: flex; flex-direction: column; gap: 1px; }
 .pg {
@@ -69,15 +115,10 @@
 }
 
 /* ── recent edits ────────────────────────────────────────────────────────── */
-.side {
-    border: 1px solid #e5e5e5; border-radius: 6px; background: #fff;
-    box-shadow: 0 1px 2px rgba(0,0,0,.06); padding: .8rem .5rem .5rem;
-}
-.side-h {
-    margin: 0 .4rem .5rem; font-size: 10.5px; font-weight: 700;
-    letter-spacing: .08em; text-transform: uppercase; color: #747474;
-}
-.side-empty { margin: 0 .4rem .5rem; font-size: 12px; color: #747474; }
+.side { display: flex; flex-direction: column; gap: 1rem; }
+.side-h { margin: 0; font-size: 14px; font-weight: 700; }
+.side-card .slds-card__body_inner { padding: .4rem .35rem .5rem; }
+.side-empty { margin: .3rem .5rem .5rem; font-size: 12px; color: #747474; }
 .rec-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
 .rec {
     width: 100%; display: flex; flex-direction: column; gap: 1px;
@@ -91,20 +132,6 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 10.5px; color: #969696;
 }
-
-/* ── create ──────────────────────────────────────────────────────────────── */
-.side-new {
-    display: flex; align-items: flex-start; gap: 0.5rem; width: 100%;
-    padding: 0.6rem 0.7rem; margin-bottom: 1.1rem;
-    border: 1px solid #0176d3; border-radius: 5px; background: #0176d3;
-    color: #fff; cursor: pointer; text-align: left;
-}
-.side-new:hover { background: #014486; border-color: #014486; }
-.side-new-plus { font-size: 17px; line-height: 1.1; }
-.side-new-main { display: flex; flex-direction: column; gap: 0.1rem; }
-.side-new-label { font-size: 13px; font-weight: 700; }
-.side-new-sub { font-size: 11.5px; opacity: 0.85; line-height: 1.4; }
-.side-h--spaced { margin-top: 0; }
 
 /* ── modal ───────────────────────────────────────────────────────────────── */
 .scrim {

@@ -3,10 +3,20 @@ import { NavigationMixin } from 'lightning/navigation';
 import createPage from '@salesforce/apex/MaPageSectionController.createPage';
 import { starterFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
+import renameOffering from '@salesforce/apex/MaPageContentController.renameOffering';
 
 
 // Every template the picklist allows, so the home can show what an offering
 // has NOT built yet rather than only what it has.
+
+// A page reads as what it is before its name is read.
+const PAGE_ICONS = {
+    'story': 'utility:socialshare',
+    'configurator': 'utility:setup',
+    'offerings-listing': 'utility:tile_card_list',
+    'offerings-page': 'utility:apps',
+    'industry-chooser': 'utility:company'
+};
 
 export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track offerings = [];
@@ -18,6 +28,10 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track npTemplate = 'story';
     @track isLoading = false;
     @track loadError = '';
+
+    // rename
+    @track renamingKey = '';
+    @track renameValue = '';
 
     connectedCallback() { this.load(); }
 
@@ -36,6 +50,14 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
             .finally(() => { this.isLoading = false; });
     }
 
+    get headerMeta() {
+        const offerings = this.offerings.filter((o) => !o.isFramework).length;
+        const pages = this.offerings.reduce(
+            (n, o) => n + (o.pages || []).filter((p) => (p.sectionCount || 0) > 0).length, 0);
+        const noun = offerings === 1 ? 'offering' : 'offerings';
+        return `Framework · ${offerings} ${noun} · ${pages} pages`;
+    }
+
     get cards() {
         return this.offerings.map((o) => {
             const built = o.pages.filter((p) => (p.sectionCount || 0) > 0);
@@ -44,6 +66,20 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
             return {
                 key: o.offeringKey,
                 label: o.label,
+                isFramework: o.isFramework === true,
+                canRename: o.canRename === true,
+                isEditing: this.renamingKey === o.offeringKey,
+                icon: o.isFramework ? 'standard:hierarchy' : 'standard:product',
+                subtitle: o.isFramework
+                    ? 'Sits above every offering'
+                    : o.offeringKey,
+                cardClass: o.isFramework
+                    ? 'slds-card off off--framework'
+                    : 'slds-card off',
+                badgeClass: built.length
+                    ? 'slds-badge slds-badge_lightest off-stat'
+                    : 'slds-badge off-stat',
+                addLabel: o.isFramework ? 'New framework page' : 'New page for this offering',
                 builtCount: built.length,
                 fieldTotal: o.pages.reduce((n, p) => n + (p.fieldCount || 0), 0),
                 summary: built.length === 1
@@ -67,6 +103,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                         // where you go to build it. It has nothing in it, which
                         // is a different thing from being closed.
                         badge: isBuilt ? '' : 'Empty',
+                        icon: PAGE_ICONS[t] || 'utility:page',
                         rowClass: isBuilt ? 'pg' : 'pg pg--unbuilt'
                     };
                 })
@@ -134,11 +171,17 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     handleOpenNewPage() {
         this.newPageOpen = true;
         this.npOffering = this.offerings.length === 1 ? this.offerings[0].offeringKey : '';
-        this.npTemplate = 'story';
+        this.npTemplate = this.npOffering ? (templatesFor(this.npOffering)[0] || '') : 'story';
     }
 
     handleCloseNewPage() { this.newPageOpen = false; }
-    handleNpOffering(event) { this.npOffering = event.detail.value; }
+    handleNpOffering(event) {
+        this.npOffering = event.detail.value;
+        // The framework and an offering own different pages, so a template
+        // chosen under one is not necessarily offered by the other.
+        const allowed = templatesFor(this.npOffering);
+        if (allowed.indexOf(this.npTemplate) === -1) this.npTemplate = allowed[0] || '';
+    }
     handleNpTemplate(event) { this.npTemplate = event.detail.value; }
 
     // A page that already has sections is opened, not rebuilt. A page that
@@ -189,6 +232,52 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
             attributes: { apiName: 'GTM_Content_Manager' },
             state
         });
+    }
+
+    // ─── renaming an offering ─────────────────────────────────────────────────
+    // The name is the one on the offering's own tile, so renaming it here
+    // renames it on the offerings page in the same move.
+
+    handleStartRename(event) {
+        event.stopPropagation();
+        const key = event.currentTarget.dataset.key;
+        const hit = this.offerings.find((o) => o.offeringKey === key);
+        this.renamingKey = key;
+        this.renameValue = hit ? hit.label : '';
+    }
+
+    handleRenameInput(event) { this.renameValue = event.target.value; }
+
+    handleRenameKey(event) {
+        if (event.key === 'Enter') this.handleSaveRename();
+        if (event.key === 'Escape') this.handleCancelRename();
+    }
+
+    handleCancelRename() { this.renamingKey = ''; this.renameValue = ''; }
+
+    handleSaveRename() {
+        const offeringKey = this.renamingKey;
+        const name = (this.renameValue || '').trim();
+        if (!offeringKey || !name) return;
+        this.isLoading = true;
+        renameOffering({ offeringKey, name })
+            .then(() => {
+                this.handleCancelRename();
+                this.load();
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The offering could not be renamed.';
+                this.isLoading = false;
+            });
+    }
+
+    // The create action on a card already knows which offering it is under, so
+    // it opens the dialog with that answer filled in.
+    handleNewPageFor(event) {
+        const key = event.currentTarget.dataset.key;
+        this.newPageOpen = true;
+        this.npOffering = key;
+        this.npTemplate = templatesFor(key)[0] || '';
     }
 
     handleRefresh() { this.load(); }

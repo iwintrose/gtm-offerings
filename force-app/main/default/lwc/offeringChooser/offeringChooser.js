@@ -1,5 +1,5 @@
 import { LightningElement, api, track } from 'lwc';
-import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
+import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 import getOfferingTiles from '@salesforce/apex/MaPageContentReader.getOfferingTiles';
 import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
@@ -115,7 +115,6 @@ export default class OfferingChooser extends LightningElement {
 
     @track _loadError = '';
     @track theme = null;
-    @track _tileDescription = null;
     // MA_Page_Content__c flat map: 'section::field' -> resolved string.
     @track _cms = {};
     @track _tiles = [];
@@ -185,11 +184,6 @@ export default class OfferingChooser extends LightningElement {
         });
     }
 
-    // Kept for the legacy CMS path, which still feeds the industry page.
-    get tileDescription() {
-        return this._tileDescription || DEFAULTS.cards[0].description;
-    }
-
     get builderUrl() { return buildBuilderUrl(this._orgUrl); }
 
     connectedCallback() {
@@ -225,17 +219,18 @@ export default class OfferingChooser extends LightningElement {
                 console.error('[offeringChooser] getPageLayout failed:', JSON.stringify(err));
             });
 
-        getStoryContent({ offeringKey: this.offeringKey })
-            .then((data) => {
-                if (data && data.setting) this._tileDescription = data.setting.offeringTileDescription;
-                this._orgUrl = (data && data.orgUrl) || '';
-                this._lightningUrl = (data && data.lightningUrl) || '';
-                this._sites = (data && data.sites) || [];
+        // Org URL and site list drive the edit-mode deep links only. The tile
+        // description they used to carry is content now, on each offering's own
+        // offerings-listing page.
+        getSiteInfo()
+            .then((info) => {
+                if (!info) return;
+                this._orgUrl = info.orgUrl || '';
+                this._lightningUrl = info.lightningUrl || '';
+                this._sites = info.sites || [];
             })
-            .catch((err) => {
-                this._loadError = 'Offering content could not be loaded; showing built-in defaults.';
-                // eslint-disable-next-line no-console
-                console.error('[offeringChooser] getStoryContent:', JSON.stringify(err));
+            .catch(() => {
+                // Deep links are progressive enhancement.
             });
     }
 

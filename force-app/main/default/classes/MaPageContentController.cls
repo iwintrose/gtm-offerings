@@ -399,8 +399,88 @@ public without sharing class MaPageContentController {
             if (o != null) { o.pages.add(p); }
         }
 
+        // The name an offering goes by is the name on the tile it publishes
+        // about itself, so renaming it in the editor renames it everywhere it
+        // appears. The metadata label is only the fallback for an offering
+        // that has not written its tile yet.
+        for (MA_Page_Content__c rec : [
+            SELECT Offering_Key__c, Text_Value__c
+            FROM   MA_Page_Content__c
+            WHERE  Template_Type__c = 'offerings-listing'
+            AND    Field_Key__c     = 'name'
+            AND    Active__c        = true
+            LIMIT  200
+        ]) {
+            OfferingSummary o = byKey.get(rec.Offering_Key__c);
+            if (o != null && String.isNotBlank(rec.Text_Value__c)) o.label = rec.Text_Value__c;
+        }
+        for (OfferingSummary o : home.offerings) {
+            o.isFramework = (o.offeringKey == FRAMEWORK_KEY);
+            o.canRename   = !o.isFramework;
+        }
+
         home.activity = getPageActivity();
         return home;
+    }
+
+    /**
+     * Rename an offering.
+     *
+     * The name is content, not configuration: it is the name on the offering's
+     * own tile, which is what the offerings page shows. Writing it here means
+     * one edit renames the card, the tile and the page in the same move,
+     * without a metadata deployment.
+     */
+    @AuraEnabled
+    public static String renameOffering(String offeringKey, String name) {
+        if (String.isBlank(offeringKey)) {
+            throw new AuraHandledException('An offering is required.');
+        }
+        if (offeringKey == FRAMEWORK_KEY) {
+            throw new AuraHandledException('The framework is not an offering and cannot be renamed.');
+        }
+        String clean = name == null ? '' : name.trim();
+        if (String.isBlank(clean)) {
+            throw new AuraHandledException('A name is required.');
+        }
+        if (clean.length() > 255) clean = clean.substring(0, 255);
+
+        String sectionAddress = offeringKey + '::offerings-listing::tile';
+        List<MA_Page_Section__c> secs = [
+            SELECT Id FROM MA_Page_Section__c WHERE Section_Address__c = :sectionAddress LIMIT 1
+        ];
+        if (secs.isEmpty()) {
+            // An offering with no tile yet gets one, so naming it is never
+            // blocked on having built its listing page first.
+            MA_Page_Section__c sec = new MA_Page_Section__c(
+                Section_Address__c = sectionAddress,
+                Offering_Key__c    = offeringKey,
+                Template_Type__c   = 'offerings-listing',
+                Section_Key__c     = 'tile',
+                Label__c           = 'Offerings page entry',
+                Layout_Type__c     = 'offering-tile',
+                Width__c           = 'standard',
+                Sort_Order__c      = 10,
+                Active__c          = true,
+                Status__c          = 'Published'
+            );
+            insert sec;
+        }
+
+        MA_Page_Content__c row = new MA_Page_Content__c(
+            Content_Address__c = sectionAddress + '::name',
+            Offering_Key__c    = offeringKey,
+            Template_Type__c   = 'offerings-listing',
+            Section_Key__c     = 'tile',
+            Field_Key__c       = 'name',
+            Field_Type__c      = 'text',
+            Label__c           = 'Name',
+            Active__c          = true,
+            Status__c          = 'Published',
+            Text_Value__c      = clean
+        );
+        upsert row Content_Address__c;
+        return clean;
     }
 
     public class HomeSummary {
@@ -415,6 +495,10 @@ public without sharing class MaPageContentController {
         // live site. The overview links here rather than to an industry
         // chooser: the story is what a colleague actually gets sent.
         @AuraEnabled public String storyUrl    { get; set; }
+        // The framework is not an offering: it owns the pages that sit above
+        // them, is always shown first, and has no name of its own to change.
+        @AuraEnabled public Boolean isFramework = false;
+        @AuraEnabled public Boolean canRename   = false;
         @AuraEnabled public List<PageSummary> pages = new List<PageSummary>();
     }
 

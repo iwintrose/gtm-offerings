@@ -2,6 +2,8 @@ import { LightningElement, api, track, wire } from 'lwc';
 import isConfigManager from '@salesforce/apex/MaSavedConfigurationController.isConfigManager';
 import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
+import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
+import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
 import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
 import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
 import verifyAndIssueToken from '@salesforce/apex/MaLinkAuthController.verifyAndIssueToken';
