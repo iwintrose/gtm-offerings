@@ -232,7 +232,3 @@
     background: transparent; color: #444; cursor: pointer; font-size: 12px; font-weight: 600;
 }
 .rep-add:hover { border-color: #0176d3; color: #0176d3; background: #eef4ff; }
-
-/* The embedded page draws its own full layout, so the preview column is a
-   viewport for it rather than a styled container. */
-.gcm-preview-body c-ma-story { display: block; }
