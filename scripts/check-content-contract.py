@@ -60,6 +60,11 @@ def parse_layout_fields(js):
     return out
 
 
+# Layouts drawn outside the section loop (page chrome), so they legitimately
+# have no is<Layout> branch inside it.
+NON_SEQUENCE_LAYOUTS = {"page-chrome"}
+
+
 def rendered_layouts(html):
     return set(re.findall(r"if:true=\{s\.is(\w+)\}", html))
 
@@ -92,7 +97,7 @@ def main():
                     % (name, sec["Section_Key__c"], layout)
                 )
                 continue
-            if camel(layout) not in drawn:
+            if layout not in NON_SEQUENCE_LAYOUTS and camel(layout) not in drawn:
                 failures.append(
                     "%s: layout '%s' is declared but no branch in the template draws it"
                     % (name, layout)

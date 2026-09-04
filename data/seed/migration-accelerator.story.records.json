@@ -594,6 +594,74 @@
    "Text_Value__c": "",
    "Rich_Value__c": "",
    "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row36"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "page",
+   "Field_Key__c": "brandLabel",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::page::brandLabel",
+   "Active__c": true,
+   "Sort_Order__c": 360,
+   "Text_Value__c": "Migration Accelerator",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row37"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "page",
+   "Field_Key__c": "brandTag",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::page::brandTag",
+   "Active__c": true,
+   "Sort_Order__c": 370,
+   "Text_Value__c": "/ the story",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row38"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "page",
+   "Field_Key__c": "footerLeft",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::page::footerLeft",
+   "Active__c": true,
+   "Sort_Order__c": 380,
+   "Text_Value__c": "Migration Accelerator — positioning working draft",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Content__c",
+    "referenceId": "row39"
+   },
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "page",
+   "Field_Key__c": "footerRight",
+   "Field_Type__c": "text",
+   "Content_Address__c": "migration-accelerator::story::page::footerRight",
+   "Active__c": true,
+   "Sort_Order__c": 390,
+   "Text_Value__c": "Grounded against ma-migrator + project-conduit, August 2026",
+   "Rich_Value__c": "",
+   "JSON_Value__c": ""
   }
  ]
 }

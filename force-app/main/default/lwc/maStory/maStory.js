@@ -28,7 +28,13 @@ function buildBuilderUrl(orgUrl) {
 // MA_Page_Content__c: scripts/check-content-contract.py reads it to assert
 // the seeded records match, and the sections getter resolves from it, so the
 // two cannot drift apart. Adding a field to a layout means adding it here.
+// Page chrome (masthead + footer) is declared as a layout so the contract
+// check validates it, but it renders outside the section loop rather than in
+// sequence with the beats.
+const CHROME_LAYOUT = 'page-chrome';
+
 const LAYOUT_FIELDS = {
+    'page-chrome': { text: ['brandLabel', 'brandTag', 'footerLeft', 'footerRight'], rich: [], json: [] },
     'hero':        { text: ['eyebrow'],                      rich: ['headline', 'subhead'],        json: [] },
     'lede-chips':  { text: ['eyebrow'],                      rich: ['lede', 'close'],              json: ['chips'] },
     'route-proof': { text: ['eyebrow', 'proofDemoRoot'],     rich: ['head', 'sub', 'proofCtaText'], json: ['routeSteps', 'proofDemoDeps'] },
@@ -44,6 +50,12 @@ const LAYOUT_FIELDS = {
 // field name so they line up with LAYOUT_FIELDS. These are the floor: the page
 // still renders if the org has no content rows at all.
 const SECTION_FALLBACKS = {
+    'page-chrome': {
+        brandLabel: 'Migration Accelerator',
+        brandTag: '/ the story',
+        footerLeft: 'Migration Accelerator — positioning working draft',
+        footerRight: 'Grounded against ma-migrator + project-conduit, August 2026'
+    },
     'hero': {
         eyebrow: DEFAULTS.heroEyebrow,
         headline: DEFAULTS.heroHeadline,
@@ -99,6 +111,7 @@ const SECTION_FALLBACKS = {
 // Fallback structure, used only until getPageLayout returns rows. Order here
 // matches the page as originally authored; MA_Page_Section__c overrides it.
 const DEFAULT_SECTIONS = [
+    { sectionKey: 'page',          layoutType: 'page-chrome', width: 'standard', label: '' },
     { sectionKey: 'hero',          layoutType: 'hero',        width: 'standard', label: '' },
     { sectionKey: 'problem',       layoutType: 'lede-chips',  width: 'standard', label: '' },
     { sectionKey: 'mechanism',     layoutType: 'route-proof', width: 'wide',     label: 'The mechanism' },
@@ -251,7 +264,7 @@ export default class MaStory extends LightningElement {
 
     get sections() {
         const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
-        return rows.map((row) => {
+        return rows.filter((row) => row.layoutType !== CHROME_LAYOUT).map((row) => {
             const k = row.sectionKey;
             const t = row.layoutType;
             const spec = LAYOUT_FIELDS[t] || { text: [], rich: [], json: [] };
@@ -342,6 +355,20 @@ export default class MaStory extends LightningElement {
     }
 
     get proofClass() { return this.proofOn ? 'proof rv d3 on' : 'proof rv d3'; }
+    // Masthead and footer text. Resolved the same way as any section, so a
+    // second offering supplies its own rather than inheriting this one's.
+    get chrome() {
+        const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
+        const row = rows.find((r) => r.layoutType === CHROME_LAYOUT);
+        const key = row ? row.sectionKey : 'page';
+        const fb = SECTION_FALLBACKS[CHROME_LAYOUT];
+        const out = {};
+        LAYOUT_FIELDS[CHROME_LAYOUT].text.forEach((f) => {
+            out[f] = this._ct(key + '::' + f) || fb[f] || '';
+        });
+        return out;
+    }
+
     get proofBarLabel() { return `${this.offeringKey} \u00b7 live preview`; }
     get gaugeStyle() { return `--pct: ${this.gaugeValue};`; }
     get progressStyle() { return `width: ${this.scrollPct}%;`; }

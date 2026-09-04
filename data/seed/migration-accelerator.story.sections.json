@@ -3,6 +3,22 @@
   {
    "attributes": {
     "type": "MA_Page_Section__c",
+    "referenceId": "sec0"
+   },
+   "Section_Address__c": "migration-accelerator::story::page",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "page",
+   "Label__c": "Page Chrome",
+   "Help_Text__c": "Masthead and footer text. Renders around the page rather than in the section sequence.",
+   "Layout_Type__c": "page-chrome",
+   "Width__c": "standard",
+   "Sort_Order__c": 0,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
     "referenceId": "sec1"
    },
    "Section_Address__c": "migration-accelerator::story::hero",

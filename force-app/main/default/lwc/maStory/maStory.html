@@ -2,8 +2,8 @@
   <div class={rootClass}>
     <div class="bar">
       <div class="bar-wm">
-        <span class="tick"></span> Migration Accelerator
-        <span class="bar-tag mono">/ the story</span>
+        <span class="tick"></span> {chrome.brandLabel}
+        <span class="bar-tag mono">{chrome.brandTag}</span>
       </div>
       <div class="bar-right">
         <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
@@ -237,8 +237,8 @@
     </template>
 
     <footer class="pf">
-      <span>Migration Accelerator — positioning working draft</span>
-      <span>Grounded against ma-migrator + project-conduit, August 2026</span>
+      <span>{chrome.footerLeft}</span>
+      <span>{chrome.footerRight}</span>
     </footer>
   </div>
 </template>
