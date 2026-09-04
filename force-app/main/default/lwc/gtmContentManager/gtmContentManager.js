@@ -13,6 +13,9 @@ import createSection from '@salesforce/apex/MaPageSectionController.createSectio
 import deleteSection from '@salesforce/apex/MaPageSectionController.deleteSection';
 import createField from '@salesforce/apex/MaPageSectionController.createField';
 import restoreSection from '@salesforce/apex/MaPageSectionController.restoreSection';
+import deleteField from '@salesforce/apex/MaPageSectionController.deleteField';
+import restoreField from '@salesforce/apex/MaPageSectionController.restoreField';
+import saveFieldOrder from '@salesforce/apex/MaPageSectionController.saveFieldOrder';
 // One definition of what a layout is made of, shared with the renderer.
 import { addableLayouts, fieldsFor } from 'c/gtmPageLayouts';
 
@@ -90,6 +93,17 @@ export default class GtmContentManager extends LightningElement {
     @track addLayout = '';
     @track addLabel = '';
     @track deleteTarget = null;
+
+    // add field
+    @track addFieldOpen = false;
+    @track nfLabel = '';
+    @track nfKey = '';
+    @track nfType = 'text';
+    @track nfHelp = '';
+    @track nfKeyTouched = false;
+
+    // column splitter
+    @track fieldsWidth = 0;
 
     // Set when the home page deep-links into a specific page. Without this the
     // editor would always open on its own guess, which is the "landed somewhere
@@ -405,7 +419,17 @@ export default class GtmContentManager extends LightningElement {
                 };
                 if (base.isJson) base.items = this.buildItems(r.id, value);
                 return base;
-            });
+            })
+            .map((f, i, all) => ({
+                ...f,
+                isFirst: i === 0,
+                isLast: i === all.length - 1,
+                statusClass: f.pendingDelete
+                    ? 'fld-status fld-status--doomed'
+                    : (f.isDraft ? 'fld-status fld-status--draft' : 'fld-status'),
+                statusLabel: f.pendingDelete ? 'Delete on publish' : (f.isDraft ? 'Draft' : ''),
+                fieldClass: f.pendingDelete ? 'fld fld--doomed' : 'fld'
+            }));
     }
 
     buildItems(recordId, raw) {
@@ -591,6 +615,30 @@ export default class GtmContentManager extends LightningElement {
         return parts.join(' · ') || 'No unpublished changes';
     }
 
+    // The save state is a state, not a log line: a dot and a word that say
+    // whether what you typed is safely on the server.
+    get saveStateLabel() {
+        if (this.isSaving) return 'Saving…';
+        if (this.saveMessage) return this.saveMessage;
+        return this.hasDrafts ? 'Draft saved' : 'All changes saved';
+    }
+
+    get saveStateClass() {
+        if (this.isSaving) return 'gcm-savestate gcm-savestate--busy';
+        return this.hasDrafts ? 'gcm-savestate gcm-savestate--draft' : 'gcm-savestate';
+    }
+
+    // Leaving with a draft is a normal outcome, not an escape hatch: the point
+    // of drafts is that you can stop halfway and the live page is unaffected.
+    handleSaveAndExit() {
+        this.saveDraft();
+        this.selectedTemplate = '';
+        this.sections = [];
+        this.records = [];
+        this.activeKey = '';
+        this.saveMessage = 'Draft kept — the live page is unchanged';
+    }
+
     handleOpenExit() { this.exitOpen = true; }
     handleCloseExit() { this.exitOpen = false; }
 
@@ -636,7 +684,12 @@ export default class GtmContentManager extends LightningElement {
     // ─── add / delete sections ────────────────────────────────────────────────
 
     get layoutOptions() {
-        return addableLayouts();
+        return addableLayouts().map((l) => ({
+            ...l,
+            icon: SECTION_ICONS[l.value] || 'utility:record',
+            fieldLabel: `${l.fieldCount} field${l.fieldCount === 1 ? '' : 's'}`,
+            cardClass: l.value === this.addLayout ? 'card card--on' : 'card'
+        }));
     }
 
     get addLayoutHint() {
@@ -677,7 +730,9 @@ export default class GtmContentManager extends LightningElement {
     }
 
     handleCloseAdd() { this.addOpen = false; }
-    handleAddLayoutChange(event) { this.addLayout = event.detail.value; }
+    handleAddLayoutChange(event) {
+        this.addLayout = event.currentTarget.dataset.layout;
+    }
     handleAddLabelChange(event) { this.addLabel = event.target.value; }
 
     handleCreateSection() {
@@ -777,6 +832,185 @@ export default class GtmContentManager extends LightningElement {
                 this.loadError = this.messageFrom(err) || 'The section could not be deleted.';
             })
             .finally(() => { this.isSaving = false; });
+    }
+
+    // ─── add a field ──────────────────────────────────────────────────────────
+    // Unlike "add section", this is not limited to what a layout declares: the
+    // renderer draws fields it does not recognise generically, so an editor can
+    // put something on a page that nobody designed a slot for.
+
+    get fieldTypeOptions() {
+        return [
+            { label: 'Plain text', value: 'text' },
+            { label: 'Rich text', value: 'rich' },
+            { label: 'List', value: 'json' }
+        ];
+    }
+
+    get nfTypeHint() {
+        if (this.nfType === 'rich') return 'A formatted paragraph, with bold, italic and links.';
+        if (this.nfType === 'json') {
+            return 'A repeating list. Its shape is read from what you put in it: '
+                 + 'plain entries become chips, two-part entries a titled paragraph, '
+                 + 'three-part entries cards.';
+        }
+        return 'A single line or paragraph of unformatted text.';
+    }
+
+    get nfAddress() {
+        const key = this.camelKey(this.nfKey || this.nfLabel);
+        return key
+            ? `${this.selectedOffering}::${this.selectedTemplate}::${this.activeKey}::${key}`
+            : '';
+    }
+
+    get addFieldDisabled() {
+        return !this.camelKey(this.nfKey || this.nfLabel) || !this.nfLabel.trim() || this.isSaving;
+    }
+
+    /**
+     * A field key is an address segment, so it has to survive being joined and
+     * split on "::". camelCase rather than hyphens, to match the keys the
+     * layouts already use.
+     */
+    camelKey(raw) {
+        const words = String(raw || '').trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+        if (!words.length) return '';
+        return words
+            .map((w, i) => (i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+            .join('')
+            .slice(0, 60);
+    }
+
+    handleOpenAddField() {
+        if (!this.activeKey) return;
+        this.addFieldOpen = true;
+        this.nfLabel = '';
+        this.nfKey = '';
+        this.nfType = 'text';
+        this.nfHelp = '';
+        this.nfKeyTouched = false;
+    }
+
+    handleCloseAddField() { this.addFieldOpen = false; }
+
+    handleNfLabel(event) {
+        this.nfLabel = event.target.value;
+        // The key follows the label until someone edits the key themselves;
+        // after that it is theirs and we stop overwriting it.
+        if (!this.nfKeyTouched) this.nfKey = this.camelKey(this.nfLabel);
+    }
+
+    handleNfKey(event) {
+        this.nfKeyTouched = true;
+        this.nfKey = event.target.value;
+    }
+
+    handleNfType(event) { this.nfType = event.detail.value; }
+    handleNfHelp(event) { this.nfHelp = event.target.value; }
+
+    handleCreateField() {
+        const key = this.camelKey(this.nfKey || this.nfLabel);
+        if (!key) return;
+        this.addFieldOpen = false;
+        this.isSaving = true;
+        this.saveMessage = 'Adding field…';
+        createField({
+            offeringKey: this.selectedOffering,
+            templateType: this.selectedTemplate,
+            sectionKey: this.activeKey,
+            fieldKey: key,
+            fieldType: this.nfType,
+            label: this.nfLabel.trim(),
+            helpText: this.nfHelp.trim() || null
+        })
+            .then(() => { this.saveMessage = 'Field added'; return this.loadPage(); })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'The field could not be added.';
+            })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    // ─── field order and removal ──────────────────────────────────────────────
+
+    handleFieldUp(event) { this.moveField(event.currentTarget.dataset.id, -1); }
+    handleFieldDown(event) { this.moveField(event.currentTarget.dataset.id, 1); }
+
+    /**
+     * Field order is the order of the boxes in this editor. The renderer
+     * resolves a layout's fields by name, not position, so this changes nothing
+     * on the page and needs no publish — which is why it saves straight away
+     * while section order does not.
+     */
+    moveField(recordId, delta) {
+        const inSection = this.records.filter((r) => r.sectionKey === this.activeKey);
+        const from = inSection.findIndex((r) => r.id === recordId);
+        const to = from + delta;
+        if (from < 0 || to < 0 || to >= inSection.length) return;
+        const reordered = [...inSection];
+        reordered.splice(to, 0, reordered.splice(from, 1)[0]);
+
+        const rank = {};
+        reordered.forEach((r, i) => { rank[r.id] = i; });
+        this.records = [...this.records].sort((a, b) => {
+            if (a.sectionKey !== b.sectionKey) return 0;
+            if (a.sectionKey !== this.activeKey) return 0;
+            return rank[a.id] - rank[b.id];
+        });
+
+        this.isSaving = true;
+        saveFieldOrder({ recordIds: reordered.map((r) => r.id) })
+            .then(() => { this.saveMessage = 'Field order saved'; })
+            .catch((err) => { this.loadError = this.messageFrom(err) || 'The field order could not be saved.'; })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    handleFieldDelete(event) {
+        const id = event.currentTarget.dataset.id;
+        this.isSaving = true;
+        deleteField({ recordId: id })
+            .then((removedNow) => {
+                this.saveMessage = removedNow
+                    ? 'Field removed'
+                    : 'Marked for deletion — publish to remove it';
+                return this.loadPage();
+            })
+            .catch((err) => { this.loadError = this.messageFrom(err) || 'The field could not be deleted.'; })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    handleFieldRestore(event) {
+        const id = event.currentTarget.dataset.id;
+        this.isSaving = true;
+        restoreField({ recordId: id })
+            .then(() => { this.saveMessage = 'Delete undone'; return this.loadPage(); })
+            .catch((err) => { this.loadError = this.messageFrom(err) || 'The field could not be restored.'; })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    // ─── column splitter ──────────────────────────────────────────────────────
+
+    handleSplitDown(event) {
+        event.preventDefault();
+        const cols = this.template.querySelector('.gcm-cols');
+        const fields = this.template.querySelector('.gcm-fields');
+        if (!cols || !fields) return;
+        const x0 = event.clientX;
+        const w0 = fields.getBoundingClientRect().width;
+        const move = (ev) => {
+            // Bounded so neither column can be dragged out of usefulness: the
+            // preview needs room to be a preview, the fields to be editable.
+            const next = Math.max(280, Math.min(760, w0 + (ev.clientX - x0)));
+            this.fieldsWidth = Math.round(next);
+            cols.style.setProperty('--gcm-fieldw', `${this.fieldsWidth}px`);
+        };
+        const up = () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
     }
 
     // ─── missing fields ───────────────────────────────────────────────────────

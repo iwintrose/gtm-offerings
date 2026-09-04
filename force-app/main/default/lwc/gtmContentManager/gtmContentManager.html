@@ -26,9 +26,9 @@
         <span class="gcm-crumb-current">{selectedTemplate}</span>
       </template>
 
-      <template if:true={saveMessage}>
-        <span class="gcm-save">{saveMessage}</span>
-      </template>
+      <span class={saveStateClass} title="Edits save as a draft while you type">
+        <span class="gcm-save-dot"></span>{saveStateLabel}
+      </span>
 
       <div class="gcm-bar-right">
         <template if:true={hasSections}>
@@ -39,13 +39,19 @@
             onclick={handleToggleReorder}>
           </lightning-button>
         </template>
-        <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh}></lightning-button>
+        <lightning-button label="Refresh" icon-name="utility:refresh"
+                          title="Reload this page from the org, discarding nothing"
+                          onclick={handleRefresh}></lightning-button>
         <template if:true={hasDrafts}>
           <span class="gcm-drafts" title="Not yet on the live page">{draftSummary}</span>
+          <lightning-button label="Save &amp; exit"
+                            title="Leave the editor and keep the draft unpublished"
+                            onclick={handleSaveAndExit}></lightning-button>
           <lightning-button
             label="Publish"
             variant="brand"
             icon-name="utility:upload"
+            title="Replace the live page with this draft"
             onclick={handleOpenExit}>
           </lightning-button>
         </template>
@@ -168,7 +174,7 @@
               </div>
 
               <template for:each={activeFields} for:item="f">
-                <div key={f.id} class="fld">
+                <div key={f.id} class={f.fieldClass}>
                   <div class="fld-top">
                     <span class="fld-label">{f.displayLabel}</span>
                     <span class="fld-key">{f.fieldKey}</span>
@@ -247,8 +253,29 @@
                   <template if:true={f.hasHelp}>
                     <p class="fld-help">{f.helpText}</p>
                   </template>
+
+                  <div class="fld-tools">
+                    <button class="fldbtn" data-id={f.id} onclick={handleFieldUp}
+                            disabled={f.isFirst} title="Move up">&uarr;</button>
+                    <button class="fldbtn" data-id={f.id} onclick={handleFieldDown}
+                            disabled={f.isLast} title="Move down">&darr;</button>
+                    <template if:true={f.pendingDelete}>
+                      <button class="fldbtn fldbtn--undo" data-id={f.id} onclick={handleFieldRestore}
+                              title="Undo the pending delete">&#8630;</button>
+                    </template>
+                    <template if:false={f.pendingDelete}>
+                      <button class="fldbtn fldbtn--danger" data-id={f.id} onclick={handleFieldDelete}
+                              title="Delete this field">&times;</button>
+                    </template>
+                  </div>
                 </div>
               </template>
+
+              <button class="gcm-add gcm-add--field" onclick={handleOpenAddField} disabled={isSaving}
+                      title="Add a field to this section">
+                <span class="gcm-add-plus">+</span> Add field
+              </button>
+
           <template if:true={hasMissingFields}>
                 <div class="gcm-missing">
                   <p class="gcm-missing-h">{missingSummary}</p>
@@ -268,6 +295,9 @@
               </template>
             </div>
           </section>
+
+          <div class="gcm-split" role="separator" aria-orientation="vertical"
+               title="Drag to resize the editor column" onpointerdown={handleSplitDown}></div>
 
           <c-gtm-page-preview
             class="gcm-preview"
@@ -292,10 +322,19 @@
             <p>A layout decides what the section can hold. Its fields are created with it.</p>
           </header>
           <div class="modal-b">
-            <lightning-combobox label="Layout" value={addLayout} options={layoutOptions}
-                                placeholder="Choose a layout"
-                                onchange={handleAddLayoutChange}></lightning-combobox>
-            <p class="modal-note">{addLayoutHint}</p>
+            <div class="cards">
+              <template for:each={layoutOptions} for:item="l">
+                <button key={l.value} class={l.cardClass} data-layout={l.value}
+                        onclick={handleAddLayoutChange}>
+                  <span class="card-h">
+                    <lightning-icon icon-name={l.icon} size="x-small"></lightning-icon>
+                    {l.label}
+                  </span>
+                  <span class="card-hint">{l.hint}</span>
+                  <span class="card-count">{l.fieldLabel}</span>
+                </button>
+              </template>
+            </div>
             <lightning-input label="Heading" value={addLabel} placeholder="For example: The mechanism"
                              onchange={handleAddLabelChange}></lightning-input>
             <template if:true={addKeyPreview}>
@@ -306,6 +345,37 @@
             <lightning-button label="Cancel" onclick={handleCloseAdd}></lightning-button>
             <lightning-button label="Add section" variant="brand" disabled={canAddSectionDisabled}
                               onclick={handleCreateSection}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <template if:true={addFieldOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="afTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="afTitle">Add a field</h2>
+            <p>Adds one record to {activeSectionLabel}. The type decides which column it writes to.</p>
+          </header>
+          <div class="modal-b">
+            <lightning-input label="Label" value={nfLabel} placeholder="For example: Supporting note"
+                             onchange={handleNfLabel}></lightning-input>
+            <lightning-input label="Field key" value={nfKey} class="mono"
+                             placeholder="supportingNote" onchange={handleNfKey}></lightning-input>
+            <template if:true={nfAddress}>
+              <p class="modal-addr">{nfAddress}</p>
+            </template>
+            <lightning-combobox label="Type" value={nfType} options={fieldTypeOptions}
+                                onchange={handleNfType}></lightning-combobox>
+            <p class="modal-note">{nfTypeHint}</p>
+            <lightning-input label="Help text (optional)" value={nfHelp}
+                             placeholder="Shown under the field in this editor"
+                             onchange={handleNfHelp}></lightning-input>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseAddField}></lightning-button>
+            <lightning-button label="Add field" variant="brand" disabled={addFieldDisabled}
+                              onclick={handleCreateField}></lightning-button>
           </footer>
         </div>
       </section>
