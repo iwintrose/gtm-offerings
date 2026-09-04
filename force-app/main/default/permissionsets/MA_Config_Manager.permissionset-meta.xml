@@ -433,6 +433,10 @@
         <editable>false</editable>
     </fieldPermissions>
     <tabSettings>
+        <tab>GTM_Embed_Probe</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
         <tab>GTM_Content_Home</tab>
         <visibility>Visible</visibility>
     </tabSettings>

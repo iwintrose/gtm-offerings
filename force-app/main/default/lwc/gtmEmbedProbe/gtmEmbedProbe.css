@@ -1,0 +1,13 @@
+.probe { padding: 1.5rem; background: #fff; min-height: 100%; font-size: 13px; color: #181818; }
+.probe h1 { margin: 0 0 .5rem; font-size: 18px; font-weight: 700; }
+.marker {
+    margin: 0 0 1rem; padding: .6rem .8rem; border-radius: 4px;
+    background: #ebf7ed; border: 1px solid #2e844a; color: #194e2b; font-weight: 600;
+}
+.step { margin: 0 0 .6rem; max-width: 42rem; line-height: 1.55; color: #444; }
+.step code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+    background: #fafaf9; border: 1px solid #e5e5e5; border-radius: 3px; padding: 0 .25rem;
+}
+.frame { margin-top: 1.25rem; border: 1px dashed #c9c9c9; border-radius: 6px; min-height: 12rem; overflow: auto; }
+.idle { padding: 2rem; text-align: center; color: #747474; margin: 0; }

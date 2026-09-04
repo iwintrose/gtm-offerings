@@ -1,0 +1,27 @@
+<template>
+  <div class="probe">
+    <h1>Embed probe</h1>
+    <p class="marker">{marker}</p>
+
+    <p class="step">
+      <strong>Step 1.</strong> If you can read the line above, this component mounts
+      even though <code>c-ma-story</code> is present in its template.
+    </p>
+
+    <p class="step">
+      <strong>Step 2.</strong> Press the button. If the page goes blank or the story
+      does not appear, composing that component here is the problem.
+    </p>
+
+    <lightning-button label="Render the story" variant="brand" onclick={handleShow}></lightning-button>
+
+    <div class="frame">
+      <template if:true={showStory}>
+        <c-ma-story offering-key="migration-accelerator"></c-ma-story>
+      </template>
+      <template if:false={showStory}>
+        <p class="idle">Not rendered yet.</p>
+      </template>
+    </div>
+  </div>
+</template>
