@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Content_Address__c</fullName>
+    <caseSensitive>false</caseSensitive>
+    <description>Composite unique key: Offering_Key__c + &apos;::&apos; + Template_Type__c + &apos;::&apos; + Section_Key__c + &apos;::&apos; + Field_Key__c. Set by Apex before every write; used as external ID for upsert-by-key.</description>
+    <externalId>true</externalId>
+    <label>Content Address</label>
+    <length>255</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>

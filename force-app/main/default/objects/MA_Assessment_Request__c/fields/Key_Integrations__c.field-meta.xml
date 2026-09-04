@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Key_Integrations__c</fullName>
+    <label>Key Integrations to Maintain</label>
+    <description>CRM, CMS, eCommerce, data warehouse, analytics, and other systems that must stay connected after migration.</description>
+    <required>false</required>
+    <length>4000</length>
+    <visibleLines>4</visibleLines>
+    <type>LongTextArea</type>
+</CustomField>

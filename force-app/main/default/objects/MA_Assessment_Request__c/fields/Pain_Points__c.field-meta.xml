@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Pain_Points__c</fullName>
+    <label>Pain Points with Current Platform</label>
+    <description>What is not working well with the current marketing automation platform?</description>
+    <required>false</required>
+    <length>4000</length>
+    <visibleLines>5</visibleLines>
+    <type>LongTextArea</type>
+</CustomField>

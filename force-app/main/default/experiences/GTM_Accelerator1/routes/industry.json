@@ -1,0 +1,12 @@
+{
+  "activeViewId" : "a98348b3-4548-4c5f-8ea9-76ef13cb9dd1",
+  "appPageId" : "8a38f8a2-ecf6-40bb-bc18-d20c8619aae8",
+  "configurationTags" : [ ],
+  "devName" : "Industry__c",
+  "id" : "d604df08-d990-46b8-97ed-ca4c496fa7de",
+  "label" : "Industry",
+  "pageAccess" : "UseParent",
+  "routeType" : "custom-industry",
+  "type" : "route",
+  "urlPrefix" : "choose-industry"
+}

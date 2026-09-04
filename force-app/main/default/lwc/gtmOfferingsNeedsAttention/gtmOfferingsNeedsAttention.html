@@ -1,0 +1,19 @@
+<template>
+    <div class="na-root">
+        <div class="na-title">New Assessment Requests</div>
+        <template if:true={showEmpty}>
+            <div class="na-empty">Nothing new right now.</div>
+        </template>
+        <template for:each={rows} for:item="row">
+            <a key={row.key} class="na-row" href={row.url}>
+                <div class="na-info">
+                    <span class="na-name">{row.name}</span>
+                    <template if:true={row.meta}>
+                        <span class="na-meta">{row.meta}</span>
+                    </template>
+                </div>
+                <span class="na-date">{row.date}</span>
+            </a>
+        </template>
+    </div>
+</template>

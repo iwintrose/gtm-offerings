@@ -1,0 +1,218 @@
+:host {
+  /* No box of its own when the template renders nothing (guest/no
+     access) -- avoids leaving an empty gap in whichever top bar this
+     is embedded in. */
+  display: contents;
+  /* Fixed, page-independent accent -- this component is embedded in
+     three different pages, each with its own --coral/--accent (or
+     neither, like chooseIndustry, which only defines --accent). Using
+     the parent's variable made this bar's own accent color silently
+     change depending on which page it happened to be on. */
+  --sl-accent: #ee3d23;
+}
+
+.sl-root {
+  position: relative;
+  display: inline-flex;
+  font-family: inherit;
+}
+
+.sl-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  height: 32px;
+  padding: 0 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--line, rgba(127, 127, 127, 0.3));
+  background: transparent;
+  color: var(--ink-soft, inherit);
+  cursor: pointer;
+}
+
+.sl-toggle:hover {
+  color: var(--ink, inherit);
+  border-color: var(--sl-accent);
+}
+
+.sl-chevron {
+  color: inherit;
+  transition: transform 0.15s ease;
+  flex: none;
+}
+
+.sl-chevron.open {
+  transform: rotate(180deg);
+}
+
+.sl-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 100;
+  min-width: 300px;
+  max-width: 400px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--paper, #fff);
+  color: var(--ink, #1a1a1a);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  padding: 0.5rem;
+}
+
+.sl-panel.open {
+  display: block;
+}
+
+.sl-empty {
+  font-size: 0.82rem;
+  opacity: 0.7;
+  margin: 0.5rem;
+}
+
+.sl-error {
+  margin: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(224, 49, 49, 0.1);
+  border: 1px solid rgba(224, 49, 49, 0.35);
+  color: #b3261e;
+  font-size: 0.76rem;
+}
+
+.sl-offering {
+  margin-bottom: 0.5rem;
+}
+
+.sl-offering-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  margin: 0.5rem 0.5rem 0.2rem;
+}
+
+.sl-industry {
+  margin: 0.2rem 0;
+}
+
+.sl-industry-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.5;
+  margin: 0.3rem 0.5rem 0.15rem;
+}
+
+.sl-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+}
+
+.sl-link:hover {
+  background: rgba(127, 127, 127, 0.08);
+}
+
+.sl-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+  background: #1a7a3a;
+}
+
+.sl-dot.off {
+  background: #9a9a9a;
+}
+
+.sl-link-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sl-link-name {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--sl-accent);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sl-link-name:hover {
+  text-decoration: underline;
+}
+
+.sl-link.inactive .sl-link-name {
+  color: inherit;
+  opacity: 0.6;
+}
+
+.sl-link-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  opacity: 0.55;
+  margin-top: 0.1rem;
+}
+
+.sl-link-record {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sl-link-record:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+.sl-link-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+}
+
+.sl-toggle-active {
+  background: transparent;
+  border: 1px solid var(--line, rgba(127, 127, 127, 0.3));
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.sl-toggle-active:hover {
+  opacity: 1;
+  border-color: var(--sl-accent);
+}
+
+.sl-delete {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.4;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.3rem;
+  color: inherit;
+}
+
+.sl-delete:hover {
+  opacity: 1;
+}

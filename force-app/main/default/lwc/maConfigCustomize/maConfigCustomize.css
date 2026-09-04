@@ -1,0 +1,684 @@
+/* Customize panel + link builder — ported from configurator.html (.cust*, .lb*) */
+
+/* --coral/--coral-soft are set on the page root by maConfigurator's
+ * rootStyle whenever a rep sets/looks up a brand accent color for the
+ * CLIENT-facing page -- and being CSS custom properties, they cross the
+ * shadow boundary into this component too. This panel is a rep tool, not
+ * part of what a client sees, so its own buttons/borders/highlights need
+ * to stay on the app's own fixed color regardless of whatever accent is
+ * being set for someone else's page. Re-declaring both here on :host
+ * pins them for everything inside this component's shadow tree, taking
+ * precedence over the cascaded-in value from the ancestor. */
+:host {
+  --coral: #ee3d23;
+  --coral-soft: rgba(238, 61, 35, 0.09);
+}
+
+.cust {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 88vw);
+  z-index: 80;
+  background: var(--paper, #fff);
+  border-left: 1px solid var(--line, #e7e2db);
+  box-shadow: -20px 0 50px -24px rgba(0, 0, 0, 0.4);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.6, 0.02, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  color: var(--ink, #17140f);
+  font-family: 'Söhne', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+.cust.open {
+  transform: none;
+}
+.cust-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--line, #e7e2db);
+}
+.cust-h .ct {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.cust-h .ct small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.76rem;
+  color: var(--ink-faint, #8b857d);
+  margin-top: 0.15rem;
+}
+.cust-x {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--ink-faint, #8b857d);
+  cursor: pointer;
+  line-height: 1;
+}
+.cust-x:hover {
+  color: var(--ink, #17140f);
+}
+.cust-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.1rem 1.2rem;
+}
+.cust-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.fld.spaced {
+  margin-top: 0.6rem;
+}
+.fld label {
+  font-size: 0.74rem;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint, #8b857d);
+}
+.fld input {
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink, #17140f);
+  background: var(--ground, #f7f4f0);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+}
+.fld input:focus {
+  outline: none;
+  border-color: var(--coral, #ee3d23);
+}
+/* Without this, placeholder examples ("e.g. Alex Rivera") can render at
+   near-full opacity on some browsers/devices -- indistinguishable from a
+   real saved value, so the whole panel reads as already filled in when
+   it's actually blank. This makes "just an example" unmistakable. */
+.fld input::placeholder,
+.fld textarea::placeholder {
+  color: var(--ink-faint, #8b857d);
+  opacity: 0.65;
+}
+.fld textarea {
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink, #17140f);
+  background: var(--ground, #f7f4f0);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  resize: vertical;
+  min-height: 4.4rem;
+}
+.fld textarea:focus {
+  outline: none;
+  border-color: var(--coral, #ee3d23);
+}
+.contact-results {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 11rem;
+  overflow-y: auto;
+}
+.contact-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--ink, #17140f);
+  background: var(--paper, #fff);
+  border: none;
+  border-bottom: 1px solid var(--line, #e7e2db);
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+}
+.contact-result:last-child {
+  border-bottom: none;
+}
+.contact-result:hover,
+.contact-result:focus {
+  background: var(--ground, #f7f4f0);
+  outline: none;
+}
+.contact-create-new {
+  align-self: flex-start;
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: var(--coral, #ee3d23);
+  background: none;
+  border: none;
+  padding: 0.4rem 0;
+  cursor: pointer;
+  text-align: left;
+}
+.contact-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+  color: var(--ink, #17140f);
+  background: var(--ground, #f7f4f0);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+}
+.contact-change {
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--coral, #ee3d23);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.lb-select {
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink, #17140f);
+  background: var(--paper, #fff);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+}
+.cust-foot {
+  padding: 1rem 1.2rem;
+  border-top: 1px solid var(--line, #e7e2db);
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.cust-foot button {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--line, #e7e2db);
+  background: transparent;
+  color: var(--ink-soft, #57534d);
+}
+.cust-foot button.primary {
+  background: var(--coral, #ee3d23);
+  border-color: var(--coral, #ee3d23);
+  color: var(--on-coral, #fff);
+}
+.cust-foot button:hover {
+  border-color: var(--coral, #ee3d23);
+}
+.cust-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  background: rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.cust-scrim.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---------- link builder ---------- */
+.lb {
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  background: var(--ground, #f7f4f0);
+  margin-bottom: 1.1rem;
+}
+.lb .lb-t {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 0.15rem;
+}
+.lb .lb-t.spaced-top {
+  margin-top: 1rem;
+}
+.lb .lb-s {
+  font-size: 0.76rem;
+  color: var(--ink-faint, #8b857d);
+  margin-bottom: 0.7rem;
+}
+.accent-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.lb-picker {
+  width: 38px;
+  height: 38px;
+  padding: 2px;
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  background: var(--paper, #fff);
+  cursor: pointer;
+  flex: none;
+}
+.accent-text {
+  flex: 1;
+  min-width: 0;
+}
+.lb-mono {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--on-coral, #FFFFFF);
+  background: var(--coral, #ee3d23);
+  flex: none;
+  box-shadow: 0 0 0 1.5px var(--coral-ring, transparent);
+}
+.swatches {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.lb-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--line, #e7e2db);
+  cursor: pointer;
+  padding: 0;
+}
+.lb-swatch:hover {
+  box-shadow: 0 0 0 2px var(--paper, #fff), 0 0 0 3px var(--coral, #ee3d23);
+}
+.lb .lb-out {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+.lb .lb-out input {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.74rem;
+  color: var(--ink, #17140f);
+  background: var(--paper, #fff);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+}
+.lb .lb-copy {
+  border: 1px solid var(--coral, #ee3d23);
+  background: var(--coral, #ee3d23);
+  color: var(--on-coral, #fff);
+  border-radius: 8px;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lb-lookup {
+  border: 1px solid var(--line, #e7e2db);
+  background: transparent;
+  color: var(--ink-soft, #57534d);
+  border-radius: 8px;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lb-lookup:hover:not(:disabled) {
+  color: var(--ink, #17140f);
+  border-color: var(--coral, #ee3d23);
+}
+.lb-lookup:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.lb-error {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(224, 49, 49, 0.1);
+  border: 1px solid rgba(224, 49, 49, 0.35);
+  color: #b3261e;
+  font-size: 0.78rem;
+  /* The brand-lookup failure message lists every source URL tried, one
+     per line -- preserve those line breaks and let long URLs wrap
+     instead of overflowing the panel. */
+  white-space: pre-line;
+  word-break: break-word;
+}
+.fld.field-invalid input {
+  border-color: #e03131;
+}
+.fld.field-invalid label {
+  color: #e03131;
+}
+.lb-save-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.lb-draft {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--ink-faint, #8b857d);
+  font-size: 0.72rem;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.lb-draft:hover {
+  color: var(--ink-soft, #57534d);
+}
+.lb-save {
+  flex: 1;
+  border: 1px solid var(--coral, #ee3d23);
+  background: var(--coral, #ee3d23);
+  color: var(--on-coral, #fff);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lb-saveas {
+  flex: 1;
+  border: 1px solid var(--line, #e7e2db);
+  background: transparent;
+  color: var(--ink-soft, #57534d);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.lb-saveas:hover {
+  color: var(--ink, #17140f);
+  border-color: var(--coral, #ee3d23);
+}
+.lb-editbar {
+  margin-top: 0.5rem;
+  font-size: 0.74rem;
+}
+.lb-editing {
+  color: var(--coral, #ee3d23);
+  font-weight: 600;
+}
+.lb-editbar a {
+  color: var(--ink-faint, #8b857d);
+}
+.lb .lb-recent {
+  margin-top: 0.8rem;
+}
+.lb .lb-recent .rl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  padding: 0.35rem 0.3rem;
+  border-top: 1px solid var(--line, #e7e2db);
+  border-radius: 6px;
+}
+.lb .lb-recent .rl.editing {
+  background: var(--coral-soft, rgba(238, 61, 35, 0.09));
+}
+.lb .lb-recent .rl a {
+  color: var(--coral, #ee3d23);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.rl-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+.rl-date {
+  color: var(--ink-faint, #8b857d);
+}
+.lb .lb-recent .rl-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex: none;
+}
+.lb .lb-recent .rl-actions button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  line-height: 1;
+  padding: 0.25rem 0.35rem;
+  color: var(--ink-faint, #8b857d);
+  border-radius: 5px;
+}
+.lb .lb-recent .rl-actions button:hover {
+  color: var(--coral, #ee3d23);
+  background: var(--coral-soft, rgba(238, 61, 35, 0.09));
+}
+.accent-warn {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(202, 138, 4, 0.1);
+  border: 1px solid rgba(202, 138, 4, 0.35);
+  color: #7c5a00;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.accent-warn-use {
+  align-self: flex-start;
+  background: rgba(202, 138, 4, 0.15);
+  border: 1px solid rgba(202, 138, 4, 0.5);
+  color: #5c4200;
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: ui-monospace, monospace;
+}
+.accent-warn-use:hover {
+  background: rgba(202, 138, 4, 0.25);
+}
+.lb-note {
+  font-size: 0.72rem;
+  color: var(--ink-faint, #8b857d);
+  margin-top: 0.7rem;
+  line-height: 1.4;
+}
+.pw-status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.pw-on {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a7f45;
+}
+.pw-remove {
+  font-size: 0.78rem;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+.pw-remove:hover {
+  border-color: #c00;
+  color: #c00;
+}
+.sf-opp-link {
+  display: inline-block;
+  font-size: 0.88rem;
+  color: #0070d2;
+  text-decoration: none;
+  padding: 0.25rem 0;
+}
+.sf-opp-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Live-link banner ──────────────────────────────────────────────────────── */
+.live-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1.2rem;
+  background: #f0fdf4;
+  border-bottom: 1px solid #bbf7d0;
+  font-size: 0.74rem;
+  color: #166534;
+  line-height: 1.35;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16a34a;
+  flex: none;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Save toast ────────────────────────────────────────────────────────────── */
+.save-toast {
+  height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.74rem;
+  font-weight: 600;
+  transition: height 0.2s ease, background 0.2s ease;
+}
+.save-toast.saving {
+  height: 2rem;
+  background: #f7f4f0;
+  color: var(--ink-faint, #8b857d);
+}
+.save-toast.saved {
+  height: 2rem;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+/* ── Advanced / Sales Cloud toggle ────────────────────────────────────────── */
+.adv-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: var(--ground, #f7f4f0);
+  border: 1px solid var(--line, #e7e2db);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-soft, #57534d);
+  cursor: pointer;
+  margin-top: 0.6rem;
+  text-align: left;
+}
+.adv-toggle:hover {
+  border-color: var(--coral, #ee3d23);
+  color: var(--ink, #17140f);
+}
+.adv-chevron {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform 0.18s ease;
+  flex: none;
+}
+.adv-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* ── Agent mode toggle bar ───────────────────────────────────────────── */
+.agent-mode-bar {
+  padding: 0.5rem 1.25rem 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.agent-mode-toggle {
+  background: none;
+  border: 1px solid var(--coral, #ee3d23);
+  color: var(--coral, #ee3d23);
+  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.agent-mode-toggle:hover {
+  background: var(--coral, #ee3d23);
+  color: #fff;
+}
+
+/* ── Agent slot (placeholder until einstein-copilot-chat is wired) ──── */
+.agent-slot {
+  padding: 1.25rem;
+}
+.agent-placeholder {
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: #888;
+}
+.agent-ph-title {
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: #555;
+}
+.agent-ph-body {
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.5;
+}

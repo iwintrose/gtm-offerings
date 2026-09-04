@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Assessment_Request__c</fullName>
+    <label>Assessment Request</label>
+    <type>Lookup</type>
+    <referenceTo>MA_Assessment_Request__c</referenceTo>
+    <relationshipLabel>Link Events</relationshipLabel>
+    <relationshipName>Link_Events</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

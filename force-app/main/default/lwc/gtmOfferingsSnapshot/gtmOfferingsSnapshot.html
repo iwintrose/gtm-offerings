@@ -1,0 +1,26 @@
+<template>
+    <div class="gs-root">
+        <!-- Sends the rep through the site's own "choose your industry"
+             flow (same starting point a client-shared link uses) rather
+             than opening the wizard inline here -- picking an industry (or
+             skipping) there is what actually lands them in the wizard.
+             See chooseIndustry.js / maConfigurator.js's ?wizard=1 handling. -->
+        <button type="button" class="gs-new-btn" onclick={handleNewProspectPage} disabled={_navBusy}>{newButtonLabel}</button>
+        <template if:true={hasError}>
+            <div class="gs-error">Couldn't load the snapshot right now.</div>
+        </template>
+        <template if:false={hasError}>
+            <div class="gs-row">
+                <template for:each={tiles} for:item="tile">
+                    <div key={tile.key} class="gs-tile">
+                        <div class="gs-tile-header">
+                            <lightning-icon icon-name={tile.icon} size="x-small" class="gs-tile-icon"></lightning-icon>
+                            <span class="gs-label">{tile.label}</span>
+                        </div>
+                        <div class="gs-value">{tile.value}</div>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</template>

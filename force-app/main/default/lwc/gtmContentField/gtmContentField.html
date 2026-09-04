@@ -1,0 +1,137 @@
+<template>
+  <div class={fieldClass}>
+    <div class="gcf-meta">
+      <div class="gcf-meta-text">
+        <span class="gcf-key">{displayLabel}</span>
+        <template if:true={hasHelp}>
+          <span class="gcf-help">{displayHelp}</span>
+        </template>
+      </div>
+      <template if:true={record.industryKey}>
+        <span class="gcf-industry">{record.industryKey}</span>
+      </template>
+    </div>
+
+    <template if:true={isText}>
+      <lightning-textarea
+        variant="label-hidden"
+        value={record.textValue}
+        onchange={handleTextChange}
+        class="gcf-input"
+      ></lightning-textarea>
+    </template>
+
+    <template if:true={isRich}>
+      <lightning-input-rich-text
+        value={record.richValue}
+        onchange={handleRichChange}
+        class="gcf-input"
+      ></lightning-input-rich-text>
+    </template>
+
+    <template if:true={isStringList}>
+      <div class="gcf-list">
+        <template for:each={stringItemsForTemplate} for:item="item">
+          <div key={item.key} class="gcf-chip-row" data-key={item.key}>
+            <input
+              type="text"
+              class="gcf-chip-input"
+              value={item.value}
+              data-key={item.key}
+              onchange={handleStringItemChange}
+            />
+            <button
+              type="button"
+              class="gcf-chip-remove"
+              data-key={item.key}
+              onclick={handleStringItemRemove}
+              title="Remove"
+            >×</button>
+          </div>
+        </template>
+        <button type="button" class="gcf-list-add" onclick={handleStringItemAdd}>+ Add item</button>
+      </div>
+    </template>
+
+    <template if:true={isObjectList}>
+      <div class="gcf-list">
+        <template for:each={objectItemsForTemplate} for:item="item">
+          <div key={item.key} class="gcf-obj-card">
+            <div class="gcf-obj-fields">
+              <template for:each={item.fields} for:item="f">
+                <div key={f.field} class="gcf-obj-field">
+                  <label class="gcf-obj-label">{f.field}</label>
+                  <template if:true={f.isBoolean}>
+                    <input
+                      type="checkbox"
+                      checked={f.boolValue}
+                      data-item-key={item.key}
+                      data-field={f.field}
+                      onchange={handleObjectFieldChange}
+                    />
+                  </template>
+                  <template if:false={f.isBoolean}>
+                    <input
+                      type="text"
+                      class="gcf-obj-input"
+                      value={f.value}
+                      data-item-key={item.key}
+                      data-field={f.field}
+                      onchange={handleObjectFieldChange}
+                    />
+                  </template>
+                </div>
+              </template>
+            </div>
+            <button
+              type="button"
+              class="gcf-obj-remove"
+              data-item-key={item.key}
+              onclick={handleObjectItemRemove}
+              title="Remove item"
+            >Remove</button>
+          </div>
+        </template>
+        <button type="button" class="gcf-list-add" onclick={handleObjectItemAdd}>+ Add item</button>
+      </div>
+    </template>
+
+    <template if:true={isRawJson}>
+      <lightning-textarea
+        label="JSON Value"
+        value={record.jsonValue}
+        onchange={handleJsonChange}
+        class="gcf-input gcf-json"
+        placeholder='e.g. ["chip 1","chip 2"] or [{"cardTitle":"...","cardDesc":"..."}]'
+      ></lightning-textarea>
+      <template if:true={jsonError}>
+        <p class="gcf-json-err">{jsonError}</p>
+      </template>
+    </template>
+
+    <template if:true={showRawToggle}>
+      <button type="button" class="gcf-raw-toggle" onclick={handleToggleRaw}>{rawToggleLabel}</button>
+    </template>
+
+    <div class="gcf-actions">
+      <lightning-button
+        label={saveLabel}
+        variant="brand"
+        onclick={handleSave}
+        disabled={isSaving}
+        class="gcf-save"
+      ></lightning-button>
+      <template if:true={record.id}>
+        <lightning-button
+          label="Delete"
+          variant="destructive-text"
+          onclick={handleDelete}
+          class="gcf-del"
+        ></lightning-button>
+      </template>
+      <template if:true={saveError}>
+        <span class="gcf-save-err">{saveError}</span>
+      </template>
+    </div>
+  </div>
+</template>

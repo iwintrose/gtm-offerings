@@ -1,0 +1,141 @@
+<template>
+  <div class="gcm">
+    <!-- Top bar: title, template picker, draft/publish buttons -->
+    <div class="gcm-header">
+      <div class="gcm-header-left">
+        <span class="gcm-title">Content Editor</span>
+        <span class="gcm-offering">{offeringKey} / {templateType}</span>
+      </div>
+      <div class="gcm-header-right">
+        <lightning-combobox
+          label="Template"
+          value={templateType}
+          options={templateTypeOptions}
+          onchange={handleTemplateChange}
+          variant="label-hidden"
+          class="gcm-tmpl-sel"
+        ></lightning-combobox>
+        <template if:true={hasDraftChanges}>
+          <lightning-button
+            label="Save Draft"
+            variant="neutral"
+            onclick={handleSaveDraft}
+            disabled={isSaving}
+          ></lightning-button>
+          <lightning-button
+            label="Publish"
+            variant="brand"
+            onclick={handlePublish}
+            disabled={isSaving}
+          ></lightning-button>
+        </template>
+        <template if:false={hasDraftChanges}>
+          <span class="gcm-status">✓ Published</span>
+        </template>
+        <template if:true={saveMessage}>
+          <span class="gcm-message">{saveMessage}</span>
+        </template>
+      </div>
+    </div>
+
+    <template if:true={isLoading}>
+      <div class="gcm-loading">
+        <lightning-spinner alternative-text="Loading…" size="small"></lightning-spinner>
+      </div>
+    </template>
+
+    <template if:false={isLoading}>
+      <!-- Split screen container -->
+      <div class="gcm-split" onmousemove={handleMouseMove}>
+        <!-- Left: Editor -->
+        <div class="gcm-editor" style={editorStyle}>
+          <div class="gcm-editor-scroll">
+            <template if:true={hasContent}>
+              <div class="gcm-sections">
+                <template for:each={draftSections} for:item="sec">
+                  <c-gtm-content-section
+                    key={sec.sectionKey}
+                    section-key={sec.sectionKey}
+                    section-label={sec.label}
+                    section-help={sec.help}
+                    offering-key={offeringKey}
+                    template-type={templateType}
+                    records={sec.records}
+                    oncontentsaved={handleContentSaved}
+                    oncontentdeleted={handleContentDeleted}
+                    onfieldcreate={handleFieldCreate}
+                  ></c-gtm-content-section>
+                </template>
+              </div>
+              <div class="gcm-add-section">
+                <lightning-button label="+ Add section" variant="neutral" onclick={handleNewSection}></lightning-button>
+              </div>
+            </template>
+            <template if:false={hasContent}>
+              <div class="gcm-empty">
+                <p>No content yet</p>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Draggable divider -->
+        <div class="gcm-divider" onmousedown={handleMouseDown}></div>
+
+        <!-- Right: Live preview -->
+        <div class="gcm-preview" style={previewStyle}>
+          <div class="gcm-preview-label">LIVE PREVIEW</div>
+          <div class="gcm-preview-scroll">
+            <c-gtm-content-preview
+              offering-key={offeringKey}
+              template-type={templateType}
+              records={draftSections}
+            ></c-gtm-content-preview>
+          </div>
+        </div>
+      </div>
+
+      <!-- Version history panel -->
+      <div class="gcm-versions">
+        <button class="gcm-versions-toggle" onclick={handleToggleVersionHistory}>
+          📋 Version History {showVersionHistory ? '▼' : '▶'}
+        </button>
+        <template if:true={showVersionHistory}>
+          <div class="gcm-versions-list">
+            <div class="gcm-version-item">
+              <span class="gcm-version-num">v3</span>
+              <span class="gcm-version-info">Published 2 hours ago</span>
+            </div>
+            <div class="gcm-version-item">
+              <span class="gcm-version-num">v2</span>
+              <span class="gcm-version-info">Published yesterday</span>
+            </div>
+            <div class="gcm-version-item">
+              <span class="gcm-version-num">v1</span>
+              <span class="gcm-version-info">Initial version</span>
+            </div>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- New section modal -->
+    <template if:true={newSectionOpen}>
+      <div class="gcm-modal-overlay">
+        <div class="gcm-modal">
+          <div class="gcm-modal-header">New Section</div>
+          <lightning-input
+            label="Section Key"
+            value={newSectionKey}
+            onchange={handleNewSectionKeyChange}
+            placeholder="e.g. hero, problem"
+          ></lightning-input>
+          <div class="gcm-modal-actions">
+            <lightning-button label="Create" variant="brand" onclick={handleNewSectionConfirm}></lightning-button>
+            <lightning-button label="Cancel" onclick={handleNewSectionCancel}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>

@@ -1,0 +1,8 @@
+.timestamp {
+    white-space: nowrap;
+    margin-left: 0.5rem;
+}
+
+.slds-timeline__item {
+    padding-bottom: 0.75rem;
+}
