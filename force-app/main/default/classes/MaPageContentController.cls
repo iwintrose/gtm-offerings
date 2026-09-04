@@ -172,13 +172,13 @@ public without sharing class MaPageContentController {
     }
 
     @AuraEnabled
-    public static void saveSectionOrder(List<String> sectionIds) {
-        MaPageSectionController.saveSectionOrder(sectionIds);
+    public static List<String> saveSectionOrder(List<String> sectionIds) {
+        return MaPageSectionController.saveSectionOrder(sectionIds);
     }
 
     @AuraEnabled
-    public static void setSectionActive(String sectionId, Boolean active) {
-        MaPageSectionController.setSectionActive(sectionId, active);
+    public static Boolean setSectionActive(String sectionId, Boolean active) {
+        return MaPageSectionController.setSectionActive(sectionId, active);
     }
 
     @AuraEnabled

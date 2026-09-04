@@ -58,9 +58,9 @@ public with sharing class MaPageSectionController {
      * and rewrites Sort_Order__c to match, so the page follows the records.
      */
     @AuraEnabled
-    public static void saveSectionOrder(List<String> sectionIds) {
+    public static List<String> saveSectionOrder(List<String> sectionIds) {
         if (sectionIds == null || sectionIds.isEmpty()) {
-            return;
+            return new List<String>();
         }
         Set<Id> ids = new Set<Id>();
         for (String raw : sectionIds) { if (String.isNotBlank(raw)) ids.add((Id) raw); }
@@ -85,13 +85,26 @@ public with sharing class MaPageSectionController {
         } catch (DmlException e) {
             throw new AuraHandledException('Could not save the section order: ' + e.getMessage());
         }
+        // Which sections are now unpublished. Reordering is a draft like any
+        // other edit, and the editor has to know that to offer Publish; it
+        // used to reorder silently and report nothing to publish.
+        return draftedIds(updates);
+    }
+
+    /** The ids among these that carry an unpublished change. */
+    private static List<String> draftedIds(List<MA_Page_Section__c> secs) {
+        List<String> out = new List<String>();
+        for (MA_Page_Section__c s : secs) {
+            if (String.isNotBlank(s.Draft_State__c)) out.add(String.valueOf(s.Id));
+        }
+        return out;
     }
 
     /**
      * Toggles a section on or off without deleting it or its content rows.
      */
     @AuraEnabled
-    public static void setSectionActive(String sectionId, Boolean active) {
+    public static Boolean setSectionActive(String sectionId, Boolean active) {
         if (String.isBlank(sectionId) || active == null) {
             throw new AuraHandledException('A section id and active flag are both required.');
         }
@@ -108,6 +121,9 @@ public with sharing class MaPageSectionController {
         } catch (DmlException e) {
             throw new AuraHandledException('Could not update the section: ' + e.getMessage());
         }
+        // True when this leaves the section unpublished, so the editor can
+        // offer Publish rather than silently holding the change.
+        return String.isNotBlank(sec.Draft_State__c);
     }
 
     /**

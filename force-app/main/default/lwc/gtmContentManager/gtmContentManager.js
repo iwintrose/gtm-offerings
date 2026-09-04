@@ -352,9 +352,27 @@ export default class GtmContentManager extends LightningElement {
         this.isSaving = true;
         this.saveMessage = 'Saving order…';
         saveSectionOrder({ sectionIds: this.sections.map((s) => s.id) })
-            .then(() => { this.saveMessage = 'Order saved'; })
+            .then((draftedIds) => {
+                this.saveMessage = 'Order saved as a draft';
+                // A new order is an unpublished change like any other. Without
+                // this the rail reordered, Apex wrote the draft, and the header
+                // still said there was nothing to publish.
+                this.markDrafted(draftedIds);
+            })
             .catch((err) => { this.loadError = this.messageFrom(err) || 'The new order could not be saved.'; })
             .finally(() => { this.isSaving = false; });
+    }
+
+    /**
+     * Mark exactly the sections Apex says are now unpublished.
+     *
+     * Apex returns the ids rather than the editor guessing, because a section
+     * moved back to where it started has no draft to publish and should not
+     * claim one.
+     */
+    markDrafted(draftedIds) {
+        const drafted = new Set(draftedIds || []);
+        this.sections = this.sections.map((s) => ({ ...s, isDraft: drafted.has(s.id) }));
     }
 
     handleToggleActive(event) {
@@ -364,9 +382,9 @@ export default class GtmContentManager extends LightningElement {
         const next = !(section.active !== false);
         this.isSaving = true;
         setSectionActive({ sectionId: section.id, active: next })
-            .then(() => {
+            .then((isDraft) => {
                 this.sections = this.sections.map((s) =>
-                    s.sectionKey === key ? { ...s, active: next } : s);
+                    s.sectionKey === key ? { ...s, active: next, isDraft: isDraft === true } : s);
                 this.saveMessage = next ? 'Section shown' : 'Section hidden';
             })
             .catch((err) => { this.loadError = this.messageFrom(err) || 'The section could not be updated.'; })
