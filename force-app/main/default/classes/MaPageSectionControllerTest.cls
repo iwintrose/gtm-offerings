@@ -128,7 +128,7 @@ private class MaPageSectionControllerTest {
 
         Test.startTest();
         String id = MaPageSectionController.createField(
-            OFFERING, TMPL, 'partial', 'head', 'text', 'Head');
+            OFFERING, TMPL, 'partial', 'head', 'text', 'Head', null);
         Test.stopTest();
 
         MA_Page_Content__c row = [SELECT Content_Address__c, Field_Type__c, Label__c
@@ -146,7 +146,7 @@ private class MaPageSectionControllerTest {
         Test.startTest();
         try {
             MaPageSectionController.createField(
-                OFFERING, TMPL, 'dupefield', 'eyebrow', 'text', 'Eyebrow');
+                OFFERING, TMPL, 'dupefield', 'eyebrow', 'text', 'Eyebrow', null);
         } catch (AuraHandledException e) {
             blocked = true;
         }

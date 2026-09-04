@@ -41,7 +41,8 @@ const TEMPLATE_LABELS = {
 // as blank space with no console error, which is how utility:brand_engagement
 // — a name that does not exist — sat on the hero row unnoticed.
 const SECTION_ICONS = {
-    'page-chrome': 'utility:page',
+    'page-header': 'utility:page',
+    'page-footer': 'utility:anchor',
     hero: 'utility:display_text',
     'lede-chips': 'utility:warning',
     'route-proof': 'utility:flow',
@@ -817,7 +818,8 @@ export default class GtmContentManager extends LightningElement {
             sectionKey: this.activeKey,
             fieldKey: spec.fieldKey,
             fieldType: spec.fieldType,
-            label: spec.label
+            label: spec.label,
+            helpText: null
         })
             .then(() => { this.saveMessage = 'Field added'; return this.loadPage(); })
             .catch((err) => {

@@ -266,9 +266,18 @@ export default class GtmPagePreview extends LightningElement {
         // reach the top; at the end of the scroll it is what you are looking at.
         const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4;
         let current = atBottom ? rects[rects.length - 1].sectionKey : '';
+        if (!current && sc.scrollTop <= 4) {
+            // At the very top, the pinned masthead is what you are looking at.
+            const pinned = rects.find((r) => r.pinned);
+            if (pinned) current = pinned.sectionKey;
+        }
         if (!current) {
             const top = sc.getBoundingClientRect().top;
-            rects.forEach((r) => { if (r.top - top <= 24) current = r.sectionKey; });
+            // Pinned elements are skipped: sitting at the top of the frame is
+            // what they always do, so they would always win this test.
+            rects.forEach((r) => {
+                if (!r.pinned && r.top - top <= 24) current = r.sectionKey;
+            });
         }
         if (current && current !== this._activeKey) {
             this._activeKey = current;
@@ -281,13 +290,15 @@ export default class GtmPagePreview extends LightningElement {
         const { el: sc, scaled } = this.scroller();
         if (!sc) return;
         const hit = this.rects().find((r) => r.sectionKey === sectionKey);
-        // Page chrome renders around the page rather than in the sequence, so
-        // it has no rect; the top of the page is where it lives.
         const top = sc.getBoundingClientRect().top;
         // Rect deltas are post-transform; a scrolled element's own scrollTop is
         // not. Only the device carries the transform.
         const k = scaled ? (this.currentScale() || 1) : 1;
-        const target = hit ? sc.scrollTop + (hit.top - top) / k - 8 : 0;
+        // A pinned element — the masthead — is drawn at the top of the frame
+        // whatever the scroll position, so its rect says nothing about where to
+        // go. It lives at the top of the page, so that is where we go. The same
+        // fallback covers a section with no rect at all.
+        const target = (hit && !hit.pinned) ? sc.scrollTop + (hit.top - top) / k - 8 : 0;
         // A scroll this code started is not the reader scrolling. That matters
         // most for the last section, where the canvas cannot scroll far enough
         // to honour the request and parks somewhere the spy would misread.

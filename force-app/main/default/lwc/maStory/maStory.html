@@ -1,9 +1,9 @@
 <template>
   <div class={rootClass}>
-    <div class="bar">
+    <div class="bar" data-section={header.sectionKey}>
       <div class="bar-wm">
-        <span class="tick"></span> {chrome.brandLabel}
-        <span class="bar-tag mono">{chrome.brandTag}</span>
+        <span class="tick"></span> {header.brandLabel}
+        <span class="bar-tag mono">{header.brandTag}</span>
       </div>
       <div class="bar-right">
         <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
@@ -233,12 +233,68 @@
           </p>
         </template>
 
+        <!-- Fields this layout never declared. Drawn generically so an editor
+             who adds a field to a section sees it on the page instead of
+             creating a record that silently goes nowhere. -->
+        <template if:true={s.hasExtras}>
+          <div class="extras rv d2">
+            <template for:each={s.extras} for:item="x">
+              <div key={x.key} class="extra">
+                <template if:true={x.hasLabel}>
+                  <h3 class="extra-h">{x.label}</h3>
+                </template>
+
+                <template if:true={x.isText}>
+                  <p class="extra-p">{x.value}</p>
+                </template>
+
+                <template if:true={x.isRich}>
+                  <div class="extra-p">
+                    <lightning-formatted-rich-text value={x.value}></lightning-formatted-rich-text>
+                  </div>
+                </template>
+
+                <template if:true={x.isList}>
+                  <div class="chip-row">
+                    <template for:each={x.items} for:item="c">
+                      <span key={c.id} class="chip">{c.text}</span>
+                    </template>
+                  </div>
+                </template>
+
+                <template if:true={x.isPairs}>
+                  <dl class="extra-pairs">
+                    <template for:each={x.items} for:item="i">
+                      <div key={i.id} class="extra-pair">
+                        <dt>{i.title}</dt>
+                        <dd>{i.body}</dd>
+                      </div>
+                    </template>
+                  </dl>
+                </template>
+
+                <template if:true={x.isCards}>
+                  <div class="extra-cards">
+                    <template for:each={x.items} for:item="i">
+                      <div key={i.id} class="extra-card">
+                        <span class="extra-badge">{i.badge}</span>
+                        <h4>{i.title}</h4>
+                        <p>{i.body}</p>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+
       </section>
     </template>
 
-    <footer class="pf">
-      <span>{chrome.footerLeft}</span>
-      <span>{chrome.footerRight}</span>
+    <footer class="pf" data-section={footer.sectionKey}>
+      <span>{footer.footerLeft}</span>
+      <span>{footer.footerRight}</span>
     </footer>
   </div>
 </template>

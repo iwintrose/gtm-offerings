@@ -68,7 +68,7 @@ public without sharing class MaPageContentController {
                    Text_Value__c, Rich_Value__c, JSON_Value__c,
                    Industry_Key__c, Sort_Order__c, Active__c,
                    Content_Address__c, Offering_Key__c, Template_Type__c,
-                   Label__c, Help_Text__c, Draft_Value__c, Status__c
+                   Label__c, Help_Text__c, Draft_Value__c, Status__c, Pending_Delete__c
             FROM   MA_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -177,7 +177,7 @@ public without sharing class MaPageContentController {
         String fieldKey, String fieldType, String label
     ) {
         return MaPageSectionController.createField(
-            offeringKey, templateType, sectionKey, fieldKey, fieldType, label);
+            offeringKey, templateType, sectionKey, fieldKey, fieldType, label, null);
     }
 
     /**
@@ -436,7 +436,8 @@ public without sharing class MaPageContentController {
         // pending section delete removes that section's content, so a list of
         // drafts gathered beforehand would still hold rows that no longer
         // exist and the update below would fail on them.
-        Integer structural = publishSections(offeringKey, templateType);
+        Integer structural = publishSections(offeringKey, templateType)
+            + publishFieldDeletes(offeringKey, templateType);
 
         // Draft_Value__c is a long text area, which SOQL cannot filter on, so
         // the "has a draft" test happens in Apex.
@@ -554,7 +555,8 @@ public without sharing class MaPageContentController {
         // Same ordering rule as publish: discarding a section that was never
         // published deletes its content rows, so they must be gone before the
         // remaining drafts are read.
-        Integer structural = discardSections(offeringKey, templateType);
+        Integer structural = discardSections(offeringKey, templateType)
+            + discardFieldDeletes(offeringKey, templateType);
         List<MA_Page_Content__c> drafts = [
             SELECT Id FROM MA_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
@@ -650,6 +652,7 @@ public without sharing class MaPageContentController {
         @AuraEnabled public String draftValue       { get; set; }
         @AuraEnabled public String status           { get; set; }
         @AuraEnabled public Boolean isDraft         { get; set; }
+        @AuraEnabled public Boolean pendingDelete   { get; set; }
         @AuraEnabled public String textValue        { get; set; }
         @AuraEnabled public String richValue        { get; set; }
         @AuraEnabled public String jsonValue        { get; set; }
@@ -675,6 +678,7 @@ public without sharing class MaPageContentController {
             this.sortOrder         = rec.Sort_Order__c == null ? 0 : rec.Sort_Order__c.intValue();
             this.active            = rec.Active__c;
             this.contentAddress    = rec.Content_Address__c;
+            this.pendingDelete     = rec.Pending_Delete__c == true;
             this.label             = rec.Label__c;
             this.helpText          = rec.Help_Text__c;
             this.draftValue        = rec.Draft_Value__c;
@@ -700,5 +704,46 @@ public without sharing class MaPageContentController {
             rec.Content_Address__c = MaContentAddress.forField(this.offeringKey, this.templateType, this.sectionKey, this.fieldKey);
             return rec;
         }
+    }
+
+    /**
+     * Removes the fields marked for deletion. Runs with the structural pass and
+     * before the content pass for the same reason sections do: these rows are
+     * about to stop existing, so nothing downstream should be holding them.
+     */
+    private static Integer publishFieldDeletes(String offeringKey, String templateType) {
+        List<MA_Page_Content__c> doomed = [
+            SELECT Id FROM MA_Page_Content__c
+            WHERE  Offering_Key__c   = :offeringKey
+            AND    Template_Type__c  = :templateType
+            AND    Pending_Delete__c = true
+            LIMIT  2000
+        ];
+        if (doomed.isEmpty()) return 0;
+        try {
+            delete doomed;
+        } catch (DmlException ex) {
+            throw new AuraHandledException('Publish failed removing fields: ' + ex.getMessage());
+        }
+        return doomed.size();
+    }
+
+    /** Takes back every pending field delete on a page. */
+    private static Integer discardFieldDeletes(String offeringKey, String templateType) {
+        List<MA_Page_Content__c> marked = [
+            SELECT Id FROM MA_Page_Content__c
+            WHERE  Offering_Key__c   = :offeringKey
+            AND    Template_Type__c  = :templateType
+            AND    Pending_Delete__c = true
+            LIMIT  2000
+        ];
+        if (marked.isEmpty()) return 0;
+        for (MA_Page_Content__c rec : marked) { rec.Pending_Delete__c = false; }
+        try {
+            update marked;
+        } catch (DmlException ex) {
+            throw new AuraHandledException('Changes could not be discarded: ' + ex.getMessage());
+        }
+        return marked.size();
     }
 }

@@ -70,7 +70,7 @@ def parse_layout_fields(js):
 
 # Layouts drawn outside the section loop (page chrome), so they legitimately
 # have no is<Layout> branch inside it.
-NON_SEQUENCE_LAYOUTS = {"page-chrome"}
+NON_SEQUENCE_LAYOUTS = {"page-header", "page-footer"}
 
 
 def rendered_layouts(html):

@@ -11,12 +11,16 @@
  * would drift the first time a layout gained a field.
  */
 
-// Page chrome (masthead + footer) is a layout so the contract check covers it,
-// but it renders around the page rather than in the section sequence.
-const CHROME_LAYOUT = 'page-chrome';
+// Layouts that render around the page rather than in the section sequence.
+// They are declared here so the contract check covers them like any other.
+// They are split so an editor can see what they are changing: with both in one
+// section, selecting it scrolled the preview to the masthead whether you were
+// editing the brand name or the footer.
+const FRAME_LAYOUTS = ['page-header', 'page-footer'];
 
 const LAYOUT_FIELDS = {
-    'page-chrome': { text: ['brandLabel', 'brandTag', 'footerLeft', 'footerRight'], rich: [], json: [] },
+    'page-header': { text: ['brandLabel', 'brandTag'],       rich: [], json: [] },
+    'page-footer': { text: ['footerLeft', 'footerRight'],     rich: [], json: [] },
     'hero':        { text: ['eyebrow'],                      rich: ['headline', 'subhead'],        json: [] },
     'lede-chips':  { text: ['eyebrow'],                      rich: ['lede', 'close'],              json: ['chips'] },
     'route-proof': { text: ['eyebrow', 'proofDemoRoot'],     rich: ['head', 'sub', 'proofCtaText'], json: ['routeSteps', 'proofDemoDeps'] },
@@ -30,7 +34,8 @@ const LAYOUT_FIELDS = {
 // What each layout is for, in the words an editor would use. Shown in the
 // "add section" picker, where the layout key alone tells you nothing.
 const LAYOUT_LABELS = {
-    'page-chrome': 'Page Chrome',
+    'page-header': 'Header',
+    'page-footer': 'Footer',
     'hero': 'Hero',
     'lede-chips': 'Lede with chips',
     'route-proof': 'Route with proof panel',
@@ -42,7 +47,8 @@ const LAYOUT_LABELS = {
 };
 
 const LAYOUT_HINTS = {
-    'page-chrome': 'Masthead and footer text. One per page.',
+    'page-header': 'The brand name and tag in the masthead. One per page.',
+    'page-footer': 'The two lines along the bottom of the page. One per page.',
     'hero': 'Opening statement: eyebrow, headline, subhead.',
     'lede-chips': 'A short lede, a row of chips, a closing line.',
     'route-proof': 'A numbered route beside a live proof panel.',
@@ -83,11 +89,12 @@ function humaniseFieldKey(key) {
         .trim();
 }
 
-// Layouts an editor may add to a page. Chrome is excluded: it is not a beat in
-// the sequence, and a second one would render two mastheads.
+// Layouts an editor may add to a page. The header and footer are excluded:
+// they are not beats in the sequence, and a second one would render a second
+// masthead.
 function addableLayouts() {
     return Object.keys(LAYOUT_FIELDS)
-        .filter((k) => k !== CHROME_LAYOUT)
+        .filter((k) => FRAME_LAYOUTS.indexOf(k) === -1)
         .map((k) => ({
             value: k,
             label: LAYOUT_LABELS[k] || k,
@@ -97,7 +104,7 @@ function addableLayouts() {
 }
 
 export {
-    CHROME_LAYOUT,
+    FRAME_LAYOUTS,
     LAYOUT_FIELDS,
     LAYOUT_LABELS,
     LAYOUT_HINTS,

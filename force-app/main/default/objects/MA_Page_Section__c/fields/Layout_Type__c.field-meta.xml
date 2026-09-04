@@ -11,9 +11,14 @@
         <valueSetDefinition>
             <sorted>false</sorted>
             <value>
-                <fullName>page-chrome</fullName>
+                <fullName>page-header</fullName>
                 <default>false</default>
-                <label>page-chrome</label>
+                <label>page-header</label>
+            </value>
+            <value>
+                <fullName>page-footer</fullName>
+                <default>false</default>
+                <label>page-footer</label>
             </value>
             <value>
                 <fullName>hero</fullName>

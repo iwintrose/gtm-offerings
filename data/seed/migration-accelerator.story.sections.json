@@ -3,17 +3,33 @@
   {
    "attributes": {
     "type": "MA_Page_Section__c",
-    "referenceId": "sec0"
+    "referenceId": "secHeader"
    },
-   "Section_Address__c": "migration-accelerator::story::page",
+   "Section_Address__c": "migration-accelerator::story::header",
    "Offering_Key__c": "migration-accelerator",
    "Template_Type__c": "story",
-   "Section_Key__c": "page",
-   "Label__c": "Page Chrome",
-   "Help_Text__c": "Masthead and footer text. Renders around the page rather than in the section sequence.",
-   "Layout_Type__c": "page-chrome",
+   "Section_Key__c": "header",
+   "Label__c": "Header",
+   "Help_Text__c": "The brand name and tag shown in the masthead.",
+   "Layout_Type__c": "page-header",
    "Width__c": "standard",
-   "Sort_Order__c": 0,
+   "Sort_Order__c": 5,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "secFooter"
+   },
+   "Section_Address__c": "migration-accelerator::story::footer",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "footer",
+   "Label__c": "Footer",
+   "Help_Text__c": "The two lines along the bottom of the page.",
+   "Layout_Type__c": "page-footer",
+   "Width__c": "standard",
+   "Sort_Order__c": 999,
    "Active__c": true
   },
   {

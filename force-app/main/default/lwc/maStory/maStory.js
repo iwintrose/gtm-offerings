@@ -3,7 +3,7 @@ import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryC
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
 // The layout vocabulary is shared with the editor, which has to know what
 // fields a section needs before that section exists. See c/gtmPageLayouts.
-import { CHROME_LAYOUT, LAYOUT_FIELDS } from 'c/gtmPageLayouts';
+import { FRAME_LAYOUTS, LAYOUT_FIELDS } from 'c/gtmPageLayouts';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
@@ -117,9 +117,11 @@ const DEFAULTS = {
 // field name so they line up with LAYOUT_FIELDS. These are the floor: the page
 // still renders if the org has no content rows at all.
 const SECTION_FALLBACKS = {
-    'page-chrome': {
+    'page-header': {
         brandLabel: 'Migration Accelerator',
-        brandTag: '/ the story',
+        brandTag: '/ the story'
+    },
+    'page-footer': {
         footerLeft: 'Migration Accelerator — positioning working draft',
         footerRight: 'Grounded against ma-migrator + project-conduit, August 2026'
     },
@@ -178,7 +180,8 @@ const SECTION_FALLBACKS = {
 // Fallback structure, used only until getPageLayout returns rows. Order here
 // matches the page as originally authored; MA_Page_Section__c overrides it.
 const DEFAULT_SECTIONS = [
-    { sectionKey: 'page',          layoutType: 'page-chrome', width: 'standard', label: '' },
+    { sectionKey: 'header',        layoutType: 'page-header', width: 'standard', label: 'Header' },
+    { sectionKey: 'footer',        layoutType: 'page-footer', width: 'standard', label: 'Footer' },
     { sectionKey: 'hero',          layoutType: 'hero',        width: 'standard', label: '' },
     { sectionKey: 'problem',       layoutType: 'lede-chips',  width: 'standard', label: '' },
     { sectionKey: 'mechanism',     layoutType: 'route-proof', width: 'wide',     label: 'The mechanism' },
@@ -213,6 +216,8 @@ export default class MaStory extends LightningElement {
     // Structure of the page, ordered. Empty until getPageLayout returns, at
     // which point DEFAULT_SECTIONS stops being used.
     @track _sectionRows = [];
+    // Type and label of every field, so undeclared ones can be drawn.
+    @track _fieldMeta = [];
     @track _loadError = '';
     // Set in the Lightning App Builder / Experience Builder. Defaults to the
     // first offering but is not bound to it.
@@ -233,6 +238,14 @@ export default class MaStory extends LightningElement {
         if (!value || !value.length) return;
         this._preview = true;
         this._sectionRows = value;
+    }
+
+    @api
+    get previewFieldMeta() { return this._fieldMeta; }
+    set previewFieldMeta(value) {
+        if (!value) return;
+        this._preview = true;
+        this._fieldMeta = value;
     }
 
     @api
@@ -257,7 +270,17 @@ export default class MaStory extends LightningElement {
         const out = [];
         this.template.querySelectorAll('[data-section]').forEach((el) => {
             const r = el.getBoundingClientRect();
-            out.push({ sectionKey: el.dataset.section, top: r.top, bottom: r.bottom });
+            // The masthead is sticky, so its rect sits at the top of the frame
+            // no matter where the page is scrolled. A caller that treated that
+            // as a position would compute "no movement" when asked to scroll to
+            // it, and would read it as the current section forever.
+            const pos = window.getComputedStyle(el).position;
+            out.push({
+                sectionKey: el.dataset.section,
+                top: r.top,
+                bottom: r.bottom,
+                pinned: pos === 'sticky' || pos === 'fixed'
+            });
         });
         return out;
     }
@@ -275,6 +298,60 @@ export default class MaStory extends LightningElement {
     // Priority: MA_Page_Content__c (_cms map) → legacy CMS (_page/_body) → DEFAULTS
 
     _ct(key) { return this._cms[key] || null; }
+
+    /**
+     * Undeclared fields on a section, shaped for the template.
+     *
+     * The item shape of a list is read from the data rather than configured:
+     * strings become chips, two-key objects become a titled paragraph, and
+     * anything wider becomes a card. Nothing here knows what a capability or
+     * an FAQ entry is, which is what keeps it general.
+     */
+    _extrasFor(sectionKey, spec) {
+        const declared = new Set(
+            (spec.text || []).concat(spec.rich || [], spec.json || [])
+        );
+        const prefix = sectionKey + '::';
+        return this._fieldMeta
+            .filter((m) => m.sectionKey === sectionKey && !declared.has(m.fieldKey))
+            .map((m) => {
+                const raw = this._cms[prefix + m.fieldKey];
+                const out = {
+                    key: m.fieldKey,
+                    label: m.label || '',
+                    hasLabel: !!m.label,
+                    isText: m.fieldType === 'text',
+                    isRich: m.fieldType === 'rich',
+                    isList: false,
+                    isPairs: false,
+                    isCards: false,
+                    value: raw || '',
+                    items: []
+                };
+                if (m.fieldType !== 'json') return out;
+                const list = this._cj(prefix + m.fieldKey) || [];
+                if (!list.length) return out;
+                const first = list[0];
+                if (typeof first !== 'object' || first === null) {
+                    out.isList = true;
+                    out.items = this._withKeys(list.map((v) => String(v)));
+                    return out;
+                }
+                const keys = Object.keys(first);
+                const shaped = list.map((entry, i) => ({
+                    id: `${m.fieldKey}-${i}`,
+                    badge: keys.length > 2 ? String(entry[keys[0]] || '') : '',
+                    title: String(entry[keys[keys.length > 2 ? 1 : 0]] || ''),
+                    body: String(entry[keys[keys.length > 2 ? 2 : 1]] || '')
+                }));
+                if (keys.length > 2) { out.isCards = true; } else { out.isPairs = true; }
+                out.items = shaped;
+                return out;
+            })
+            // A field with nothing in it draws nothing, rather than an empty
+            // heading where an editor has created a row but not filled it.
+            .filter((x) => x.value || x.items.length);
+    }
     _cj(key) {
         const raw = this._cms[key];
         if (!raw) return null;
@@ -289,7 +366,7 @@ export default class MaStory extends LightningElement {
 
     get sections() {
         const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
-        return rows.filter((row) => row.layoutType !== CHROME_LAYOUT).map((row) => {
+        return rows.filter((row) => FRAME_LAYOUTS.indexOf(row.layoutType) === -1).map((row) => {
             const k = row.sectionKey;
             const t = row.layoutType;
             const spec = LAYOUT_FIELDS[t] || { text: [], rich: [], json: [] };
@@ -319,6 +396,15 @@ export default class MaStory extends LightningElement {
                 const fromRecord = this._cj(k + '::' + f);
                 s[f] = (fromRecord && fromRecord.length) ? fromRecord : (fb[f] || []);
             });
+
+            // Fields nobody declared. A layout is a shape the page knows how to
+            // draw, but the schema is editable, so a section can carry fields
+            // this renderer has never heard of. Those are drawn generically,
+            // after the layout's own content — visible and editable rather
+            // than silently dropped, which is what happens when a renderer
+            // only ever looks for the names it was written against.
+            s.extras = this._extrasFor(k, spec);
+            s.hasExtras = s.extras.length > 0;
 
             // An eyebrow renders only when the layout declares one and a value
             // resolves. The section's editor label is deliberately NOT used as a
@@ -382,17 +468,23 @@ export default class MaStory extends LightningElement {
     get proofClass() { return this.proofOn ? 'proof rv d3 on' : 'proof rv d3'; }
     // Masthead and footer text. Resolved the same way as any section, so a
     // second offering supplies its own rather than inheriting this one's.
-    get chrome() {
+    // The masthead and the footer are separate sections so that selecting one
+    // in the editor scrolls the preview to it. Both resolve the same way as any
+    // other section; they just render outside the sequence.
+    _frame(layoutType) {
         const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
-        const row = rows.find((r) => r.layoutType === CHROME_LAYOUT);
-        const key = row ? row.sectionKey : 'page';
-        const fb = SECTION_FALLBACKS[CHROME_LAYOUT];
-        const out = {};
-        LAYOUT_FIELDS[CHROME_LAYOUT].text.forEach((f) => {
+        const row = rows.find((r) => r.layoutType === layoutType);
+        const key = row ? row.sectionKey : layoutType.replace('page-', '');
+        const fb = SECTION_FALLBACKS[layoutType] || {};
+        const out = { sectionKey: key };
+        (LAYOUT_FIELDS[layoutType] || { text: [] }).text.forEach((f) => {
             out[f] = this._ct(key + '::' + f) || fb[f] || '';
         });
         return out;
     }
+
+    get header() { return this._frame('page-header'); }
+    get footer() { return this._frame('page-footer'); }
 
     get proofBarLabel() { return `${this.offeringKey} \u00b7 live preview`; }
     get gaugeStyle() { return `--pct: ${this.gaugeValue};`; }
@@ -423,6 +515,7 @@ export default class MaStory extends LightningElement {
                 if (!layout) return;
                 if (layout.content) this._cms = layout.content;
                 if (layout.sections && layout.sections.length) this._sectionRows = layout.sections;
+                if (layout.fieldMeta) this._fieldMeta = layout.fieldMeta;
             })
             .catch((err) => {
                 // Surfaced, not swallowed: a silent failure here is what let the

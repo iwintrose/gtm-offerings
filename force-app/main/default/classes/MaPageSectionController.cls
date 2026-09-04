@@ -284,10 +284,13 @@ public with sharing class MaPageSectionController {
     }
 
     /**
-     * Creates a single content row for a field the section's layout declares
-     * but has no record for. This is a repair action, not a way to invent
-     * fields: a field the renderer does not know about would never appear on
-     * the page, so the editor only offers the layout's own vocabulary.
+     * Creates one content row on a section.
+     *
+     * Two things arrive here. A field the layout declares but has no record
+     * for — a gap, where the page falls back to a built-in default. And a
+     * field nobody declared, which the renderer draws generically after the
+     * layout's own fields. Both are just a row; what differs is whether the
+     * layout already had a place for it.
      */
     @AuraEnabled
     public static String createField(
@@ -296,11 +299,17 @@ public with sharing class MaPageSectionController {
         String sectionKey,
         String fieldKey,
         String fieldType,
-        String label
+        String label,
+        String helpText
     ) {
         if (String.isBlank(offeringKey) || String.isBlank(templateType)
             || String.isBlank(sectionKey) || String.isBlank(fieldKey)) {
             throw new AuraHandledException('An offering, page, section and field are all required.');
+        }
+        if (!VALUE_TYPES.contains(fieldType)) {
+            throw new AuraHandledException(
+                'A field type must be one of: ' + String.join(new List<String>(VALUE_TYPES), ', ') + '.'
+            );
         }
         String address = MaContentAddress.forField(offeringKey, templateType, sectionKey, fieldKey);
         if (![SELECT Id FROM MA_Page_Content__c WHERE Content_Address__c = :address LIMIT 1].isEmpty()) {
@@ -312,10 +321,11 @@ public with sharing class MaPageSectionController {
         row.Template_Type__c   = templateType;
         row.Section_Key__c     = sectionKey;
         row.Field_Key__c       = fieldKey;
-        row.Field_Type__c      = String.isBlank(fieldType) ? 'text' : fieldType;
+        row.Field_Type__c      = fieldType;
         row.Label__c           = label;
+        row.Help_Text__c       = helpText;
         row.Active__c          = true;
-        row.Sort_Order__c      = 0;
+        row.Sort_Order__c      = nextFieldSortOrder(offeringKey, templateType, sectionKey);
         if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
         try {
             insert row;
@@ -429,5 +439,89 @@ public with sharing class MaPageSectionController {
         Object v = draftOf(sec).get('active');
         if (v == null) return sec.Active__c;
         return Boolean.valueOf(v);
+    }
+
+    /** The value columns a field can resolve from. */
+    private static final Set<String> VALUE_TYPES = new Set<String>{ 'text', 'rich', 'json' };
+
+    private static Decimal nextFieldSortOrder(String offeringKey, String templateType, String sectionKey) {
+        AggregateResult[] top = [
+            SELECT MAX(Sort_Order__c) top FROM MA_Page_Content__c
+            WHERE Offering_Key__c = :offeringKey
+            AND   Template_Type__c = :templateType
+            AND   Section_Key__c = :sectionKey
+        ];
+        Decimal current = (top.isEmpty() || top[0].get('top') == null)
+            ? 0 : (Decimal) top[0].get('top');
+        return current + 10;
+    }
+
+    /**
+     * Marks a field for removal at the next publish, or removes it outright if
+     * it has never been published. Same rule as sections: what is on the live
+     * page does not change until someone publishes.
+     */
+    @AuraEnabled
+    public static Boolean deleteField(String recordId) {
+        if (String.isBlank(recordId)) {
+            throw new AuraHandledException('A field id is required.');
+        }
+        List<MA_Page_Content__c> found = [
+            SELECT Id, Status__c, Text_Value__c, Rich_Value__c, JSON_Value__c
+            FROM   MA_Page_Content__c WHERE Id = :recordId LIMIT 1
+        ];
+        if (found.isEmpty()) {
+            throw new AuraHandledException('That field no longer exists.');
+        }
+        MA_Page_Content__c rec = found[0];
+        // Never published and never given a value: it exists only in the
+        // editor, so removing it changes nothing anyone has seen.
+        Boolean neverLive = rec.Status__c != 'Published'
+            && String.isBlank(rec.Text_Value__c)
+            && String.isBlank(rec.Rich_Value__c)
+            && (String.isBlank(rec.JSON_Value__c) || rec.JSON_Value__c == '[]');
+        try {
+            if (neverLive) { delete rec; return true; }
+            rec.Pending_Delete__c = true;
+            update rec;
+            return false;
+        } catch (DmlException e) {
+            throw new AuraHandledException('The field could not be deleted: ' + e.getMessage());
+        }
+    }
+
+    /** Takes back a pending field delete. Nothing has been removed yet. */
+    @AuraEnabled
+    public static void restoreField(String recordId) {
+        if (String.isBlank(recordId)) {
+            throw new AuraHandledException('A field id is required.');
+        }
+        try {
+            update new MA_Page_Content__c(Id = recordId, Pending_Delete__c = false);
+        } catch (DmlException e) {
+            throw new AuraHandledException('The field could not be restored: ' + e.getMessage());
+        }
+    }
+
+    /**
+     * Reorders the fields within a section. This is an editor-only ordering —
+     * the renderer resolves a layout's fields by name, not by position — so
+     * unlike section order it is not a pending change and needs no publish.
+     */
+    @AuraEnabled
+    public static void saveFieldOrder(List<String> recordIds) {
+        if (recordIds == null || recordIds.isEmpty()) return;
+        List<MA_Page_Content__c> updates = new List<MA_Page_Content__c>();
+        Integer position = 0;
+        for (String id : recordIds) {
+            if (String.isBlank(id)) continue;
+            position += 10;
+            updates.add(new MA_Page_Content__c(Id = id, Sort_Order__c = position));
+        }
+        try {
+            update updates;
+        } catch (DmlException e) {
+            throw new AuraHandledException('Could not save the field order: ' + e.getMessage());
+        }
     }
 }
