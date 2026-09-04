@@ -67,7 +67,8 @@ public without sharing class MaPageContentController {
             SELECT Id, Name, Section_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c,
                    Industry_Key__c, Sort_Order__c, Active__c,
-                   Content_Address__c, Offering_Key__c, Template_Type__c
+                   Content_Address__c, Offering_Key__c, Template_Type__c,
+                   Label__c, Help_Text__c
             FROM   MA_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -234,6 +235,8 @@ public without sharing class MaPageContentController {
         @AuraEnabled public String sectionKey       { get; set; }
         @AuraEnabled public String fieldKey         { get; set; }
         @AuraEnabled public String fieldType        { get; set; }
+        @AuraEnabled public String label            { get; set; }
+        @AuraEnabled public String helpText         { get; set; }
         @AuraEnabled public String textValue        { get; set; }
         @AuraEnabled public String richValue        { get; set; }
         @AuraEnabled public String jsonValue        { get; set; }
@@ -259,6 +262,8 @@ public without sharing class MaPageContentController {
             this.sortOrder         = rec.Sort_Order__c == null ? 0 : rec.Sort_Order__c.intValue();
             this.active            = rec.Active__c;
             this.contentAddress    = rec.Content_Address__c;
+            this.label             = rec.Label__c;
+            this.helpText          = rec.Help_Text__c;
         }
 
         public MA_Page_Content__c toSObject() {

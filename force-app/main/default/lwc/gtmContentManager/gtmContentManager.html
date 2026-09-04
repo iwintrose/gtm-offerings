@@ -113,7 +113,8 @@
             <template for:each={activeFields} for:item="f">
               <div key={f.id} class="fld">
                 <div class="fld-top">
-                  <span class="fld-label">{f.fieldKey}</span>
+                  <span class="fld-label">{f.displayLabel}</span>
+                  <span class="fld-key">{f.fieldKey}</span>
                   <span class="fld-type">{f.fieldType}</span>
                 </div>
                 <template if:true={f.isShort}>
@@ -128,6 +129,7 @@
                 <template if:true={f.isLong}>
                   <lightning-textarea
                     variant="label-hidden"
+                    class="fld-area"
                     value={f.value}
                     data-id={f.id}
                     data-column={f.column}
@@ -137,12 +139,15 @@
                 <template if:true={f.isJson}>
                   <lightning-textarea
                     variant="label-hidden"
-                    class="fld-json"
+                    class="fld-json fld-area"
                     value={f.value}
                     data-id={f.id}
                     data-column={f.column}
                     onchange={handleFieldChange}>
                   </lightning-textarea>
+                </template>
+                <template if:true={f.hasHelp}>
+                  <p class="fld-help">{f.helpText}</p>
                 </template>
               </div>
             </template>

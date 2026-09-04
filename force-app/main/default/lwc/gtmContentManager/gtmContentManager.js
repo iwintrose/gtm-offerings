@@ -191,12 +191,20 @@ export default class GtmContentManager extends LightningElement {
             .map((r) => {
                 const type = r.fieldType || 'text';
                 const value = r[COLUMN[type]] || '';
+                // Exactly one of these is true. json was previously caught by
+                // isLong as well whenever the payload ran past 80 characters,
+                // which rendered the field twice.
+                const isJson = type === 'json';
+                const isLong = !isJson && (type === 'rich' || value.length > 80);
                 return {
                     ...r,
                     value,
-                    isJson: type === 'json',
-                    isLong: type === 'rich' || value.length > 80,
-                    isShort: !(type === 'json') && !(type === 'rich' || value.length > 80),
+                    isJson,
+                    isLong,
+                    isShort: !isJson && !isLong,
+                    rows: isJson ? 8 : 4,
+                    displayLabel: r.label || r.fieldKey,
+                    hasHelp: !!r.helpText,
                     column: COLUMN[type],
                     address: `${this.activeKey}::${r.fieldKey}`
                 };
