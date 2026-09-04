@@ -25,6 +25,7 @@ export default class GtmPagePreview extends LightningElement {
     @api offeringKey = '';
     @api sections = [];
     @api content = {};
+    @api fieldMeta = [];
     @api pageUrl = '';
     @api hasDrafts = false;
 

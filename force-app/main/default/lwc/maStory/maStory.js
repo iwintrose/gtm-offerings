@@ -366,7 +366,20 @@ export default class MaStory extends LightningElement {
 
     get sections() {
         const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
-        return rows.filter((row) => FRAME_LAYOUTS.indexOf(row.layoutType) === -1).map((row) => {
+        return rows
+            .filter((row) => FRAME_LAYOUTS.indexOf(row.layoutType) === -1)
+            // A layout this build does not know is skipped rather than drawn.
+            // Without this it fell through to the generic path, where every one
+            // of its fields counted as undeclared and got dumped into the page
+            // as loose headings — which is what a renamed layout looks like to
+            // a browser still running the previous bundle.
+            .filter((row) => {
+                if (LAYOUT_FIELDS[row.layoutType]) return true;
+                // eslint-disable-next-line no-console
+                console.warn('[maStory] unknown layout, section skipped:', row.layoutType, row.sectionKey);
+                return false;
+            })
+            .map((row) => {
             const k = row.sectionKey;
             const t = row.layoutType;
             const spec = LAYOUT_FIELDS[t] || { text: [], rich: [], json: [] };

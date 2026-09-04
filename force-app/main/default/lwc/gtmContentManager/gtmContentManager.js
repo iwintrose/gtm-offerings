@@ -848,6 +848,20 @@ export default class GtmContentManager extends LightningElement {
             }));
     }
 
+    // Types and labels for every field, so the preview can draw fields no
+    // layout declares. The flat content map carries values only, which is
+    // enough to resolve a known field and not enough to draw an unknown one.
+    get previewFieldMeta() {
+        return this.records
+            .filter((r) => r.active !== false && !r.pendingDelete)
+            .map((r) => ({
+                sectionKey: r.sectionKey,
+                fieldKey: r.fieldKey,
+                fieldType: r.fieldType || 'text',
+                label: r.label || ''
+            }));
+    }
+
     get previewContent() {
         const map = {};
         this.records.forEach((r) => {
