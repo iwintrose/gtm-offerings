@@ -351,29 +351,13 @@ public without sharing class MaPageContentController {
             if (o != null) { o.pages.add(p); }
         }
 
-        for (MA_Page_Content__c rec : [
-            SELECT Offering_Key__c, Template_Type__c, Section_Key__c, Field_Key__c,
-                   Label__c, LastModifiedDate
-            FROM   MA_Page_Content__c
-            WHERE  Active__c = true
-            ORDER BY LastModifiedDate DESC
-            LIMIT 8
-        ]) {
-            RecentEdit e = new RecentEdit();
-            e.offeringKey  = rec.Offering_Key__c;
-            e.templateType = rec.Template_Type__c;
-            e.sectionKey   = rec.Section_Key__c;
-            e.fieldKey     = rec.Field_Key__c;
-            e.label        = rec.Label__c;
-            e.modified     = rec.LastModifiedDate;
-            home.recent.add(e);
-        }
+        home.activity = getPageActivity();
         return home;
     }
 
     public class HomeSummary {
         @AuraEnabled public List<OfferingSummary> offerings = new List<OfferingSummary>();
-        @AuraEnabled public List<RecentEdit> recent = new List<RecentEdit>();
+        @AuraEnabled public List<PageActivity> activity = new List<PageActivity>();
     }
 
     public class OfferingSummary {
@@ -391,6 +375,14 @@ public without sharing class MaPageContentController {
         @AuraEnabled public String  templateType { get; set; }
         @AuraEnabled public Integer sectionCount { get; set; }
         @AuraEnabled public Integer fieldCount   { get; set; }
+    }
+
+    public class PageActivity {
+        @AuraEnabled public String  offeringKey  { get; set; }
+        @AuraEnabled public String  templateType { get; set; }
+        @AuraEnabled public String  summary      { get; set; }
+        @AuraEnabled public Integer fieldCount   { get; set; }
+        @AuraEnabled public Datetime occurred    { get; set; }
     }
 
     public class RecentEdit {
@@ -792,5 +784,54 @@ public without sharing class MaPageContentController {
         } catch (DmlException e) {
             throw new AuraHandledException('That could not be saved: ' + e.getMessage());
         }
+    }
+
+    /**
+     * What has happened to these pages, as pages.
+     *
+     * The old list showed individual fields by LastModifiedDate, which counted
+     * every autosaved keystroke as an event and could not see structural
+     * changes at all. A publish is the thing that actually happened to a page,
+     * and MA_Page_Content_Version__c already records one row per field per
+     * publish — so the rows are grouped back into the publish they came from.
+     */
+    private static List<PageActivity> getPageActivity() {
+        Map<Id, MA_Page_Content__c> byContent = new Map<Id, MA_Page_Content__c>([
+            SELECT Id, Offering_Key__c, Template_Type__c FROM MA_Page_Content__c LIMIT 2000
+        ]);
+
+        // Rows published within the same minute are one act of publishing.
+        Map<String, PageActivity> grouped = new Map<String, PageActivity>();
+        List<String> order = new List<String>();
+        for (MA_Page_Content_Version__c v : [
+            SELECT Content__c, CreatedDate FROM MA_Page_Content_Version__c
+            ORDER BY CreatedDate DESC LIMIT 500
+        ]) {
+            MA_Page_Content__c parent = byContent.get(v.Content__c);
+            if (parent == null) continue;
+            String bucket = parent.Offering_Key__c + '::' + parent.Template_Type__c + '::'
+                + v.CreatedDate.formatGmt('yyyy-MM-dd HH:mm');
+            PageActivity a = grouped.get(bucket);
+            if (a == null) {
+                a = new PageActivity();
+                a.offeringKey  = parent.Offering_Key__c;
+                a.templateType = parent.Template_Type__c;
+                a.occurred     = v.CreatedDate;
+                a.fieldCount   = 0;
+                grouped.put(bucket, a);
+                order.add(bucket);
+            }
+            a.fieldCount += 1;
+        }
+
+        List<PageActivity> out = new List<PageActivity>();
+        for (String bucket : order) {
+            PageActivity a = grouped.get(bucket);
+            a.summary = 'Published — ' + a.fieldCount
+                + (a.fieldCount == 1 ? ' field replaced' : ' fields replaced');
+            out.add(a);
+            if (out.size() >= 8) break;
+        }
+        return out;
     }
 }

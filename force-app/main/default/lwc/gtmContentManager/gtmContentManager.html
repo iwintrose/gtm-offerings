@@ -31,17 +31,20 @@
       </span>
 
       <div class="gcm-bar-right">
-        <template if:true={hasSections}>
-          <lightning-button
-            label={reorderLabel}
-            icon-name="utility:drag_and_drop"
-            variant={reorderVariant}
-            onclick={handleToggleReorder}>
-          </lightning-button>
-        </template>
-        <lightning-button label="Refresh" icon-name="utility:refresh"
-                          title="Reload this page from the org, discarding nothing"
-                          onclick={handleRefresh}></lightning-button>
+        <!-- Grouped the way Salesforce groups list-view actions: related
+             buttons share one pill, the primary action sits apart from it. -->
+        <lightning-button-group>
+          <template if:true={hasSections}>
+            <lightning-button
+              label={reorderLabel}
+              variant={reorderVariant}
+              onclick={handleToggleReorder}>
+            </lightning-button>
+          </template>
+          <lightning-button label="Refresh"
+                            title="Reload this page from the org. Nothing is discarded."
+                            onclick={handleRefresh}></lightning-button>
+        </lightning-button-group>
         <template if:true={hasDrafts}>
           <div class="gcm-changes">
             <button class="gcm-drafts" onclick={handleToggleChanges}
@@ -66,16 +69,17 @@
               </div>
             </template>
           </div>
-          <lightning-button label="Save &amp; exit"
-                            title="Leave the editor and keep the draft unpublished"
-                            onclick={handleSaveAndExit}></lightning-button>
-          <lightning-button
-            label="Publish"
-            variant="brand"
-            icon-name="utility:upload"
-            title="Replace the live page with this draft"
-            onclick={handleOpenExit}>
-          </lightning-button>
+          <lightning-button-group>
+            <lightning-button label="Save &amp; exit"
+                              title="Leave the editor and keep the draft unpublished"
+                              onclick={handleSaveAndExit}></lightning-button>
+            <lightning-button
+              label="Publish"
+              variant="brand"
+              title="Replace the live page with this draft"
+              onclick={handleOpenExit}>
+            </lightning-button>
+          </lightning-button-group>
         </template>
       </div>
     </header>

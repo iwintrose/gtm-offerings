@@ -71,12 +71,15 @@
         </section>
 
         <aside class="side">
-          <h2 class="side-h">Recently edited</h2>
-          <template if:false={hasRecent}>
-            <p class="side-empty">No content edited yet.</p>
+          <h2 class="side-h">Activity</h2>
+          <template if:false={hasActivity}>
+            <p class="side-empty">
+              Nothing published yet. Publishing a page records what changed and
+              when, and it shows up here.
+            </p>
           </template>
           <ul class="rec-list">
-            <template for:each={recentRows} for:item="r">
+            <template for:each={activityRows} for:item="r">
               <li key={r.id}>
                 <button class="rec"
                         data-offering={r.offeringKey}

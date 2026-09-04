@@ -15,7 +15,7 @@ const ALL_TEMPLATES = ['story', 'configurator', 'industry-chooser', 'offerings-l
 
 export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track offerings = [];
-    @track recent = [];
+    @track activity = [];
     @track isLoading = false;
     @track loadError = '';
 
@@ -27,7 +27,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         getHomeSummary()
             .then((data) => {
                 this.offerings = (data && data.offerings) || [];
-                this.recent = (data && data.recent) || [];
+                this.activity = (data && data.activity) || [];
             })
             .catch((err) => {
                 this.loadError = (err && err.body && err.body.message)
@@ -74,19 +74,24 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         });
     }
 
-    get recentRows() {
-        return this.recent.map((r, i) => ({
-            id: `${r.offeringKey}-${r.sectionKey}-${r.fieldKey}-${i}`,
-            offeringKey: r.offeringKey,
-            templateType: r.templateType,
-            what: r.label || r.fieldKey,
-            where: `${TEMPLATE_LABELS[r.templateType] || r.templateType} · ${r.sectionKey}`,
-            when: r.modified ? new Date(r.modified).toLocaleString() : ''
+    /**
+     * Page-level activity: what happened to a page, not which box someone
+     * typed in. A publish is an event; an autosaved keystroke is not.
+     */
+    get activityRows() {
+        return this.activity.map((a, i) => ({
+            id: `${a.offeringKey}-${a.templateType}-${i}`,
+            offeringKey: a.offeringKey,
+            templateType: a.templateType,
+            what: a.summary,
+            where: TEMPLATE_LABELS[a.templateType] || a.templateType,
+            when: a.occurred ? new Date(a.occurred).toLocaleString() : ''
         }));
     }
 
+    get hasActivity() { return this.activity.length > 0; }
+
     get hasOfferings() { return !this.isLoading && this.offerings.length > 0; }
-    get hasRecent() { return this.recent.length > 0; }
     get isEmpty() { return !this.isLoading && this.offerings.length === 0; }
 
     // Opening the editor carries the choice with it, so nobody lands on a page
