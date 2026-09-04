@@ -24,9 +24,13 @@ function buildBuilderUrl(orgUrl) {
 
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
 const OFFERING_LABEL = 'Migration Accelerator';
-const OFFERING_KEY = 'migration-accelerator';
+// Default only. The offering is set on the page in Experience Builder, so a
+// second offering is a page assignment rather than a code change.
+const DEFAULT_OFFERING_KEY = 'migration-accelerator';
 
 export default class MaConfigurator extends LightningElement {
+    @api offeringKey = DEFAULT_OFFERING_KEY;
+
     /** Back links, shown only for the internal/self-serve flow — hidden on
      * a shared prospect link (see showCustomizeButton). Set in Experience
      * Builder to match wherever Home and Choose Industry actually live. */
@@ -164,7 +168,7 @@ export default class MaConfigurator extends LightningElement {
         this.readUrlParams();
         this.setPageTitle();
         // Phase 1 — MA_Page_Content__c is the primary CMS source for static content.
-        getPageContent({ offeringKey: OFFERING_KEY, templateType: 'configurator', industryKey: null })
+        getPageContent({ offeringKey: this.offeringKey, templateType: 'configurator', industryKey: null })
             .then((map) => { if (map) this._cms = map; })
             // eslint-disable-next-line no-console
             .catch((err) => {
@@ -172,7 +176,7 @@ export default class MaConfigurator extends LightningElement {
                 // eslint-disable-next-line no-console
                 console.error('[maConfigurator] getPageContent:', JSON.stringify(err));
             });
-        getStoryContent({ offeringKey: OFFERING_KEY })
+        getStoryContent({ offeringKey: this.offeringKey })
             .then((data) => {
                 if (!data) return;
                 this._orgUrl = data.orgUrl || '';

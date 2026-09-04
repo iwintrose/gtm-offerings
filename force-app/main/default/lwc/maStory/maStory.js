@@ -247,7 +247,10 @@ export default class MaStory extends LightningElement {
     @api
     get previewSections() { return this._sectionRows; }
     set previewSections(value) {
-        if (!value) return;
+        // An empty array is truthy. Without the length check the editor's
+        // first render would put this component into preview mode with no
+        // sections and it would never fetch its own.
+        if (!value || !value.length) return;
         this._preview = true;
         this._sectionRows = value;
     }
@@ -255,7 +258,7 @@ export default class MaStory extends LightningElement {
     @api
     get previewContent() { return this._cms; }
     set previewContent(value) {
-        if (!value) return;
+        if (!value || !Object.keys(value).length) return;
         this._preview = true;
         this._cms = value;
     }

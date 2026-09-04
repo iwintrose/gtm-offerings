@@ -4,7 +4,9 @@ import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryC
 const FONTS_HREF =
     'https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap';
 
-const OFFERING_KEY = 'migration-accelerator';
+// Default only. The offering is set on the page in Experience Builder, so a
+// second offering is a page assignment rather than a code change.
+const DEFAULT_OFFERING_KEY = 'migration-accelerator';
 
 function buildBuilderUrl(orgUrl) {
     // The previous per-site deep link (/apex/networkbranding) pointed at a
@@ -44,6 +46,8 @@ const HARDCODED_INDUSTRIES = [
 ];
 
 export default class ChooseIndustry extends LightningElement {
+    @api offeringKey = DEFAULT_OFFERING_KEY;
+
     /** Back link target. Set in Experience Builder. */
     @api offeringsUrl = '/';
     /** Configurator page. Industry is appended as ?industry=<key>. */
@@ -106,7 +110,7 @@ export default class ChooseIndustry extends LightningElement {
         this._winClickHandler = () => { this._openEditId = null; };
         window.addEventListener('maadminedit', this._editModeHandler);
         window.addEventListener('click', this._winClickHandler);
-        getStoryContent({ offeringKey: OFFERING_KEY })
+        getStoryContent({ offeringKey: this.offeringKey })
             .then((data) => {
                 const industries = (data && data.industries) || [];
                 // Fall back to hardcoded data when the CMS callout returns nothing
