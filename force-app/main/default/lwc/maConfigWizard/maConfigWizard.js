@@ -701,7 +701,12 @@ export default class MaConfigWizard extends LightningElement {
                 this._step = TOTAL_STEPS + 1; // "done" screen
                 this._existed = true;
             }
-            this.dispatchEvent(new CustomEvent('configsaved', { detail: { recordId } }));
+            // The URL goes up with the id: the page this wizard sits on
+            // restores itself from query params, so without it a refresh
+            // lands on a bare configurator and the work looks lost.
+            this.dispatchEvent(new CustomEvent('configsaved', {
+                detail: { recordId, generatedUrl: this._generatedUrl }
+            }));
         } catch (e) {
             // An autosave failing mid-form is not something to interrupt for;
             // the explicit save at the end surfaces it.

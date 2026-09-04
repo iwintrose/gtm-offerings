@@ -804,9 +804,35 @@ export default class MaConfigurator extends LightningElement {
 
     /** So a save shows up in the Saved bar immediately -- without this,
      * the only way to see it was navigating away and back. */
-    handleConfigSaved() {
+    handleConfigSaved(event) {
         const bar = this.refs.savedLinksBar;
         if (bar) bar.refresh();
+        this._adoptSavedUrl(event && event.detail ? event.detail.generatedUrl : '');
+    }
+
+    /**
+     * Put the saved link's own parameters in the address bar.
+     *
+     * This page restores itself from query params -- that is deliberate, so a
+     * link always shows its own values rather than whatever this browser last
+     * edited. But a wizard save left the address bar on a bare /configurator,
+     * so refreshing showed an empty page and the work read as lost. It was
+     * never lost: the record was saved. The browser just had no way back to
+     * it.
+     *
+     * Only the query string is adopted, against the current path: the
+     * generated URL is absolute to the public site, and replacing the whole
+     * URL would throw inside Experience Builder, where the origin differs.
+     */
+    _adoptSavedUrl(generatedUrl) {
+        if (!generatedUrl) return;
+        try {
+            const search = generatedUrl.slice(generatedUrl.indexOf('?'));
+            if (!search || search[0] !== '?') return;
+            window.history.replaceState(null, '', window.location.pathname + search);
+        } catch (e) {
+            // A URL that cannot be rewritten is not a reason to fail the save.
+        }
     }
 
     handleFieldChange(event) {
