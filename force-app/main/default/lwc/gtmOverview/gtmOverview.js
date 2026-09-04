@@ -167,14 +167,24 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
 
     // Deep-links the editor rather than dropping you on its first page, which
     // is the "landed somewhere I did not choose" problem the home page exists
-    // to avoid.
+    /**
+     * Opens the editor in the Content Manager app, not as a lone tab inside
+     * this one. The editor has its own tabs — home, editor, records — and
+     * landing on it stranded from them is disorienting.
+     *
+     * standard__navItemPage stays inside the current app, so this navigates by
+     * URL: /lightning/app/<app>/n/<tab> is the documented way to cross apps.
+     */
     openEditor(offeringKey, templateType) {
-        const state = { c__offering: offeringKey };
-        if (templateType) state.c__template = templateType;
+        const params = [];
+        if (offeringKey) params.push(`c__offering=${encodeURIComponent(offeringKey)}`);
+        if (templateType) params.push(`c__template=${encodeURIComponent(templateType)}`);
+        const query = params.length ? `?${params.join('&')}` : '';
         this[NavigationMixin.Navigate]({
-            type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Content_Manager' },
-            state
+            type: 'standard__webPage',
+            attributes: {
+                url: `/lightning/app/c__GTM_Content_Manager/n/GTM_Content_Manager${query}`
+            }
         });
     }
 }

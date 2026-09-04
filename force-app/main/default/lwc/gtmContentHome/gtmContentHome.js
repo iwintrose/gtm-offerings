@@ -104,11 +104,15 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         this.openEditor(offering, template);
     }
 
+    // This page already lives in the Content Manager app, so the editor is a
+    // tab away rather than an app away; navItemPage keeps the app shell.
     openEditor(offeringKey, templateType) {
+        const state = { c__offering: offeringKey };
+        if (templateType) state.c__template = templateType;
         this[NavigationMixin.Navigate]({
             type: 'standard__navItemPage',
             attributes: { apiName: 'GTM_Content_Manager' },
-            state: { c__offering: offeringKey, c__template: templateType }
+            state
         });
     }
 

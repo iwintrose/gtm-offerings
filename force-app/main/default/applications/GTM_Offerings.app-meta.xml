@@ -9,12 +9,9 @@
     <label>GTM Offerings</label>
     <navType>Standard</navType>
     <tabs>GTM_Offerings_Overview</tabs>
-    <tabs>standard-home</tabs>
     <tabs>MA_Saved_Configuration__c</tabs>
     <tabs>MA_Assessment_Request__c</tabs>
     <tabs>MA_CMS_Content_Index__c</tabs>
-    <tabs>GTM_Content_Manager</tabs>
-    <tabs>MA_Page_Content__c</tabs>
     <tabs>standard-Lead</tabs>
     <tabs>standard-Opportunity</tabs>
     <tabs>standard-Account</tabs>

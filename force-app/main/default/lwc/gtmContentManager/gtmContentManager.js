@@ -85,6 +85,7 @@ export default class GtmContentManager extends LightningElement {
     _scrollQueued = false;
     _previewDriven = false;
     @track _scalePct = 100;
+    @track _changesOpen = false;
 
     // add / delete section
     @track addOpen = false;
@@ -428,6 +429,43 @@ export default class GtmContentManager extends LightningElement {
         if (st) parts.push(st === 1 ? '1 section changed' : `${st} sections changed`);
         return parts.join(' · ') || 'No unpublished changes';
     }
+
+    /**
+     * What is actually pending, named. A count alone tells you something is
+     * unpublished without telling you what, which is the one thing you need
+     * before deciding whether to publish.
+     */
+    get pendingChanges() {
+        const bySection = new Map(this.sections.map((x) => [x.sectionKey, x.label || x.sectionKey]));
+        const out = [];
+        this.sections.forEach((sec) => {
+            if (!sec.isDraft) return;
+            let what = 'moved';
+            if (sec.isDeleted) what = 'delete on publish';
+            else if (sec.isNew) what = 'new section';
+            else if (sec.isHidden) what = sec.active === false ? 'hide on publish' : 'show on publish';
+            out.push({
+                id: `sec-${sec.sectionKey}`,
+                where: sec.label || sec.sectionKey,
+                what,
+                kindClass: 'chg chg--structure'
+            });
+        });
+        this.records.forEach((r) => {
+            if (!r.isDraft && !r.pendingDelete) return;
+            out.push({
+                id: `fld-${r.id}`,
+                where: bySection.get(r.sectionKey) || r.sectionKey,
+                what: r.pendingDelete ? `${r.label || r.fieldKey} — delete on publish` : (r.label || r.fieldKey),
+                kindClass: r.pendingDelete ? 'chg chg--doomed' : 'chg'
+            });
+        });
+        return out;
+    }
+
+    get changesOpen() { return this._changesOpen && this.hasDrafts; }
+    handleToggleChanges() { this._changesOpen = !this._changesOpen; }
+    handleCloseChanges() { this._changesOpen = false; }
 
     // The save state is a state, not a log line: a dot and a word that say
     // whether what you typed is safely on the server.

@@ -43,7 +43,29 @@
                           title="Reload this page from the org, discarding nothing"
                           onclick={handleRefresh}></lightning-button>
         <template if:true={hasDrafts}>
-          <span class="gcm-drafts" title="Not yet on the live page">{draftSummary}</span>
+          <div class="gcm-changes">
+            <button class="gcm-drafts" onclick={handleToggleChanges}
+                    title="What is not yet on the live page">
+              <span class="gcm-drafts-dot"></span>{draftSummary}
+              <span class="gcm-drafts-caret">&#9662;</span>
+            </button>
+            <template if:true={changesOpen}>
+              <div class="chgpop">
+                <div class="chgpop-h">
+                  <span>Not yet published</span>
+                  <button class="chgpop-x" onclick={handleCloseChanges} title="Close">&times;</button>
+                </div>
+                <ul class="chgpop-list">
+                  <template for:each={pendingChanges} for:item="c">
+                    <li key={c.id} class={c.kindClass}>
+                      <span class="chg-where">{c.where}</span>
+                      <span class="chg-what">{c.what}</span>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </template>
+          </div>
           <lightning-button label="Save &amp; exit"
                             title="Leave the editor and keep the draft unpublished"
                             onclick={handleSaveAndExit}></lightning-button>
