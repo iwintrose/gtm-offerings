@@ -217,8 +217,29 @@
   opacity: 1;
 }
 
-/* One client, more than one link. Not an error -- a second contact or a second
-   pitch is normal -- but it should be visible without reading the whole list. */
+/* The deal a link was built for. A client with several links is normal; not
+   knowing which deal each belongs to is the problem this solves. */
+.sl-deal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #5b5a6b;
+}
+.sl-deal-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sl-deal-stage {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid #d6d6de;
+  border-radius: 999px;
+  font-size: 10px;
+  color: #6b6a78;
+}
+.sl-deal--none { color: #8a8798; font-style: italic; }
+
+/* Two links on the SAME deal, which is probably a mistake rather than a
+   second conversation. */
 .sl-dupe {
   display: inline-block;
   margin-top: 3px;

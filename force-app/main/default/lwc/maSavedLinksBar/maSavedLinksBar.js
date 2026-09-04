@@ -193,17 +193,21 @@ export default class MaSavedLinksBar extends LightningElement {
     groupRecords(records) {
         const byOffering = new Map();
 
-        // How many links each client already has. Two links for one account is
-        // legitimate -- a second contact, a second pitch -- but it was
-        // invisible: the list groups by offering and industry, so they sat
-        // apart with nothing saying they were the same client. Counting by
-        // account rather than by the typed company name, because the name is
-        // free text and the same client can be spelled two ways.
-        const linksPerAccount = new Map();
+        // Two links for one client is normal and is NOT what to flag: a
+        // client can have several deals at once, different parts of the
+        // business buying separately, or a deal that closed and restarted
+        // months later. Salesforce already models that as one account with
+        // many opportunities, and the link carries the opportunity -- so the
+        // deal is what tells two links apart, and naming it is what saves the
+        // reader from guessing.
+        //
+        // Two links on the SAME opportunity is the case that is probably a
+        // mistake, so that is the one that gets flagged.
+        const linksPerOpportunity = new Map();
         records.forEach((rec) => {
-            const acct = rec.Account__c;
-            if (!acct) return;
-            linksPerAccount.set(acct, (linksPerAccount.get(acct) || 0) + 1);
+            const opp = rec.Opportunity__c;
+            if (!opp) return;
+            linksPerOpportunity.set(opp, (linksPerOpportunity.get(opp) || 0) + 1);
         });
 
         records.forEach((rec) => {
@@ -217,14 +221,22 @@ export default class MaSavedLinksBar extends LightningElement {
                 byIndustry.set(industryKey, []);
             }
             const active = rec.Active__c !== false;
-            const siblings = rec.Account__c ? (linksPerAccount.get(rec.Account__c) || 1) : 1;
+            const sameDeal = rec.Opportunity__c ? (linksPerOpportunity.get(rec.Opportunity__c) || 1) : 1;
             byIndustry.get(industryKey).push({
                 id: rec.Id,
                 label: rec.Company__c || rec.Name,
                 accountName: rec.Account__r ? rec.Account__r.Name : '',
                 contactName: rec.Contact__r ? rec.Contact__r.Name : '',
-                shared: siblings > 1,
-                sharedLabel: siblings > 1 ? `${siblings} links for this client` : '',
+                // The deal this link is for. Naming it is the whole point:
+                // two links under one client stop being ambiguous the moment
+                // you can see they belong to different deals.
+                dealName: rec.Opportunity__r ? rec.Opportunity__r.Name : '',
+                dealStage: rec.Opportunity__r ? rec.Opportunity__r.StageName : '',
+                noDeal: !rec.Opportunity__c,
+                shared: sameDeal > 1,
+                sharedLabel: sameDeal > 1
+                    ? `${sameDeal} links on this same deal`
+                    : '',
                 recordNumber: rec.Name,
                 url: appendCfgId(rec.Generated_URL__c, rec.Id),
                 owner: rec.Owner ? rec.Owner.Name : '',

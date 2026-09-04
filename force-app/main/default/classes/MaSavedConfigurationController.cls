@@ -243,13 +243,17 @@ public with sharing class MaSavedConfigurationController {
      */
     @AuraEnabled
     public static List<MA_Saved_Configuration__c> getMyConfigurations() {
-        // The account comes back so the list can say when one client has
-        // more than one link. Company__c is free text a rep typed and two
-        // links for the same client can spell it differently; the account is
-        // the thing that actually joins them.
+        // The account and the opportunity both come back, because they answer
+        // different questions. One client having several links is normal --
+        // different deals, different parts of the business, a deal that closed
+        // and restarted months later. Salesforce already models that as one
+        // account with many opportunities, and the link carries the
+        // opportunity, so the deal is what tells two links apart. Two links on
+        // the SAME opportunity is the case worth flagging.
         return [
             SELECT Id, Name, Offering__c, Industry__c, Company__c,
                    Account__c, Account__r.Name, Contact__c, Contact__r.Name,
+                   Opportunity__c, Opportunity__r.Name, Opportunity__r.StageName,
                    Generated_URL__c, Active__c, CreatedDate, OwnerId, Owner.Name
             FROM MA_Saved_Configuration__c
             ORDER BY CreatedDate DESC

@@ -34,12 +34,30 @@
                                                     <span>{link.contactName}</span>
                                                 </template>
                                             </div>
-                                            <!-- Two links for one client is
-                                                 allowed, but it should not be
-                                                 something you have to notice
-                                                 by reading the whole list. -->
+                                            <!-- The deal, named. A client with
+                                                 several links is normal; which
+                                                 deal each one is for is the
+                                                 thing you would otherwise have
+                                                 to guess. -->
+                                            <template if:true={link.dealName}>
+                                                <div class="sl-deal" title="The opportunity this link was built for">
+                                                    <span class="sl-deal-name">{link.dealName}</span>
+                                                    <template if:true={link.dealStage}>
+                                                        <span class="sl-deal-stage">{link.dealStage}</span>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <template if:true={link.noDeal}>
+                                                <div class="sl-deal sl-deal--none"
+                                                     title="Not linked to an opportunity, so it cannot be told apart from another link for this client">
+                                                    <span class="sl-deal-name">No deal linked</span>
+                                                </div>
+                                            </template>
+                                            <!-- Two links on the SAME deal is
+                                                 the case that is probably a
+                                                 mistake. -->
                                             <template if:true={link.shared}>
-                                                <span class="sl-dupe" title="Same account, more than one link">
+                                                <span class="sl-dupe" title="More than one link points at this same opportunity">
                                                     {link.sharedLabel}
                                                 </span>
                                             </template>
