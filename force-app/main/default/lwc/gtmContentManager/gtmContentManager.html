@@ -1,141 +1,325 @@
 <template>
   <div class="gcm">
-    <!-- Top bar: title, template picker, draft/publish buttons -->
-    <div class="gcm-header">
-      <div class="gcm-header-left">
-        <span class="gcm-title">Content Editor</span>
-        <span class="gcm-offering">{offeringKey} / {templateType}</span>
+
+    <!-- toolbar: offering is the top of the hierarchy, page sits under it -->
+    <header class="gcm-bar">
+      <span class="gcm-brand">
+        <lightning-icon icon-name="utility:page" size="x-small"></lightning-icon>
+        GTM Content Manager
+      </span>
+      <span class="gcm-sep"></span>
+
+      <lightning-combobox
+        label="Offering"
+        variant="label-hidden"
+        placeholder="Choose an offering"
+        value={selectedOffering}
+        options={offeringOptions}
+        onchange={handleOfferingChange}
+        class="gcm-pick">
+      </lightning-combobox>
+
+      <template if:true={hasTemplate}>
+        <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
+        <button class="gcm-crumb" onclick={handleBackToPages}>All pages</button>
+        <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
+        <span class="gcm-crumb-current">{selectedTemplate}</span>
+      </template>
+
+      <span class={saveStateClass} title="Edits save as a draft while you type">
+        <span class="gcm-save-dot"></span>{saveStateLabel}
+      </span>
+
+      <div class="gcm-bar-right">
+        <!-- Grouped the way Salesforce groups list-view actions: related
+             buttons share one pill, the primary action sits apart from it. -->
+        <lightning-button-group>
+          <template if:true={hasSections}>
+            <lightning-button
+              label={reorderLabel}
+              variant={reorderVariant}
+              onclick={handleToggleReorder}>
+            </lightning-button>
+          </template>
+          <lightning-button label="Refresh"
+                            title="Reload this page from the org. Nothing is discarded."
+                            onclick={handleRefresh}></lightning-button>
+        </lightning-button-group>
+        <template if:true={hasDrafts}>
+          <div class="gcm-changes">
+            <button class="gcm-drafts" onclick={handleToggleChanges}
+                    title="What is not yet on the live page">
+              <span class="gcm-drafts-dot"></span>{draftSummary}
+              <span class="gcm-drafts-caret">&#9662;</span>
+            </button>
+            <template if:true={changesOpen}>
+              <div class="chgpop">
+                <div class="chgpop-h">
+                  <span>Not yet published</span>
+                  <button class="chgpop-x" onclick={handleCloseChanges} title="Close">&times;</button>
+                </div>
+                <ul class="chgpop-list">
+                  <template for:each={pendingChanges} for:item="c">
+                    <li key={c.id} class={c.kindClass}>
+                      <span class="chg-where">{c.where}</span>
+                      <span class="chg-what">{c.what}</span>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </template>
+          </div>
+          <lightning-button-group>
+            <lightning-button label="Save &amp; exit"
+                              title="Leave the editor and keep the draft unpublished"
+                              onclick={handleSaveAndExit}></lightning-button>
+            <lightning-button
+              label="Publish"
+              variant="brand"
+              title="Replace the live page with this draft"
+              onclick={handleOpenExit}>
+            </lightning-button>
+          </lightning-button-group>
+        </template>
       </div>
-      <div class="gcm-header-right">
-        <lightning-combobox
-          label="Template"
-          value={templateType}
-          options={templateTypeOptions}
-          onchange={handleTemplateChange}
-          variant="label-hidden"
-          class="gcm-tmpl-sel"
-        ></lightning-combobox>
-        <template if:true={hasDraftChanges}>
-          <lightning-button
-            label="Save Draft"
-            variant="neutral"
-            onclick={handleSaveDraft}
-            disabled={isSaving}
-          ></lightning-button>
-          <lightning-button
-            label="Publish"
-            variant="brand"
-            onclick={handlePublish}
-            disabled={isSaving}
-          ></lightning-button>
-        </template>
-        <template if:false={hasDraftChanges}>
-          <span class="gcm-status">✓ Published</span>
-        </template>
-        <template if:true={saveMessage}>
-          <span class="gcm-message">{saveMessage}</span>
-        </template>
+    </header>
+
+    <template if:true={loadError}>
+      <div class="gcm-error" role="alert">
+        <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+        <span>{loadError}</span>
+        <button class="gcm-error-x" onclick={handleDismissError} title="Dismiss">&times;</button>
       </div>
-    </div>
+    </template>
 
     <template if:true={isLoading}>
-      <div class="gcm-loading">
-        <lightning-spinner alternative-text="Loading…" size="small"></lightning-spinner>
+      <div class="gcm-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+    </template>
+
+    <!-- no offering chosen yet -->
+    <template if:false={hasOffering}>
+      <template if:false={isLoading}>
+        <div class="gcm-empty">
+          <p><b>Choose an offering to begin.</b></p>
+          <p class="gcm-empty-sub">
+            Each offering has its own pages, sections and content. Offerings come
+            from MA_Offering__mdt, so adding one is a metadata record.
+          </p>
+        </div>
+      </template>
+    </template>
+
+    <!-- offering chosen: pick a page -->
+    <template if:true={showPagePicker}>
+      <div class="gcm-pages">
+        <h2 class="gcm-pages-h">Pages in {offeringLabel}</h2>
+        <div class="pg-grid">
+          <template for:each={templates} for:item="t">
+            <button key={t.templateType} class={t.cardClass}
+                    data-template={t.templateType} onclick={handlePickTemplate}>
+              <span class="pg-name">{t.label}</span>
+              <span class="pg-sum">{t.summary}</span>
+              <template if:false={t.isBuilt}>
+                <span class="pg-flag">Not editable yet</span>
+              </template>
+            </button>
+          </template>
+        </div>
+        <p class="gcm-empty-sub gcm-pages-note">
+          A page becomes editable once its structure exists as Page Section
+          records. Pages showing no sections still render from their component's
+          built-in defaults.
+        </p>
       </div>
     </template>
 
-    <template if:false={isLoading}>
-      <!-- Split screen container -->
-      <div class="gcm-split" onmousemove={handleMouseMove}>
-        <!-- Left: Editor -->
-        <div class="gcm-editor" style={editorStyle}>
-          <div class="gcm-editor-scroll">
-            <template if:true={hasContent}>
-              <div class="gcm-sections">
-                <template for:each={draftSections} for:item="sec">
-                  <c-gtm-content-section
-                    key={sec.sectionKey}
-                    section-key={sec.sectionKey}
-                    section-label={sec.label}
-                    section-help={sec.help}
-                    offering-key={offeringKey}
-                    template-type={templateType}
-                    records={sec.records}
-                    oncontentsaved={handleContentSaved}
-                    oncontentdeleted={handleContentDeleted}
-                    onfieldcreate={handleFieldCreate}
-                  ></c-gtm-content-section>
-                </template>
-              </div>
-              <div class="gcm-add-section">
-                <lightning-button label="+ Add section" variant="neutral" onclick={handleNewSection}></lightning-button>
-              </div>
-            </template>
-            <template if:false={hasContent}>
-              <div class="gcm-empty">
-                <p>No content yet</p>
-              </div>
-            </template>
-          </div>
+    <!-- page chosen: the editor -->
+    <template if:true={showEditor}>
+      <template if:true={noSections}>
+        <div class="gcm-empty">
+          <p><b>This page has no sections yet.</b></p>
+          <p class="gcm-empty-sub">
+            A page is its sections. Add the first one and the editor opens on it;
+            nothing is public until you publish.
+          </p>
+          <lightning-button label="Add the first section" variant="brand"
+                            icon-name="utility:add" class="gcm-empty-cta"
+                            onclick={handleOpenAdd}></lightning-button>
         </div>
+      </template>
 
-        <!-- Draggable divider -->
-        <div class="gcm-divider" onmousedown={handleMouseDown}></div>
+      <template if:true={hasSections}>
+        <div class="gcm-cols">
 
-        <!-- Right: Live preview -->
-        <div class="gcm-preview" style={previewStyle}>
-          <div class="gcm-preview-label">LIVE PREVIEW</div>
-          <div class="gcm-preview-scroll">
-            <c-gtm-content-preview
-              offering-key={offeringKey}
-              template-type={templateType}
-              records={draftSections}
-            ></c-gtm-content-preview>
-          </div>
+          <aside class="gcm-rail">
+            <div class="gcm-colhead"><span>Sections</span><span class="gcm-count">{sectionCount}</span></div>
+            <div class="gcm-rail-body">
+              <template for:each={railSections} for:item="s">
+                <div key={s.sectionKey} class={s.itemClass} data-key={s.sectionKey}
+                     draggable={reorderMode} onclick={handleSelectSection}
+                     ondragstart={handleDragStart} ondragover={handleDragOver} ondrop={handleDrop}>
+                  <lightning-icon icon-name={s.icon} size="x-small" class="sec-icon"></lightning-icon>
+                  <div class="sec-main">
+                    <span class="sec-name">{s.label}</span>
+                    <span class="sec-meta">{s.layoutType} &middot; {s.fieldCount} fields</span>
+                    <template if:true={s.hasPending}>
+                      <span class="sec-pending">{s.pendingLabel}</span>
+                    </template>
+                  </div>
+                  <template if:true={s.isDirty}><span class="sec-dot" title="Unsaved"></span></template>
+                  <template if:true={reorderMode}>
+                    <span class="sec-move">
+                      <button class="mv" data-key={s.sectionKey} onclick={handleMoveUp}
+                              disabled={s.isFirst} title="Move up">&uarr;</button>
+                      <button class="mv" data-key={s.sectionKey} onclick={handleMoveDown}
+                              disabled={s.isLast} title="Move down">&darr;</button>
+                      <button class="mv" data-key={s.sectionKey} onclick={handleToggleActive}
+                              title={s.toggleLabel}>&#9679;</button>
+                      <template if:true={s.canDelete}>
+                        <button class="mv mv--danger" data-key={s.sectionKey} onclick={handleAskDelete}
+                                title="Delete this section">&times;</button>
+                      </template>
+                      <template if:true={s.canRestore}>
+                        <button class="mv mv--undo" data-key={s.sectionKey} onclick={handleRestore}
+                                title="Undo the pending delete">&#8630;</button>
+                      </template>
+                    </span>
+                  </template>
+                </div>
+              </template>
+            </div>
+            <div class="gcm-rail-foot">
+              <button class="gcm-add" onclick={handleOpenAdd} disabled={isSaving}>
+                <span class="gcm-add-plus">+</span> Add section
+              </button>
+              <p class="gcm-hint">{railHint}</p>
+            </div>
+          </aside>
+
+          <c-gtm-field-editor
+            class="gcm-fields"
+            records={records}
+            active-key={activeKey}
+            section-label={activeSectionLabel}
+            section-help={activeSectionHelp}
+            section-address={activeAddress}
+            layout-type={activeLayoutType}
+            offering-key={selectedOffering}
+            template-type={selectedTemplate}
+            busy={isSaving}
+            onvaluechange={handleFieldValueChange}
+            onfieldschanged={handleFieldsChanged}
+            onpresentationchange={handleFieldPresentationChange}
+            onerror={handleChildError}>
+          </c-gtm-field-editor>
+
+
+          <div class="gcm-split" role="separator" aria-orientation="vertical"
+               title="Drag to resize the editor column" onpointerdown={handleSplitDown}></div>
+
+          <c-gtm-page-preview
+            class="gcm-preview"
+            offering-key={selectedOffering}
+            sections={previewSections}
+            content={previewContent}
+            field-meta={previewFieldMeta}
+            page-url={livePageUrl}
+            has-drafts={hasDrafts}
+            active-key={activeKey}
+            onsectionchange={handlePreviewSectionChange}>
+          </c-gtm-page-preview>
+
         </div>
-      </div>
-
-      <!-- Version history panel -->
-      <div class="gcm-versions">
-        <button class="gcm-versions-toggle" onclick={handleToggleVersionHistory}>
-          📋 Version History {showVersionHistory ? '▼' : '▶'}
-        </button>
-        <template if:true={showVersionHistory}>
-          <div class="gcm-versions-list">
-            <div class="gcm-version-item">
-              <span class="gcm-version-num">v3</span>
-              <span class="gcm-version-info">Published 2 hours ago</span>
+      </template>
+    </template>
+    <template if:true={addOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="addTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="addTitle">Add a section</h2>
+            <p>A layout decides what the section can hold. Its fields are created with it.</p>
+          </header>
+          <div class="modal-b">
+            <div class="cards">
+              <template for:each={layoutOptions} for:item="l">
+                <button key={l.value} class={l.cardClass} data-layout={l.value}
+                        onclick={handleAddLayoutChange}>
+                  <span class="card-h">
+                    <lightning-icon icon-name={l.icon} size="x-small"></lightning-icon>
+                    {l.label}
+                  </span>
+                  <span class="card-hint">{l.hint}</span>
+                  <span class="card-count">{l.fieldLabel}</span>
+                </button>
+              </template>
             </div>
-            <div class="gcm-version-item">
-              <span class="gcm-version-num">v2</span>
-              <span class="gcm-version-info">Published yesterday</span>
-            </div>
-            <div class="gcm-version-item">
-              <span class="gcm-version-num">v1</span>
-              <span class="gcm-version-info">Initial version</span>
-            </div>
+            <lightning-input label="Heading" value={addLabel} placeholder="For example: The mechanism"
+                             onchange={handleAddLabelChange}></lightning-input>
+            <template if:true={addKeyPreview}>
+              <p class="modal-addr">{addKeyPreview}</p>
+            </template>
           </div>
-        </template>
-      </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseAdd}></lightning-button>
+            <lightning-button label="Add section" variant="brand" disabled={canAddSectionDisabled}
+                              onclick={handleCreateSection}></lightning-button>
+          </footer>
+        </div>
+      </section>
     </template>
 
-    <!-- New section modal -->
-    <template if:true={newSectionOpen}>
-      <div class="gcm-modal-overlay">
-        <div class="gcm-modal">
-          <div class="gcm-modal-header">New Section</div>
-          <lightning-input
-            label="Section Key"
-            value={newSectionKey}
-            onchange={handleNewSectionKeyChange}
-            placeholder="e.g. hero, problem"
-          ></lightning-input>
-          <div class="gcm-modal-actions">
-            <lightning-button label="Create" variant="brand" onclick={handleNewSectionConfirm}></lightning-button>
-            <lightning-button label="Cancel" onclick={handleNewSectionCancel}></lightning-button>
+    <template if:true={deleteOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="delTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="delTitle">Delete this section?</h2>
+            <p>This removes {deleteSummary}.</p>
+          </header>
+          <div class="modal-b">
+            <template if:true={deleteIsImmediate}>
+              <p class="modal-note">
+                This section has never been published, so nothing on the live
+                page changes and there is nothing to publish. It is removed now.
+              </p>
+            </template>
+            <template if:false={deleteIsImmediate}>
+              <p class="modal-note">
+                The section is marked and stays on the live page until you
+                publish. You can undo the mark until then. To take a section off
+                the page but keep what is in it, hide it instead.
+              </p>
+            </template>
           </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCancelDelete}></lightning-button>
+            <lightning-button label={deleteConfirmLabel} class="modal-danger"
+                              onclick={handleConfirmDelete}></lightning-button>
+          </footer>
         </div>
-      </div>
+      </section>
+    </template>
+
+    <template if:true={exitOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="pubTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="pubTitle">Publish to the live page?</h2>
+            <p>{draftSummary} on this page. The published page has not changed yet.</p>
+          </header>
+          <div class="modal-b">
+            <p class="modal-note">
+              Publishing replaces what visitors see and keeps the previous value
+              as a version you can roll back to. Discarding throws the edits away
+              and leaves the live page exactly as it is.
+            </p>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Discard changes" class="modal-danger" onclick={handleDiscard}></lightning-button>
+            <lightning-button label="Keep editing" onclick={handleCloseExit}></lightning-button>
+            <lightning-button label="Publish" variant="brand" onclick={handlePublish}></lightning-button>
+          </footer>
+        </div>
+      </section>
     </template>
   </div>
 </template>

@@ -25,6 +25,11 @@
                 <default>false</default>
                 <label>JSON (Structured)</label>
             </value>
+            <value>
+                <fullName>icontext</fullName>
+                <default>false</default>
+                <label>Button (label + icon)</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

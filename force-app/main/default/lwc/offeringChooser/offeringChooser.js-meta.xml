@@ -7,8 +7,11 @@
         <target>lightningCommunity__Page</target>
         <target>lightningCommunity__Default</target>
     </targets>
-    <targetConfigs>
+<targetConfigs>
         <targetConfig targets="lightningCommunity__Default">
+            <property name="offeringKey" type="String" label="Offering Key"
+                      description="Offering key, matching MA_Offering__mdt.Offering_Key__c."
+                      default="migration-accelerator"/>
             <property
                 name="industryUrl"
                 type="String"

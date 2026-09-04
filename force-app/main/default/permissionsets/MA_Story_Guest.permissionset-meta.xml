@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Read-only guest access to CMS-backed story content (MaStoryContentController). Separate from MA_Assessment_Guest so a story-only guest user doesn't pick up its booking-flow create rights.</description>
+    <description>Read-only guest access to story content: MaPageContentReader (MA_Page_Content__c and MA_Page_Section__c) and MaStoryContentController (CMS-backed). MaPageContentController is excluded: Apex access is per class, so it would expose save and delete publicly.</description>
     <label>MA Story Guest</label>
+    <classAccesses>
+        <apexClass>MaPageContentReader</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <classAccesses>
         <apexClass>MaStoryContentController</apexClass>
         <enabled>true</enabled>

@@ -313,3 +313,19 @@ h1 {
   max-width: 58rem;
   margin: 0 auto;
 }
+
+/* Shown when a content callout fails. Deliberately visible rather than
+   console-only: both data paths on this page failed silently for months
+   because the only signal was a console warning nobody was watching. */
+.load-error {
+    max-width: 50rem;
+    margin: 0.75rem auto 0;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--warn, #B4842E);
+    border-left-width: 3px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--warn, #B4842E) 8%, transparent);
+    color: var(--ink-soft, #5B5A6B);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}

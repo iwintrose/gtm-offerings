@@ -1,0 +1,132 @@
+<template>
+  <div class="home">
+
+    <header class="home-head">
+      <div>
+        <h1>Content</h1>
+        <p class="home-sub">
+          Every offering, the pages under it, and what has changed recently.
+          Choose a page to edit it.
+        </p>
+      </div>
+      <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh}></lightning-button>
+    </header>
+
+    <template if:true={loadError}>
+      <div class="home-error" role="alert">
+        <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+        <span>{loadError}</span>
+        <button class="home-error-x" onclick={handleDismissError} title="Dismiss">&times;</button>
+      </div>
+    </template>
+
+    <template if:true={isLoading}>
+      <div class="home-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+    </template>
+
+    <template if:true={isEmpty}>
+      <div class="home-empty">
+        <p><b>No offerings registered.</b></p>
+        <p class="home-empty-sub">
+          Offerings come from MA_Offering__mdt. Add a record there and its pages appear here.
+        </p>
+      </div>
+    </template>
+
+    <template if:true={hasOfferings}>
+      <div class="home-cols">
+
+        <section class="off-col">
+          <template for:each={cards} for:item="o">
+            <article key={o.key} class="off">
+              <div class="off-head">
+                <div class="off-id">
+                  <h2>{o.label}</h2>
+                  <span class="off-key">{o.key}</span>
+                </div>
+                <span class="off-stat">{o.summary}</span>
+              </div>
+              <ul class="pg-list">
+                <template for:each={o.pages} for:item="p">
+                  <li key={p.id}>
+                    <button class={p.rowClass}
+                            data-offering={p.offeringKey}
+                            data-template={p.templateType}
+                            data-built={p.isBuilt}
+                            onclick={handleOpenPage}>
+                      <span class="pg-main">
+                        <span class="pg-name">{p.label}</span>
+                        <span class="pg-detail">{p.detail}</span>
+                      </span>
+                      <template if:false={p.isBuilt}>
+                        <span class="pg-flag">{p.badge}</span>
+                      </template>
+                      <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
+                    </button>
+                  </li>
+                </template>
+              </ul>
+            </article>
+          </template>
+        </section>
+
+        <aside class="side">
+          <h2 class="side-h">Create</h2>
+          <button class="side-new" onclick={handleOpenNewPage}>
+            <span class="side-new-plus">+</span>
+            <span class="side-new-main">
+              <span class="side-new-label">New Accelerator Page</span>
+              <span class="side-new-sub">Build a page for an offering</span>
+            </span>
+          </button>
+
+          <h2 class="side-h side-h--spaced">Activity</h2>
+          <template if:false={hasActivity}>
+            <p class="side-empty">
+              Nothing published yet. Publishing a page records what changed and
+              when, and it shows up here.
+            </p>
+          </template>
+          <ul class="rec-list">
+            <template for:each={activityRows} for:item="r">
+              <li key={r.id}>
+                <button class="rec"
+                        data-offering={r.offeringKey}
+                        data-template={r.templateType}
+                        onclick={handleOpenRecent}>
+                  <span class="rec-what">{r.what}</span>
+                  <span class="rec-where">{r.where}</span>
+                  <span class="rec-when">{r.when}</span>
+                </button>
+              </li>
+            </template>
+          </ul>
+        </aside>
+
+      </div>
+    </template>
+  </div>
+
+    <template if:true={newPageOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="npTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="npTitle">New Accelerator page</h2>
+            <p>Pick the offering and which of its pages to build.</p>
+          </header>
+          <div class="modal-b">
+            <lightning-combobox label="Offering" value={npOffering} options={offeringOptions}
+                                onchange={handleNpOffering}></lightning-combobox>
+            <lightning-combobox label="Page" value={npTemplate} options={templateOptions}
+                                onchange={handleNpTemplate}></lightning-combobox>
+            <p class="modal-note">{npHint}</p>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseNewPage}></lightning-button>
+            <lightning-button label="Open in the editor" variant="brand"
+                              disabled={npDisabled} onclick={handleGoToPage}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
+</template>

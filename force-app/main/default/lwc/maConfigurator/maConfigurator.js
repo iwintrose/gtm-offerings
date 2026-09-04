@@ -24,9 +24,13 @@ function buildBuilderUrl(orgUrl) {
 
 const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
 const OFFERING_LABEL = 'Migration Accelerator';
-const OFFERING_KEY = 'migration-accelerator';
+// Default only. The offering is set on the page in Experience Builder, so a
+// second offering is a page assignment rather than a code change.
+const DEFAULT_OFFERING_KEY = 'migration-accelerator';
 
 export default class MaConfigurator extends LightningElement {
+    @api offeringKey = DEFAULT_OFFERING_KEY;
+
     /** Back links, shown only for the internal/self-serve flow — hidden on
      * a shared prospect link (see showCustomizeButton). Set in Experience
      * Builder to match wherever Home and Choose Industry actually live. */
@@ -34,6 +38,7 @@ export default class MaConfigurator extends LightningElement {
     @api industryUrl = '/choose-industry';
     @api accentColor = ''; // deprecated — colour is set via saved links / Customize panel
 
+    @track _loadError = '';
     @track tokenState = {};
     @track company = '';
     @track industryKey = '';
@@ -178,11 +183,15 @@ export default class MaConfigurator extends LightningElement {
         this.readUrlParams();
         this.setPageTitle();
         // Phase 1 — MA_Page_Content__c is the primary CMS source for static content.
-        getPageContent({ offeringKey: OFFERING_KEY, templateType: 'configurator', industryKey: null })
+        getPageContent({ offeringKey: this.offeringKey, templateType: 'configurator', industryKey: null })
             .then((map) => { if (map) this._cms = map; })
             // eslint-disable-next-line no-console
-            .catch((err) => { console.warn('[maConfigurator] getPageContent:', JSON.stringify(err)); });
-        getStoryContent({ offeringKey: OFFERING_KEY })
+            .catch((err) => {
+                this._loadError = 'Page content could not be loaded; showing built-in defaults.';
+                // eslint-disable-next-line no-console
+                console.error('[maConfigurator] getPageContent:', JSON.stringify(err));
+            });
+        getStoryContent({ offeringKey: this.offeringKey })
             .then((data) => {
                 if (!data) return;
                 this._orgUrl = data.orgUrl || '';
@@ -202,8 +211,11 @@ export default class MaConfigurator extends LightningElement {
                     this.tokenState = { ...cmsDefaults, ...this.tokenState };
                 }
             })
-            // eslint-disable-next-line no-console
-            .catch((err) => { console.error('[maConfigurator] getStoryContent:', JSON.stringify(err)); });
+            .catch((err) => {
+                this._loadError = 'Offering content could not be loaded; showing built-in defaults.';
+                // eslint-disable-next-line no-console
+                console.error('[maConfigurator] getStoryContent:', JSON.stringify(err));
+            });
 
         this._scrollHandler = this.handleScroll.bind(this);
         this._keyHandler = this.handleKeydown.bind(this);
@@ -228,6 +240,11 @@ export default class MaConfigurator extends LightningElement {
         if (!raw) return null;
         try { return JSON.parse(raw); } catch (e) { return null; }
     }
+
+
+    // This page is client-facing. The failure is always logged, but the banner
+    // only shows to an internal user in edit mode, never to a prospect.
+    get showLoadError() { return !!this._loadError && this._editMode; }
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl); }
     get contentManagerUrl() {

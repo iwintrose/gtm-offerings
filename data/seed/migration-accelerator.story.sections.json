@@ -1,0 +1,164 @@
+{
+ "records": [
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "secHeader"
+   },
+   "Section_Address__c": "migration-accelerator::story::header",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "header",
+   "Label__c": "Header",
+   "Help_Text__c": "The brand name and tag shown in the masthead.",
+   "Layout_Type__c": "page-header",
+   "Width__c": "standard",
+   "Sort_Order__c": 5,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "secFooter"
+   },
+   "Section_Address__c": "migration-accelerator::story::footer",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "footer",
+   "Label__c": "Footer",
+   "Help_Text__c": "The two lines along the bottom of the page.",
+   "Layout_Type__c": "page-footer",
+   "Width__c": "standard",
+   "Sort_Order__c": 999,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "sec1"
+   },
+   "Section_Address__c": "migration-accelerator::story::hero",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "hero",
+   "Label__c": "Hero",
+   "Help_Text__c": "The first screen: eyebrow, headline and the one line saying what this is.",
+   "Layout_Type__c": "hero",
+   "Width__c": "standard",
+   "Sort_Order__c": 10,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "sec2"
+   },
+   "Section_Address__c": "migration-accelerator::story::problem",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "problem",
+   "Label__c": "The Problem",
+   "Help_Text__c": "What's broken about the status quo. Sets up everything after it.",
+   "Layout_Type__c": "lede-chips",
+   "Width__c": "standard",
+   "Sort_Order__c": 20,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "sec3"
+   },
+   "Section_Address__c": "migration-accelerator::story::mechanism",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "mechanism",
+   "Label__c": "The Mechanism",
+   "Help_Text__c": "How it works: the step route plus the live proof panel.",
+   "Layout_Type__c": "route-proof",
+   "Width__c": "wide",
+   "Sort_Order__c": 30,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "sec4"
+   },
+   "Section_Address__c": "migration-accelerator::story::capabilities",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "capabilities",
+   "Label__c": "Capabilities",
+   "Help_Text__c": "What's actually built today, one card per capability.",
+   "Layout_Type__c": "card-grid",
+   "Width__c": "standard",
+   "Sort_Order__c": 40,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "sec5"
+   },
+   "Section_Address__c": "migration-accelerator::story::clientProfile",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "clientProfile",
+   "Label__c": "Client Profile",
+   "Help_Text__c": "Who this fits: the sizing stat and the honest caveat.",
+   "Layout_Type__c": "stat",
+   "Width__c": "standard",
+   "Sort_Order__c": 50,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "sec6"
+   },
+   "Section_Address__c": "migration-accelerator::story::bd",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "bd",
+   "Label__c": "BD Pitch",
+   "Help_Text__c": "For BD and Industry Leaders: how to run the story in a room.",
+   "Layout_Type__c": "use-pitch",
+   "Width__c": "wide",
+   "Sort_Order__c": 60,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "sec7"
+   },
+   "Section_Address__c": "migration-accelerator::story::faq",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "faq",
+   "Label__c": "FAQ",
+   "Help_Text__c": "The questions this has to survive.",
+   "Layout_Type__c": "faq",
+   "Width__c": "standard",
+   "Sort_Order__c": 70,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "MA_Page_Section__c",
+    "referenceId": "sec8"
+   },
+   "Section_Address__c": "migration-accelerator::story::closing",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "closing",
+   "Label__c": "Closing CTA",
+   "Help_Text__c": "The last screen: the summary line and the call to action.",
+   "Layout_Type__c": "closing",
+   "Width__c": "standard",
+   "Sort_Order__c": 80,
+   "Active__c": true
+  }
+ ]
+}

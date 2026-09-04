@@ -1,0 +1,90 @@
+<template>
+  <div class="ov">
+    <template if:true={loadError}>
+      <div class="ov-err">{loadError}</div>
+    </template>
+
+    <div class="ov-cols">
+      <!-- left: the numbers, stacked, because they are read down not across -->
+      <section class="ov-col ov-col--stats">
+        <h2 class="ov-h">Snapshot</h2>
+        <template for:each={tiles} for:item="t">
+          <div key={t.key} class="tile">
+            <div class="tile-top">
+              <lightning-icon icon-name={t.icon} size="x-small" class="tile-ico"></lightning-icon>
+              <span class="tile-label">{t.label}</span>
+            </div>
+            <div class={t.valueClass}>{t.value}</div>
+          </div>
+        </template>
+      </section>
+
+      <!-- middle: the work waiting on someone -->
+      <section class="ov-col ov-col--work">
+        <h2 class="ov-h">New assessment requests</h2>
+        <template if:true={hasRequests}>
+          <div class="rows">
+            <template for:each={requests} for:item="r">
+              <a key={r.key} class="row" href={r.url}>
+                <span class="row-main">
+                  <span class="row-name">{r.name}</span>
+                  <span class="row-meta">{r.meta}</span>
+                </span>
+                <span class="row-date">{r.date}</span>
+              </a>
+            </template>
+          </div>
+        </template>
+        <template if:true={showEmptyRequests}>
+          <p class="ov-empty">Nothing waiting. New requests from the public pages land here.</p>
+        </template>
+      </section>
+
+      <!-- right: what a rep comes here to do -->
+      <section class="ov-col ov-col--act">
+        <h2 class="ov-h">Create</h2>
+        <button class="act" onclick={handleNewProspectPage} disabled={navBusy}>
+          <span class="act-plus">+</span>
+          <span class="act-main">
+            <span class="act-label">New Prospect Page</span>
+            <span class="act-sub">Pick an industry and build a client configurator</span>
+          </span>
+        </button>
+        <a class="act act--quiet" href={contentManagerUrl}>
+          <span class="act-main">
+            <span class="act-label">Open the Content Manager</span>
+            <span class="act-sub">Edit the pages behind these offerings</span>
+          </span>
+        </a>
+      </section>
+    </div>
+
+    <!-- offerings, each linking to its own story -->
+    <section class="ov-offerings">
+      <h2 class="ov-h">Offerings</h2>
+      <div class="cards">
+        <template for:each={offerings} for:item="o">
+          <div key={o.offeringKey} class="ocard">
+            <div class="ocard-top">
+              <span class="ocard-name">{o.label}</span>
+              <span class="ocard-key">{o.offeringKey}</span>
+            </div>
+            <p class="ocard-sum">{o.summary}</p>
+            <div class="ocard-acts">
+              <template if:true={o.hasStory}>
+                <a class="ocard-btn ocard-btn--primary" href={o.storyUrl}
+                   target="_blank" rel="noopener">View the story &#8599;</a>
+              </template>
+              <button class="ocard-btn" data-offering={o.offeringKey}
+                      onclick={handleEditOffering}>Edit pages</button>
+            </div>
+          </div>
+        </template>
+      </div>
+      <template if:true={showEmptyOfferings}>
+        <p class="ov-empty">No offerings configured. Add an MA_Offering__mdt record to create one.</p>
+      </template>
+    </section>
+
+  </div>
+</template>

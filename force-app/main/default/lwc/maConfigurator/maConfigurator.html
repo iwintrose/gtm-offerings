@@ -1,5 +1,9 @@
 <template>
   <div class={rootClass} style={rootStyle}>
+    <template if:true={showLoadError}>
+      <div class="load-error" role="status">{_loadError}</div>
+    </template>
+
     <div class="psbar">
       <span class="wm"><span class="tick"></span> Publicis <b>Sapient</b></span>
       <div class="bar-right">

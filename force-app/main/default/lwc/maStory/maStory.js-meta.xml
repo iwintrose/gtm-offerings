@@ -6,5 +6,9 @@
     <targets>
         <target>lightningCommunity__Page</target>
         <target>lightningCommunity__Default</target>
+        <!-- Also usable inside Lightning Experience: the GTM Content Manager
+             embeds this component to preview a draft through the real
+             renderer rather than a copy of it. -->
+        <target>lightning__AppPage</target>
     </targets>
 </LightningComponentBundle>

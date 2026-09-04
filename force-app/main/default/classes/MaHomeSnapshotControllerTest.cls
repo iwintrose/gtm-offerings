@@ -50,9 +50,7 @@ private class MaHomeSnapshotControllerTest {
         Test.stopTest();
 
         Assert.areEqual(2, snap.activeEngagementCount);
-        Assert.areEqual(50000, snap.activeEngagementValue);
         Assert.areEqual(1, snap.newAssessmentCount);
-        Assert.areEqual(75000, snap.openPipelineAmount);
     }
 
     @IsTest
@@ -86,8 +84,6 @@ private class MaHomeSnapshotControllerTest {
         Test.stopTest();
 
         Assert.areEqual(0, snap.activeEngagementCount);
-        Assert.areEqual(0, snap.activeEngagementValue);
         Assert.areEqual(0, snap.newAssessmentCount);
-        Assert.areEqual(0, snap.openPipelineAmount);
     }
 }

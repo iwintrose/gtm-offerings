@@ -1,0 +1,124 @@
+:host { display: block; }
+.ov { padding: 0.75rem; font-size: 13px; color: #181818; }
+.ov-err {
+    margin-bottom: 0.75rem; padding: 0.6rem 0.8rem;
+    border: 1px solid #f2c2c2; border-radius: 5px; background: #fdf2f2; color: #ba0517;
+}
+
+/* Three columns, each with a different job: numbers read down the left, work
+   waiting in the middle, the action you came to start on the right. */
+.ov-cols {
+    display: grid;
+    grid-template-columns: 15rem minmax(20rem, 1fr) 17rem;
+    gap: 0.75rem;
+    align-items: start;
+}
+@media (max-width: 1100px) {
+    .ov-cols { grid-template-columns: 1fr; }
+}
+
+.ov-col {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
+    padding: 0.7rem 0.8rem 0.9rem;
+}
+.ov-h {
+    margin: 0 0 0.6rem;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #747474;
+}
+.ov-empty { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
+
+/* ── left: stats ─────────────────────────────────────────────────────────── */
+.tile { padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; }
+.tile:last-child { border-bottom: 0; padding-bottom: 0; }
+.tile-top { display: flex; align-items: center; gap: 0.35rem; }
+.tile-ico { --sds-c-icon-color-foreground-default: #747474; }
+.tile-label { font-size: 11.5px; color: #747474; }
+.tile-value {
+    margin-top: 0.15rem;
+    font-size: 26px; font-weight: 700; line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+.tile-value--good { color: #2e844a; }
+
+/* ── middle: requests ────────────────────────────────────────────────────── */
+.rows { display: flex; flex-direction: column; }
+.row {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.5rem 0.35rem;
+    border-bottom: 1px solid #f0f0f0; text-decoration: none; color: inherit;
+    border-radius: 3px;
+}
+.row:last-child { border-bottom: 0; }
+.row:hover { background: #f7f9fc; }
+.row-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.row-name { font-weight: 600; font-size: 12.5px; }
+.row-meta { font-size: 11.5px; color: #747474; }
+.row-date {
+    font-size: 11.5px; color: #969696;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+/* ── right: the action ───────────────────────────────────────────────────── */
+.act {
+    display: flex; align-items: flex-start; gap: 0.5rem; width: 100%;
+    padding: 0.65rem 0.7rem; margin-bottom: 0.5rem;
+    border: 1px solid #0176d3; border-radius: 5px; background: #0176d3;
+    color: #fff; cursor: pointer; text-align: left; text-decoration: none;
+}
+.act:hover { background: #014486; border-color: #014486; }
+.act--quiet {
+    background: #fff; color: #181818; border-color: #e5e5e5;
+}
+.act--quiet:hover { background: #f7f7f7; border-color: #c9c9c9; }
+.act-plus { font-size: 18px; line-height: 1.1; }
+.act-main { display: flex; flex-direction: column; gap: 0.1rem; }
+.act-label { font-size: 13px; font-weight: 700; }
+.act-sub { font-size: 11.5px; opacity: 0.85; line-height: 1.4; }
+.act--quiet .act-sub { color: #747474; opacity: 1; }
+
+/* ── offerings ───────────────────────────────────────────────────────────── */
+.ov-offerings {
+    margin-top: 0.75rem;
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
+    padding: 0.7rem 0.8rem 0.9rem;
+}
+.cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 0.6rem;
+}
+.ocard { border: 1px solid #e5e5e5; border-radius: 5px; padding: 0.7rem 0.75rem; }
+.ocard-top { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+.ocard-name { font-size: 13.5px; font-weight: 700; }
+.ocard-key {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px; color: #969696;
+}
+.ocard-sum { margin: 0.3rem 0 0.6rem; font-size: 11.5px; color: #747474; }
+.ocard-acts { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ocard-btn {
+    padding: 0.28rem 0.55rem;
+    border: 1px solid #c9c9c9; border-radius: 4px; background: #fff;
+    font-size: 12px; color: #181818; cursor: pointer; text-decoration: none;
+}
+.ocard-btn:hover { border-color: #0176d3; color: #0176d3; }
+.ocard-btn--primary { border-color: #0176d3; color: #0176d3; font-weight: 600; }
+
+/* ── modal ───────────────────────────────────────────────────────────────── */
+.scrim {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,20,24,.5); display: grid; place-items: center; padding: 1rem;
+}
+.modal {
+    width: min(28rem, 100%); background: #fff; border-radius: 8px;
+    box-shadow: 0 10px 34px rgba(0,0,0,.22); overflow: hidden;
+}
+.modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid #e5e5e5; }
+.modal-h h2 { margin: 0 0 .2rem; font-size: 16px; font-weight: 700; }
+.modal-h p { margin: 0; font-size: 12.5px; color: #444; }
+.modal-b { padding: .9rem 1.15rem; display: flex; flex-direction: column; gap: .7rem; }
+.modal-note { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
+.modal-f {
+    padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
+    display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
+}

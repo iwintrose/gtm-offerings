@@ -1,6 +1,9 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import getStoryContent from '@salesforce/apex/MaStoryContentController.getStoryContent';
-import getPageContent from '@salesforce/apex/MaPageContentController.getPageContent';
+import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
+// The layout vocabulary is shared with the editor, which has to know what
+// fields a section needs before that section exists. See c/gtmPageLayouts.
+import { FRAME_LAYOUTS, LAYOUT_FIELDS, ctaGlyph } from 'c/gtmPageLayouts';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
@@ -36,6 +39,38 @@ const DEFAULTS = {
     mechanismSub: 'Point it at a client\'s email tool (ex: SFMC, Eloqua, etc) — get a build-ready plan out, and for the pieces it\'s confident about, a finished migration.',
     closingHead: 'This is Migration Accelerator today: an offering built on evidence, moving toward a finished migration instead of a plan for one.',
     closingSub: 'The next step is putting a name and an industry behind it.',
+    faqs: [
+        {
+            question: 'Does it let us run a migration with fewer people?',
+            verdict: 'Yes',
+            answer: 'The platform drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.'
+        },
+        {
+            question: 'Does it let us do it faster?',
+            verdict: 'Yes',
+            answer: 'Assessment runs in about an hour instead of weeks. A full plan for a mid-size environment fits inside a single sprint.'
+        },
+        {
+            question: 'Can it actually execute the migration, or just plan it?',
+            verdict: 'Yes',
+            answer: 'For supported objects, the platform previews the change with a dry run, executes it live, and keeps rollback ready if anything doesn\'t land clean.'
+        },
+        {
+            question: 'Does it mean fewer defects?',
+            verdict: 'Yes',
+            answer: 'Dependency-aware planning won\'t let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely.'
+        },
+        {
+            question: 'Does it give us better scoping, less risk?',
+            verdict: 'Yes',
+            answer: 'The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.'
+        },
+        {
+            question: 'Does it let us scale without deep platform specialists on every deal?',
+            verdict: 'Qualified yes',
+            answer: 'Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve.'
+        }
+    ],
     routeSteps: [
         { stepLabel: 'Ingest', stepDesc: 'Every asset, read directly' },
         { stepLabel: 'Audit', stepDesc: 'A live health score' },
@@ -77,6 +112,87 @@ const DEFAULTS = {
     ]
 };
 
+
+// Per-layout fallbacks, used when a record is absent. Keyed by layout type and
+// field name so they line up with LAYOUT_FIELDS. These are the floor: the page
+// still renders if the org has no content rows at all.
+const SECTION_FALLBACKS = {
+    'page-header': {
+        brandLabel: 'Migration Accelerator',
+        brandTag: '/ the story'
+    },
+    'page-footer': {
+        footerLeft: 'Migration Accelerator — positioning working draft',
+        footerRight: 'Grounded against ma-migrator + project-conduit, August 2026'
+    },
+    'hero': {
+        eyebrow: DEFAULTS.heroEyebrow,
+        headline: DEFAULTS.heroHeadline,
+        subhead: DEFAULTS.heroSubhead
+    },
+    'lede-chips': {
+        lede: DEFAULTS.problemLede,
+        close: DEFAULTS.problemClose,
+        chips: DEFAULTS.problemChips
+    },
+    'route-proof': {
+        eyebrow: 'The mechanism',
+        head: DEFAULTS.mechanismHead,
+        sub: DEFAULTS.mechanismSub,
+        routeSteps: DEFAULTS.routeSteps,
+        proofCtaText: DEFAULTS.proofCtaText,
+        proofDemoRoot: DEFAULTS.proofDemoRoot,
+        proofDemoDeps: DEFAULTS.proofDemoDeps
+    },
+    'card-grid': {
+        eyebrow: 'The capabilities',
+        head: "What's actually built.",
+        cards: DEFAULTS.capabilities,
+        bonusCard: DEFAULTS.bonusCard
+    },
+    'stat': {
+        eyebrow: 'The client profile',
+        head: 'Who this fits.',
+        statBig: DEFAULTS.clientStatBig,
+        statDesc: DEFAULTS.clientStatDesc,
+        note: DEFAULTS.clientNote
+    },
+    'use-pitch': {
+        eyebrow: 'For Business Development and Industry Leaders',
+        head: DEFAULTS.bdHead,
+        lede: DEFAULTS.bdLede,
+        useCases: DEFAULTS.bdUseCases,
+        pitchOldChips: DEFAULTS.pitchOldChips,
+        pitchNewChips: DEFAULTS.pitchNewChips
+    },
+    'faq': {
+        eyebrow: 'FAQ',
+        head: 'The questions this needs to survive.',
+        items: DEFAULTS.faqs
+    },
+    'closing': {
+        head: DEFAULTS.closingHead,
+        sub: DEFAULTS.closingSub,
+        ctaLabel: { label: 'Build a client-specific version', icon: 'arrow' }
+    }
+};
+
+// Fallback structure, used only until getPageLayout returns rows. Order here
+// matches the page as originally authored; MA_Page_Section__c overrides it.
+const DEFAULT_SECTIONS = [
+    { sectionKey: 'header',        layoutType: 'page-header', width: 'standard', label: 'Header' },
+    { sectionKey: 'footer',        layoutType: 'page-footer', width: 'standard', label: 'Footer' },
+    { sectionKey: 'hero',          layoutType: 'hero',        width: 'standard', label: '' },
+    { sectionKey: 'problem',       layoutType: 'lede-chips',  width: 'standard', label: '' },
+    { sectionKey: 'mechanism',     layoutType: 'route-proof', width: 'wide',     label: 'The mechanism' },
+    { sectionKey: 'capabilities',  layoutType: 'card-grid',   width: 'standard', label: 'The capabilities' },
+    { sectionKey: 'clientProfile', layoutType: 'stat',        width: 'standard', label: 'The client profile' },
+    { sectionKey: 'bd',            layoutType: 'use-pitch',   width: 'wide',     label: 'For Business Development and Industry Leaders' },
+    { sectionKey: 'faq',           layoutType: 'faq',         width: 'standard', label: 'FAQ' },
+    { sectionKey: 'closing',       layoutType: 'closing',     width: 'standard', label: '' }
+];
+
+
 export default class MaStory extends LightningElement {
     acceleratorUrl = ACCELERATOR_URL;
 
@@ -97,9 +213,81 @@ export default class MaStory extends LightningElement {
     @track _proofHealthScore = null;
     // MA_Page_Content__c flat map: key = 'section::field', value = resolved string
     @track _cms = {};
+    // Structure of the page, ordered. Empty until getPageLayout returns, at
+    // which point DEFAULT_SECTIONS stops being used.
+    @track _sectionRows = [];
+    // Type and label of every field, so undeclared ones can be drawn.
+    @track _fieldMeta = [];
+    @track _loadError = '';
+    // Set in the Lightning App Builder / Experience Builder. Defaults to the
+    // first offering but is not bound to it.
+    @api offeringKey = OFFERING_KEY;
+
+    // Preview mode. When the GTM Content Manager passes draft structure and
+    // content in, this component renders those instead of fetching its own,
+    // so the editor previews through the real renderer rather than a
+    // reimplementation of it that can drift.
+    _preview = false;
+
+    @api
+    get previewSections() { return this._sectionRows; }
+    set previewSections(value) {
+        // An empty array is truthy. Without the length check the editor's
+        // first render would put this component into preview mode with no
+        // sections and it would never fetch its own.
+        if (!value || !value.length) return;
+        this._preview = true;
+        this._sectionRows = value;
+    }
+
+    @api
+    get previewFieldMeta() { return this._fieldMeta; }
+    set previewFieldMeta(value) {
+        if (!value) return;
+        this._preview = true;
+        this._fieldMeta = value;
+    }
+
+    @api
+    get previewContent() { return this._cms; }
+    set previewContent(value) {
+        if (!value || !Object.keys(value).length) return;
+        this._preview = true;
+        this._cms = value;
+    }
+
+    /**
+     * Where each section currently sits, in viewport coordinates.
+     *
+     * Viewport-relative rather than offsetTop because in the editor this
+     * component is inside a scaled container: offsetTop reports untransformed
+     * layout pixels, and the caller would scroll to the wrong place by exactly
+     * the scale factor. getBoundingClientRect is measured after the transform,
+     * so the caller can diff it against its own rect and get a real answer.
+     */
+    @api
+    getSectionRects() {
+        const out = [];
+        this.template.querySelectorAll('[data-section]').forEach((el) => {
+            const r = el.getBoundingClientRect();
+            // The masthead is sticky, so its rect sits at the top of the frame
+            // no matter where the page is scrolled. A caller that treated that
+            // as a position would compute "no movement" when asked to scroll to
+            // it, and would read it as the current section forever.
+            const pos = window.getComputedStyle(el).position;
+            out.push({
+                sectionKey: el.dataset.section,
+                top: r.top,
+                bottom: r.bottom,
+                pinned: pos === 'sticky' || pos === 'fixed'
+            });
+        });
+        return out;
+    }
 
     _observer;
     _revealed = new Set();
+    _observed = new WeakSet();
     _scrollHandler;
     _editModeHandler;
     _orgUrl = '';
@@ -110,71 +298,211 @@ export default class MaStory extends LightningElement {
     // Priority: MA_Page_Content__c (_cms map) → legacy CMS (_page/_body) → DEFAULTS
 
     _ct(key) { return this._cms[key] || null; }
+
+    /**
+     * Undeclared fields on a section, shaped for the template.
+     *
+     * The item shape of a list is read from the data rather than configured:
+     * strings become chips, two-key objects become a titled paragraph, and
+     * anything wider becomes a card. Nothing here knows what a capability or
+     * an FAQ entry is, which is what keeps it general.
+     */
+    /**
+     * The class, id and inline style an editor set on a field, keyed by
+     * "section::field". LWC cannot compute an attribute inside a template, so
+     * every field that can carry presentation resolves it here.
+     */
+    _pres(sectionKey, fieldKey) {
+        const m = this._fieldMeta.find(
+            (x) => x.sectionKey === sectionKey && x.fieldKey === fieldKey
+        );
+        if (!m) return { cls: '', id: null, style: null };
+        return {
+            cls: m.cssClass ? ' ' + m.cssClass : '',
+            id: m.htmlId || null,
+            style: m.inlineStyle || null
+        };
+    }
+
+    _extrasFor(sectionKey, spec) {
+        const declared = new Set(
+            (spec.text || []).concat(spec.rich || [], spec.json || [])
+        );
+        const prefix = sectionKey + '::';
+        return this._fieldMeta
+            .filter((m) => m.sectionKey === sectionKey && !declared.has(m.fieldKey))
+            .map((m) => {
+                const raw = this._cms[prefix + m.fieldKey];
+                const out = {
+                    key: m.fieldKey,
+                    label: m.label || '',
+                    cls: 'extra' + (m.cssClass ? ' ' + m.cssClass : ''),
+                    htmlId: m.htmlId || null,
+                    style: m.inlineStyle || null,
+                    hasLabel: !!m.label,
+                    isText: m.fieldType === 'text',
+                    isRich: m.fieldType === 'rich',
+                    isList: false,
+                    isPairs: false,
+                    isCards: false,
+                    value: raw || '',
+                    items: []
+                };
+                if (m.fieldType !== 'json') return out;
+                const list = this._cj(prefix + m.fieldKey) || [];
+                if (!list.length) return out;
+                const first = list[0];
+                if (typeof first !== 'object' || first === null) {
+                    out.isList = true;
+                    out.items = this._withKeys(list.map((v) => String(v)));
+                    return out;
+                }
+                const keys = Object.keys(first);
+                const shaped = list.map((entry, i) => ({
+                    id: `${m.fieldKey}-${i}`,
+                    badge: keys.length > 2 ? String(entry[keys[0]] || '') : '',
+                    title: String(entry[keys[keys.length > 2 ? 1 : 0]] || ''),
+                    body: String(entry[keys[keys.length > 2 ? 2 : 1]] || '')
+                }));
+                if (keys.length > 2) { out.isCards = true; } else { out.isPairs = true; }
+                out.items = shaped;
+                return out;
+            })
+            // A field with nothing in it draws nothing, rather than an empty
+            // heading where an editor has created a row but not filled it.
+            .filter((x) => x.value || x.items.length);
+    }
     _cj(key) {
         const raw = this._cms[key];
         if (!raw) return null;
         try { return JSON.parse(raw); } catch (e) { return null; }
     }
 
+
+    // ─── section render model ──────────────────────────────────────────────
+    // The page is drawn by iterating this. Every value the template needs is
+    // resolved here, because LWC templates cannot call functions. Layout type
+    // decides which branch draws the section; order comes from the records.
+
+    get sections() {
+        const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
+        return rows
+            .filter((row) => FRAME_LAYOUTS.indexOf(row.layoutType) === -1)
+            // A layout this build does not know is skipped rather than drawn.
+            // Without this it fell through to the generic path, where every one
+            // of its fields counted as undeclared and got dumped into the page
+            // as loose headings — which is what a renamed layout looks like to
+            // a browser still running the previous bundle.
+            .filter((row) => {
+                if (LAYOUT_FIELDS[row.layoutType]) return true;
+                // eslint-disable-next-line no-console
+                console.warn('[maStory] unknown layout, section skipped:', row.layoutType, row.sectionKey);
+                return false;
+            })
+            .map((row) => {
+            const k = row.sectionKey;
+            const t = row.layoutType;
+            const spec = LAYOUT_FIELDS[t] || { text: [], rich: [], json: [] };
+            const fb = SECTION_FALLBACKS[t] || {};
+
+            const s = {
+                key: k,
+                layoutType: t,
+                isHero: t === 'hero',
+                isLedeChips: t === 'lede-chips',
+                isRouteProof: t === 'route-proof',
+                isCardGrid: t === 'card-grid',
+                isStat: t === 'stat',
+                isUsePitch: t === 'use-pitch',
+                isFaq: t === 'faq',
+                isClosing: t === 'closing',
+                sectionClass: t === 'hero' ? 'hero wrap'
+                    : t === 'closing' ? 'closing wrap'
+                    : row.width === 'wide' ? 'beat wrap wide' : 'beat wrap'
+            };
+
+            // Resolve every field this layout declares: record -> fallback.
+            spec.text.concat(spec.rich).forEach((f) => {
+                s[f] = this._ct(k + '::' + f) || fb[f] || '';
+            });
+            // A button carries a label and an icon in one JSON object, so it
+            // resolves to two values the template can place separately.
+            (spec.icontext || []).forEach((f) => {
+                const parsed = this._cj(k + '::' + f) || {};
+                const fbv = fb[f] || {};
+                s[f] = parsed.label || fbv.label || '';
+                s[f + 'Icon'] = ctaGlyph(parsed.icon || fbv.icon || '');
+            });
+            spec.json.forEach((f) => {
+                const fromRecord = this._cj(k + '::' + f);
+                s[f] = (fromRecord && fromRecord.length) ? fromRecord : (fb[f] || []);
+            });
+
+            // Presentation an editor set on any of this section's fields.
+            s.pres = {};
+            ['text', 'rich', 'json', 'icontext'].forEach((bucket) => {
+                (spec[bucket] || []).forEach((f) => { s.pres[f] = this._pres(k, f); });
+            });
+
+            // Fields nobody declared. A layout is a shape the page knows how to
+            // draw, but the schema is editable, so a section can carry fields
+            // this renderer has never heard of. Those are drawn generically,
+            // after the layout's own content — visible and editable rather
+            // than silently dropped, which is what happens when a renderer
+            // only ever looks for the names it was written against.
+            s.extras = this._extrasFor(k, spec);
+            s.hasExtras = s.extras.length > 0;
+
+            // An eyebrow renders only when the layout declares one and a value
+            // resolves. The section's editor label is deliberately NOT used as a
+            // fallback: sections like the problem beat carry no eyebrow on the
+            // page, and borrowing the label would invent one.
+            s.hasEyebrow = !!s.eyebrow;
+
+            // Shaping the template cannot do for itself.
+            if (s.isLedeChips) s.chips = this._withKeys(s.chips);
+            if (s.isRouteProof) s.proofDemoDeps = this._withKeys(s.proofDemoDeps);
+            if (s.isCardGrid) {
+                s.cards = s.cards.map((c) => ({ ...c, cardClass: c.isNew ? 'cap-card new' : 'cap-card' }));
+            }
+            if (s.isUsePitch) {
+                s.oldChips = this._withKeys(s.pitchOldChips);
+                s.newChips = this._withKeys(s.pitchNewChips);
+            }
+            if (s.isFaq) s.items = this._buildFaqs(s.items);
+
+            return s;
+        });
+    }
+
+    // for:each needs a stable key, and a bare string cannot carry one.
+    _withKeys(list) {
+        return list.map((text, i) => ({ id: i + '-' + text, text }));
+    }
+
+    _buildFaqs(fromRecords) {
+        const source = fromRecords.length
+            ? fromRecords
+            : (this._faqData && this._faqData.length) ? this._faqData : DEFAULTS.faqs;
+        return source.map((f, index) => {
+            const id = 'q' + (index + 1);
+            const qualified = f.verdict !== 'Yes';
+            return {
+                id,
+                question: f.question,
+                verdict: f.verdict,
+                answer: f.answer,
+                itemClass: this.openFaqId === id ? 'faq-item open' : 'faq-item',
+                verdictClass: qualified ? 'faq-verdict qualified' : 'faq-verdict yes'
+            };
+        });
+    }
+
     // ---- page getters ----
 
-    get heroEyebrow() { return this._ct('hero::eyebrow') || (this._page && this._page.heroEyebrow) || DEFAULTS.heroEyebrow; }
-    get heroHeadline() { return this._ct('hero::headline') || (this._page && this._page.heroHeadline) || DEFAULTS.heroHeadline; }
-    get heroSubhead() { return this._ct('hero::subhead') || (this._page && this._page.heroSubhead) || DEFAULTS.heroSubhead; }
-    get problemLede() { return this._ct('problem::lede') || (this._page && this._page.problemLede) || DEFAULTS.problemLede; }
-    get problemChips() {
-        const cj = this._cj('problem::chips');
-        if (cj && cj.length) return cj;
-        return (this._page && this._page.problemChips && this._page.problemChips.length) ? this._page.problemChips : DEFAULTS.problemChips;
-    }
-    get problemClose() { return this._ct('problem::close') || (this._page && this._page.problemClose) || DEFAULTS.problemClose; }
-    get mechanismHead() { return this._ct('mechanism::head') || (this._page && this._page.mechanismHead) || DEFAULTS.mechanismHead; }
-    get mechanismSub() { return this._ct('mechanism::sub') || (this._page && this._page.mechanismSub) || DEFAULTS.mechanismSub; }
-    get closingHead() { return this._ct('closing::head') || (this._page && this._page.closingHead) || DEFAULTS.closingHead; }
-    get closingSub() { return this._ct('closing::sub') || (this._page && this._page.closingSub) || DEFAULTS.closingSub; }
 
     // ---- body getters ----
 
-    get routeSteps() {
-        const cj = this._cj('mechanism::routeSteps');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.routeSteps && this._body.routeSteps.length) ? this._body.routeSteps : DEFAULTS.routeSteps;
-    }
-    get proofCtaText() { return this._ct('mechanism::proofCtaText') || (this._body && this._body.proofCtaText) || DEFAULTS.proofCtaText; }
-    get proofDemoRoot() { return this._ct('mechanism::proofDemoRoot') || (this._body && this._body.proofDemoRoot) || DEFAULTS.proofDemoRoot; }
-    get proofDemoDeps() {
-        const cj = this._cj('mechanism::proofDemoDeps');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.proofDemoDeps && this._body.proofDemoDeps.length) ? this._body.proofDemoDeps : DEFAULTS.proofDemoDeps;
-    }
-    get capabilities() {
-        const cj = this._cj('capabilities::cards');
-        const caps = (cj && cj.length) ? cj
-            : (this._body && this._body.capabilities && this._body.capabilities.length)
-                ? this._body.capabilities : DEFAULTS.capabilities;
-        return caps.map((c) => ({ ...c, cardClass: c.isNew ? 'cap-card new' : 'cap-card' }));
-    }
-    get bonusCard() { return this._ct('capabilities::bonusCard') || (this._body && this._body.bonusCard) || DEFAULTS.bonusCard; }
-    get clientStatBig() { return this._ct('clientProfile::statBig') || (this._body && this._body.clientStatBig) || DEFAULTS.clientStatBig; }
-    get clientStatDesc() { return this._ct('clientProfile::statDesc') || (this._body && this._body.clientStatDesc) || DEFAULTS.clientStatDesc; }
-    get clientNote() { return this._ct('clientProfile::note') || (this._body && this._body.clientNote) || DEFAULTS.clientNote; }
-    get bdHead() { return this._ct('bd::head') || (this._body && this._body.bdHead) || DEFAULTS.bdHead; }
-    get bdLede() { return this._ct('bd::lede') || (this._body && this._body.bdLede) || DEFAULTS.bdLede; }
-    get bdUseCases() {
-        const cj = this._cj('bd::useCases');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.bdUseCases && this._body.bdUseCases.length) ? this._body.bdUseCases : DEFAULTS.bdUseCases;
-    }
-    get pitchOldChips() {
-        const cj = this._cj('bd::pitchOldChips');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.pitchOldChips && this._body.pitchOldChips.length) ? this._body.pitchOldChips : DEFAULTS.pitchOldChips;
-    }
-    get pitchNewChips() {
-        const cj = this._cj('bd::pitchNewChips');
-        if (cj && cj.length) return cj;
-        return (this._body && this._body.pitchNewChips && this._body.pitchNewChips.length) ? this._body.pitchNewChips : DEFAULTS.pitchNewChips;
-    }
 
     // ---- misc computed ----
 
@@ -185,28 +513,30 @@ export default class MaStory extends LightningElement {
     }
 
     get proofClass() { return this.proofOn ? 'proof rv d3 on' : 'proof rv d3'; }
+    // Masthead and footer text. Resolved the same way as any section, so a
+    // second offering supplies its own rather than inheriting this one's.
+    // The masthead and the footer are separate sections so that selecting one
+    // in the editor scrolls the preview to it. Both resolve the same way as any
+    // other section; they just render outside the sequence.
+    _frame(layoutType) {
+        const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
+        const row = rows.find((r) => r.layoutType === layoutType);
+        const key = row ? row.sectionKey : layoutType.replace('page-', '');
+        const fb = SECTION_FALLBACKS[layoutType] || {};
+        const out = { sectionKey: key };
+        (LAYOUT_FIELDS[layoutType] || { text: [] }).text.forEach((f) => {
+            out[f] = this._ct(key + '::' + f) || fb[f] || '';
+        });
+        return out;
+    }
+
+    get header() { return this._frame('page-header'); }
+    get footer() { return this._frame('page-footer'); }
+
+    get proofBarLabel() { return `${this.offeringKey} \u00b7 live preview`; }
     get gaugeStyle() { return `--pct: ${this.gaugeValue};`; }
     get progressStyle() { return `width: ${this.scrollPct}%;`; }
 
-    get faqs() {
-        const orgUrl = this._orgUrl;
-        return this._faqData.map((f, index) => {
-            const id = `q${index + 1}`;
-            const qualified = f.verdict !== 'Yes';
-            const cmsUrl = (orgUrl && f.indexRecordId)
-                ? `${orgUrl}/lightning/r/MA_CMS_Content_Index__c/${f.indexRecordId}/view`
-                : orgUrl ? `${orgUrl}/lightning/cms/home` : '#';
-            return {
-                id,
-                question: f.question,
-                verdict: f.verdict,
-                answer: f.answer,
-                itemClass: this.openFaqId === id ? 'faq-item open' : 'faq-item',
-                verdictClass: qualified ? 'faq-verdict qualified' : 'faq-verdict yes',
-                cmsUrl
-            };
-        });
-    }
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl); }
     get contentManagerUrl() {
@@ -217,15 +547,30 @@ export default class MaStory extends LightningElement {
 
     connectedCallback() {
         this.loadFonts();
+        // Phase 1 — MA_Page_Content__c is the primary CMS; falls back to legacy getStoryContent.
+        // In preview mode the parent owns the data; fetching would overwrite the
+        // draft. The window-level listeners are skipped too: inside the editor
+        // this component sits in a scaled, scrolling container, so window scroll
+        // is not this page's scroll and the progress bar would read as noise.
+        if (this._preview) return;
         this._scrollHandler = this.handleScroll.bind(this);
         this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
         window.addEventListener('maadminedit', this._editModeHandler);
-        // Phase 1 — MA_Page_Content__c is the primary CMS; falls back to legacy getStoryContent.
-        getPageContent({ offeringKey: OFFERING_KEY, templateType: 'story', industryKey: null })
-            .then((map) => { if (map) this._cms = map; })
-            // eslint-disable-next-line no-console
-            .catch((err) => { console.warn('[maStory] getPageContent:', JSON.stringify(err)); });
+        getPageLayout({ offeringKey: this.offeringKey, templateType: 'story', industryKey: null })
+            .then((layout) => {
+                if (!layout) return;
+                if (layout.content) this._cms = layout.content;
+                if (layout.sections && layout.sections.length) this._sectionRows = layout.sections;
+                if (layout.fieldMeta) this._fieldMeta = layout.fieldMeta;
+            })
+            .catch((err) => {
+                // Surfaced, not swallowed: a silent failure here is what let the
+                // page render hardcoded defaults for months without anyone noticing.
+                this._loadError = 'Page content could not be loaded; showing built-in defaults.';
+                // eslint-disable-next-line no-console
+                console.error('[maStory] getPageLayout failed:', JSON.stringify(err));
+            });
         getStoryContent({ offeringKey: OFFERING_KEY })
             .then((data) => {
                 if (!data) return;
@@ -260,7 +605,12 @@ export default class MaStory extends LightningElement {
 
     renderedCallback() {
         this.reapplyRevealed();
-        if (this._observer) return;
+        // Deliberately not guarded on "have we set up yet". Sections arrive in
+        // two waves — the built-in defaults, then the records — and a section
+        // added in the editor is a DOM node that did not exist on the first
+        // render. Bailing out here once the observer existed left those nodes
+        // unobserved and therefore permanently at opacity 0: the section took
+        // up its full height on the page and drew nothing.
         this.setupReveal();
     }
 
@@ -286,22 +636,34 @@ export default class MaStory extends LightningElement {
     setupReveal() {
         const nodes = this.template.querySelectorAll('.rv');
         if (!nodes || nodes.length === 0) return;
-        if (!('IntersectionObserver' in window) || this.reducedMotion) {
+        // In preview the sections live in a transformed, independently scrolled
+        // container. IntersectionObserver measures against the browser viewport,
+        // so anything below the fold there would never intersect and would stay
+        // at opacity 0 — a blank preview. Reveal everything up front instead.
+        if (this._preview || !('IntersectionObserver' in window) || this.reducedMotion) {
             nodes.forEach((el) => { el.classList.add('in'); this._revealed.add(el); });
             return;
         }
-        this._observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (!entry.isIntersecting) return;
-                    entry.target.classList.add('in');
-                    this._revealed.add(entry.target);
-                    this._observer.unobserve(entry.target);
-                });
-            },
-            { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
-        );
-        nodes.forEach((el) => this._observer.observe(el));
+        if (!this._observer) {
+            this._observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (!entry.isIntersecting) return;
+                        entry.target.classList.add('in');
+                        this._revealed.add(entry.target);
+                        this._observer.unobserve(entry.target);
+                    });
+                },
+                { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
+            );
+        }
+        // Observing a node twice is harmless, but tracking what has already
+        // been handed over keeps this cheap on every re-render.
+        nodes.forEach((el) => {
+            if (this._observed.has(el)) return;
+            this._observed.add(el);
+            this._observer.observe(el);
+        });
     }
 
     reapplyRevealed() {

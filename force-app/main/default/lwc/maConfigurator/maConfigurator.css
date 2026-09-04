@@ -1238,3 +1238,18 @@ b {
     transform: none;
   }
 }
+
+/* Content-load failure notice. Gated behind edit mode in the template because
+   this page is client-facing; the console error is unconditional. */
+.load-error {
+    max-width: 52rem;
+    margin: 0.75rem auto 0;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--warn, #B4842E);
+    border-left-width: 3px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--warn, #B4842E) 8%, transparent);
+    color: var(--ink-soft, #5B5A6B);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}

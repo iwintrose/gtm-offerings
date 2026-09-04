@@ -7,8 +7,11 @@
         <target>lightningCommunity__Page</target>
         <target>lightningCommunity__Default</target>
     </targets>
-    <targetConfigs>
+<targetConfigs>
         <targetConfig targets="lightningCommunity__Default">
+            <property name="offeringKey" type="String" label="Offering Key"
+                      description="Offering key, matching MA_Offering__mdt.Offering_Key__c."
+                      default="migration-accelerator"/>
             <property name="accentColor" type="Color" label="Brand accent colour" description="Client brand colour (leave blank — accent is set via URL parameter)."/>
             <property name="offeringsUrl" type="String" label="Offerings URL" description="URL for the offerings page (leave blank — set via URL parameter)."/>
             <property name="industryUrl" type="String" label="Industry URL" description="URL for the industry page (leave blank — set via URL parameter)."/>

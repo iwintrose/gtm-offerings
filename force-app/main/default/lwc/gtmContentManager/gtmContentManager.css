@@ -1,242 +1,438 @@
-:host {
-    display: block;
-    height: 100vh;
-    overflow: hidden;
-}
+/* GTM Content Manager — Salesforce chrome around a live page preview.
+   The chrome is deliberately SLDS-flavoured while the preview keeps the
+   published page's own identity, so it stays obvious which is the tool and
+   which is the page. */
 
 .gcm {
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 640px;
+    background: #f3f3f3;
+    color: #181818;
+    font-size: 13px;
 }
 
-/* Header bar */
-.gcm-header {
+/* ── toolbar ─────────────────────────────────────────────────────────────── */
+.gcm-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    background: #ffffff;
-    border-bottom: 1px solid #dddbda;
-    gap: 1rem;
-    flex-shrink: 0;
+    gap: 0.6rem;
+    padding: 0.45rem 0.75rem;
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    flex: none;
+}
+.gcm-brand { display: flex; align-items: center; gap: 0.35rem; font-weight: 700; white-space: nowrap; }
+.gcm-sep { width: 1px; height: 20px; background: #e5e5e5; }
+.gcm-tmpl { width: 11rem; }
+.gcm-addr {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; color: #747474;
+    background: #fafaf9; border: 1px solid #e5e5e5;
+    border-radius: 4px; padding: 0.1rem 0.4rem;
+}
+.gcm-save { font-size: 11.5px; color: #2e844a; margin-left: 0.25rem; }
+.gcm-bar-right { margin-left: auto; display: flex; gap: 0.4rem; }
+
+/* ── error ───────────────────────────────────────────────────────────────── */
+.gcm-error {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin: 0.5rem 0.75rem 0; padding: 0.5rem 0.7rem;
+    border: 1px solid #fe9339; border-left-width: 3px; border-radius: 4px;
+    background: #fef5ec; font-size: 12.5px;
+}
+.gcm-error-x {
+    margin-left: auto; border: 0; background: none; cursor: pointer;
+    font-size: 16px; line-height: 1; color: #747474; padding: 0 0.2rem;
 }
 
-.gcm-header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.gcm-loading { position: relative; min-height: 180px; }
+.gcm-empty { padding: 2rem; text-align: center; color: #444; }
+.gcm-empty-sub { color: #747474; font-size: 12px; max-width: 28rem; margin: 0.3rem auto 0; line-height: 1.5; }
+
+/* ── columns ─────────────────────────────────────────────────────────────── */
+.gcm-cols {
+    flex: 1; min-height: 0;
+    display: grid;
+    --gcm-fieldw: 26rem;
+    grid-template-columns: 15rem var(--gcm-fieldw) 6px minmax(24rem, 1fr);
+}
+.gcm-rail, .gcm-fields {
+    display: flex; flex-direction: column; min-height: 0;
+    background: #fff; border-right: 1px solid #e5e5e5;
+}
+.gcm-preview { min-height: 0; }
+
+.gcm-colhead {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 0.7rem; border-bottom: 1px solid #e5e5e5;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #747474; flex: none;
+}
+.gcm-count { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 11px; }
+
+/* ── rail ────────────────────────────────────────────────────────────────── */
+/* The trailing padding keeps the last section clear of the Add-section
+   footer; without it the active row's border sits under the button edge. */
+.gcm-rail-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0.3rem 0.3rem 0.6rem; }
+.sec {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.45rem 0.5rem; border-radius: 4px; cursor: pointer;
+    border: 1px solid transparent;
+}
+.sec + .sec { margin-top: 1px; }
+.sec:hover { background: #fafaf9; }
+.sec--active { background: #eef4ff; border-color: #0176d3; }
+.sec--active .sec-name { color: #014486; font-weight: 700; }
+.sec--off { opacity: 0.5; }
+.sec--off .sec-name { text-decoration: line-through; }
+.sec-main { min-width: 0; display: flex; flex-direction: column; }
+.sec-name { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sec-meta {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10.5px; color: #747474; margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sec-dot { width: 6px; height: 6px; border-radius: 50%; background: #fe9339; flex: none; }
+.sec-move { margin-left: auto; display: flex; gap: 2px; flex: none; }
+.mv {
+    width: 20px; height: 20px; border: 1px solid #c9c9c9; border-radius: 3px;
+    background: #fff; cursor: pointer; color: #444; font-size: 11px; line-height: 1; padding: 0;
+}
+.mv:hover:not(:disabled) { border-color: #0176d3; color: #0176d3; }
+.mv:disabled { opacity: 0.3; cursor: default; }
+.gcm-hint {
+    flex: none; padding: 0.5rem 0.6rem; border-top: 1px solid #e5e5e5;
+    font-size: 10.5px; color: #747474; line-height: 1.5; margin: 0;
 }
 
-.gcm-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #032d60;
+/* ── preview ─────────────────────────────────────────────────────────────── */
+.gcm-preview-body {
+    flex: 1; min-height: 0; overflow: auto;
+    background: #fff; margin: 0.6rem 0.6rem 0; border: 1px solid #c9c9c9;
+    border-radius: 6px 6px 0 0;
+    padding: 0.6rem;
+    display: flex; justify-content: center;
+    /* The page draws its own background; a checker-free neutral behind it makes
+       the frame edge read as a device boundary rather than part of the page. */
+    background-image: linear-gradient(#fafafa, #fafafa);
 }
 
-.gcm-offering {
-    font-family: monospace;
-    font-size: 0.75rem;
-    color: #706e6b;
-}
-
-.gcm-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.gcm-tmpl-sel {
-    min-width: 140px;
-}
-
-.gcm-status {
-    font-size: 0.9rem;
-    color: #047857;
-    font-weight: 500;
-}
-
-.gcm-message {
-    font-size: 0.9rem;
-    color: #047857;
-}
-
-/* Loading state */
-.gcm-loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    flex: 1;
-    color: #706e6b;
-}
-
-/* Split screen container */
-.gcm-split {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
+/* The shell holds the space the SCALED page occupies. The stage inside it is
+   always PREVIEW_WIDTH wide and unscaled as far as layout is concerned —
+   transform does not shrink a box — so the shell's width and height are set
+   from JS in fitPreview(). Without it the pane would scroll as if the page
+   were still 1280px wide and full height. */
+.gcm-stage-shell {
     position: relative;
-}
-
-/* Left editor pane */
-.gcm-editor {
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid #dddbda;
+    flex: none;
+    align-self: flex-start;
     overflow: hidden;
-    transition: width 0.1s ease-out;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    background: #fff;
+}
+.gcm-stage {
+    width: 1280px;
+    transform-origin: top left;
+    /* Set by fitPreview(); this is the un-fitted starting point so a first
+       paint before the observer runs is not full-size and overflowing. */
+    transform: scale(1);
 }
 
-.gcm-editor-scroll {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
+.gcm-preview-foot {
+    flex: none;
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.7rem 0.6rem;
+    font-size: 11px; color: #747474;
+}
+.gcm-preview-foot a { margin-left: auto; color: #0176d3; font-weight: 600; text-decoration: none; }
+.gcm-preview-foot a:hover { text-decoration: underline; }
+
+/* Below this the preview is what gets squeezed, so the rail and the field
+   column give up width first — the preview is the only column whose value
+   drops off a cliff when it gets narrow. */
+@media (max-width: 1400px) {
+    .gcm-cols { --gcm-fieldw: 21rem; grid-template-columns: 13rem var(--gcm-fieldw) 6px minmax(22rem, 1fr); }
+    .gcm-preview-body { margin: 0.4rem 0.4rem 0; padding: 0.4rem; }
+}
+/* Below this there is not enough room for a page preview to tell you anything,
+   so the editor gives the space to the fields instead. */
+@media (max-width: 1080px) {
+    .gcm-cols { grid-template-columns: 14rem minmax(22rem, 1fr) 0 0; }
+    .gcm-split { display: none; }
+    .gcm-preview { display: none; }
 }
 
-.gcm-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+/* Field labelling: the human name leads, the record's field key sits beside it
+   in mono so an editor can still tie a control back to its row. */
+.fld-key {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    color: #969696;
+}
+.fld-help {
+    margin: 0.25rem 0 0;
+    font-size: 11px;
+    color: #747474;
+    line-height: 1.45;
+}
+/* Textareas were clipping their content at three lines. Let them grow, and
+   let the editor drag them further. */
+.fld-area textarea {
+    min-height: 5.5rem;
+    resize: vertical;
+    line-height: 1.5;
+}
+.fld-json textarea {
+    min-height: 8rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+    white-space: pre;
+    overflow-x: auto;
 }
 
-.gcm-add-section {
-    padding: 1rem 0;
-    text-align: center;
+/* ── offering / page selection ───────────────────────────────────────────── */
+.gcm-pick { width: 13rem; }
+.gcm-crumb {
+    border: 0; background: none; cursor: pointer;
+    color: #0176d3; font-size: 12.5px; font-weight: 600; padding: 0 .1rem;
+}
+.gcm-crumb:hover { text-decoration: underline; }
+.gcm-crumb-sep { color: #969696; }
+.gcm-crumb-current {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; color: #444;
 }
 
-.gcm-empty {
-    padding: 2rem 1rem;
-    text-align: center;
-    color: #706e6b;
+.gcm-pages { padding: 1.5rem; overflow-y: auto; }
+.gcm-pages-h { margin: 0 0 .9rem; font-size: 15px; font-weight: 700; }
+.pg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .6rem; max-width: 62rem; }
+.pg-card {
+    display: flex; flex-direction: column; gap: .2rem; text-align: left;
+    padding: .8rem .9rem; border: 1px solid #c9c9c9; border-radius: 6px;
+    background: #fff; cursor: pointer;
+}
+.pg-card:hover { border-color: #0176d3; background: #eef4ff; }
+.pg-name { font-size: 13.5px; font-weight: 700; }
+.pg-sum { font-size: 11.5px; color: #747474; }
+.pg-card--unbuilt { opacity: .6; cursor: not-allowed; background: #fafaf9; }
+.pg-card--unbuilt:hover { border-color: #c9c9c9; background: #fafaf9; }
+.pg-flag {
+    margin-top: .3rem; align-self: flex-start;
+    font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
+    color: #8c6a1a; background: #fef5ec; border: 1px solid #fe9339;
+    border-radius: 3px; padding: .05rem .3rem;
+}
+.gcm-pages-note { margin-top: 1rem; text-align: left; max-width: 40rem; }
+
+.sec-icon { margin-right: .1rem; }
+
+/* ── repeaters: structured lists, no JSON in the box ─────────────────────── */
+.rep { display: flex; flex-direction: column; gap: .4rem; }
+.rep-item {
+    border: 1px solid #e5e5e5; border-radius: 5px;
+    background: #fafaf9; padding: .45rem .55rem .6rem;
+}
+.rep-item:focus-within { border-color: #0176d3; background: #fff; }
+.rep-head { display: flex; align-items: center; gap: .3rem; margin-bottom: .2rem; }
+.rep-n {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px; color: #747474; background: #fff;
+    border: 1px solid #e5e5e5; border-radius: 3px;
+    min-width: 17px; text-align: center; padding: 0 .2rem;
+}
+.rep-acts { margin-left: auto; display: flex; gap: 2px; }
+.mv--del:hover { border-color: #ea001e; color: #ea001e; }
+.rep-sub + .rep-sub { margin-top: .25rem; }
+.rep-add {
+    display: flex; align-items: center; justify-content: center; gap: .3rem;
+    padding: .4rem; border: 1px dashed #c9c9c9; border-radius: 5px;
+    background: transparent; color: #444; cursor: pointer; font-size: 12px; font-weight: 600;
+}
+.rep-add:hover { border-color: #0176d3; color: #0176d3; background: #eef4ff; }
+
+/* ── publish dialog ──────────────────────────────────────────────────────── */
+.scrim {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,20,24,.5); display: grid; place-items: center; padding: 1rem;
+}
+.modal {
+    width: min(30rem, 100%); background: #fff; border-radius: 8px;
+    box-shadow: 0 10px 34px rgba(0,0,0,.22); overflow: hidden;
+}
+.modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid #e5e5e5; }
+.modal-h h2 { margin: 0 0 .2rem; font-size: 16px; font-weight: 700; }
+.modal-h p { margin: 0; font-size: 12.5px; color: #444; }
+.modal-b { padding: .9rem 1.15rem; display: flex; flex-direction: column; gap: .7rem; }
+.modal-note { margin: 0; font-size: 12.5px; color: #444; line-height: 1.55; }
+/* Destructive actions read as destructive. Applied to lightning-button, so the
+   colour has to reach the button element inside it. */
+.modal-danger { --slds-c-button-text-color: #ba0517; }
+.modal-danger button { color: #ba0517; }
+.modal-f {
+    padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
+    display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
 }
 
-/* Draggable divider */
-.gcm-divider {
-    width: 4px;
-    background: #dddbda;
-    cursor: col-resize;
-    flex-shrink: 0;
-    user-select: none;
-    transition: background-color 0.2s;
+/* ── add / delete sections ───────────────────────────────────────────────── */
+.gcm-rail-foot {
+    flex: none;
+    border-top: 1px solid #e5e5e5;
+    padding: 0.4rem 0.5rem 0.5rem;
+    background: #fff;
+}
+.gcm-add {
+    display: flex; align-items: center; gap: 0.4rem;
+    width: 100%; padding: 0.4rem 0.5rem;
+    border: 1px dashed #c9c9c9; border-radius: 4px; background: #fff;
+    color: #0176d3; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.gcm-add:hover:not(:disabled) { border-color: #0176d3; background: #f3f8fd; }
+.gcm-add:disabled { color: #969696; cursor: default; }
+.gcm-add-plus { font-size: 15px; line-height: 1; }
+
+.mv--danger { color: #ba0517; }
+.mv--danger:hover:not(:disabled) { background: #fdf2f2; }
+
+/* Fields the layout supports but the section has no record for. Framed as a
+   gap to fill rather than an error, because the page still renders. */
+.gcm-missing {
+    margin: 0.5rem 0 1rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid #e5c98a; border-radius: 5px; background: #fffaf0;
+}
+.gcm-missing-h { margin: 0; font-size: 12.5px; font-weight: 700; color: #573a08; }
+.gcm-missing-sub { margin: 0.25rem 0 0.6rem; font-size: 11.5px; color: #6b5116; line-height: 1.45; }
+.gcm-missing-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.gcm-missing-add {
+    display: inline-flex; align-items: baseline; gap: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #c9c9c9; border-radius: 3px; background: #fff;
+    font-size: 12px; color: #181818; cursor: pointer;
+}
+.gcm-missing-add:hover:not(:disabled) { border-color: #0176d3; color: #0176d3; }
+.gcm-missing-add:disabled { color: #969696; cursor: default; }
+.gcm-missing-key {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px; color: #969696;
 }
 
-.gcm-divider:hover {
-    background: #032d60;
+.modal-addr {
+    margin: 0.5rem 0 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10.5px; color: #747474;
+    word-break: break-all;
 }
 
-/* Right preview pane */
-.gcm-preview {
-    display: flex;
-    flex-direction: column;
-    background: #f8f8f8;
-    overflow: hidden;
-    transition: width 0.1s ease-out;
+
+/* ── pending structural changes ──────────────────────────────────────────── */
+.sec-pending {
+    display: inline-block; margin-top: 0.15rem;
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #8c4b02; background: #fef5e7; border: 1px solid #f0d9a8;
+    border-radius: 3px; padding: 0 0.25rem;
+}
+.sec--doomed .sec-name { text-decoration: line-through; color: #969696; }
+.sec--doomed .sec-pending { color: #ba0517; background: #fdf2f2; border-color: #f2c2c2; }
+.sec--pending { border-left: 2px solid #dd7a01; }
+.mv--undo { color: #0176d3; }
+.mv--undo:hover:not(:disabled) { background: #eef4ff; }
+
+
+/* ── column splitter ─────────────────────────────────────────────────────── */
+.gcm-split {
+    background: #e5e5e5; cursor: col-resize; position: relative; touch-action: none;
+}
+/* A 6px target is hard to hit, so the grab area reaches past the visible line. */
+.gcm-split::before { content: ""; position: absolute; inset: 0 -4px; }
+.gcm-split:hover { background: #0176d3; }
+
+/* ── save state ──────────────────────────────────────────────────────────── */
+.gcm-savestate {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 11.5px; color: #747474; margin-left: 0.4rem;
+}
+.gcm-save-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #2e844a;
+    box-shadow: 0 0 0 3px rgba(46, 132, 74, 0.15); flex: none;
+}
+.gcm-savestate--draft { color: #8c4b02; }
+.gcm-savestate--draft .gcm-save-dot { background: #dd7a01; box-shadow: 0 0 0 3px rgba(221, 122, 1, 0.15); }
+.gcm-savestate--busy { color: #0176d3; }
+.gcm-savestate--busy .gcm-save-dot { background: #0176d3; box-shadow: 0 0 0 3px rgba(1, 118, 211, 0.15); }
+
+/* ── layout picker cards ─────────────────────────────────────────────────── */
+.cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0.5rem; max-height: 20rem; overflow-y: auto; padding: 0.1rem;
+}
+.card {
+    display: flex; flex-direction: column; gap: 0.25rem; text-align: left;
+    padding: 0.6rem 0.65rem; cursor: pointer;
+    border: 1px solid #e5e5e5; border-radius: 5px; background: #fff;
+}
+.card:hover { border-color: #0176d3; }
+.card--on { border-color: #0176d3; background: #f3f8fd; box-shadow: inset 0 0 0 1px #0176d3; }
+.card-h {
+    display: flex; align-items: center; gap: 0.35rem;
+    font-size: 12.5px; font-weight: 700; color: #181818;
+}
+.card-hint { font-size: 11px; color: #747474; line-height: 1.4; }
+.card-count {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px; color: #969696;
 }
 
-.gcm-preview-label {
-    padding: 0.75rem 1rem;
-    background: #032d60;
-    color: #ffffff;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-align: center;
-}
+.gcm-empty-cta { display: inline-block; margin-top: 0.9rem; }
 
-.gcm-preview-scroll {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-}
 
-/* Version history */
-.gcm-versions {
-    background: #ffffff;
-    border-top: 1px solid #dddbda;
-    flex-shrink: 0;
-    max-height: 200px;
-    overflow-y: auto;
+/* ── what is pending ─────────────────────────────────────────────────────────
+   A count says something is unpublished; it does not say what. The list is the
+   part that lets you decide whether to publish. */
+.gcm-changes { position: relative; }
+.gcm-drafts {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.22rem 0.5rem;
+    border: 1px solid #f0d9a8; border-radius: 4px; background: #fef5e7;
+    color: #8c4b02; font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    -webkit-font-smoothing: antialiased;
 }
+.gcm-drafts:hover { border-color: #dd7a01; }
+.gcm-drafts-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #dd7a01; flex: none;
+}
+.gcm-drafts-caret { font-size: 9px; opacity: 0.7; }
 
-.gcm-versions-toggle {
-    display: block;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: #f3f2f2;
-    border: none;
-    text-align: left;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #032d60;
+.chgpop {
+    position: absolute; top: calc(100% + 0.35rem); right: 0; z-index: 60;
+    width: 20rem; max-height: 22rem; overflow-y: auto;
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.16);
 }
-
-.gcm-versions-toggle:hover {
-    background: #e8e6e6;
+.chgpop-h {
+    display: flex; align-items: center;
+    padding: 0.45rem 0.6rem; border-bottom: 1px solid #e5e5e5;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #747474;
 }
-
-.gcm-versions-list {
-    padding: 0.5rem;
+.chgpop-x {
+    margin-left: auto; border: 0; background: none; cursor: pointer;
+    color: #969696; font-size: 14px; line-height: 1; padding: 0 0.15rem;
 }
-
-.gcm-version-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    border-radius: 4px;
-    cursor: pointer;
+.chgpop-x:hover { color: #181818; }
+.chgpop-list { margin: 0; padding: 0.25rem; list-style: none; }
+.chg {
+    display: flex; flex-direction: column; gap: 0.1rem;
+    padding: 0.35rem 0.45rem; border-radius: 3px;
 }
-
-.gcm-version-item:hover {
-    background: #f3f2f2;
+.chg + .chg { border-top: 1px solid #f3f3f3; }
+.chg-where {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #969696; font-weight: 600;
 }
-
-.gcm-version-num {
-    font-weight: 600;
-    color: #032d60;
-    min-width: 30px;
-}
-
-.gcm-version-info {
-    font-size: 0.85rem;
-    color: #706e6b;
-}
-
-/* Modal for new section */
-.gcm-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.gcm-modal {
-    background: #ffffff;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    min-width: 300px;
-}
-
-.gcm-modal-header {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #032d60;
-    margin-bottom: 1rem;
-}
-
-.gcm-modal-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
+.chg-what { font-size: 12.5px; color: #181818; }
+.chg--structure .chg-what { color: #8c4b02; }
+.chg--doomed .chg-what { color: #ba0517; }
