@@ -288,6 +288,106 @@ public without sharing class MaPageContentController {
         @AuraEnabled public Integer fieldCount   { get; set; }
     }
 
+    /**
+     * Everything the Content Manager home needs in one call: each offering,
+     * the pages under it with their section and field counts, and the most
+     * recently edited fields across the org.
+     */
+    @AuraEnabled(cacheable=false)
+    public static HomeSummary getHomeSummary() {
+        HomeSummary home = new HomeSummary();
+
+        Map<String, OfferingSummary> byKey = new Map<String, OfferingSummary>();
+        for (MA_Offering__mdt off : [SELECT Offering_Key__c, Label__c FROM MA_Offering__mdt ORDER BY Label__c]) {
+            OfferingSummary o = new OfferingSummary();
+            o.offeringKey = off.Offering_Key__c;
+            o.label       = off.Label__c;
+            byKey.put(o.offeringKey, o);
+            home.offerings.add(o);
+        }
+
+        // Sections modelled per offering + template.
+        Map<String, PageSummary> pages = new Map<String, PageSummary>();
+        for (AggregateResult ar : [
+            SELECT Offering_Key__c o, Template_Type__c t, COUNT(Id) c
+            FROM   MA_Page_Section__c WHERE Active__c = true
+            GROUP BY Offering_Key__c, Template_Type__c
+        ]) {
+            PageSummary p = new PageSummary();
+            p.offeringKey  = (String) ar.get('o');
+            p.templateType = (String) ar.get('t');
+            p.sectionCount = (Integer) ar.get('c');
+            pages.put(p.offeringKey + '::' + p.templateType, p);
+        }
+        // Content rows per offering + template, including templates with no sections.
+        for (AggregateResult ar : [
+            SELECT Offering_Key__c o, Template_Type__c t, COUNT(Id) c
+            FROM   MA_Page_Content__c WHERE Active__c = true
+            GROUP BY Offering_Key__c, Template_Type__c
+        ]) {
+            String k = (String) ar.get('o') + '::' + (String) ar.get('t');
+            PageSummary p = pages.get(k);
+            if (p == null) {
+                p = new PageSummary();
+                p.offeringKey  = (String) ar.get('o');
+                p.templateType = (String) ar.get('t');
+                p.sectionCount = 0;
+                pages.put(k, p);
+            }
+            p.fieldCount = (Integer) ar.get('c');
+        }
+        for (PageSummary p : pages.values()) {
+            OfferingSummary o = byKey.get(p.offeringKey);
+            if (o != null) { o.pages.add(p); }
+        }
+
+        for (MA_Page_Content__c rec : [
+            SELECT Offering_Key__c, Template_Type__c, Section_Key__c, Field_Key__c,
+                   Label__c, LastModifiedDate
+            FROM   MA_Page_Content__c
+            WHERE  Active__c = true
+            ORDER BY LastModifiedDate DESC
+            LIMIT 8
+        ]) {
+            RecentEdit e = new RecentEdit();
+            e.offeringKey  = rec.Offering_Key__c;
+            e.templateType = rec.Template_Type__c;
+            e.sectionKey   = rec.Section_Key__c;
+            e.fieldKey     = rec.Field_Key__c;
+            e.label        = rec.Label__c;
+            e.modified     = rec.LastModifiedDate;
+            home.recent.add(e);
+        }
+        return home;
+    }
+
+    public class HomeSummary {
+        @AuraEnabled public List<OfferingSummary> offerings = new List<OfferingSummary>();
+        @AuraEnabled public List<RecentEdit> recent = new List<RecentEdit>();
+    }
+
+    public class OfferingSummary {
+        @AuraEnabled public String offeringKey { get; set; }
+        @AuraEnabled public String label       { get; set; }
+        @AuraEnabled public List<PageSummary> pages = new List<PageSummary>();
+    }
+
+    public class PageSummary {
+        @AuraEnabled public String  offeringKey  { get; set; }
+        @AuraEnabled public String  templateType { get; set; }
+        @AuraEnabled public Integer sectionCount { get; set; }
+        @AuraEnabled public Integer fieldCount   { get; set; }
+    }
+
+    public class RecentEdit {
+        @AuraEnabled public String   offeringKey  { get; set; }
+        @AuraEnabled public String   templateType { get; set; }
+        @AuraEnabled public String   sectionKey   { get; set; }
+        @AuraEnabled public String   fieldKey     { get; set; }
+        @AuraEnabled public String   label        { get; set; }
+        @AuraEnabled public Datetime modified     { get; set; }
+    }
+
     private static String resolveValue(MA_Page_Content__c rec) {
         if (rec.Field_Type__c == 'rich')   return rec.Rich_Value__c;
         if (rec.Field_Type__c == 'json')   return rec.JSON_Value__c;

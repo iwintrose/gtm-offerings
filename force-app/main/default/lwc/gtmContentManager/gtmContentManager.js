@@ -1,4 +1,5 @@
-import { LightningElement, api, track } from 'lwc';
+import { LightningElement, api, track, wire } from 'lwc';
+import { CurrentPageReference } from 'lightning/navigation';
 import getOfferings from '@salesforce/apex/MaPageContentController.getOfferings';
 import getTemplateSummary from '@salesforce/apex/MaPageContentController.getTemplateSummary';
 import getEditorSections from '@salesforce/apex/MaPageContentController.getEditorSections';
@@ -54,6 +55,19 @@ export default class GtmContentManager extends LightningElement {
     _dragKey = '';
     _saveTimer;
 
+    // Set when the home page deep-links into a specific page. Without this the
+    // editor would always open on its own guess, which is the "landed somewhere
+    // I didn't choose" problem the home page exists to fix.
+    _requestedOffering = '';
+    _requestedTemplate = '';
+
+    @wire(CurrentPageReference)
+    capturePageRef(ref) {
+        if (!ref || !ref.state) return;
+        this._requestedOffering = ref.state.c__offering || '';
+        this._requestedTemplate = ref.state.c__template || '';
+    }
+
     // ─── lifecycle ────────────────────────────────────────────────────────────
 
     connectedCallback() {
@@ -61,7 +75,10 @@ export default class GtmContentManager extends LightningElement {
         getOfferings()
             .then((rows) => {
                 this.offerings = rows || [];
-                const preset = this.offeringKey
+                // Priority: what the home page asked for, then a pinned page
+                // property, then the only offering if there is exactly one.
+                const preset = this._requestedOffering
+                    || this.offeringKey
                     || (this.offerings.length === 1 ? this.offerings[0].offeringKey : '');
                 if (preset) {
                     this.selectedOffering = preset;
@@ -116,8 +133,15 @@ export default class GtmContentManager extends LightningElement {
                         : `${t.fieldCount || 0} fields · no sections modelled yet`,
                     cardClass: (t.sectionCount || 0) > 0 ? 'pg-card' : 'pg-card pg-card--unbuilt'
                 }));
-                // Only auto-open a page when there is exactly one that is built.
+                // Open the page the home page asked for. Otherwise show the
+                // picker, unless exactly one page is built.
                 const built = this.templates.filter((t) => t.isBuilt);
+                const asked = built.find((t) => t.templateType === this._requestedTemplate);
+                if (asked) {
+                    this._requestedTemplate = '';
+                    this.selectedTemplate = asked.templateType;
+                    return this.loadPage();
+                }
                 if (built.length === 1) {
                     this.selectedTemplate = built[0].templateType;
                     return this.loadPage();

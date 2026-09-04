@@ -413,6 +413,10 @@
         <editable>false</editable>
     </fieldPermissions>
     <tabSettings>
+        <tab>GTM_Content_Home</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
         <tab>MA_Saved_Configuration__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>

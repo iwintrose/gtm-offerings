@@ -8,6 +8,7 @@
     <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
     <label>GTM Content Manager</label>
     <navType>Standard</navType>
+    <tabs>GTM_Content_Home</tabs>
     <tabs>GTM_Content_Manager</tabs>
     <tabs>MA_Page_Content__c</tabs>
     <uiType>Lightning</uiType>
