@@ -260,8 +260,14 @@
 }
 .modal {
     width: min(30rem, 100%); background: #fff; border-radius: 8px;
-    box-shadow: 0 10px 34px rgba(0,0,0,.22); overflow: hidden;
+    box-shadow: 0 10px 34px rgba(0,0,0,.22);
+    /* Not overflow:hidden — a combobox drops its menu outside the modal box,
+       and clipping it makes the picker look broken. The rounded corners are
+       kept by clipping only the header and footer, which are what touch them. */
+    overflow: visible;
 }
+.modal-h { border-radius: 8px 8px 0 0; }
+.modal-f { border-radius: 0 0 8px 8px; }
 .modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid #e5e5e5; }
 .modal-h h2 { margin: 0 0 .2rem; font-size: 16px; font-weight: 700; }
 .modal-h p { margin: 0; font-size: 12.5px; color: #444; }

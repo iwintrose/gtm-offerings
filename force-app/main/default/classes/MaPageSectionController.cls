@@ -532,4 +532,105 @@ public with sharing class MaPageSectionController {
             throw new AuraHandledException('Could not save the field order: ' + e.getMessage());
         }
     }
+
+    /** One section to create as part of a new page. */
+    public class SectionSeed {
+        @AuraEnabled public String sectionKey { get; set; }
+        @AuraEnabled public String label      { get; set; }
+        @AuraEnabled public String helpText   { get; set; }
+        @AuraEnabled public String layoutType { get; set; }
+        @AuraEnabled public String width      { get; set; }
+        @AuraEnabled public List<FieldSeed> fields { get; set; }
+    }
+
+    /**
+     * Creates a whole page: its sections, in order, each with the fields its
+     * layout declares.
+     *
+     * "New page" used to mean "open the editor and hope" — the page did not
+     * exist until someone added a section by hand, which is why every page but
+     * the story was empty. A template is a starting shape, so creating one
+     * lays that shape down and leaves everything about it editable.
+     *
+     * Refuses a page that already has sections rather than merging into it:
+     * scaffolding on top of real content would duplicate section keys and
+     * quietly merge two pages' worth of fields.
+     */
+    @AuraEnabled
+    public static Integer createPage(
+        String offeringKey, String templateType, List<SectionSeed> sections
+    ) {
+        if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
+            throw new AuraHandledException('An offering and a page are both required.');
+        }
+        if (sections == null || sections.isEmpty()) {
+            throw new AuraHandledException('This page has no starting shape defined.');
+        }
+        if (![
+            SELECT Id FROM MA_Page_Section__c
+            WHERE Offering_Key__c = :offeringKey AND Template_Type__c = :templateType
+            LIMIT 1
+        ].isEmpty()) {
+            throw new AuraHandledException(
+                'That page already has sections. Open it and add to it instead.'
+            );
+        }
+
+        List<MA_Page_Section__c> newSections = new List<MA_Page_Section__c>();
+        List<MA_Page_Content__c> newRows = new List<MA_Page_Content__c>();
+        Decimal order = 0;
+        for (SectionSeed seed : sections) {
+            String key = MaContentAddress.normaliseKey(seed.sectionKey);
+            if (String.isBlank(key)) continue;
+            order += 10;
+
+            MA_Page_Section__c sec = new MA_Page_Section__c();
+            sec.Section_Address__c = MaContentAddress.forSection(offeringKey, templateType, key);
+            sec.Offering_Key__c    = offeringKey;
+            sec.Template_Type__c   = templateType;
+            sec.Section_Key__c     = key;
+            sec.Label__c           = String.isBlank(seed.label) ? key : seed.label;
+            sec.Help_Text__c       = seed.helpText;
+            sec.Layout_Type__c     = seed.layoutType;
+            sec.Width__c           = String.isBlank(seed.width) ? 'standard' : seed.width;
+            sec.Active__c          = true;
+            // Draft until published, so creating a page does not change
+            // anything public the moment it is named.
+            sec.Status__c          = 'Draft';
+            sec.Sort_Order__c      = order;
+            newSections.add(sec);
+
+            Integer position = 0;
+            for (FieldSeed f : (seed.fields == null ? new List<FieldSeed>() : seed.fields)) {
+                if (f == null || String.isBlank(f.fieldKey)) continue;
+                position += 10;
+                MA_Page_Content__c row = new MA_Page_Content__c();
+                row.Content_Address__c = MaContentAddress.forField(offeringKey, templateType, key, f.fieldKey);
+                row.Offering_Key__c    = offeringKey;
+                row.Template_Type__c   = templateType;
+                row.Section_Key__c     = key;
+                row.Field_Key__c       = f.fieldKey;
+                row.Field_Type__c      = String.isBlank(f.fieldType) ? 'text' : f.fieldType;
+                row.Label__c           = f.label;
+                row.Sort_Order__c      = position;
+                row.Active__c          = true;
+                if (row.Field_Type__c == 'json') row.JSON_Value__c = '[]';
+                if (row.Field_Type__c == 'icontext') row.JSON_Value__c = '{"label":"","icon":""}';
+                newRows.add(row);
+            }
+        }
+        if (newSections.isEmpty()) {
+            throw new AuraHandledException('None of the section names were usable.');
+        }
+
+        Savepoint sp = Database.setSavepoint();
+        try {
+            insert newSections;
+            if (!newRows.isEmpty()) insert newRows;
+        } catch (DmlException e) {
+            Database.rollback(sp);
+            throw new AuraHandledException('The page could not be created: ' + e.getMessage());
+        }
+        return newSections.size();
+    }
 }

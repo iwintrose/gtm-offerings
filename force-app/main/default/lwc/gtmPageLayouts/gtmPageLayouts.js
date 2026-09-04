@@ -126,7 +126,58 @@ function ctaGlyph(value) {
 }
 
 
+/**
+ * What a page is made of when it is first created.
+ *
+ * A template is a starting shape, not a fixed one: these sections are created
+ * so a new page opens with something to edit rather than an empty rail, and
+ * every one of them can then be renamed, reordered, added to or removed. The
+ * three pages beyond the story reuse the story's own layouts — a listing is a
+ * heading and a grid of cards whatever it is listing — which is the whole
+ * claim of the layout system, so no new layout types are needed to model them.
+ */
+const STARTER_PAGES = {
+    'story': [
+        { sectionKey: 'header',  label: 'Header',        layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
+        { sectionKey: 'hero',    label: 'Hero',          layoutType: 'hero',        width: 'standard', helpText: 'The first screen: eyebrow, headline and the one line saying what this is.' },
+        { sectionKey: 'problem', label: 'The Problem',   layoutType: 'lede-chips',  width: 'standard', helpText: 'What the reader recognises before you have said anything about the offering.' },
+        { sectionKey: 'closing', label: 'Closing CTA',   layoutType: 'closing',     width: 'standard', helpText: 'The last screen and the button.' },
+        { sectionKey: 'footer',  label: 'Footer',        layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
+    ],
+    'offerings-listing': [
+        { sectionKey: 'header',   label: 'Header',   layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
+        { sectionKey: 'intro',    label: 'Intro',    layoutType: 'hero',        width: 'standard', helpText: 'Step label, heading and the line under it.' },
+        { sectionKey: 'tiles',    label: 'Offerings', layoutType: 'card-grid',  width: 'standard', helpText: 'One card per offering. The badge is the short mark shown on the tile.' },
+        { sectionKey: 'footer',   label: 'Footer',   layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
+    ],
+    'industry-chooser': [
+        { sectionKey: 'header',     label: 'Header',     layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
+        { sectionKey: 'intro',      label: 'Intro',      layoutType: 'hero',        width: 'standard', helpText: 'Step label, heading and the line under it.' },
+        { sectionKey: 'industries', label: 'Industries', layoutType: 'card-grid',   width: 'standard', helpText: 'One card per industry offered.' },
+        { sectionKey: 'footer',     label: 'Footer',     layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
+    ],
+    'configurator': [
+        { sectionKey: 'header',   label: 'Header',       layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
+        { sectionKey: 'intro',    label: 'Intro',        layoutType: 'hero',        width: 'standard', helpText: 'What this configuration is, for the person it was sent to.' },
+        { sectionKey: 'why',      label: 'Why us',       layoutType: 'card-grid',   width: 'standard', helpText: 'The case, one card per point.' },
+        { sectionKey: 'proof',    label: 'Proof',        layoutType: 'stat',        width: 'standard', helpText: 'The number that makes the case concrete.' },
+        { sectionKey: 'closing',  label: 'Closing CTA',  layoutType: 'closing',     width: 'standard', helpText: 'The last screen and the button.' },
+        { sectionKey: 'footer',   label: 'Footer',       layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
+    ]
+};
+
+/** The starter sections for a template, each with the fields its layout declares. */
+function starterFor(templateType) {
+    return (STARTER_PAGES[templateType] || []).map((s) => ({
+        ...s,
+        fields: fieldsFor(s.layoutType)
+    }));
+}
+
+
 export {
+    STARTER_PAGES,
+    starterFor,
     CTA_ICONS,
     ctaGlyph,
     FRAME_LAYOUTS,

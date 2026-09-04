@@ -1,5 +1,7 @@
 import { LightningElement, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
+import createPage from '@salesforce/apex/MaPageSectionController.createPage';
+import { starterFor } from 'c/gtmPageLayouts';
 import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
 
 const TEMPLATE_LABELS = {
@@ -114,6 +116,12 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         this.openEditor(offering, template);
     }
 
+    messageFrom(err) {
+        if (!err) return '';
+        if (err.body && err.body.message) return err.body.message;
+        return err.message || '';
+    }
+
     // ─── new page ─────────────────────────────────────────────────────────────
     // Building a page for an offering belongs here, with the pages, rather
     // than on the GTM Offerings overview — that page is a rep's, and its
@@ -129,10 +137,6 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
 
     get npDisabled() { return !this.npOffering || !this.npTemplate; }
 
-    get npHint() {
-        if (this.npDisabled) return 'Both are needed to open the editor on the right page.';
-        return 'The editor opens on this page. If it has no sections yet, add the first one there.';
-    }
 
     handleOpenNewPage() {
         this.newPageOpen = true;
@@ -144,10 +148,42 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     handleNpOffering(event) { this.npOffering = event.detail.value; }
     handleNpTemplate(event) { this.npTemplate = event.detail.value; }
 
+    // A page that already has sections is opened, not rebuilt. A page that
+    // does not is created first — otherwise "new page" meant "open the editor
+    // and hope", which is why every page but the story was empty.
+    get npIsExisting() {
+        const offering = this.offerings.find((o) => o.offeringKey === this.npOffering);
+        if (!offering) return false;
+        const page = (offering.pages || []).find((p) => p.templateType === this.npTemplate);
+        return !!(page && page.isBuilt);
+    }
+
+    get npHint() {
+        if (this.npDisabled) return 'Both are needed to open the editor on the right page.';
+        if (this.npIsExisting) return 'This page already exists. The editor will open on it.';
+        const n = starterFor(this.npTemplate).length;
+        return n
+            ? `Creates ${n} starting sections you can rename, reorder or remove. Nothing is public until you publish.`
+            : 'This page has no starting shape defined yet.';
+    }
+
     handleGoToPage() {
         if (this.npDisabled) return;
+        const offeringKey = this.npOffering;
+        const templateType = this.npTemplate;
         this.newPageOpen = false;
-        this.openEditor(this.npOffering, this.npTemplate);
+
+        if (this.npIsExisting) {
+            this.openEditor(offeringKey, templateType);
+            return;
+        }
+        this.isLoading = true;
+        createPage({ offeringKey, templateType, sections: starterFor(templateType) })
+            .then(() => { this.openEditor(offeringKey, templateType); })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The page could not be created.';
+            })
+            .finally(() => { this.isLoading = false; });
     }
 
     // This page already lives in the Content Manager app, so the editor is a

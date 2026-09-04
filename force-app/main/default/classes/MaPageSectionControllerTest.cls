@@ -371,4 +371,72 @@ private class MaPageSectionControllerTest {
         Test.stopTest();
         System.assert(threw, 'A blank section id is rejected');
     }
+
+    // ─── createPage ───────────────────────────────────────────────────────────
+
+    private static List<MaPageSectionController.SectionSeed> starter() {
+        MaPageSectionController.SectionSeed head = new MaPageSectionController.SectionSeed();
+        head.sectionKey = 'header';
+        head.label = 'Header';
+        head.layoutType = 'page-header';
+        head.width = 'standard';
+        head.fields = new List<MaPageSectionController.FieldSeed>();
+        for (String k : new List<String>{ 'brandLabel', 'brandTag' }) {
+            MaPageSectionController.FieldSeed f = new MaPageSectionController.FieldSeed();
+            f.fieldKey = k; f.fieldType = 'text'; f.label = k;
+            head.fields.add(f);
+        }
+        MaPageSectionController.SectionSeed tiles = new MaPageSectionController.SectionSeed();
+        tiles.sectionKey = 'tiles';
+        tiles.label = 'Offerings';
+        tiles.layoutType = 'card-grid';
+        tiles.width = 'standard';
+        tiles.fields = new List<MaPageSectionController.FieldSeed>();
+        MaPageSectionController.FieldSeed cards = new MaPageSectionController.FieldSeed();
+        cards.fieldKey = 'cards'; cards.fieldType = 'json'; cards.label = 'Cards';
+        tiles.fields.add(cards);
+        return new List<MaPageSectionController.SectionSeed>{ head, tiles };
+    }
+
+    @IsTest
+    static void createPage_laysDownTheStartingShape() {
+        Test.startTest();
+        Integer made = MaPageSectionController.createPage(OFFERING, 'offerings-listing', starter());
+        Test.stopTest();
+
+        System.assertEquals(2, made, 'Both starting sections should be created');
+        List<MA_Page_Section__c> secs = [
+            SELECT Section_Key__c, Layout_Type__c, Status__c, Sort_Order__c
+            FROM MA_Page_Section__c
+            WHERE Offering_Key__c = :OFFERING AND Template_Type__c = 'offerings-listing'
+            ORDER BY Sort_Order__c];
+        System.assertEquals('header', secs[0].Section_Key__c, 'Order follows the starting shape');
+        // Creating a page must not change anything public until it is published.
+        System.assertEquals('Draft', secs[0].Status__c, 'A new page starts unpublished');
+        System.assertEquals(3, [SELECT COUNT() FROM MA_Page_Content__c
+            WHERE Offering_Key__c = :OFFERING AND Template_Type__c = 'offerings-listing'],
+            'Every declared field gets a record');
+        System.assertEquals('[]', [SELECT JSON_Value__c FROM MA_Page_Content__c
+            WHERE Offering_Key__c = :OFFERING AND Field_Key__c = 'cards' LIMIT 1].JSON_Value__c,
+            'A new list field starts as an empty list, not null');
+    }
+
+    @IsTest
+    static void createPage_refusesAPageThatAlreadyHasSections() {
+        MaPageSectionController.createPage(OFFERING, 'offerings-listing', starter());
+        Boolean blocked = false;
+        Test.startTest();
+        try {
+            MaPageSectionController.createPage(OFFERING, 'offerings-listing', starter());
+        } catch (AuraHandledException e) {
+            blocked = true;
+        }
+        Test.stopTest();
+        // Scaffolding on top of real content would duplicate section keys and
+        // merge two pages' worth of fields into one.
+        System.assert(blocked, 'A page that already has sections is not rebuilt');
+        System.assertEquals(2, [SELECT COUNT() FROM MA_Page_Section__c
+            WHERE Offering_Key__c = :OFFERING AND Template_Type__c = 'offerings-listing'],
+            'and nothing is duplicated');
+    }
 }
