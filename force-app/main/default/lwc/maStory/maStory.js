@@ -21,6 +21,93 @@ function buildBuilderUrl(orgUrl) {
 
 // Hardcoded fallbacks shown until CMS data loads (keeps the page usable if a
 // CMS record hasn't been created yet or a callout fails).
+const DEFAULTS = {
+    heroEyebrow: 'Internal positioning · GTM buy-in',
+    heroHeadline: 'Every migration starts with a decade nobody documented. We read it in an afternoon.',
+    heroSubhead: 'How Migration Accelerator turns an untrusted platform and a go-live date that won\'t move into a plan, and increasingly, a finished migration.',
+    problemLede: 'Every enterprise migration starts the same way.',
+    problemChips: [
+        'A platform nobody fully trusts',
+        'A decade of undocumented campaigns',
+        'A go-live date that won\'t move'
+    ],
+    problemClose: 'Migration Accelerator starts working before the rebuild, before the plan, at the part everyone dreads: finding out what\'s actually there.',
+    mechanismHead: 'Point it at the platform.\nGet a plan you can act on.',
+    mechanismSub: 'Point it at a client\'s email tool (ex: SFMC, Eloqua, etc) — get a build-ready plan out, and for the pieces it\'s confident about, a finished migration.',
+    closingHead: 'This is Migration Accelerator today: an offering built on evidence, moving toward a finished migration instead of a plan for one.',
+    closingSub: 'The next step is putting a name and an industry behind it.',
+    faqs: [
+        {
+            question: 'Does it let us run a migration with fewer people?',
+            verdict: 'Yes',
+            answer: 'The platform drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.'
+        },
+        {
+            question: 'Does it let us do it faster?',
+            verdict: 'Yes',
+            answer: 'Assessment runs in about an hour instead of weeks. A full plan for a mid-size environment fits inside a single sprint.'
+        },
+        {
+            question: 'Can it actually execute the migration, or just plan it?',
+            verdict: 'Yes',
+            answer: 'For supported objects, the platform previews the change with a dry run, executes it live, and keeps rollback ready if anything doesn\'t land clean.'
+        },
+        {
+            question: 'Does it mean fewer defects?',
+            verdict: 'Yes',
+            answer: 'Dependency-aware planning won\'t let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely.'
+        },
+        {
+            question: 'Does it give us better scoping, less risk?',
+            verdict: 'Yes',
+            answer: 'The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.'
+        },
+        {
+            question: 'Does it let us scale without deep platform specialists on every deal?',
+            verdict: 'Qualified yes',
+            answer: 'Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve.'
+        }
+    ],
+    routeSteps: [
+        { stepLabel: 'Ingest', stepDesc: 'Every asset, read directly' },
+        { stepLabel: 'Audit', stepDesc: 'A live health score' },
+        { stepLabel: 'Decide', stepDesc: 'Port, rework, retire, logged' },
+        { stepLabel: 'Plan', stepDesc: 'Dependencies pulled automatically' },
+        { stepLabel: 'Execute', stepDesc: 'Dry run, then live, rollback ready' }
+    ],
+    proofCtaText: 'A snapshot of what the platform reads from an environment, automatically, on day one.',
+    proofDemoRoot: 'APAC Onboarding',
+    proofDemoDeps: ['Welcome email', 'Shared data extension', 'Brand header'],
+    capabilities: [
+        { icon: 'In', cardTitle: 'Ingestion & inventory', cardDesc: 'Automatic, for any major marketing automation platform.', isNew: false },
+        { icon: 'Au', cardTitle: 'Automated audit', cardDesc: 'A health score plus an exportable report, generated on demand.', isNew: true },
+        { icon: 'De', cardTitle: 'Disposition & audit trail', cardDesc: 'Port, rework, or retire, on every object, with full history.', isNew: false },
+        { icon: 'Pl', cardTitle: 'Dependency-aware planning', cardDesc: 'Assigning one object pulls in everything it needs, automatically.', isNew: false },
+        { icon: 'Sp', cardTitle: 'AI-drafted build specs', cardDesc: 'Human-reviewed requirements per object, down to Journey Builder specs.', isNew: false },
+        { icon: 'Ex', cardTitle: 'Live execution & rollback', cardDesc: 'Dry run, then live, with a verification pass once it finishes.', isNew: true }
+    ],
+    bonusCard: '<strong>Also in the toolkit:</strong> a design-to-email pipeline. An approved Figma layout becomes a built, publishable email, no separate rebuild.',
+    clientStatBig: '500–2,000+',
+    clientStatDesc: 'objects is where this offering\'s advantage is largest, enterprise accounts migrating between major marketing automation platforms, carrying a sizable, under-documented environment.',
+    clientNote: 'Today, this runs through us, in working sessions, not a self-serve portal, and that\'s exactly how it should work for now.',
+    bdHead: 'One story. Here\'s how to run it.',
+    bdLede: 'This is the pitch, the same one a client hears. The job is fluency in it, plus the tools to make it specific to whoever\'s in the room.',
+    bdUseCases: [
+        { caseTitle: 'Presales', caseDesc: 'Run a prospect\'s export before the SOW. Walk in with a real health score, not a guess.' },
+        { caseTitle: 'Delivery', caseDesc: 'Run the full engagement through it, start to finish, and increasingly, the cutover itself.' },
+        { caseTitle: 'The pitch', caseDesc: 'A real environment becoming a real plan, live, in the room, not described afterward.' }
+    ],
+    pitchOldChips: [
+        'A promise to figure out scope after signature',
+        'An estimate built on intuition',
+        'A plan that ends in a manual handoff'
+    ],
+    pitchNewChips: [
+        'A real health score, produced live, in the room',
+        'Scope set from the actual environment',
+        'A dry run, and where it applies, a finished cutover'
+    ]
+};
 
 
 // The field vocabulary of each layout type, bucketed by how the value is
@@ -122,93 +209,6 @@ const DEFAULT_SECTIONS = [
     { sectionKey: 'closing',       layoutType: 'closing',     width: 'standard', label: '' }
 ];
 
-const DEFAULTS = {
-    heroEyebrow: 'Internal positioning · GTM buy-in',
-    heroHeadline: 'Every migration starts with a decade nobody documented. We read it in an afternoon.',
-    heroSubhead: 'How Migration Accelerator turns an untrusted platform and a go-live date that won\'t move into a plan, and increasingly, a finished migration.',
-    problemLede: 'Every enterprise migration starts the same way.',
-    problemChips: [
-        'A platform nobody fully trusts',
-        'A decade of undocumented campaigns',
-        'A go-live date that won\'t move'
-    ],
-    problemClose: 'Migration Accelerator starts working before the rebuild, before the plan, at the part everyone dreads: finding out what\'s actually there.',
-    mechanismHead: 'Point it at the platform.\nGet a plan you can act on.',
-    mechanismSub: 'Point it at a client\'s email tool (ex: SFMC, Eloqua, etc) — get a build-ready plan out, and for the pieces it\'s confident about, a finished migration.',
-    closingHead: 'This is Migration Accelerator today: an offering built on evidence, moving toward a finished migration instead of a plan for one.',
-    closingSub: 'The next step is putting a name and an industry behind it.',
-    faqs: [
-        {
-            question: 'Does it let us run a migration with fewer people?',
-            verdict: 'Yes',
-            answer: 'The platform drafts the first pass, inventory, descriptions, build requirements, and a person reviews and refines instead of starting from nothing.'
-        },
-        {
-            question: 'Does it let us do it faster?',
-            verdict: 'Yes',
-            answer: 'Assessment runs in about an hour instead of weeks. A full plan for a mid-size environment fits inside a single sprint.'
-        },
-        {
-            question: 'Can it actually execute the migration, or just plan it?',
-            verdict: 'Yes',
-            answer: 'For supported objects, the platform previews the change with a dry run, executes it live, and keeps rollback ready if anything doesn\'t land clean.'
-        },
-        {
-            question: 'Does it mean fewer defects?',
-            verdict: 'Yes',
-            answer: 'Dependency-aware planning won\'t let a destination ship without something it needs to run, the exact class of miss that spreadsheet planning lets through routinely.'
-        },
-        {
-            question: 'Does it give us better scoping, less risk?',
-            verdict: 'Yes',
-            answer: 'The health score comes from an automated audit of the real environment, not client-reported counts, which is usually where scoping risk starts.'
-        },
-        {
-            question: 'Does it let us scale without deep platform specialists on every deal?',
-            verdict: 'Qualified yes',
-            answer: 'Platform knowledge, field semantics, translation heuristics, vocabulary, lives in the platform, so someone without years of Eloqua or SFMC experience can operate it credibly. A specialist should still review and approve.'
-        }
-    ],
-    routeSteps: [
-        { stepLabel: 'Ingest', stepDesc: 'Every asset, read directly' },
-        { stepLabel: 'Audit', stepDesc: 'A live health score' },
-        { stepLabel: 'Decide', stepDesc: 'Port, rework, retire, logged' },
-        { stepLabel: 'Plan', stepDesc: 'Dependencies pulled automatically' },
-        { stepLabel: 'Execute', stepDesc: 'Dry run, then live, rollback ready' }
-    ],
-    proofCtaText: 'A snapshot of what the platform reads from an environment, automatically, on day one.',
-    proofDemoRoot: 'APAC Onboarding',
-    proofDemoDeps: ['Welcome email', 'Shared data extension', 'Brand header'],
-    capabilities: [
-        { icon: 'In', cardTitle: 'Ingestion & inventory', cardDesc: 'Automatic, for any major marketing automation platform.', isNew: false },
-        { icon: 'Au', cardTitle: 'Automated audit', cardDesc: 'A health score plus an exportable report, generated on demand.', isNew: true },
-        { icon: 'De', cardTitle: 'Disposition & audit trail', cardDesc: 'Port, rework, or retire, on every object, with full history.', isNew: false },
-        { icon: 'Pl', cardTitle: 'Dependency-aware planning', cardDesc: 'Assigning one object pulls in everything it needs, automatically.', isNew: false },
-        { icon: 'Sp', cardTitle: 'AI-drafted build specs', cardDesc: 'Human-reviewed requirements per object, down to Journey Builder specs.', isNew: false },
-        { icon: 'Ex', cardTitle: 'Live execution & rollback', cardDesc: 'Dry run, then live, with a verification pass once it finishes.', isNew: true }
-    ],
-    bonusCard: '<strong>Also in the toolkit:</strong> a design-to-email pipeline. An approved Figma layout becomes a built, publishable email, no separate rebuild.',
-    clientStatBig: '500–2,000+',
-    clientStatDesc: 'objects is where this offering\'s advantage is largest, enterprise accounts migrating between major marketing automation platforms, carrying a sizable, under-documented environment.',
-    clientNote: 'Today, this runs through us, in working sessions, not a self-serve portal, and that\'s exactly how it should work for now.',
-    bdHead: 'One story. Here\'s how to run it.',
-    bdLede: 'This is the pitch, the same one a client hears. The job is fluency in it, plus the tools to make it specific to whoever\'s in the room.',
-    bdUseCases: [
-        { caseTitle: 'Presales', caseDesc: 'Run a prospect\'s export before the SOW. Walk in with a real health score, not a guess.' },
-        { caseTitle: 'Delivery', caseDesc: 'Run the full engagement through it, start to finish, and increasingly, the cutover itself.' },
-        { caseTitle: 'The pitch', caseDesc: 'A real environment becoming a real plan, live, in the room, not described afterward.' }
-    ],
-    pitchOldChips: [
-        'A promise to figure out scope after signature',
-        'An estimate built on intuition',
-        'A plan that ends in a manual handoff'
-    ],
-    pitchNewChips: [
-        'A real health score, produced live, in the room',
-        'Scope set from the actual environment',
-        'A dry run, and where it applies, a finished cutover'
-    ]
-};
 
 export default class MaStory extends LightningElement {
     acceleratorUrl = ACCELERATOR_URL;
@@ -408,13 +408,16 @@ export default class MaStory extends LightningElement {
 
     connectedCallback() {
         this.loadFonts();
+        // Phase 1 — MA_Page_Content__c is the primary CMS; falls back to legacy getStoryContent.
+        // In preview mode the parent owns the data; fetching would overwrite the
+        // draft. The window-level listeners are skipped too: inside the editor
+        // this component sits in a scaled, scrolling container, so window scroll
+        // is not this page's scroll and the progress bar would read as noise.
+        if (this._preview) return;
         this._scrollHandler = this.handleScroll.bind(this);
         this._editModeHandler = (evt) => { this._editMode = evt.detail.active; };
         window.addEventListener('scroll', this._scrollHandler, { passive: true });
         window.addEventListener('maadminedit', this._editModeHandler);
-        // Phase 1 — MA_Page_Content__c is the primary CMS; falls back to legacy getStoryContent.
-        // In preview mode the parent owns the data; fetching would overwrite the draft.
-        if (this._preview) return;
         getPageLayout({ offeringKey: this.offeringKey, templateType: 'story', industryKey: null })
             .then((layout) => {
                 if (!layout) return;
@@ -488,7 +491,11 @@ export default class MaStory extends LightningElement {
     setupReveal() {
         const nodes = this.template.querySelectorAll('.rv');
         if (!nodes || nodes.length === 0) return;
-        if (!('IntersectionObserver' in window) || this.reducedMotion) {
+        // In preview the sections live in a transformed, independently scrolled
+        // container. IntersectionObserver measures against the browser viewport,
+        // so anything below the fold there would never intersect and would stay
+        // at opacity 0 — a blank preview. Reveal everything up front instead.
+        if (this._preview || !('IntersectionObserver' in window) || this.reducedMotion) {
             nodes.forEach((el) => { el.classList.add('in'); this._revealed.add(el); });
             return;
         }

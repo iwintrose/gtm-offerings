@@ -223,16 +223,51 @@ public without sharing class MaPageContentController {
     @AuraEnabled(cacheable=true)
     public static List<OfferingOption> getOfferings() {
         List<OfferingOption> out = new List<OfferingOption>();
+        String host = siteHost();
         for (MA_Offering__mdt off : [
-            SELECT Offering_Key__c, Label__c FROM MA_Offering__mdt
+            SELECT Offering_Key__c, Label__c, Site_Path__c FROM MA_Offering__mdt
             ORDER BY Label__c ASC
         ]) {
             OfferingOption o = new OfferingOption();
             o.offeringKey = off.Offering_Key__c;
             o.label       = off.Label__c;
+            o.publicUrl   = publicUrlFor(host, off.Site_Path__c);
             out.add(o);
         }
         return out;
+    }
+
+    /**
+     * The org's Experience Cloud host, read from the platform rather than
+     * assembled from the org URL: a sandbox, a scratch org and production all
+     * spell this differently, and getting it wrong produces a link that 404s
+     * without anything failing loudly.
+     */
+    private static String siteHost() {
+        for (Domain d : [SELECT Domain FROM Domain WHERE DomainType = 'DNS' LIMIT 50]) {
+            if (d.Domain != null && d.Domain.contains('.my.site.com')) {
+                return d.Domain;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Only returns a URL for a site that actually exists and is Live. A
+     * configured Site_Path__c that no longer matches a Network is a broken
+     * link, and a blank link the editor can hide is better than a dead one.
+     */
+    private static String publicUrlFor(String host, String sitePath) {
+        if (String.isBlank(host) || String.isBlank(sitePath)) return null;
+        String prefix = sitePath.trim().removeStart('/').removeEnd('/');
+        if (String.isBlank(prefix)) return null;
+        List<Network> nets = [
+            SELECT Id FROM Network
+            WHERE UrlPathPrefix = :prefix AND Status = 'Live'
+            LIMIT 1
+        ];
+        if (nets.isEmpty()) return null;
+        return 'https://' + host + '/' + prefix + '/s/';
     }
 
     /**
@@ -280,6 +315,11 @@ public without sharing class MaPageContentController {
     public class OfferingOption {
         @AuraEnabled public String offeringKey { get; set; }
         @AuraEnabled public String label       { get; set; }
+        // Absolute URL of the offering's public site, or blank when the
+        // offering has no site path configured. Absolute because the editor
+        // runs on the Lightning domain and Experience sites are served from
+        // my.site.com: a relative /gtmstory/s/ link 404s from Lightning.
+        @AuraEnabled public String publicUrl   { get; set; }
     }
 
     public class TemplateSummary {

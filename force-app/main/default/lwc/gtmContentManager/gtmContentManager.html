@@ -231,18 +231,26 @@
           </section>
 
           <section class="gcm-preview">
-            <div class="gcm-colhead"><span>Preview</span><span class="gcm-count">opens in a tab</span></div>
+            <div class="gcm-colhead">
+              <span>Preview</span>
+              <span class="gcm-count">{previewScaleLabel}</span>
+            </div>
             <div class="gcm-preview-body">
-              <div class="gcm-nopreview">
-                <p><b>Preview opens in a new tab.</b></p>
-                <p class="gcm-empty-sub">
-                  Edits save as you type. Open the live page to see them, or use
-                  Rearrange to change section order.
-                </p>
-                <p class="gcm-preview-link">
-                  <a href={livePageUrl} target="_blank" rel="noopener">Open the live page &#8599;</a>
-                </p>
+              <div class="gcm-stage-shell">
+                <div class="gcm-stage">
+                  <c-ma-story
+                    offering-key={selectedOffering}
+                    preview-sections={previewSections}
+                    preview-content={previewContent}>
+                  </c-ma-story>
+                </div>
               </div>
+            </div>
+            <div class="gcm-preview-foot">
+              <span>Showing your unpublished draft.</span>
+              <template if:true={hasLivePage}>
+                <a href={livePageUrl} target="_blank" rel="noopener">Live page &#8599;</a>
+              </template>
             </div>
           </section>
 

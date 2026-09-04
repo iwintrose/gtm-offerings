@@ -49,14 +49,14 @@
 }
 
 .gcm-loading { position: relative; min-height: 180px; }
-.gcm-empty, .gcm-nopreview { padding: 2rem; text-align: center; color: #444; }
+.gcm-empty { padding: 2rem; text-align: center; color: #444; }
 .gcm-empty-sub { color: #747474; font-size: 12px; max-width: 28rem; margin: 0.3rem auto 0; line-height: 1.5; }
 
 /* ── columns ─────────────────────────────────────────────────────────────── */
 .gcm-cols {
     flex: 1; min-height: 0;
     display: grid;
-    grid-template-columns: 16rem minmax(26rem, 34rem) 1fr;
+    grid-template-columns: 16rem minmax(24rem, 30rem) minmax(28rem, 1fr);
 }
 .gcm-rail, .gcm-fields {
     display: flex; flex-direction: column; min-height: 0;
@@ -133,11 +133,52 @@
 
 /* ── preview ─────────────────────────────────────────────────────────────── */
 .gcm-preview-body {
-    flex: 1; min-height: 0; overflow-y: auto;
-    background: #fff; margin: 0.6rem; border: 1px solid #c9c9c9; border-radius: 6px;
+    flex: 1; min-height: 0; overflow: auto;
+    background: #fff; margin: 0.6rem 0.6rem 0; border: 1px solid #c9c9c9;
+    border-radius: 6px 6px 0 0;
+    padding: 0.6rem;
+    display: flex; justify-content: center;
+    /* The page draws its own background; a checker-free neutral behind it makes
+       the frame edge read as a device boundary rather than part of the page. */
+    background-image: linear-gradient(#fafafa, #fafafa);
 }
 
-@media (max-width: 1280px) {
+/* The shell holds the space the SCALED page occupies. The stage inside it is
+   always PREVIEW_WIDTH wide and unscaled as far as layout is concerned —
+   transform does not shrink a box — so the shell's width and height are set
+   from JS in fitPreview(). Without it the pane would scroll as if the page
+   were still 1280px wide and full height. */
+.gcm-stage-shell {
+    position: relative;
+    flex: none;
+    align-self: flex-start;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    background: #fff;
+}
+.gcm-stage {
+    width: 1280px;
+    transform-origin: top left;
+    /* Set by fitPreview(); this is the un-fitted starting point so a first
+       paint before the observer runs is not full-size and overflowing. */
+    transform: scale(1);
+}
+
+.gcm-preview-foot {
+    flex: none;
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.7rem 0.6rem;
+    font-size: 11px; color: #747474;
+}
+.gcm-preview-foot a { margin-left: auto; color: #0176d3; font-weight: 600; text-decoration: none; }
+.gcm-preview-foot a:hover { text-decoration: underline; }
+
+@media (max-width: 1400px) {
+    .gcm-cols { grid-template-columns: 14rem minmax(21rem, 26rem) minmax(22rem, 1fr); }
+}
+/* Below this there is not enough room for a page preview to tell you anything,
+   so the editor gives the space to the fields instead. */
+@media (max-width: 1080px) {
     .gcm-cols { grid-template-columns: 14rem minmax(22rem, 1fr) 0; }
     .gcm-preview { display: none; }
 }
@@ -169,9 +210,6 @@
     white-space: pre;
     overflow-x: auto;
 }
-.gcm-preview-link { margin-top: 0.75rem; }
-.gcm-preview-link a { color: #0176d3; font-weight: 600; text-decoration: none; }
-.gcm-preview-link a:hover { text-decoration: underline; }
 
 /* ── offering / page selection ───────────────────────────────────────────── */
 .gcm-pick { width: 13rem; }

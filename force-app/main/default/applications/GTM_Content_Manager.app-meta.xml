@@ -11,6 +11,5 @@
     <tabs>GTM_Content_Home</tabs>
     <tabs>GTM_Content_Manager</tabs>
     <tabs>MA_Page_Content__c</tabs>
-    <tabs>GTM_Embed_Probe</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>

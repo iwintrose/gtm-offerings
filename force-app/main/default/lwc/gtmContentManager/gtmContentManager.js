@@ -14,6 +14,12 @@ import setSectionActive from '@salesforce/apex/MaPageContentController.setSectio
 // MaPageContentController.resolveValue.
 const COLUMN = { text: 'textValue', rich: 'richValue', json: 'jsonValue' };
 
+// The preview renders the real page component at a fixed desktop width and
+// scales the whole thing down to whatever the pane can give it. Scaling rather
+// than narrowing is deliberate: it keeps the proportions of the published page
+// instead of showing a tablet breakpoint and calling it a preview.
+const PREVIEW_WIDTH = 1280;
+
 const TEMPLATE_LABELS = {
     story: 'Story',
     configurator: 'Configurator',
@@ -57,6 +63,8 @@ export default class GtmContentManager extends LightningElement {
 
     _dragKey = '';
     _saveTimer;
+    _fitObserver;
+    @track _scalePct = 100;
 
     // Set when the home page deep-links into a specific page. Without this the
     // editor would always open on its own guess, which is the "landed somewhere
@@ -527,7 +535,91 @@ export default class GtmContentManager extends LightningElement {
 
     handleDismissError() { this.loadError = ''; }
 
-    get livePageUrl() { return '/gtmstory/s/'; }
+    // ─── live preview ─────────────────────────────────────────────────────────
+    // The preview is the real <c-ma-story> renderer fed from this component's
+    // working copy, not a second implementation of the page. It is driven by
+    // getters, so every keystroke that lands in `records` redraws it — the
+    // draft is visible here before it is visible to anyone else.
+
+    get previewSections() {
+        return this.sections
+            .filter((s) => s.active !== false)
+            .map((s) => ({
+                sectionKey: s.sectionKey,
+                layoutType: s.layoutType,
+                width: s.width || 'standard',
+                label: s.label || ''
+            }));
+    }
+
+    /**
+     * The flat `sectionKey::fieldKey` map the renderer resolves against, built
+     * from the working copy: draft value where one exists, published value
+     * otherwise. Same shape MaPageContentReader.getPageLayout returns, so the
+     * preview and the live page agree by construction.
+     */
+    get previewContent() {
+        const map = {};
+        this.records.forEach((r) => {
+            if (r.active === false) return;
+            const value = r.isDraft ? (r.draftValue || '') : (r[COLUMN[r.fieldType || 'text']] || '');
+            if (!value) return;
+            map[`${r.sectionKey}::${r.fieldKey}`] = value;
+        });
+        return map;
+    }
+
+    get previewScaleLabel() { return `${this._scalePct}% of 1280px`; }
+
+    fitPreview() {
+        const pane = this.template.querySelector('.gcm-preview-body');
+        const stage = this.template.querySelector('.gcm-stage');
+        const shell = this.template.querySelector('.gcm-stage-shell');
+        if (!pane || !stage || !shell) return;
+        // The pane's own padding is the only thing between the frame and the
+        // rail; subtract it or the scaled page sits under the scrollbar.
+        const available = pane.clientWidth - 24;
+        if (available <= 0) return;
+        const scale = Math.min(1, available / PREVIEW_WIDTH);
+        stage.style.transform = `scale(${scale})`;
+        // transform does not affect layout, so the shell has to be told what
+        // the scaled page now occupies or the pane scrolls to the wrong height.
+        shell.style.width = `${Math.round(PREVIEW_WIDTH * scale)}px`;
+        shell.style.height = `${Math.round(stage.scrollHeight * scale)}px`;
+        const pct = Math.round(scale * 100);
+        if (pct !== this._scalePct) this._scalePct = pct;
+    }
+
+    renderedCallback() {
+        this.fitPreview();
+        if (this._fitObserver || typeof ResizeObserver === 'undefined') return;
+        const pane = this.template.querySelector('.gcm-preview-body');
+        const stage = this.template.querySelector('.gcm-stage');
+        if (!pane || !stage) return;
+        // Two things change the fit: the pane resizing with the window, and the
+        // page itself growing or shrinking as content is edited.
+        this._fitObserver = new ResizeObserver(() => { this.fitPreview(); });
+        this._fitObserver.observe(pane);
+        this._fitObserver.observe(stage);
+    }
+
+    disconnectedCallback() {
+        if (this._fitObserver) {
+            this._fitObserver.disconnect();
+            this._fitObserver = undefined;
+        }
+        clearTimeout(this._saveTimer);
+    }
+
+    // Resolved by Apex from the offering's configured site path, not built
+    // here: a relative link would resolve against the Lightning domain, where
+    // Experience Cloud sites do not exist.
+    get livePageUrl() {
+        const o = this.offerings.find((x) => x.offeringKey === this.selectedOffering);
+        return (o && o.publicUrl) || '';
+    }
+
+    get hasLivePage() { return !!this.livePageUrl; }
     get hasSections() { return !this.isLoading && this.sections.length > 0; }
     get showPagePicker() { return this.hasOffering && !this.hasTemplate && !this.isLoading; }
     get showEditor() { return this.hasOffering && this.hasTemplate && !this.isLoading; }
