@@ -1,6 +1,6 @@
 import { LightningElement, api, track, wire } from 'lwc';
-import getStageContext from '@salesforce/apex/MaStageActionsController.getStageContext';
-import advanceStage   from '@salesforce/apex/MaStageActionsController.advanceStage';
+import getStageContext from '@salesforce/apex/GtmStageActionsController.getStageContext';
+import advanceStage   from '@salesforce/apex/GtmStageActionsController.advanceStage';
 
 const STAGE_LABELS = {
     Assessment : 'Assessment received',
@@ -15,7 +15,7 @@ const CLIENT_MSGS = {
     Draft      : "Your proposal is almost ready — we'll email you shortly."
 };
 
-export default class MaStageActions extends LightningElement {
+export default class GtmStageActions extends LightningElement {
     @api configId      = '';
     @api isConfigManager = false;
 

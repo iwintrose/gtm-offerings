@@ -38,8 +38,8 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>maLinkSitemap</componentName>
-                <identifier>c_maLinkSitemap</identifier>
+                <componentName>gtmLinkSitemap</componentName>
+                <identifier>c_gtmLinkSitemap</identifier>
             </componentInstance>
         </itemInstances>
         <name>Facet-2833fe35-34d4-49a6-a980-442edec52150</name>

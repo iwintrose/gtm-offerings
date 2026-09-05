@@ -17,7 +17,7 @@ const EVENT_VARIANT = {
     'Drop-off':       'error',
 };
 
-export default class MaLinkActivity extends LightningElement {
+export default class GtmLinkActivity extends LightningElement {
     @api recordId;
 
     _configId;

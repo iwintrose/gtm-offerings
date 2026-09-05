@@ -26,7 +26,7 @@ SRC = os.path.join(ROOT, "force-app", "main", "default")
 
 
 def kebab(name):
-    """maStory -> ma-story, so c-ma-story is findable."""
+    """gtmStory -> gtm-story, so c-gtm-story is findable."""
     return re.sub(r"(?<!^)(?=[A-Z])", "-", name).lower()
 
 
@@ -98,9 +98,9 @@ def main():
     for name in lwcs:
         # Every form a reference can take. Missing one of these is how four
         # bundles got deleted on the strength of an audit that saw nothing:
-        #   c-ma-story          markup composition
-        #   c/maStory           ES module import
-        #   c:maStory           FlexiPage and Experience Cloud view JSON
+        #   c-gtm-story         markup composition
+        #   c/gtmStory          ES module import
+        #   c:gtmStory          FlexiPage and Experience Cloud view JSON
         #   <lwcComponent>      Custom Tab
         hits = refs_to([f"c-{kebab(name)}", f"c/{name}", f"c:{name}",
                         f"<componentName>{name}</componentName>",

@@ -1,5 +1,5 @@
 /* Bottom-left, so it never competes with the assistant bubble's bottom-right
-   corner on the client-facing configurator pattern (c/maAgentBubble) even
+   corner on the client-facing configurator pattern (c/gtmAgentBubble) even
    though neither of this panel's two hosts uses that component today. */
 :host { display: block; }
 

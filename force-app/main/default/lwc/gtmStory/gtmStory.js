@@ -1,5 +1,5 @@
 import { LightningElement, api, track } from 'lwc';
-import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
+import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
 // The layout vocabulary is shared with the editor, which has to know what
 // fields a section needs before that section exists. See c/gtmPageLayouts.
 import { FRAME_LAYOUTS, LAYOUT_FIELDS, ctaGlyph } from 'c/gtmPageLayouts';
@@ -184,7 +184,7 @@ const DEFAULT_SECTIONS = [
 ];
 
 
-export default class MaStory extends LightningElement {
+export default class GtmStory extends LightningElement {
     acceleratorUrl = ACCELERATOR_URL;
 
     @track openFaqId = null;
@@ -376,7 +376,7 @@ export default class MaStory extends LightningElement {
             .filter((row) => {
                 if (LAYOUT_FIELDS[row.layoutType]) return true;
                 // eslint-disable-next-line no-console
-                console.warn('[maStory] unknown layout, section skipped:', row.layoutType, row.sectionKey);
+                console.warn('[gtmStory] unknown layout, section skipped:', row.layoutType, row.sectionKey);
                 return false;
             })
             .map((row) => {
@@ -540,7 +540,7 @@ export default class MaStory extends LightningElement {
                 // page render hardcoded defaults for months without anyone noticing.
                 this._loadError = 'Page content could not be loaded; showing built-in defaults.';
                 // eslint-disable-next-line no-console
-                console.error('[maStory] getPageLayout failed:', JSON.stringify(err));
+                console.error('[gtmStory] getPageLayout failed:', JSON.stringify(err));
             });
     }
 

@@ -1,10 +1,10 @@
 import { LightningElement, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
-import createPage from '@salesforce/apex/MaPageSectionController.createPage';
+import createPage from '@salesforce/apex/GtmPageSectionController.createPage';
 import { starterFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
-import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
-import renameOffering from '@salesforce/apex/MaPageContentController.renameOffering';
-import createOffering from '@salesforce/apex/MaPageContentController.createOffering';
+import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSummary';
+import renameOffering from '@salesforce/apex/GtmPageContentController.renameOffering';
+import createOffering from '@salesforce/apex/GtmPageContentController.createOffering';
 
 
 // Every template the picklist allows, so the home can show what an offering

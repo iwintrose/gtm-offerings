@@ -1,5 +1,5 @@
 import { LightningElement, api, track } from 'lwc';
-import getPageContent from '@salesforce/apex/MaPageContentReader.getPageContent';
+import getPageContent from '@salesforce/apex/GtmPageContentReader.getPageContent';
 
 const FRAMEWORK_KEY = 'gtm';
 const SECTION_KEY = 'faq';
@@ -13,7 +13,7 @@ const SECTION_KEY = 'faq';
  * first open, for the same reason — a panel nobody opens should cost nothing.
  *
  * The content itself is not hardcoded here. It reads through
- * MaPageContentReader.getPageContent — the same read path every other CMS-
+ * GtmPageContentReader.getPageContent — the same read path every other CMS-
  * backed component on these pages already uses — addressed at
  * gtm::<templateType>::faq::*, using the 'faq' layout the story page's own
  * FAQ section already renders from (c/gtmPageLayouts LAYOUT_FIELDS.faq): an

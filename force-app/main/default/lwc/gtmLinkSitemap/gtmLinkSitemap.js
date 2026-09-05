@@ -1,5 +1,5 @@
 import { LightningElement, api, track } from 'lwc';
-import getLinkSitemap from '@salesforce/apex/MaHomeSnapshotController.getLinkSitemap';
+import getLinkSitemap from '@salesforce/apex/GtmHomeSnapshotController.getLinkSitemap';
 
 /**
  * What the recipient of this link actually read.
@@ -13,7 +13,7 @@ import getLinkSitemap from '@salesforce/apex/MaHomeSnapshotController.getLinkSit
  * rather than omitted: a map with the unread parts left out is a map that can
  * only tell you good news.
  */
-export default class MaLinkSitemap extends LightningElement {
+export default class GtmLinkSitemap extends LightningElement {
     @api recordId;
 
     @track nodes = [];

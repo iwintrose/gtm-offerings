@@ -24,7 +24,7 @@ const FALLBACK = {
     label: 'Ask Gus'
 };
 
-export default class MaAgentBubble extends LightningElement {
+export default class GtmAgentBubble extends LightningElement {
     @api sessionToken = '';
     @api configId = '';
 
@@ -99,18 +99,18 @@ export default class MaAgentBubble extends LightningElement {
                 this.dispatchEvent(new CustomEvent('agentdelta', { detail: { changes } }));
             } catch (e) {
                 // eslint-disable-next-line no-console
-                console.error('[maAgentBubble] platform-event delta:', e);
+                console.error('[gtmAgentBubble] platform-event delta:', e);
             }
         })
             .then((sub) => { this._sub = sub; })
             // eslint-disable-next-line no-console
-            .catch((err) => { console.warn('[maAgentBubble] subscribe failed:', err); });
+            .catch((err) => { console.warn('[gtmAgentBubble] subscribe failed:', err); });
     }
 
     disconnectedCallback() {
         if (!this._sub) return;
         // eslint-disable-next-line no-console
-        unsubscribe(this._sub).catch((err) => console.warn('[maAgentBubble] unsubscribe:', err));
+        unsubscribe(this._sub).catch((err) => console.warn('[gtmAgentBubble] unsubscribe:', err));
         this._sub = null;
     }
 

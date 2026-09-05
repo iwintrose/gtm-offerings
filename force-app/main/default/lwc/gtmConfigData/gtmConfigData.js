@@ -5,8 +5,8 @@
  * DEFAULTS used to live here as hardcoded constants -- they're now
  * authored in Salesforce CMS (force-app/main/default/managedContentTypes/)
  * and read at runtime via MaStoryContentController.getStoryContent(),
- * wired directly in maConfigurator.js, maConfigCustomize.js, and
- * maSavedLinksBar.js. See DEPLOYMENT.md for how that content gets from
+ * wired directly in gtmConfigurator.js, maConfigCustomize.js, and
+ * gtmSavedLinksBar.js. See DEPLOYMENT.md for how that content gets from
  * CMS onto the page.
  *
  * What's left here is genuinely static: the per-client personalization

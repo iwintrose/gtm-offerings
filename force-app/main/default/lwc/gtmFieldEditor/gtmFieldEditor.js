@@ -1,12 +1,12 @@
 import { LightningElement, api, track } from 'lwc';
-import createField from '@salesforce/apex/MaPageSectionController.createField';
-import deleteField from '@salesforce/apex/MaPageSectionController.deleteField';
-import restoreField from '@salesforce/apex/MaPageSectionController.restoreField';
-import saveFieldOrder from '@salesforce/apex/MaPageSectionController.saveFieldOrder';
+import createField from '@salesforce/apex/GtmPageSectionController.createField';
+import deleteField from '@salesforce/apex/GtmPageSectionController.deleteField';
+import restoreField from '@salesforce/apex/GtmPageSectionController.restoreField';
+import saveFieldOrder from '@salesforce/apex/GtmPageSectionController.saveFieldOrder';
 import { fieldsFor, humaniseFieldKey, CTA_ICONS } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
-// MaPageContentController.resolveValue.
+// GtmPageContentController.resolveValue.
 const COLUMN = {
     text: 'textValue',
     rich: 'richValue',

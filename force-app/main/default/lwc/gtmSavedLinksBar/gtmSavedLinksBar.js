@@ -1,15 +1,15 @@
 import { LightningElement, api } from 'lwc';
 import isGuest from '@salesforce/user/isGuest';
-import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
-import getConfiguratorPageUrl from '@salesforce/apex/MaSavedConfigurationController.getConfiguratorPageUrl';
-import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
-import setActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
-import getOrgBaseUrl from '@salesforce/apex/MaSavedConfigurationController.getOrgBaseUrl';
-import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
+import getMyConfigurations from '@salesforce/apex/GtmSavedConfigurationController.getMyConfigurations';
+import getConfiguratorPageUrl from '@salesforce/apex/GtmSavedConfigurationController.getConfiguratorPageUrl';
+import deleteConfiguration from '@salesforce/apex/GtmSavedConfigurationController.deleteConfiguration';
+import setActive from '@salesforce/apex/GtmSavedConfigurationController.setActive';
+import getOrgBaseUrl from '@salesforce/apex/GtmSavedConfigurationController.getOrgBaseUrl';
+import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
 import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 
-export default class MaSavedLinksBar extends LightningElement {
+export default class GtmSavedLinksBar extends LightningElement {
     _industryLabels = {};
     /** Where the configurator lives, so a short link can be built for any row. */
     _configuratorBase = '';
@@ -48,7 +48,7 @@ export default class MaSavedLinksBar extends LightningElement {
             : '';
     }
 
-    /** Called by a parent (e.g. maConfigurator, after a save) so a new or
+    /** Called by a parent (e.g. gtmConfigurator, after a save) so a new or
      * edited link shows up here without the rep navigating away and back. */
     @api
     refresh() {
@@ -88,7 +88,7 @@ export default class MaSavedLinksBar extends LightningElement {
             );
             if (!isAccessError) {
                 // eslint-disable-next-line no-console
-                console.error('maSavedLinksBar: unexpected error loading configurations', error);
+                console.error('gtmSavedLinksBar: unexpected error loading configurations', error);
             }
         }
     }
@@ -175,7 +175,7 @@ export default class MaSavedLinksBar extends LightningElement {
     }
 
     /** Does not delete or hide the record -- only gates what the client
-     * sees when they open the shared link (MaConfigurationStatusController). */
+     * sees when they open the shared link (GtmConfigurationStatusController). */
     async handleToggleActive(event) {
         event.stopPropagation();
         const recordId = event.currentTarget.dataset.id;
@@ -187,7 +187,7 @@ export default class MaSavedLinksBar extends LightningElement {
             await this.loadConfigurations();
         } catch (e) {
             // eslint-disable-next-line no-console
-            console.error('maSavedLinksBar: failed to toggle active state', e);
+            console.error('gtmSavedLinksBar: failed to toggle active state', e);
             this.actionError = this.readErrorMessage(e, 'update that link\'s status');
         }
     }

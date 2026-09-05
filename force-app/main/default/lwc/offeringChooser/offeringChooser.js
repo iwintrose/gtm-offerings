@@ -1,7 +1,7 @@
 import { LightningElement, api, track } from 'lwc';
-import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
-import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
-import getOfferingTiles from '@salesforce/apex/MaPageContentReader.getOfferingTiles';
+import getSiteInfo from '@salesforce/apex/GtmPageContentReader.getSiteInfo';
+import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
+import getOfferingTiles from '@salesforce/apex/GtmPageContentReader.getOfferingTiles';
 import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 const FONTS_HREF =

@@ -33,7 +33,7 @@ const FIELDS = [
     REQ_NAME, REQ_EMAIL, COMPANY_FIELD, ROLE_FIELD, SOURCE_FIELD
 ];
 
-export default class MaAssessmentDetail extends LightningElement {
+export default class GtmAssessmentDetail extends LightningElement {
     @api recordId;
 
     _record = null;

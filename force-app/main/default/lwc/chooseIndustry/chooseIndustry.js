@@ -1,7 +1,7 @@
 import { LightningElement, api, track } from 'lwc';
-import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
-import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
-import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
+import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
+import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
+import getSiteInfo from '@salesforce/apex/GtmPageContentReader.getSiteInfo';
 import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 const FONTS_HREF =
@@ -117,7 +117,7 @@ export default class ChooseIndustry extends LightningElement {
     }
 
     /** Every tile here (an industry, or "Skip for now") is a rep starting
-     * a brand-new page -- wizard=1 tells maConfigurator to open the wizard
+     * a brand-new page -- wizard=1 tells gtmConfigurator to open the wizard
      * immediately instead of landing on a bare configurator with no clear
      * next step. A prospect clicking a link a rep already built and shared
      * carries its own cfgId/company params instead and never passes through

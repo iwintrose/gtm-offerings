@@ -35,7 +35,7 @@
                   "componentAttributes": {
                     "offeringKey": "migration-accelerator"
                   },
-                  "componentName": "c:maStory",
+                  "componentName": "c:gtmStory",
                   "id": "85c0c68d-30ac-4bef-8983-d043de303cfc",
                   "renderPriority": "NEUTRAL",
                   "renditionMap": {},

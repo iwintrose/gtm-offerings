@@ -1,9 +1,9 @@
 import { LightningElement, api, track } from 'lwc';
-import chat from '@salesforce/apex/MaAgentProxyController.chat';
+import chat from '@salesforce/apex/GtmAgentProxyController.chat';
 
 const FALLBACK_PLACEHOLDER = 'Ask me to update company, industry, accent color…';
 
-export default class MaAgentChat extends LightningElement {
+export default class GtmAgentChat extends LightningElement {
     @api sessionToken = '';
     @api configId = '';
 

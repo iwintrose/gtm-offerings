@@ -2,7 +2,7 @@
  * The layout design system, in one place.
  *
  * A layout type is a shape the page knows how to draw, and the field
- * vocabulary below is that shape's contract: the renderer (c/maStory) resolves
+ * vocabulary below is that shape's contract: the renderer (c/gtmStory) resolves
  * against it, the editor (c/gtmContentManager) creates records from it, and
  * scripts/check-content-contract.py asserts the seeded data matches it.
  *
@@ -11,7 +11,7 @@
  * would drift the first time a layout gained a field.
  */
 
-import { CHAPTERS } from 'c/maConfiguratorCopy';
+import { CHAPTERS } from 'c/gtmConfiguratorCopy';
 
 // Layouts that render around the page rather than in the section sequence.
 // They are declared here so the contract check covers them like any other.

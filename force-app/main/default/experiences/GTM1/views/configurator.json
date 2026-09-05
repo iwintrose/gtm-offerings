@@ -27,7 +27,7 @@
       "regions" : [ {
         "components" : [ {
           "componentAttributes" : { },
-          "componentName" : "c:maConfigurator",
+          "componentName" : "c:gtmConfigurator",
           "id" : "2968a14f-791c-46d0-9f46-ba1a7df73dd3",
           "renderPriority" : "NEUTRAL",
           "renditionMap" : { },

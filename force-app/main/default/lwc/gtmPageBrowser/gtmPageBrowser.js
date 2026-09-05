@@ -1,6 +1,6 @@
 import { LightningElement, track, wire } from 'lwc';
 import { CurrentPageReference, NavigationMixin } from 'lightning/navigation';
-import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
+import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSummary';
 import { TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 
 /**

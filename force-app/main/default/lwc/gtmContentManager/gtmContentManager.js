@@ -1,23 +1,23 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import { CurrentPageReference } from 'lightning/navigation';
-import getOfferings from '@salesforce/apex/MaPageContentController.getOfferings';
-import getTemplateSummary from '@salesforce/apex/MaPageContentController.getTemplateSummary';
-import getEditorSections from '@salesforce/apex/MaPageSectionController.getEditorSections';
-import getAllContent from '@salesforce/apex/MaPageContentController.getAllContent';
-import saveDrafts from '@salesforce/apex/MaPageContentController.saveDrafts';
-import publishPage from '@salesforce/apex/MaPageContentController.publishPage';
-import discardDrafts from '@salesforce/apex/MaPageContentController.discardDrafts';
-import savePresentation from '@salesforce/apex/MaPageContentController.savePresentation';
-import saveSectionOrder from '@salesforce/apex/MaPageSectionController.saveSectionOrder';
-import setSectionActive from '@salesforce/apex/MaPageSectionController.setSectionActive';
-import createSection from '@salesforce/apex/MaPageSectionController.createSection';
-import deleteSection from '@salesforce/apex/MaPageSectionController.deleteSection';
-import restoreSection from '@salesforce/apex/MaPageSectionController.restoreSection';
+import getOfferings from '@salesforce/apex/GtmPageContentController.getOfferings';
+import getTemplateSummary from '@salesforce/apex/GtmPageContentController.getTemplateSummary';
+import getEditorSections from '@salesforce/apex/GtmPageSectionController.getEditorSections';
+import getAllContent from '@salesforce/apex/GtmPageContentController.getAllContent';
+import saveDrafts from '@salesforce/apex/GtmPageContentController.saveDrafts';
+import publishPage from '@salesforce/apex/GtmPageContentController.publishPage';
+import discardDrafts from '@salesforce/apex/GtmPageContentController.discardDrafts';
+import savePresentation from '@salesforce/apex/GtmPageContentController.savePresentation';
+import saveSectionOrder from '@salesforce/apex/GtmPageSectionController.saveSectionOrder';
+import setSectionActive from '@salesforce/apex/GtmPageSectionController.setSectionActive';
+import createSection from '@salesforce/apex/GtmPageSectionController.createSection';
+import deleteSection from '@salesforce/apex/GtmPageSectionController.deleteSection';
+import restoreSection from '@salesforce/apex/GtmPageSectionController.restoreSection';
 // One definition of what a layout is made of, shared with the renderer.
 import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS, FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
-// MaPageContentController.resolveValue.
+// GtmPageContentController.resolveValue.
 const COLUMN = { text: 'textValue', rich: 'richValue', json: 'jsonValue' };
 
 // The preview renders the real page component at a fixed desktop width and

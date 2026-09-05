@@ -15,7 +15,7 @@
  */
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { CHAPTERS } from 'c/maConfiguratorCopy';
+import { CHAPTERS } from 'c/gtmConfiguratorCopy';
 import { starterFor, LAYOUT_FIELDS } from 'c/gtmPageLayouts';
 
 const offering = process.argv[2] || 'migration-accelerator';

@@ -36,7 +36,7 @@
                     "industryUrl": "/gtmaccelerator/s/choose-industry",
                     "offeringsUrl": "/gtmaccelerator/s/"
                   },
-                  "componentName": "c:maConfigurator",
+                  "componentName": "c:gtmConfigurator",
                   "id": "2bb63a49-9356-4953-b343-245d35d487c4",
                   "renderPriority": "NEUTRAL",
                   "renditionMap": {},

@@ -52,11 +52,11 @@
                  previewed through the component that actually draws it, fed
                  the draft, so what is on screen is the page itself. -->
             <template if:true={isStory}>
-              <c-ma-story
+              <c-gtm-story
                 offering-key={offeringKey}
                 preview-sections={sections}
                 preview-content={content}
-                preview-field-meta={fieldMeta}></c-ma-story>
+                preview-field-meta={fieldMeta}></c-gtm-story>
             </template>
             <template if:true={isOfferings}>
               <c-offering-chooser
@@ -70,10 +70,10 @@
                 preview-content={content}></c-choose-industry>
             </template>
             <template if:true={isConfigurator}>
-              <c-ma-configurator
+              <c-gtm-configurator
                 offering-key={offeringKey}
                 preview-section-key={activeKey}
-                preview-content={content}></c-ma-configurator>
+                preview-content={content}></c-gtm-configurator>
             </template>
             <template if:true={isUnknown}>
               <div class="pv-none">

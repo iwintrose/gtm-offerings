@@ -11,7 +11,7 @@
           <a class="backlink" href={industryUrl}>← Industry</a>
           <a class="backlink" href={offeringsUrl}>← Offerings</a>
         </template>
-        <c-ma-saved-links-bar lwc:ref="savedLinksBar"></c-ma-saved-links-bar>
+        <c-gtm-saved-links-bar lwc:ref="savedLinksBar"></c-gtm-saved-links-bar>
         <!-- The gap on .cta already separates these two flex items; the
              &nbsp; that used to be here doubled it. -->
         <button class="cta" onclick={handleOpenBooking}>
@@ -34,12 +34,12 @@
         <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
       </div>
     </div>
-    <c-ma-stage-actions
+    <c-gtm-stage-actions
       config-id={savedRecordId}
       is-config-manager={isConfigManager}
       onstagesent={handleStageSent}
       onpreviewclient={handleStagePreview}
-    ></c-ma-stage-actions>
+    ></c-gtm-stage-actions>
 
     <div class="progress" style={progressStyle}></div>
 
@@ -389,14 +389,14 @@
     <template if:true={showAssistantPreview}>
       <section class="asst-dock" data-section="assistant">
         <p class="asst-note">Floats in the corner of the live page. Only the rep sees it.</p>
-        <c-ma-agent-bubble
+        <c-gtm-agent-bubble
           docked={alwaysTrue}
           assistant-name={assistantName}
           assistant-role={assistantRole}
           label={assistantLabel}
           greeting={assistantGreeting}
           placeholder={assistantPlaceholder}
-        ></c-ma-agent-bubble>
+        ></c-gtm-agent-bubble>
       </section>
     </template>
 
@@ -405,7 +405,7 @@
       <span>{footerRight}</span>
     </footer>
 
-    <c-ma-config-wizard
+    <c-gtm-config-wizard
       is-open={customizeOpen}
       state={tokenState}
       company={company}
@@ -418,13 +418,13 @@
       onindustrychange={handleIndustryChange}
       onaccentchange={handleAccentChange}
       onconfigsaved={handleConfigSaved}
-    ></c-ma-config-wizard>
+    ></c-gtm-config-wizard>
 
     <!-- The assistant sits in the corner, not inside the Customize form. It
          only appears for the rep, the same rule the Customize button follows:
          a prospect on a shared link has nothing to configure. -->
     <template if:true={showAssistant}>
-      <c-ma-agent-bubble
+      <c-gtm-agent-bubble
         session-token={agentSessionToken}
         config-id={savedRecordId}
         assistant-name={assistantName}
@@ -433,10 +433,10 @@
         greeting={assistantGreeting}
         placeholder={assistantPlaceholder}
         onagentdelta={handleAgentDelta}
-      ></c-ma-agent-bubble>
+      ></c-gtm-agent-bubble>
     </template>
 
-    <c-ma-config-booking
+    <c-gtm-config-booking
       is-open={bookingOpen}
       booking-url={bookingUrl}
       prospect={company}
@@ -449,7 +449,7 @@
       onclose={handleCloseBooking}
       onsubmitted={handleBookingSubmitted}
       onformresumed={handleFormResumed}
-    ></c-ma-config-booking>
+    ></c-gtm-config-booking>
 
     <template if:true={showGateLoading}>
       <div class="expired on"></div>

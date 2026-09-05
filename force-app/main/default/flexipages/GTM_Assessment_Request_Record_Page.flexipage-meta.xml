@@ -5,14 +5,14 @@
         <type>Region</type>
         <itemInstances>
             <componentInstance>
-                <componentName>c:maAssessmentDetail</componentName>
-                <identifier>c_maAssessmentDetail1</identifier>
+                <componentName>c:gtmAssessmentDetail</componentName>
+                <identifier>c_gtmAssessmentDetail1</identifier>
             </componentInstance>
         </itemInstances>
         <itemInstances>
             <componentInstance>
-                <componentName>c:maLinkActivity</componentName>
-                <identifier>c_maLinkActivity1</identifier>
+                <componentName>c:gtmLinkActivity</componentName>
+                <identifier>c_gtmLinkActivity1</identifier>
             </componentInstance>
         </itemInstances>
         <itemInstances>

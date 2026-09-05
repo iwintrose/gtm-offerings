@@ -17,8 +17,8 @@ if (!root || !outCsv) throw new Error('usage: fix-field-order.mjs <repoRoot> <ou
 const org = orgArg || process.env.SF_TARGET_ORG || '';
 
 const PAGES = [
-    { offering: 'migration-accelerator', template: 'configurator',      html: 'lwc/maConfigurator/maConfigurator.html' },
-    { offering: 'migration-accelerator', template: 'story',             html: 'lwc/maStory/maStory.html' },
+    { offering: 'migration-accelerator', template: 'configurator',      html: 'lwc/gtmConfigurator/gtmConfigurator.html' },
+    { offering: 'migration-accelerator', template: 'story',             html: 'lwc/gtmStory/gtmStory.html' },
     { offering: 'migration-accelerator', template: 'offerings-listing', html: 'lwc/offeringChooser/offeringChooser.html' },
     { offering: 'gtm',                   template: 'offerings-page',    html: 'lwc/offeringChooser/offeringChooser.html' },
     { offering: 'gtm',                   template: 'industry-chooser',  html: 'lwc/chooseIndustry/chooseIndustry.html' }

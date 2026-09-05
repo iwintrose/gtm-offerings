@@ -2,7 +2,7 @@
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>66.0</apiVersion>
     <isExposed>true</isExposed>
-    <masterLabel>MA Configurator</masterLabel>
+    <masterLabel>GTM Configurator</masterLabel>
     <targets>
         <target>lightningCommunity__Page</target>
         <target>lightningCommunity__Default</target>

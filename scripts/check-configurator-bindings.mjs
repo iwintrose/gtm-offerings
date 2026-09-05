@@ -20,12 +20,12 @@
  * Usage: scripts/lwc-node-harness.sh, then `node <dir>/check-configurator-bindings.mjs <repoRoot>`
  */
 import { readFileSync } from 'node:fs';
-import { CHAPTERS } from 'c/maConfiguratorCopy';
+import { CHAPTERS } from 'c/gtmConfiguratorCopy';
 import { LAYOUT_FIELDS, starterFor } from 'c/gtmPageLayouts';
 
 const root = process.argv[2];
 if (!root) throw new Error('usage: check-configurator-bindings.mjs <repoRoot>');
-const html = readFileSync(`${root}/force-app/main/default/lwc/maConfigurator/maConfigurator.html`, 'utf8');
+const html = readFileSync(`${root}/force-app/main/default/lwc/gtmConfigurator/gtmConfigurator.html`, 'utf8');
 
 // The template reads chapters through a getter named for the section, so the
 // getter name is how a binding is traced back to a section.

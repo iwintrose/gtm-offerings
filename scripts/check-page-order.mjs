@@ -43,8 +43,8 @@ const org  = process.argv[3] || process.env.SF_TARGET_ORG || '';
 if (!root) throw new Error('usage: check-page-order.mjs <repoRoot> [orgAlias]');
 
 const PAGES = [
-    { offering: 'migration-accelerator', template: 'configurator',       html: 'lwc/maConfigurator/maConfigurator.html' },
-    { offering: 'migration-accelerator', template: 'story',              html: 'lwc/maStory/maStory.html' },
+    { offering: 'migration-accelerator', template: 'configurator',       html: 'lwc/gtmConfigurator/gtmConfigurator.html' },
+    { offering: 'migration-accelerator', template: 'story',              html: 'lwc/gtmStory/gtmStory.html' },
     // One tile, drawn inside the offerings page's loop. It does not own that
     // page's masthead or footer, so only its own sections are checked.
     { offering: 'migration-accelerator', template: 'offerings-listing',  html: 'lwc/offeringChooser/offeringChooser.html', partial: true },

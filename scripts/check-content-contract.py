@@ -42,7 +42,7 @@ TEMPLATES = [
     {
         "name": "story",
         "js": LAYOUTS_JS,
-        "html": "force-app/main/default/lwc/maStory/maStory.html",
+        "html": "force-app/main/default/lwc/gtmStory/gtmStory.html",
         "sections": "data/seed/migration-accelerator.story.sections.json",
         "content": "data/seed/migration-accelerator.story.records.json",
     },

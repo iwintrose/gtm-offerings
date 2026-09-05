@@ -1,7 +1,7 @@
 /* Guided prospect-page wizard -- one question per screen, replaces
  * maConfigCustomize as the default entry point (the classic form stays
  * reachable behind "Prefer the classic form?"). Reuses the same design
- * tokens as maConfigCustomize/maConfigurator so both feel like one app. */
+ * tokens as maConfigCustomize/gtmConfigurator so both feel like one app. */
 :host {
   --coral: #ee3d23;
   --coral-ink: #c42e17;

@@ -1,8 +1,8 @@
 import { LightningElement, api, track } from 'lwc';
-import submitRequest from '@salesforce/apex/MaAssessmentRequestController.submitRequest';
-import getDraft from '@salesforce/apex/MaFormDraftController.getDraft';
-import saveDraft from '@salesforce/apex/MaFormDraftController.saveDraft';
-import clearDraft from '@salesforce/apex/MaFormDraftController.clearDraft';
+import submitRequest from '@salesforce/apex/GtmAssessmentRequestController.submitRequest';
+import getDraft from '@salesforce/apex/GtmFormDraftController.getDraft';
+import saveDraft from '@salesforce/apex/GtmFormDraftController.saveDraft';
+import clearDraft from '@salesforce/apex/GtmFormDraftController.clearDraft';
 
 // How long typing has to stop before a draft is written. Short enough that
 // closing the tab mid-thought keeps the answer, long enough that filling in a
@@ -62,14 +62,14 @@ const TIMELINES = [
     'Just exploring'
 ];
 
-export default class MaConfigBooking extends LightningElement {
+export default class GtmConfigBooking extends LightningElement {
     @api isOpen = false;
     @api bookingUrl = '';
     @api prospect = '';
     @api industryLabel = '';
     @api savedRecordId = '';
     /** HMAC token from verifyAndIssueToken(); required by submitRequest() when the
-     *  engagement link has a password set. Passed down from maConfigurator. */
+     *  engagement link has a password set. Passed down from gtmConfigurator. */
     @api submissionToken = '';
     /** Pre-filled from the configurator's company param so the guest doesn't retype it. */
     @api prefillCompany = '';

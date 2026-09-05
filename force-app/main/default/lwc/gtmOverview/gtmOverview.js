@@ -1,9 +1,9 @@
 import { LightningElement, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
-import getSnapshot from '@salesforce/apex/MaHomeSnapshotController.getSnapshot';
-import getRecentNewAssessmentRequests from '@salesforce/apex/MaHomeSnapshotController.getRecentNewAssessmentRequests';
-import getDeals from '@salesforce/apex/MaHomeSnapshotController.getDeals';
-import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
+import getSnapshot from '@salesforce/apex/GtmHomeSnapshotController.getSnapshot';
+import getRecentNewAssessmentRequests from '@salesforce/apex/GtmHomeSnapshotController.getRecentNewAssessmentRequests';
+import getDeals from '@salesforce/apex/GtmHomeSnapshotController.getDeals';
+import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSummary';
 import getFeedbackFor from '@salesforce/apex/GtmFeedbackController.getFeedbackFor';
 import submitFeedback from '@salesforce/apex/GtmFeedbackController.submitFeedback';
 

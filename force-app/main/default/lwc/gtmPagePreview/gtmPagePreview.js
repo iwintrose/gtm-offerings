@@ -18,7 +18,7 @@ const MAX_W = 1920;
  * The page is drawn at a true CSS width and then scaled, rather than being
  * squeezed into whatever space is left. That distinction is the whole point of
  * a device preview — a 414px-wide render tells you about the phone layout, a
- * squashed 414px-wide panel tells you about nothing. c/maStory carries
+ * squashed 414px-wide panel tells you about nothing. c/gtmStory carries
  * container queries so it responds to this frame rather than to the browser.
  */
 export default class GtmPagePreview extends LightningElement {
@@ -308,7 +308,7 @@ export default class GtmPagePreview extends LightningElement {
 
     rects() {
         const el = this.template.querySelector(
-            'c-ma-story, c-offering-chooser, c-choose-industry, c-ma-configurator'
+            'c-gtm-story, c-offering-chooser, c-choose-industry, c-gtm-configurator'
         );
         if (!el || typeof el.getSectionRects !== 'function') return [];
 

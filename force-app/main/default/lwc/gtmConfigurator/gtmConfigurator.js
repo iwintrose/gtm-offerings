@@ -1,19 +1,19 @@
 import { LightningElement, api, track, wire } from 'lwc';
-import isRep from '@salesforce/apex/MaViewerContext.isRep';
-import getConfigurationCrmData from '@salesforce/apex/MaSavedConfigurationController.getConfigurationCrmData';
-import isActive from '@salesforce/apex/MaConfigurationStatusController.isActive';
-import getConfiguration from '@salesforce/apex/MaSavedConfigurationController.getConfiguration';
-import getPublicConfiguration from '@salesforce/apex/MaConfigurationReader.getPublicConfiguration';
-import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
-import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
-import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
-import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
-import verifyAndIssueToken from '@salesforce/apex/MaLinkAuthController.verifyAndIssueToken';
-import logEvent from '@salesforce/apex/MaLinkEventController.logEvent';
-import logEvents from '@salesforce/apex/MaLinkEventController.logEvents';
-import identifySession from '@salesforce/apex/MaLinkEventController.identifySession';
-import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/maConfigData';
-import { CHAPTER_DEFAULTS } from 'c/maConfiguratorCopy';
+import isRep from '@salesforce/apex/GtmViewerContext.isRep';
+import getConfigurationCrmData from '@salesforce/apex/GtmSavedConfigurationController.getConfigurationCrmData';
+import isActive from '@salesforce/apex/GtmConfigurationStatusController.isActive';
+import getConfiguration from '@salesforce/apex/GtmSavedConfigurationController.getConfiguration';
+import getPublicConfiguration from '@salesforce/apex/GtmConfigurationReader.getPublicConfiguration';
+import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
+import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
+import getSiteInfo from '@salesforce/apex/GtmPageContentReader.getSiteInfo';
+import checkPasswordRequired from '@salesforce/apex/GtmLinkAuthController.checkPasswordRequired';
+import verifyAndIssueToken from '@salesforce/apex/GtmLinkAuthController.verifyAndIssueToken';
+import logEvent from '@salesforce/apex/GtmLinkEventController.logEvent';
+import logEvents from '@salesforce/apex/GtmLinkEventController.logEvents';
+import identifySession from '@salesforce/apex/GtmLinkEventController.identifySession';
+import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/gtmConfigData';
+import { CHAPTER_DEFAULTS } from 'c/gtmConfiguratorCopy';
 import USER_ID from '@salesforce/user/Id';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import USER_NAME_FIELD from '@salesforce/schema/User.Name';
@@ -33,7 +33,7 @@ const OFFERING_LABEL = 'Migration Accelerator';
 // second offering is a page assignment rather than a code change.
 const DEFAULT_OFFERING_KEY = 'migration-accelerator';
 
-export default class MaConfigurator extends LightningElement {
+export default class GtmConfigurator extends LightningElement {
     /** Which modelled page this reads. One template, many offerings. */
     @api templateType = 'configurator';
 
@@ -157,7 +157,7 @@ export default class MaConfigurator extends LightningElement {
     _formOpened = false;
     _formSubmitted = false;
 
-    // Submission token issued by verifyAndIssueToken(); passed to maConfigBooking
+    // Submission token issued by verifyAndIssueToken(); passed to gtmConfigBooking
     // so submitRequest() can validate that the guest entered the correct password.
     _submissionToken = '';
 
@@ -258,7 +258,7 @@ export default class MaConfigurator extends LightningElement {
             .then((rows) => { if (rows && rows.length) this._industries = rows; })
             .catch((err) => {
                 // eslint-disable-next-line no-console
-                console.error('[maConfigurator] getIndustryProfiles failed:', JSON.stringify(err));
+                console.error('[gtmConfigurator] getIndustryProfiles failed:', JSON.stringify(err));
             });
 
         // Org URL and site list drive edit-mode deep links only.
@@ -299,7 +299,7 @@ export default class MaConfigurator extends LightningElement {
             .catch((err) => {
                 this._loadError = 'Page content could not be loaded; showing built-in defaults.';
                 // eslint-disable-next-line no-console
-                console.error('[maConfigurator] getPageLayout failed:', JSON.stringify(err));
+                console.error('[gtmConfigurator] getPageLayout failed:', JSON.stringify(err));
             });
 
         this._scrollHandler = this.handleScroll.bind(this);
@@ -603,15 +603,15 @@ export default class MaConfigurator extends LightningElement {
             // The URL still carries enough to render; a failed refill should
             // not blank a page that was about to work.
             // eslint-disable-next-line no-console
-            console.warn('[maConfigurator] getConfiguration:', JSON.stringify(e));
+            console.warn('[gtmConfigurator] getConfiguration:', JSON.stringify(e));
         }
     }
 
     /** A rep can flip a saved config to inactive without deleting or
      * hiding it from their own list -- this is what actually stops a
      * client's already-shared link from working. Guest-safe, tiny,
-     * separate class (MaConfigurationStatusController) -- see that file
-     * for why this isn't just another method on MaSavedConfigurationController. */
+     * separate class (GtmConfigurationStatusController) -- see that file
+     * for why this isn't just another method on GtmSavedConfigurationController. */
     async checkActiveStatus() {
         if (!this.savedRecordId) return;
         try {
@@ -1226,7 +1226,7 @@ export default class MaConfigurator extends LightningElement {
     // -------------------------------------------------------- booking events
 
     handleOpenBooking() {
-        const modal = this.template.querySelector('c-ma-config-booking');
+        const modal = this.template.querySelector('c-gtm-config-booking');
         if (modal) modal.reset();
         this.bookingOpen = true;
         if (!this._formOpened) {

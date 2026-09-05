@@ -35,7 +35,7 @@
     <template if:true={hasPage}>
       <div class="pb-stage">
         <template if:true={isStory}>
-          <c-ma-story offering-key={entityKey} key={entityKey}></c-ma-story>
+          <c-gtm-story offering-key={entityKey} key={entityKey}></c-gtm-story>
         </template>
         <template if:true={isOfferings}>
           <c-offering-chooser offering-key={entityKey} key={entityKey}></c-offering-chooser>
@@ -44,7 +44,7 @@
           <c-choose-industry offering-key={entityKey} key={entityKey}></c-choose-industry>
         </template>
         <template if:true={isConfigurator}>
-          <c-ma-configurator offering-key={entityKey} key={entityKey}></c-ma-configurator>
+          <c-gtm-configurator offering-key={entityKey} key={entityKey}></c-gtm-configurator>
         </template>
       </div>
     </template>

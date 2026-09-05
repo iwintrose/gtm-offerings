@@ -1,19 +1,19 @@
 import { LightningElement, api, track, wire } from 'lwc';
-import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.saveConfiguration';
-import setConfigActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
-import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
-import getAccountDeals from '@salesforce/apex/MaSavedConfigurationController.getAccountDeals';
-import findAccountByName from '@salesforce/apex/MaSavedConfigurationController.findAccountByName';
-import getConfiguratorPageUrl from '@salesforce/apex/MaSavedConfigurationController.getConfiguratorPageUrl';
-import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
-import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
-import getIndustryProfiles from '@salesforce/apex/MaPageContentReader.getIndustryProfiles';
+import saveConfiguration from '@salesforce/apex/GtmSavedConfigurationController.saveConfiguration';
+import setConfigActive from '@salesforce/apex/GtmSavedConfigurationController.setActive';
+import searchContacts from '@salesforce/apex/GtmSavedConfigurationController.searchContacts';
+import getAccountDeals from '@salesforce/apex/GtmSavedConfigurationController.getAccountDeals';
+import findAccountByName from '@salesforce/apex/GtmSavedConfigurationController.findAccountByName';
+import getConfiguratorPageUrl from '@salesforce/apex/GtmSavedConfigurationController.getConfiguratorPageUrl';
+import fetchLogoDataUri from '@salesforce/apex/GtmBrandLookupController.fetchLogoDataUri';
+import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
+import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
 import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 import USER_ID from '@salesforce/user/Id';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import USER_NAME_FIELD from '@salesforce/schema/User.Name';
 import USER_EMAIL_FIELD from '@salesforce/schema/User.Email';
-import { isHex6, EXAMPLE } from 'c/maConfigData';
+import { isHex6, EXAMPLE } from 'c/gtmConfigData';
 
 const OFFERING = 'migration-accelerator';
 
@@ -31,13 +31,13 @@ const SIZE_PRESETS = {
 
 const TOTAL_STEPS = 8;
 
-export default class MaConfigWizard extends LightningElement {
+export default class GtmConfigWizard extends LightningElement {
     /** Controls visibility -- same contract as c-ma-config-customize. */
     @api isOpen = false;
 
     /** True when launched from the GTM Offerings Overview tab (Lightning),
      * with no live prospect page rendered behind this panel. False when
-     * embedded in maConfigurator on the live/shared page itself. Changes
+     * embedded in gtmConfigurator on the live/shared page itself. Changes
      * only the final step's copy and how the link's base URL is resolved
      * -- every other step behaves identically in both contexts. */
     @api standalone = false;
@@ -193,7 +193,7 @@ export default class MaConfigWizard extends LightningElement {
         getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: 'industry-chooser' })
             .then((rows) => { this._industries = rows || []; })
             // eslint-disable-next-line no-console
-            .catch((err) => console.warn('[maConfigWizard] getIndustryProfiles:', JSON.stringify(err)));
+            .catch((err) => console.warn('[gtmConfigWizard] getIndustryProfiles:', JSON.stringify(err)));
 
         // The swatches and the platforms a link starts from are content on the
         // configurator's own defaults section, not a custom setting.
@@ -211,13 +211,13 @@ export default class MaConfigWizard extends LightningElement {
                 };
             })
             // eslint-disable-next-line no-console
-            .catch((err) => console.warn('[maConfigWizard] getPageLayout:', JSON.stringify(err)));
+            .catch((err) => console.warn('[gtmConfigWizard] getPageLayout:', JSON.stringify(err)));
 
         if (this.standalone) {
             getConfiguratorPageUrl()
                 .then((url) => { this._siteBaseUrl = url || ''; })
                 // eslint-disable-next-line no-console
-                .catch((err) => console.warn('[maConfigWizard] getConfiguratorPageUrl:', JSON.stringify(err)));
+                .catch((err) => console.warn('[gtmConfigWizard] getConfiguratorPageUrl:', JSON.stringify(err)));
         }
     }
 
@@ -391,7 +391,7 @@ export default class MaConfigWizard extends LightningElement {
             // link: leaving the choice empty still creates a new one, which is
             // the behaviour that existed before there was a choice at all.
             // eslint-disable-next-line no-console
-            console.warn('[maConfigWizard] getAccountDeals:', JSON.stringify(e));
+            console.warn('[gtmConfigWizard] getAccountDeals:', JSON.stringify(e));
         } finally {
             this._dealsLoading = false;
         }
