@@ -139,6 +139,36 @@ whatever "used in an experience" points at (check Digital Experiences →
 [site] → Administration → CMS-adjacent settings, or the permission set's
 own detail page for a "Used by" reference) → clear it → delete the set.
 
+**D7 — `gtmPageBrowser` ("Pages" tab) has the wrong shape.** A rep should
+not be able to freely browse every offering × every template — that's the
+Content Manager's job, not the BD app's. What a rep actually needs, from
+inside GTM Offerings:
+
+- **The Story**, for context — already right: Overview's "Read the story"
+  button, no change needed.
+- **The rep's own view of a Configurator link they already sent** — not a
+  blank/generic preview, the *actual* rendering of that specific saved
+  configuration, reached by clicking through from the record it belongs
+  to (the Assessment Request, or wherever "somewhere within the GTM
+  Offering app" ends up being the right anchor) rather than picking
+  offering + template from two comboboxes.
+- The path there is **Account → Contact → Link** — browsing the CRM
+  relationship to find whose link it is, not a page picker.
+- Once you're looking at that link, it should be **a view, not the
+  editor** — no Customize/Gus chrome, none of what Claude called "the
+  editor things on the left two columns." Just what was sent.
+
+Not touched yet — `gtmPageBrowser`/`gtmConfigurator` are what the
+in-flight `code-reviewer` pass is looking at (D6 hand-made fixes); building
+this now would collide with whatever comes back from that. Real open
+question before this gets built: does "just a view" mean a genuinely new
+mode on `gtmConfigurator` (something distinct from the existing
+`isConfigManager` rep/guest split), or does the existing rep view already
+read as clean enough once Gus/Customize simply aren't opened — need to
+look at what's actually on screen for a rep today before deciding whether
+this is a new component, a flag, or nothing more than a different
+entry point into what already exists.
+
 ---
 
 ## Ready to build — no decision needed
