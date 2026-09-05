@@ -102,6 +102,13 @@ export default class GtmConfigWizard extends LightningElement {
             // The URL the rep already sent, captured before any edit in this
             // session changes what _buildUrl() would produce.
             this._existingUrl = this._buildUrl();
+            // The Done screen's link box reads _generatedUrl (see
+            // previewUrl), not _existingUrl -- the two were never the same
+            // field. Nothing set _generatedUrl on this path, so opening an
+            // existing link always showed an empty box until a save ran.
+            // Since the URL for a known record never changes (same
+            // ?cfgId=), the two can just be kept in sync here.
+            this._generatedUrl = this._existingUrl;
         }
     }
     _savedRecordId = '';
@@ -253,7 +260,19 @@ export default class GtmConfigWizard extends LightningElement {
 
         if (this.standalone) {
             getConfiguratorPageUrl()
-                .then((url) => { this._siteBaseUrl = url || ''; })
+                .then((url) => {
+                    this._siteBaseUrl = url || '';
+                    // savedRecordId's setter runs synchronously, well before
+                    // this async call resolves -- if it already built a URL
+                    // for a known record, it did so against window.location
+                    // (the Lightning tab's own URL, not the public site's),
+                    // since _siteBaseUrl was still blank at that point.
+                    // Rebuild now that the real base is in.
+                    if (this._knownRecordId) {
+                        this._existingUrl = this._buildUrl();
+                        this._generatedUrl = this._existingUrl;
+                    }
+                })
                 // eslint-disable-next-line no-console
                 .catch((err) => console.warn('[gtmConfigWizard] getConfiguratorPageUrl:', JSON.stringify(err)));
         }
