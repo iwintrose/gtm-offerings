@@ -27,10 +27,6 @@
             <span class="tbtn-gus-lbl">Gus</span>
           </button>
         </template>
-        <template if:true={showRepLogin}>
-          <a class="backlink" href={siteLoginUrl}
-             title="You are being served as a guest. Sign in to get the rep view.">Sign in</a>
-        </template>
         <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
       </div>
     </div>
@@ -476,9 +472,6 @@
               {passwordGateSubmitLabel}
             </button>
           </form>
-          <a class="pw-rep-link" href={siteLoginUrl}>
-            Publicis Sapient? Sign in and skip this &rarr;
-          </a>
         </div>
       </div>
     </template>
@@ -515,9 +508,6 @@
             You've reached this page without one. If Publicis Sapient sent you
             a link, please use that; otherwise reach out to your contact.
           </p>
-          <a class="pw-rep-link" href={siteLoginUrl}>
-            Publicis Sapient? Sign in &rarr;
-          </a>
         </div>
       </div>
     </template>

@@ -738,38 +738,6 @@ export default class GtmConfigurator extends LightningElement {
         return this.tokenValue('SOURCE_PLATFORM');
     }
 
-    /**
-     * The site login, with this page as the return trip.
-     *
-     * The public pages are served to the site's guest user, and nothing on
-     * them forces authentication -- the URL returns 200 to a browser with no
-     * session at all. So a rep opening a link they built is the guest, is
-     * asked for the password they set, and loses Gus and the saved links bar.
-     * Being logged into the org does not carry: the site is a separate
-     * session, and once the browser holds a guest one it keeps it.
-     *
-     * This does not bypass anything. It is the ordinary login page, and a
-     * prospect who follows it gets nowhere without credentials. It just gives
-     * the rep the one thing the page could not otherwise offer: a way to
-     * become themselves and come straight back here.
-     */
-    get siteLoginUrl() {
-        try {
-            const path = window.location.pathname || '';
-            // '/gtmaccelerator/s/configurator' -> '/gtmaccelerator'
-            const cut = path.indexOf('/s/');
-            const prefix = cut > 0 ? path.substring(0, cut) : '';
-            const back = encodeURIComponent(path + (window.location.search || ''));
-            return `${prefix}/s/login?startURL=${back}`;
-        } catch (e) {
-            return '';
-        }
-    }
-
-    /** Shown only to a viewer the site is treating as a guest. */
-    get showRepLogin() {
-        return !this.isConfigManager;
-    }
 
     /**
      * A guest with no saved-configuration id has nothing to see: no client

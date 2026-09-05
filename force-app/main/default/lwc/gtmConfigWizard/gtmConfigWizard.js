@@ -32,8 +32,46 @@ const SIZE_PRESETS = {
 const TOTAL_STEPS = 8;
 
 export default class GtmConfigWizard extends LightningElement {
-    /** Controls visibility -- same contract as c-ma-config-customize. */
-    @api isOpen = false;
+    /**
+     * Controls visibility -- same contract as c-ma-config-customize.
+     *
+     * Also the one reliable moment to pull in what the parent already
+     * loaded for an existing record. gtmConfigurator passes company,
+     * industry, accent and state down as plain props, but they arrive
+     * empty at mount -- the parent's own loadSavedConfiguration() is
+     * still an in-flight Apex call at that point -- and this component
+     * never read them again after that first, empty pass. The result was
+     * a wizard that always opened blank on an existing link: no company,
+     * no industry, and an accent that fell back to PS_RED, which happens
+     * to be the first swatch in the list -- so it looked "stuck" there.
+     * Seeding here instead, on open, means the parent's async load has
+     * had time to resolve by the time a rep actually clicks in.
+     */
+    @api
+    get isOpen() {
+        return this._isOpen;
+    }
+    set isOpen(value) {
+        this._isOpen = !!value;
+        if (this._isOpen && this._knownRecordId && !this._seededFromRecord) {
+            if (this.company) this._company = this.company;
+            if (this.industry) this._industry = this.industry;
+            if (isHex6(this.accent)) this._accent = this.accent;
+            if (this.state && Object.keys(this.state).length) {
+                this._state = { ...this.state, ...this._state };
+            }
+            this._seededFromRecord = true;
+        }
+    }
+    _isOpen = false;
+    _seededFromRecord = false;
+
+    /** The record's current values, as loaded by the parent. Read once,
+     *  on open -- see the isOpen setter above. */
+    @api company = '';
+    @api industry = '';
+    @api accent = '';
+    @api state = {};
 
     /** True when launched from the GTM Offerings Overview tab (Lightning),
      * with no live prospect page rendered behind this panel. False when
