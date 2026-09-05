@@ -115,15 +115,29 @@ gating, and request submission work identically for any offering, not just
 this one. Same pattern likely holds across most `MA_`-prefixed permission
 sets, custom objects/fields, and Apex classes in the org.
 
-Not a quick fix: Apex class and permission set API names can't be renamed in
-place via metadata — each is create-new, migrate every reference (LWC
-imports, other Apex, permission sets, profiles), reassign guest/user
-permission sets, then delete the old one. On a live guest-facing site, doing
-that carelessly is exactly the kind of thing that breaks password
-verification for someone's real link mid-migration. Needs a real inventory
-and an ordered plan (probably `spec-author` + `backend-engineer`, done as its
-own tracked piece of work) before touching it — not something to fold into
-whatever else is in flight when it comes up.
+**Done.** 36 Apex classes, 13 LWC bundles, 4 permission sets (metadata),
+1 flow, 2 genAiPlugins, profiles, layout label, and supporting scripts
+renamed `Ma`/`MA_` → `Gtm`/`GTM_`. Sequenced as the plan required: new
+permission sets deployed and assigned to every real guest/human user
+*before* removing old assignments; new flow deployed Active with the old
+one set Obsolete in the same pass to avoid a double-send; old Apex
+classes/LWC bundles only destructively removed from the org after both
+sites were republished and confirmed live on the new names. Found and
+fixed along the way: the org's actual live Assessment Request record page
+(`Assessment_Request_Record_Page2`, never tracked in source) still pointed
+at the old `maAssessmentDetail` — would have broken for every CRM user;
+`chooseIndustry`'s Experience Builder label was still "MA Choose Industry";
+two `scripts/data/*.apex` seed scripts still called deleted classes.
+
+**Not resolved — needs Don's Setup access.** `MA_Config_Manager`,
+`MA_Story_Guest`, `MA_Assessment_Guest` refuse deletion ("used in an
+experience") even with zero `PermissionSetAssignment` rows left — some
+Setup-UI-only reference (likely a CMS Workspace membership) not visible
+from here. They're fully unassigned and grant nothing to anyone now, just
+orphaned metadata. To finish: Setup → Permission Sets → open each →
+whatever "used in an experience" points at (check Digital Experiences →
+[site] → Administration → CMS-adjacent settings, or the permission set's
+own detail page for a "Used by" reference) → clear it → delete the set.
 
 ---
 
