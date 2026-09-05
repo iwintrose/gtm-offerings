@@ -78,8 +78,12 @@
     </div>
 
     <!-- offerings, each linking to its own story -->
-    <section class="ov-offerings">
-      <h2 class="ov-h ov-h--section">Offerings</h2>
+    <article class="slds-card ov-card ov-offerings">
+      <div class="slds-card__header ov-card-h">
+        <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
+        <h2 class="ov-h">Offerings</h2>
+      </div>
+      <div class="slds-card__body ov-card-b">
       <div class="cards">
         <template for:each={offerings} for:item="o">
           <article key={o.offeringKey} class="slds-card ocard">
@@ -105,7 +109,8 @@
       <template if:true={showEmptyOfferings}>
         <p class="ov-empty">No offerings configured. Add an MA_Offering__mdt record to create one.</p>
       </template>
-    </section>
+      </div>
+    </article>
 
   </div>
 </template>

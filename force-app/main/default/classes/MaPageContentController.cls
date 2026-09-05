@@ -256,15 +256,24 @@ public without sharing class MaPageContentController {
      */
     private static String publicUrlFor(String host, String sitePath) {
         if (String.isBlank(host) || String.isBlank(sitePath)) return null;
-        String prefix = sitePath.trim().removeStart('/').removeEnd('/');
-        if (String.isBlank(prefix)) return null;
+        String path = sitePath.trim().removeStart('/').removeEnd('/');
+        if (String.isBlank(path)) return null;
+
+        // An offering's page now lives under the shared site rather than on a
+        // site of its own, so this reads as "<site>/<page>": the first segment
+        // is the Experience Cloud prefix to validate, the rest is the page
+        // beneath it. A bare prefix still means the site's own home.
+        Integer cut = path.indexOf('/');
+        String prefix = cut > 0 ? path.substring(0, cut) : path;
+        String page   = cut > 0 ? path.substring(cut + 1) : '';
+
         List<Network> nets = [
             SELECT Id FROM Network
             WHERE UrlPathPrefix = :prefix AND Status = 'Live'
             LIMIT 1
         ];
         if (nets.isEmpty()) return null;
-        return 'https://' + host + '/' + prefix + '/s/';
+        return 'https://' + host + '/' + prefix + '/s/' + page;
     }
 
     /**

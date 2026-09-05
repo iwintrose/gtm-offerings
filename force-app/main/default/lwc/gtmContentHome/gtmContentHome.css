@@ -44,7 +44,7 @@
    offering, so it leads rather than queues. */
 .off-grid {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem; align-items: start;
+    gap: 1rem; align-items: stretch;
 }
 @media (max-width: 780px) { .off-grid { grid-template-columns: minmax(0, 1fr); } }
 
@@ -61,14 +61,30 @@
 .off--framework { border-top-color: #06a59a; }
 .off:not(.off--framework) { border-top-color: #9050e9; }
 
-.off-head { padding: .75rem .75rem .5rem; border-bottom: 1px solid #f3f3f3; }
+/* A fixed slot for the header: one card's title wraps to two lines and
+   another's does not, which is what pushed the bodies out of line with each
+   other. The slot is tall enough for two lines and centres one. */
+.off-head {
+    padding: .75rem .75rem .6rem;
+    border-bottom: 1px solid #f3f3f3;
+    min-height: 4.5rem;
+    display: flex;
+    align-items: center;
+}
+.off-head .slds-media { width: 100%; }
 .off-head .slds-media { display: flex; align-items: center; gap: .6rem; }
 .off-head .slds-media__body { min-width: 0; flex: 1 1 auto; }
 .off-name {
     margin: 0; font-size: 15px; font-weight: 700; line-height: 1.25;
     display: flex; align-items: center; gap: .3rem; min-width: 0;
 }
-.off-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.off-name > span {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .off-rename {
     border: 0; background: none; padding: .1rem; cursor: pointer; color: #747474;
     border-radius: 3px; line-height: 0; opacity: 0; transition: opacity .12s;
@@ -83,7 +99,8 @@
 .off-rename-row { display: flex; align-items: center; gap: .35rem; }
 .off-rename-in { flex: 1 1 auto; min-width: 0; }
 
-.off-body { flex: 1 1 auto; }
+.off-body { flex: 1 1 auto; display: flex; flex-direction: column; }
+.off-body .pg-list { flex: 1 1 auto; }
 
 .off-foot { padding: .4rem .5rem; border-top: 1px solid #f3f3f3; background: #fafaf9; }
 .off-foot-btn {
