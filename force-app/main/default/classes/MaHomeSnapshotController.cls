@@ -16,7 +16,7 @@ public with sharing class MaHomeSnapshotController {
         @AuraEnabled public Integer stalledCount { get; set; }
     }
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static Snapshot getSnapshot() {
         Snapshot snap = new Snapshot();
 
@@ -78,7 +78,7 @@ public with sharing class MaHomeSnapshotController {
     }
 
     /** The 5 newest requests still at Status = New, ordered newest first. */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<RequestSummary> getRecentNewAssessmentRequests() {
         List<RequestSummary> results = new List<RequestSummary>();
         for (MA_Assessment_Request__c req : [
@@ -140,7 +140,7 @@ public with sharing class MaHomeSnapshotController {
      * with sharing, and the opportunity fields come through the relationship,
      * so a user who cannot see a deal does not see it here either.
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<DealSummary> getDeals() {
         Map<Id, DealSummary> byConfig = new Map<Id, DealSummary>();
 

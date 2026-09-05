@@ -1,5 +1,11 @@
 :host { display: block; }
-.ov { padding: 0.75rem; font-size: 13px; color: #181818; background: #f3f3f3; min-height: 100%; }
+/* Mounted straight onto a tab, so nothing above supplies the gutter: without
+   horizontal padding the cards touch the browser edge. The amount is the
+   judgement call -- the Content Manager's clamp(1rem, 3vw, 2rem) resolves to
+   the full 2rem on any normal desktop, which is twice Salesforce's own page
+   gutter and costs a column's worth of the deals table. This is the same
+   shape, tightened, and both pages now use it. */
+.ov { padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem; font-size: 13px; color: #181818; background: #f3f3f3; min-height: 100%; }
 
 /* Same header shape as the Content Manager home; they are sibling pages and
    should not look like they came from different products. */
@@ -11,6 +17,8 @@
 .ov-head .slds-page-header__row { display: flex; align-items: center; gap: 1rem; }
 .ov-head .slds-page-header__col-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
 .ov-head .slds-page-header__col-actions { margin-left: auto; }
+.ov-head-icon { flex: none; }
+.ov-eyebrow { font-size: 12px; color: #444; margin: 0; }
 .ov-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
 .ov-meta { margin: .1rem 0 0; font-size: 12px; color: #747474; }
 
@@ -273,3 +281,52 @@
     .deal--head { display: none; }
     .deal { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── The funnel ────────────────────────────────────────────────────────────
+   Bars rather than tiles because the shape is the message: four numbers in a
+   column tell you the values, one bar under another tells you where the loss
+   is without reading any of them. */
+.fn { list-style: none; margin: 0; padding: 0; }
+.fn-step { padding: .45rem 0; }
+.fn-top { display: flex; align-items: baseline; gap: .5rem; }
+.fn-label { font-size: 12.5px; color: #3b3b3b; }
+.fn-n {
+    margin-left: auto;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+.fn-track {
+    margin-top: .3rem;
+    height: 7px;
+    border-radius: 999px;
+    background: #ebebeb;
+    overflow: hidden;
+}
+.fn-bar { height: 100%; border-radius: 999px; background: #0176d3; }
+/* The last stage is the one that pays, so it is the one that is not blue. */
+.fn-bar--end { background: #2e844a; }
+.fn-drop {
+    display: inline-block;
+    margin-top: .25rem;
+    font-size: 11.5px;
+    color: #8a8a8a;
+}
+/* Only the largest single loss is emphasised: a funnel where every drop shouts
+   is a funnel nobody acts on. */
+.fn-drop--worst { color: #a1500a; font-weight: 600; }
+
+.asides {
+    margin-top: .9rem;
+    padding-top: .7rem;
+    border-top: 1px solid #e9e9e9;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+.aside { display: flex; align-items: center; gap: .4rem; font-size: 12.5px; color: #3b3b3b; }
+.aside-ico { flex: none; opacity: .6; }
+.aside-l { min-width: 0; }
+.aside-v { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.aside-v--warn { color: #a1500a; }

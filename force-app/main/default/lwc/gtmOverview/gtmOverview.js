@@ -1,4 +1,4 @@
-import { LightningElement, wire, track } from 'lwc';
+import { LightningElement, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import getSnapshot from '@salesforce/apex/MaHomeSnapshotController.getSnapshot';
 import getRecentNewAssessmentRequests from '@salesforce/apex/MaHomeSnapshotController.getRecentNewAssessmentRequests';
@@ -37,26 +37,34 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
 
     @track navBusy = false;
 
-    @wire(getSnapshot)
-    wiredSnapshot({ data, error }) {
-        if (data) this.snapshot = data;
-        else if (error) this.loadError = this.messageFrom(error) || 'The snapshot could not be loaded.';
+    /**
+     * Everything this page shows is "what has happened lately", so it is read
+     * on mount rather than wired.
+     *
+     * A cacheable @wire hands a freshly mounted component whatever Lightning
+     * already had, which on a tab you navigate back to is the state before you
+     * left. That staleness is what the Refresh button existed to work around;
+     * reading on load removes the need for the button and the wait.
+     */
+    loadSnapshot() {
+        return getSnapshot()
+            .then((data) => { this.snapshot = data; })
+            .catch((e) => { this.loadError = this.messageFrom(e) || 'The snapshot could not be loaded.'; });
     }
 
-    @wire(getRecentNewAssessmentRequests)
-    wiredRequests({ data, error }) {
-        if (data) {
-            this.requests = data.map((r) => ({
-                key: r.recordId,
-                url: `/lightning/r/MA_Assessment_Request__c/${r.recordId}/view`,
-                name: r.requesterName || r.name,
-                meta: [r.company, r.platform].filter(Boolean).join(' · '),
-                date: r.createdDate ? new Date(r.createdDate).toLocaleDateString() : ''
-            }));
-        } else if (error) {
-            this.loadError = this.messageFrom(error) || 'Requests could not be loaded.';
-        }
-        this.requestsLoaded = true;
+    loadRequests() {
+        return getRecentNewAssessmentRequests()
+            .then((data) => {
+                this.requests = (data || []).map((r) => ({
+                    key: r.recordId,
+                    url: `/lightning/r/MA_Assessment_Request__c/${r.recordId}/view`,
+                    name: r.requesterName || r.name,
+                    meta: [r.company, r.platform].filter(Boolean).join(' · '),
+                    date: r.createdDate ? new Date(r.createdDate).toLocaleDateString() : ''
+                }));
+            })
+            .catch((e) => { this.loadError = this.messageFrom(e) || 'Requests could not be loaded.'; })
+            .finally(() => { this.requestsLoaded = true; });
     }
 
     /**
@@ -67,36 +75,38 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
      * row is the point: "opened, never submitted" is invisible in either list
      * on its own.
      */
-    @wire(getDeals)
-    wiredDeals({ data, error }) {
-        if (data) {
-            this.deals = data.map((d) => {
-                const stage = dealStage(d);
-                return {
-                    key: d.configId,
-                    url: `/lightning/r/Opportunity/${d.opportunityId}/view`,
-                    linkUrl: `/lightning/r/MA_Saved_Configuration__c/${d.configId}/view`,
-                    requestUrl: d.requestId ? `/lightning/r/MA_Assessment_Request__c/${d.requestId}/view` : '',
-                    name: d.opportunityName,
-                    account: d.accountName || d.company || '',
-                    industry: d.industryLabel || '',
-                    crmStage: d.stageName || '',
-                    close: d.closeDate ? new Date(d.closeDate).toLocaleDateString() : '',
-                    views: d.views || 0,
-                    viewsLabel: `${d.views || 0} view${(d.views || 0) === 1 ? '' : 's'}`,
-                    hasRequest: !!d.requestId,
-                    requestName: d.requestName || '',
-                    requestStatus: d.requestStatus || '',
-                    stageLabel: stage.label,
-                    stageClass: `pill pill--${stage.tone}`,
-                    lastLabel: d.lastActivity ? new Date(d.lastActivity).toLocaleDateString() : 'no activity yet',
-                    inactive: d.linkActive === false
-                };
-            });
-        } else if (error) {
-            this.loadError = this.messageFrom(error) || 'Deals could not be loaded.';
-        }
-        this.dealsLoaded = true;
+    loadDeals() {
+        return getDeals()
+            .then((data) => {
+                this.deals = (data || []).map((d) => {
+                    const stage = dealStage(d);
+                    return {
+                        key: d.configId,
+                        url: `/lightning/r/Opportunity/${d.opportunityId}/view`,
+                        linkUrl: `/lightning/r/MA_Saved_Configuration__c/${d.configId}/view`,
+                        requestUrl: d.requestId ? `/lightning/r/MA_Assessment_Request__c/${d.requestId}/view` : '',
+                        name: d.opportunityName,
+                        account: d.accountName || d.company || '',
+                        industry: d.industryLabel || '',
+                        crmStage: d.stageName || '',
+                        close: d.closeDate ? new Date(d.closeDate).toLocaleDateString() : '',
+                        views: d.views || 0,
+                        viewsLabel: `${d.views || 0} view${(d.views || 0) === 1 ? '' : 's'}`,
+                        hasRequest: !!d.requestId,
+                        requestName: d.requestName || '',
+                        requestStatus: d.requestStatus || '',
+                        stageLabel: stage.label,
+                        stageClass: `pill pill--${stage.tone}`,
+                        opened: (d.views || 0) > 0,
+                        started: d.formOpened === true,
+                        converted: !!d.requestId || d.formSubmitted === true,
+                        lastLabel: d.lastActivity ? new Date(d.lastActivity).toLocaleDateString() : 'no activity yet',
+                        inactive: d.linkActive === false
+                    };
+                });
+            })
+            .catch((e) => { this.loadError = this.messageFrom(e) || 'Deals could not be loaded.'; })
+            .finally(() => { this.dealsLoaded = true; });
     }
 
     get hasDeals() { return this.deals.length > 0; }
@@ -112,6 +122,9 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
         // at connect rather than at the click that needs it.
         if (super.connectedCallback) super.connectedCallback();
         try {
+            this.loadSnapshot();
+            this.loadRequests();
+            this.loadDeals();
             this.loadOfferings();
         } catch (e) {
             // A landing page that cannot load its offerings should say so, not
@@ -162,23 +175,66 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
 
     // ─── left column ──────────────────────────────────────────────────────────
 
-    get tiles() {
+    /**
+     * The funnel, derived from the deals table rather than counted separately.
+     *
+     * The four numbers that used to sit here were not a funnel and could not be
+     * made into one: they mixed three units (links, requests, events) and two
+     * time windows (all-time, last 7 days), and "new requests" was a status
+     * filter rather than a stage -- a request already marked Contacted has
+     * still converted, so counting only New made the last step shrink as the
+     * team worked it.
+     *
+     * These four are a fallout funnel in the Adobe sense: how many of one
+     * population reached each step, every stage a strict subset of the one
+     * before, one unit, one window. Deriving them from the rows below means the
+     * funnel and the table can never disagree.
+     */
+    get funnel() {
+        const deals = this.deals;
+        const stages = [
+            { key: 'sent',      label: 'Page sent',   hint: 'A prospect page prepared for a deal',   n: deals.length },
+            { key: 'opened',    label: 'Opened it',   hint: 'The recipient read the page',           n: deals.filter((d) => d.opened).length },
+            { key: 'started',   label: 'Started the form', hint: 'They began the assessment',        n: deals.filter((d) => d.started).length },
+            { key: 'requested', label: 'Asked for the assessment', hint: 'A request came back',      n: deals.filter((d) => d.converted).length }
+        ];
+        const top = stages[0].n || 0;
+        // The biggest single drop is the only part of a funnel worth acting on,
+        // so it is the only part that gets emphasis.
+        let worst = 0;
+        stages.forEach((st, i) => { if (i > 0 && stages[i - 1].n - st.n > worst) worst = stages[i - 1].n - st.n; });
+
+        return stages.map((st, i) => {
+            const prev = i === 0 ? st.n : stages[i - 1].n;
+            const lost = prev - st.n;
+            return {
+                ...st,
+                pct: top ? Math.round((st.n / top) * 100) : 0,
+                barStyle: `width: ${top ? Math.max(4, (st.n / top) * 100) : 0}%`,
+                showDrop: i > 0 && lost > 0,
+                dropLabel: `${lost} did not`,
+                dropClass: lost > 0 && lost === worst ? 'fn-drop fn-drop--worst' : 'fn-drop',
+                barClass: i === stages.length - 1 ? 'fn-bar fn-bar--end' : 'fn-bar'
+            };
+        });
+    }
+
+    get funnelReady() { return this.dealsLoaded && this.deals.length > 0; }
+
+    /* Two numbers that are context, not stages: they are measured over a
+     * different window and a different population, so putting them in the
+     * funnel would have been the mistake the funnel replaced. */
+    get asides() {
         const s = this.snapshot;
         if (!s) return [];
         return [
-            { key: 'links', label: 'Active links', value: fmt(s.activeEngagementCount), icon: 'utility:link', valueClass: 'tile-value' },
-            { key: 'new', label: 'New requests', value: fmt(s.newAssessmentCount), icon: 'utility:inbox', valueClass: 'tile-value' },
-            { key: 'views', label: 'Page views (7 days)', value: fmt(s.recentViews), icon: 'utility:preview', valueClass: 'tile-value' },
-            // The only tile that names work nobody is doing, so it is the only
-            // one that gets to shout. It replaced "submissions this month",
-            // which counted the same act as "new requests" and told a BD
-            // nothing the row above it had not already said.
+            { key: 'views', label: 'Page views, last 7 days', value: fmt(s.recentViews), icon: 'utility:preview', valueClass: 'aside-v' },
             {
                 key: 'stalled',
                 label: 'Opened, never submitted',
                 value: fmt(s.stalledCount),
                 icon: 'utility:warning',
-                valueClass: s.stalledCount > 0 ? 'tile-value tile-value--warn' : 'tile-value'
+                valueClass: s.stalledCount > 0 ? 'aside-v aside-v--warn' : 'aside-v'
             }
         ];
     }

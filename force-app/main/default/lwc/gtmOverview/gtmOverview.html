@@ -6,9 +6,11 @@
     <div class="slds-page-header ov-head">
       <div class="slds-page-header__row">
         <div class="slds-page-header__col-title">
-          <lightning-icon icon-name="standard:portal" size="medium"></lightning-icon>
+          <lightning-icon icon-name="standard:opportunity" size="medium" class="ov-head-icon"></lightning-icon>
           <div class="slds-media__body">
-            <p class="ov-meta">{headerMeta}</p>
+            <p class="slds-page-header__name-title ov-eyebrow">Go to market</p>
+            <h1 class="ov-title">GTM Offerings</h1>
+            <p class="slds-page-header__name-meta ov-meta">{headerMeta}</p>
           </div>
         </div>
         <div class="slds-page-header__col-actions">
@@ -27,19 +29,39 @@
       <!-- left: the numbers, stacked, because they are read down not across -->
       <article class="slds-card ov-card ov-col--stats">
         <div class="slds-card__header ov-card-h">
-          <lightning-icon icon-name="standard:metrics" size="small"></lightning-icon>
-          <h2 class="ov-h">Snapshot</h2>
+          <lightning-icon icon-name="standard:opportunity_splits" size="small"></lightning-icon>
+          <h2 class="ov-h">How far pages get</h2>
         </div>
         <div class="slds-card__body ov-card-b">
-        <template for:each={tiles} for:item="t">
-          <div key={t.key} class="tile">
-            <div class="tile-top">
-              <lightning-icon icon-name={t.icon} size="x-small" class="tile-ico"></lightning-icon>
-              <span class="tile-label">{t.label}</span>
-            </div>
-            <div class={t.valueClass}>{t.value}</div>
+          <template if:true={funnelReady}>
+            <ol class="fn">
+              <template for:each={funnel} for:item="st">
+                <li key={st.key} class="fn-step">
+                  <div class="fn-top">
+                    <span class="fn-label" title={st.hint}>{st.label}</span>
+                    <span class="fn-n">{st.n}</span>
+                  </div>
+                  <div class="fn-track"><div class={st.barClass} style={st.barStyle}></div></div>
+                  <template if:true={st.showDrop}>
+                    <span class={st.dropClass}>{st.dropLabel}</span>
+                  </template>
+                </li>
+              </template>
+            </ol>
+          </template>
+          <template if:false={funnelReady}>
+            <p class="ov-empty">No pages sent yet. Once you build one for a deal, how far it gets shows here.</p>
+          </template>
+
+          <div class="asides">
+            <template for:each={asides} for:item="a">
+              <div key={a.key} class="aside">
+                <lightning-icon icon-name={a.icon} size="xx-small" class="aside-ico"></lightning-icon>
+                <span class="aside-l">{a.label}</span>
+                <span class={a.valueClass}>{a.value}</span>
+              </div>
+            </template>
           </div>
-        </template>
         </div>
       </article>
 

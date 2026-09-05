@@ -336,6 +336,5 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     // Reads the org again. Page counts and the activity feed change when
     // someone else publishes, and this view does not listen for that -- so
     // this is how you find out without leaving and coming back.
-    handleRefresh() { this.load(); }
     handleDismissError() { this.loadError = ''; }
 }

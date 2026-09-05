@@ -2,7 +2,9 @@
    arrives inside a page they did not choose. */
 
 .home {
-    padding: 1.25rem clamp(1rem, 3vw, 2rem) 2.5rem;
+    /* See gtmOverview.css: 3vw resolves to the full 2rem on any normal
+       desktop, which is twice Salesforce's own gutter. */
+    padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem;
     background: #f3f3f3;
     min-height: 100%;
     color: #181818;
