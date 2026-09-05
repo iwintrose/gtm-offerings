@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <isExposed>false</isExposed>
+    <masterLabel>GTM Rep Link Finder</masterLabel>
+    <description>A rep's own Account -&gt; Contact -&gt; Link picker for reaching a Configurator link they already sent, rendered in view mode via gtmConfigurator. Mounted only by gtmPageBrowser; not a standalone drop-in.</description>
+</LightningComponentBundle>

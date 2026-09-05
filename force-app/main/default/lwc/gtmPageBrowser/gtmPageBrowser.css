@@ -1,21 +1,8 @@
 .pb { padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem; background: #f3f3f3;
       min-height: 100%; color: #181818; font-size: 13px; }
-.pb-head { background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
-           padding: .75rem 1rem; margin-bottom: 1rem; box-shadow: 0 1px 1px rgba(0,0,0,.05); }
-.pb-head .slds-page-header__row { display: flex; align-items: center; gap: 1rem; }
-.pb-head .slds-page-header__col-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
-.pb-actions { margin-left: auto; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-.pb-ico { flex: none; }
-.pb-eyebrow { font-size: 12px; color: #444; margin: 0; }
-.pb-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
-.pb-meta { margin: .1rem 0 0; font-size: 12px; color: #747474; }
-.pb-pick { width: 13rem; }
-.pb-loading { position: relative; min-height: 4rem; }
-.pb-msg { color: #747474; font-size: 12.5px; }
-.pb-msg--err { color: #a1500a; }
 
-/* Each of these is a full-bleed page. It gets its own ground and its own
-   clipping so it reads as the page it is, not a widget in an app shell. */
+/* A full-bleed page (Story). It gets its own ground and its own clipping so
+   it reads as the page it is, not a widget in an app shell. */
 .pb-stage {
     border: 1px solid #e5e5e5;
     border-radius: .25rem;

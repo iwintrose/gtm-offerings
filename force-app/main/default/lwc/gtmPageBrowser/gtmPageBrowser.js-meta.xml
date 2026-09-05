@@ -3,7 +3,7 @@
     <apiVersion>62.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>GTM Page Browser</masterLabel>
-    <description>Every internal page — the framework's offerings page and industry chooser, and each offering's story and configurator — read inside Lightning.</description>
+    <description>The Pages tab. Shows an offering's Story via Overview's "Read the story" button; otherwise hosts the rep's Account -&gt; Contact -&gt; Link picker for a Configurator link already sent (D7).</description>
     <targets>
         <target>lightning__AppPage</target>
         <target>lightning__Tab</target>

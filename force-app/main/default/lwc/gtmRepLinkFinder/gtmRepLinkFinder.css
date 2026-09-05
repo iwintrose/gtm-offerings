@@ -1,0 +1,78 @@
+:host { display: block; }
+
+/* Same page shell as gtmPageBrowser/gtmOverview -- siblings in the same app,
+   same ground and gutter. */
+.rlf { padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem; font-size: 13px;
+       color: #181818; background: #f3f3f3; min-height: 100%; }
+
+.rlf-head {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: .75rem 1rem; margin-bottom: 1rem;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}
+.rlf-head .slds-page-header__row { display: flex; align-items: center; gap: 1rem; }
+.rlf-head .slds-page-header__col-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.rlf-ico { flex: none; }
+.rlf-eyebrow { font-size: 12px; color: #444; margin: 0; }
+.rlf-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+.rlf-meta { margin: .1rem 0 0; font-size: 12px; color: #747474; }
+
+.rlf-crumbs {
+    display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
+    margin-top: .65rem; padding-top: .6rem; border-top: 1px solid #f0f0f0;
+}
+.rlf-crumb {
+    border: 0; background: none; padding: .1rem .2rem; cursor: pointer;
+    font-size: 12px; color: #0176d3;
+}
+.rlf-crumb:not(:last-child)::after { content: '›'; margin-left: .5rem; color: #b6b6b6; }
+.rlf-crumb:hover:not(:disabled) { text-decoration: underline; }
+.rlf-crumb:disabled { color: #181818; font-weight: 700; cursor: default; }
+
+.rlf-msg { font-size: 12.5px; margin: 0 0 .75rem; }
+.rlf-msg--err { color: #a1500a; }
+.rlf-empty { color: #747474; font-size: 12.5px; line-height: 1.5; margin: 0 0 .75rem; }
+
+.rlf-card {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: 1rem; box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    max-width: 34rem;
+}
+.rlf-step-label { margin: 0 0 .6rem; font-size: 13px; font-weight: 700; }
+
+.rlf-list { list-style: none; margin: 0 0 .75rem; padding: 0; }
+.rlf-row {
+    display: flex; flex-direction: column; align-items: flex-start; gap: .1rem;
+    width: 100%; text-align: left; background: none; border: 1px solid #e5e5e5;
+    border-radius: .2rem; padding: .55rem .7rem; margin-bottom: .4rem;
+    cursor: pointer; transition: background .12s ease, border-color .12s ease;
+}
+.rlf-row:hover { background: #f7f9fc; border-color: #c9d7ee; }
+.rlf-row-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.rlf-row-main { font-weight: 600; font-size: 12.5px; }
+.rlf-row-sub { font-size: 11.5px; color: #747474; }
+.rlf-row-date { font-size: 11px; color: #9a9a9a; margin-top: .1rem; }
+
+.rlf-status {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    color: #2e844a; background: #eaf6ee; border-radius: 1rem; padding: .05rem .5rem;
+}
+.rlf-status--off { color: #706e6b; background: #f3f2f2; }
+
+.rlf-back {
+    border: 0; background: none; padding: 0; cursor: pointer;
+    font-size: 12px; color: #0176d3;
+}
+.rlf-back:hover { text-decoration: underline; }
+
+/* The rendered link itself -- a full-bleed page like Story/Configurator
+   always are, boxed the same way gtmPageBrowser boxed every page it drew. */
+.rlf-view-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: .6rem;
+}
+.rlf-view-note { font-size: 12px; color: #747474; }
+.rlf-stage {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    overflow: hidden; box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}

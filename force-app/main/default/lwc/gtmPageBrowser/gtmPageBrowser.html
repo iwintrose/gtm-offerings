@@ -1,52 +1,12 @@
 <template>
-  <div class="pb">
-    <div class="slds-page-header pb-head">
-      <div class="slds-page-header__row">
-        <div class="slds-page-header__col-title">
-          <lightning-icon icon-name="standard:article" size="medium" class="pb-ico"></lightning-icon>
-          <div class="slds-media__body">
-            <p class="slds-page-header__name-title pb-eyebrow">{pageLabel}</p>
-            <h1 class="pb-title">{currentLabel}</h1>
-            <p class="slds-page-header__name-meta pb-meta">{audienceNote}</p>
-          </div>
-        </div>
-        <div class="slds-page-header__col-actions pb-actions">
-          <lightning-combobox label="Offering" variant="label-hidden"
-                              value={entityKey} options={entityOptions}
-                              onchange={handleEntity} class="pb-pick"></lightning-combobox>
-          <lightning-combobox label="Page" variant="label-hidden"
-                              value={template} options={pageOptions}
-                              onchange={handlePage} class="pb-pick"></lightning-combobox>
-          <lightning-button label="Edit" icon-name="utility:edit" onclick={handleEdit}></lightning-button>
-        </div>
+  <template if:true={isStoryMode}>
+    <div class="pb">
+      <div class="pb-stage">
+        <c-gtm-story offering-key={storyOfferingKey} key={storyOfferingKey}></c-gtm-story>
       </div>
     </div>
-
-    <template if:true={loading}>
-      <div class="pb-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
-    </template>
-    <template if:true={error}><p class="pb-msg pb-msg--err">{error}</p></template>
-    <template if:true={showEmpty}>
-      <p class="pb-msg">No pages built yet. Build one in the GTM Content Manager and it appears here.</p>
-    </template>
-
-    <!-- Each page through the component that actually draws it, so there is one
-         renderer per page and no second copy to drift from it. -->
-    <template if:true={hasPage}>
-      <div class="pb-stage">
-        <template if:true={isStory}>
-          <c-gtm-story offering-key={entityKey} key={entityKey}></c-gtm-story>
-        </template>
-        <template if:true={isOfferings}>
-          <c-offering-chooser offering-key={entityKey} key={entityKey}></c-offering-chooser>
-        </template>
-        <template if:true={isIndustry}>
-          <c-choose-industry offering-key={entityKey} key={entityKey}></c-choose-industry>
-        </template>
-        <template if:true={isConfigurator}>
-          <c-gtm-configurator offering-key={entityKey} key={entityKey}></c-gtm-configurator>
-        </template>
-      </div>
-    </template>
-  </div>
+  </template>
+  <template if:false={isStoryMode}>
+    <c-gtm-rep-link-finder></c-gtm-rep-link-finder>
+  </template>
 </template>
