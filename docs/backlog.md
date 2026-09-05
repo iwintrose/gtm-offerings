@@ -195,16 +195,27 @@ a page, when neither really belongs to one.** Two things, same shape:
   offering would silently keep reading the first one's swatches and
   defaults rather than its own.
 
-Your framing: these aren't really *pages* — nobody visits "Gus's settings"
-or "the defaults" as a page a prospect or rep reads — they're closer to
-**assets**, and belong on the Framework's card and each Offering's own card
-on the Content Manager home, not buried inside one specific page's editor.
-Agreed on the shape; still need a name for the category (you said "let's
-find a name" — candidates to react to: **Assets**, **Settings**, **Config**)
-and a decision on the mechanism: a new, non-page-scoped content record type
-addressed by `offeringKey::assetKey` (parallel to how pages are addressed
-today, just without a `templateType`), versus something else. Not started —
-logging for a decision pass, not guessing at the model.
+**Done.** Named the category **Settings** (default call, made to keep
+moving rather than block on it — easy to rename later, it's one label).
+Mechanism: reused the existing `offeringKey::templateType::sectionKey::
+fieldKey` address scheme rather than inventing a parallel one — Gus moved
+to `gtm::assistant::assistant::*` (the framework-level address `gtm` was
+already a real precedent, used by `industry-chooser`/`offerings-page`/
+`faq-bd`; `assistant` is now a real, if page-list-hidden, templateType
+registered in `gtmPageLayouts`); the Configurator's defaults stayed under
+`<offeringKey>::configurator::defaults::*` (already offering-scoped in
+principle) with the actual bug fixed — `gtmConfigWizard.js` no longer
+hardcodes `migration-accelerator`, it reads `@api offeringKey` from
+`gtmConfigurator`. Both surfaced via a "Settings" link on the Content
+Manager home's cards (Framework → Gus, each Offering → its own defaults),
+kept out of the pages list and "New page" pickers via `SETTINGS_TEMPLATES`.
+Migrated Gus's 5 fields + section to the new address with an idempotent
+data script (old rows left in place, a second cleanup pass); code-reviewer
+caught a real promise-race in the shared `_cms` merge (one of two
+concurrent `getPageLayout` calls could silently wipe the other's fields
+depending on resolution order) — fixed before deploy. Dry-run + real
+deploy clean, `GTM` site republished, migration re-run confirmed
+idempotent, `check-all.sh` green, pushed (`78206c2`, `a4c4ab8`).
 
 ---
 
