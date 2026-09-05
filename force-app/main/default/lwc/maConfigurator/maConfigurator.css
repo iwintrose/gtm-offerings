@@ -1288,3 +1288,19 @@ b {
   text-underline-offset: 3px;
 }
 .pw-rep-link:hover { color: var(--coral); }
+
+/* The assistant's dock, drawn only in the editor's preview. It is a caption
+   plus the thing being captioned, so it reads as an annotation of the page
+   rather than a block the prospect will see. */
+.asst-dock {
+    border-top: 1px dashed rgba(0, 0, 0, .16);
+    background: rgba(0, 0, 0, .02);
+}
+.asst-note {
+    margin: 0;
+    padding: 14px 20px 0;
+    font-size: 12px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    opacity: .55;
+}

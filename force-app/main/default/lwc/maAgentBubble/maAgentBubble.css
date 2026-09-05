@@ -79,3 +79,25 @@
 @media (prefers-reduced-motion: reduce) {
     .ab-fab { transition: none; }
 }
+
+/* Docked: the assistant shown in the flow of the page, for the editor's
+   preview. Everything that made it hover — fixed position, the drop shadow
+   that lifts it off the page, the viewport-relative height — is undone,
+   because in the preview it is a section like any other. */
+.ab-root--docked {
+    position: static;
+    right: auto;
+    bottom: auto;
+    align-items: flex-start;
+    z-index: auto;
+    padding: 22px 20px 26px;
+}
+.ab-root--docked .ab-panel {
+    width: min(380px, 100%);
+    height: auto;
+    max-height: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .14);
+}
+.ab-root--docked .ab-body { overflow: visible; min-height: 180px; }
+/* A shown button, not a used one: no hover lift, no pointer, no focus ring. */
+.ab-fab--static { cursor: default; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }

@@ -1,9 +1,27 @@
 import { LightningElement, api, track } from 'lwc';
 import chat from '@salesforce/apex/MaAgentProxyController.chat';
 
+const FALLBACK_PLACEHOLDER = 'Ask me to update company, industry, accent color…';
+
 export default class MaAgentChat extends LightningElement {
     @api sessionToken = '';
     @api configId = '';
+
+    /**
+     * The words, which belong to the offering rather than to this component.
+     *
+     * The prompt in the input and the line the assistant opens with are the
+     * two things a reader actually reads before typing, and what they should
+     * say depends entirely on what the page is for. They arrive as content
+     * from the page's own Assistant section; the constants below are only
+     * what shows if that section has not been filled in yet.
+     */
+    @api placeholderText = '';
+    @api greeting = '';
+
+    /** In the editor's preview this is a picture of the assistant, not the
+     *  assistant: there is no configuration behind it to change. */
+    @api readOnly = false;
 
     @track messages = [];
     @track thinking = false;
@@ -12,12 +30,34 @@ export default class MaAgentChat extends LightningElement {
     historyJson = '';
     _msgCounter = 0;
 
+    get placeholder() {
+        return this.placeholderText || FALLBACK_PLACEHOLDER;
+    }
+
+    /**
+     * The opening line is drawn as the assistant's first message rather than
+     * stored as one, so it stays put when the conversation is replayed and
+     * never ends up in the history sent back to the model.
+     */
+    get visibleMessages() {
+        const greet = (this.greeting || '').trim();
+        if (!greet) return this.messages;
+        return [
+            { id: 'greeting', role: 'assistant', text: greet, cssClass: 'message assistant' },
+            ...this.messages
+        ];
+    }
+
     get busy() {
         return this.thinking;
     }
 
+    get inputDisabled() {
+        return this.busy || this.readOnly;
+    }
+
     get sendDisabled() {
-        return this.busy || !this.draft.trim();
+        return this.inputDisabled || !this.draft.trim();
     }
 
     handleDraftChange(e) {

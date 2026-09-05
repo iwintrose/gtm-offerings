@@ -241,6 +241,12 @@
             <p>A layout decides what the section can hold. Its fields are created with it.</p>
           </header>
           <div class="modal-b">
+            <!-- A page whose renderer draws no section sequence has nothing to
+                 add: its content comes from elsewhere. Saying so beats an
+                 empty grid and a disabled button. -->
+            <template if:false={hasLayoutOptions}>
+              <p class="modal-note">{noLayoutsReason}</p>
+            </template>
             <div class="cards">
               <template for:each={layoutOptions} for:item="l">
                 <button key={l.value} class={l.cardClass} data-layout={l.value}

@@ -43,7 +43,17 @@ const SECTION_ICONS = {
     stat: 'utility:metrics',
     'use-pitch': 'utility:announcement',
     faq: 'utility:question',
-    closing: 'utility:success'
+    closing: 'utility:success',
+    'offering-tile': 'utility:apps',
+    'offering-defaults': 'utility:settings',
+    'industry-tile': 'utility:office',
+    'industry-profile': 'utility:knowledge_base',
+    assistant: 'utility:chat',
+    'chapter-cards': 'utility:tile_card_list',
+    'chapter-lede': 'utility:display_text',
+    'chapter-proof': 'utility:metrics',
+    'chapter-phases': 'utility:steps',
+    'chapter-close': 'utility:success'
 };
 
 export default class GtmContentManager extends LightningElement {
@@ -589,12 +599,22 @@ export default class GtmContentManager extends LightningElement {
     // ─── add / delete sections ────────────────────────────────────────────────
 
     get layoutOptions() {
-        return addableLayouts().map((l) => ({
+        // Scoped to the page being edited: a layout this page's renderer
+        // cannot draw would save and then show nothing.
+        return addableLayouts(this.selectedTemplate).map((l) => ({
             ...l,
             icon: SECTION_ICONS[l.value] || 'utility:record',
             fieldLabel: `${l.fieldCount} field${l.fieldCount === 1 ? '' : 's'}`,
             cardClass: l.value === this.addLayout ? 'card card--on' : 'card'
         }));
+    }
+
+    get hasLayoutOptions() { return this.layoutOptions.length > 0; }
+
+    get noLayoutsReason() {
+        return this.selectedTemplate === 'offerings-page'
+            ? 'This page draws its tiles from the offerings themselves, so there is nothing to add here. Edit an offering\u2019s Offerings Listing page to change its tile.'
+            : 'This page has no layouts to add. Its content comes from elsewhere.';
     }
 
     get addLayoutHint() {

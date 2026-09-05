@@ -80,6 +80,36 @@
                 <default>false</default>
                 <label>Industry</label>
             </value>
+            <value>
+                <fullName>assistant</fullName>
+                <default>false</default>
+                <label>Assistant</label>
+            </value>
+            <value>
+                <fullName>chapter-cards</fullName>
+                <default>false</default>
+                <label>Chapter with cards</label>
+            </value>
+            <value>
+                <fullName>chapter-lede</fullName>
+                <default>false</default>
+                <label>Chapter, text only</label>
+            </value>
+            <value>
+                <fullName>chapter-proof</fullName>
+                <default>false</default>
+                <label>Chapter with proof panel</label>
+            </value>
+            <value>
+                <fullName>chapter-phases</fullName>
+                <default>false</default>
+                <label>Chapter with phases</label>
+            </value>
+            <value>
+                <fullName>chapter-close</fullName>
+                <default>false</default>
+                <label>Chapter with the ask</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

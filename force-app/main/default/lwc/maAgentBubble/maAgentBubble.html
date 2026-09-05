@@ -1,34 +1,50 @@
 <template>
-  <div class="ab-root">
+  <div class={rootClass}>
     <!-- Collapsed: a character in the corner. Expanded: the assistant, in a
          panel that sits above the page rather than inside a form. -->
-    <template if:true={isOpen}>
-      <section class="ab-panel" role="dialog" aria-label="Gus, the GTM Utility Sidekick">
+    <template if:true={panelOpen}>
+      <section class="ab-panel" role="dialog" aria-label={panelLabel}>
         <header class="ab-head">
           <c-gtm-mascot size="sm" mood={mood} class="on-dark"></c-gtm-mascot>
           <div class="ab-id">
-            <span class="ab-name">Gus</span>
+            <span class="ab-name">{name}</span>
             <span class="ab-role">{statusLabel}</span>
           </div>
-          <button type="button" class="ab-x" aria-label="Close the assistant"
-                  onclick={handleToggle}>&times;</button>
+          <template if:false={docked}>
+            <button type="button" class="ab-x" aria-label="Close the assistant"
+                    onclick={handleToggle}>&times;</button>
+          </template>
         </header>
         <div class="ab-body">
           <c-ma-agent-chat
             session-token={sessionToken}
             config-id={configId}
+            placeholder-text={placeholder}
+            greeting={greeting}
+            read-only={docked}
             onagentdelta={handleAgentDelta}
           ></c-ma-agent-chat>
         </div>
       </section>
     </template>
 
-    <button type="button" class={fabClass} onclick={handleToggle}
-            aria-expanded={isOpen} title={fabTitle}>
-      <c-gtm-mascot size="md" mood={mood}></c-gtm-mascot>
-      <template if:false={isOpen}>
+    <template if:false={docked}>
+      <button type="button" class={fabClass} onclick={handleToggle}
+              aria-expanded={isOpen} title={fabTitle}>
+        <c-gtm-mascot size="md" mood={mood}></c-gtm-mascot>
+        <template if:false={isOpen}>
+          <span class="ab-fab-lbl">{fabLabel}</span>
+        </template>
+      </button>
+    </template>
+
+    <!-- Docked, the button is shown rather than used: it is the thing being
+         edited, so the editor has to be able to see its label. -->
+    <template if:true={docked}>
+      <div class="ab-fab ab-fab--static" aria-hidden="true">
+        <c-gtm-mascot size="md" mood="idle"></c-gtm-mascot>
         <span class="ab-fab-lbl">{fabLabel}</span>
-      </template>
-    </button>
+      </div>
+    </template>
   </div>
 </template>

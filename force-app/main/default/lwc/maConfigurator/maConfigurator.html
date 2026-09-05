@@ -112,60 +112,39 @@
     </section>
 
     <!-- 01 CONTEXT -->
-    <section class="chap">
+    <!-- 01 PARTNER -->
+    <section class="chap" data-section="partner">
       <span class="chap-num">01</span>
       <div class="wrap wrap-tight">
-        <div class="eyebrow rv">01 — How we work with you</div>
+        <div class="eyebrow rv">{chPartner.eyebrow}</div>
         <h2 class="rv d1">
-          A migration partner first.<br />The Accelerator is how we prove it.
+          <lightning-formatted-rich-text value={chPartner.head}></lightning-formatted-rich-text>
         </h2>
         <p class="lede rv d2">
-          Publicis Sapient runs your migration end-to-end — strategy, data, and
-          engineering under one team, not a tool handed off and left to your
-          side of the table. The Migration Accelerator isn't a separate product
-          we're selling; it's the same platform our own delivery teams use to
-          ground every engagement in evidence, from the first conversation
-          through a live cutover.
+          <lightning-formatted-rich-text value={chPartner.lede}></lightning-formatted-rich-text>
         </p>
         <div class="cards3 rv d3">
-          <div class="pcard">
-            <div class="pk">Strategy &amp; business case</div>
-            <p>
-              Our Virtual Lab reads the business case decks, briefs, and goals
-              docs you already have, so strategy starts from your context, not a
-              blank page.
-            </p>
-          </div>
-          <div class="pcard">
-            <div class="pk">Environment assessment</div>
-            <p>
-              The Accelerator reads your live platform directly and scores it,
-              every asset, every dependency, an audited health check.
-            </p>
-          </div>
-          <div class="pcard">
-            <div class="pk">Delivery &amp; build</div>
-            <p>
-              One team carries it through, and for supported objects, all the
-              way to a finished cutover with rollback on standby.
-            </p>
-          </div>
+          <template for:each={chPartner.cards} for:item="card">
+            <div key={card.title} class="pcard">
+              <div class="pk">{card.title}</div>
+              <p>{card.body}</p>
+            </div>
+          </template>
         </div>
       </div>
     </section>
 
     <!-- 02 CHALLENGE -->
-    <section class="chap band">
+    <section class="chap band" data-section="challenge">
       <span class="chap-num">02</span>
       <div class="wrap wrap-tight">
-        <div class="eyebrow rv">02 — The challenge</div>
-        <h2 class="rv d1">Migrations stall<br />in the dark.</h2>
+        <div class="eyebrow rv">{chChallenge.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chChallenge.head}></lightning-formatted-rich-text>
+        </h2>
         <template if:false={hasIndustry}>
           <p class="lede rv d2">
-            Years of campaigns, built by people who've since moved on. No map of
-            what connects to what. A go-live date that won't move. The hardest
-            part of a migration usually isn't the rebuild, it's not knowing what
-            you actually have before you start.
+            <lightning-formatted-rich-text value={chChallenge.lede}></lightning-formatted-rich-text>
           </p>
         </template>
         <template if:true={hasIndustry}>
@@ -182,41 +161,23 @@
     </section>
 
     <!-- 03 APPROACH -->
-    <section class="chap">
+    <section class="chap" data-section="approach">
       <span class="chap-num">03</span>
       <div class="wrap">
-        <div class="eyebrow rv">03 — Our approach</div>
+        <div class="eyebrow rv">{chApproach.eyebrow}</div>
         <h2 class="rv d1">
-          We read your environment first.<br />Then we build the plan.
+          <lightning-formatted-rich-text value={chApproach.head}></lightning-formatted-rich-text>
         </h2>
         <p class="lede rv d2">
-          The Migration Accelerator ingests your platform and audits it
-          automatically, turning it into one clear model and a health score, so
-          every decision about what moves, what changes, and what retires is
-          grounded in what's genuinely there.
+          <lightning-formatted-rich-text value={chApproach.lede}></lightning-formatted-rich-text>
         </p>
         <div class="cards3 rv d3">
-          <div class="pcard">
-            <div class="pk">Faster</div>
-            <p>
-              A real, audited read on your whole environment in about an hour,
-              not the usual weeks of discovery.
-            </p>
-          </div>
-          <div class="pcard">
-            <div class="pk">Evidence-based</div>
-            <p>
-              Every scope and estimate traces back to your actual data, with a
-              full audit trail on every decision.
-            </p>
-          </div>
-          <div class="pcard">
-            <div class="pk">Lower risk</div>
-            <p>
-              We size, sequence, and where it applies, execute from what's
-              really there, dry-run first, rollback ready.
-            </p>
-          </div>
+          <template for:each={chApproach.cards} for:item="card">
+            <div key={card.title} class="pcard">
+              <div class="pk">{card.title}</div>
+              <p>{card.body}</p>
+            </div>
+          </template>
         </div>
         <template if:true={hasIndustry}>
           <div class="indbox rv d3">
@@ -233,17 +194,15 @@
     </section>
 
     <!-- 04 SEE IT -->
-    <section class="chap band">
+    <section class="chap band" data-section="proof">
       <span class="chap-num">04</span>
       <div class="wrap">
-        <div class="eyebrow rv">04 — See it</div>
+        <div class="eyebrow rv">{chProof.eyebrow}</div>
         <h2 class="rv d1">
-          Everything you have, mapped,<br />audited, and ready to move.
+          <lightning-formatted-rich-text value={chProof.head}></lightning-formatted-rich-text>
         </h2>
         <p class="lede rv d2">
-          Point the Accelerator at your environment and it does the archaeology
-          for you: counts every asset, scores its health, and traces what
-          depends on what. Here's a preview of what an assessment surfaces.
+          <lightning-formatted-rich-text value={chProof.lede}></lightning-formatted-rich-text>
         </p>
         <template if:true={hasIndustry}>
           <p class="lede rv d2 proof-line">{proofLine}</p>
@@ -253,42 +212,37 @@
             <div class="proof-bar">
               <span class="pd"></span><span class="pd"></span><span class="pd"></span>
               <span class="pt">
-                Environment assessment · <b>{clientDisplay}</b>
+                {chProof.panelTitle} · <b>{clientDisplay}</b>
               </span>
             </div>
             <div class="proof-body">
               <div class="proof-cta">
                 <p class="proof-cta-text">
-                  A snapshot of what the Accelerator reads from a client's
-                  environment, automatically, on day one.
+                  <lightning-formatted-rich-text value={chProof.ctaText}></lightning-formatted-rich-text>
                 </p>
-                <button class="cta" onclick={handleReveal}>
-                  Reveal what the Accelerator sees →
-                </button>
+                <button class="cta" onclick={handleReveal}>{chProof.ctaLabel}</button>
               </div>
               <div class="proof-result">
                 <div class="metrics">
                   <div class="metric">
                     <div class="mn">{objectsText}</div>
-                    <div class="ml">assets mapped</div>
+                    <div class="ml">{chProof.assetsLabel}</div>
                   </div>
                   <div class="metric">
                     <div class="metric-row">
                       <div class="gauge-ring" style={gaugeStyle}>
                         <span>{gaugeValue}</span>
                       </div>
-                      <div class="ml ml-flush">health score</div>
+                      <div class="ml ml-flush">{chProof.healthLabel}</div>
                     </div>
                   </div>
                   <div class="metric">
                     <div class="mn">{depsText}</div>
-                    <div class="ml">dependencies traced</div>
+                    <div class="ml">{chProof.depsLabel}</div>
                   </div>
                 </div>
                 <div class="dep">
-                  <div class="dep-h">
-                    One campaign, and everything it needs to run
-                  </div>
+                  <div class="dep-h">{chProof.depHead}</div>
                   <div class="dep-flow">
                     <span class="node root">{demoRoot}</span>
                     <span class="arrow">→</span>
@@ -300,12 +254,10 @@
                   </div>
                 </div>
                 <div class="proof-foot">
-                  You choose one campaign. The Accelerator brings
-                  <span class="accent">&nbsp;everything it depends on&nbsp;</span>
-                  with it, so nothing gets left behind at go-live.
+                  <lightning-formatted-rich-text value={chProof.foot}></lightning-formatted-rich-text>
                 </div>
                 <div class="proof-status">
-                  <span class="lv"></span> dry run complete · rollback armed
+                  <span class="lv"></span> {chProof.statusLine}
                 </div>
               </div>
             </div>
@@ -318,98 +270,47 @@
     </section>
 
     <!-- 05 WHAT YOU GET -->
-    <section class="chap">
+    <section class="chap" data-section="deliverables">
       <span class="chap-num">05</span>
       <div class="wrap">
-        <div class="eyebrow rv">05 — What you get</div>
-        <h2 class="rv d1">Deliverables you can act on.</h2>
+        <div class="eyebrow rv">{chDeliverables.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chDeliverables.head}></lightning-formatted-rich-text>
+        </h2>
         <div class="deliv rv d2">
-          <div class="dcard">
-            <span class="dnum">01</span>
-            <span class="dt">Environment assessment</span>
-            <span class="dd">
-              A complete, categorized inventory of your marketing estate,
-              surfaced automatically, not hand-built.
-            </span>
-          </div>
-          <div class="dcard new">
-            <span class="dnum">02</span>
-            <span class="dt">An audited health score</span>
-            <span class="dd">
-              An evidence-based read of size, complexity, and risk, the numbers
-              your estimate and business case can stand on.
-            </span>
-          </div>
-          <div class="dcard">
-            <span class="dnum">03</span>
-            <span class="dt">Dependency-aware migration plan</span>
-            <span class="dd">
-              A sequenced plan where shared assets are built once and nothing
-              ships broken.
-            </span>
-          </div>
-          <div class="dcard new">
-            <span class="dnum">04</span>
-            <span class="dt">A live cutover, where it applies</span>
-            <span class="dd">
-              Dry-run first, then executed, with rollback ready and a
-              verification pass once it's done.
-            </span>
-          </div>
+          <template for:each={chDeliverables.cards} for:item="card">
+            <div key={card.title} class={card.cls}>
+              <span class="dnum">{card.num}</span>
+              <span class="dt">{card.title}</span>
+              <span class="dd">{card.body}</span>
+            </div>
+          </template>
         </div>
       </div>
     </section>
 
     <!-- 06 ENGAGEMENT -->
-    <section class="chap band">
+    <section class="chap band" data-section="engagement">
       <span class="chap-num">06</span>
       <div class="wrap">
-        <div class="eyebrow rv">06 — How we work together</div>
-        <h2 class="rv d1">Start small. Prove it. Scale.</h2>
+        <div class="eyebrow rv">{chEngagement.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chEngagement.head}></lightning-formatted-rich-text>
+        </h2>
         <p class="lede rv d2">
-          You don't have to commit to the whole migration to see the value. It
-          begins with a focused environment assessment, low commitment, high
-          signal, and grows from there.
+          <lightning-formatted-rich-text value={chEngagement.lede}></lightning-formatted-rich-text>
         </p>
         <div class="phases rv d3">
-          <div class="phase">
-            <div class="pdot"></div>
-            <div class="php">Start here</div>
-            <div class="pht">Assess</div>
-            <div class="phb">
-              A fixed-scope read of your environment, and a health score you can
-              act on.
+          <template for:each={chEngagement.phases} for:item="phase">
+            <div key={phase.title} class="phase">
+              <div class="pdot"></div>
+              <div class="php">{phase.step}</div>
+              <div class="pht">{phase.title}</div>
+              <div class="phb">{phase.body}</div>
             </div>
-          </div>
-          <div class="phase">
-            <div class="pdot"></div>
-            <div class="php">Design</div>
-            <div class="pht">Blueprint</div>
-            <div class="phb">
-              What moves, what changes, what retires, decided with you, backed
-              by data.
-            </div>
-          </div>
-          <div class="phase">
-            <div class="pdot"></div>
-            <div class="php">Sequence</div>
-            <div class="pht">Plan</div>
-            <div class="phb">
-              A dependency-aware, wave-by-wave plan your teams can execute
-              against.
-            </div>
-          </div>
-          <div class="phase">
-            <div class="pdot"></div>
-            <div class="php">Build</div>
-            <div class="pht">Execute</div>
-            <div class="phb">
-              Build-ready specs, and for supported objects, a live cutover with
-              rollback.
-            </div>
-          </div>
+          </template>
         </div>
-        <span class="starthere rv">Your first step is just the assessment.</span>
+        <span class="starthere rv">{chEngagement.footnote}</span>
       </div>
     </section>
 
@@ -417,63 +318,45 @@
     <section data-section="why" class="chap">
       <span class="chap-num">07</span>
       <div class="wrap">
-        <div class="eyebrow rv">07 — Why Publicis Sapient</div>
+        <div class="eyebrow rv">{chWhy.eyebrow}</div>
         <h2 class="rv d1">{whyHead}</h2>
         <template if:true={hasIndustry}>
           <p class="lede rv d1 why-line">{whyLine}</p>
         </template>
         <div class="why rv d2">
-          <div class="wcol">
-            <div class="wt">Deep platform expertise</div>
-            <p>
-              Years of hands-on marketing automation delivery across global,
-              regulated enterprises.
-            </p>
-          </div>
-          <div class="wcol">
-            <div class="wt">A platform, not just hands</div>
-            <p>
-              Our AI-powered Accelerator does the discovery, audit, and
-              increasingly the cutover, work that normally burns months of
-              effort.
-            </p>
-          </div>
-          <div class="wcol">
-            <div class="wt">End-to-end partnership</div>
-            <p>
-              Strategy, data, and engineering under one roof, from the first
-              assessment through go-live and beyond.
-            </p>
-          </div>
+          <template for:each={chWhy.cards} for:item="card">
+            <div key={card.title} class="wcol">
+              <div class="wt">{card.title}</div>
+              <p>{card.body}</p>
+            </div>
+          </template>
         </div>
       </div>
     </section>
 
     <!-- 08 NEXT STEP -->
-    <section class="chap band">
+    <section class="chap band" data-section="closing">
       <span class="chap-num">08</span>
       <div class="wrap wrap-tight">
-        <div class="eyebrow rv">08 — The next step</div>
-        <h2 class="rv d1">See what's really in<br />your environment.</h2>
+        <div class="eyebrow rv">{chClosing.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chClosing.head}></lightning-formatted-rich-text>
+        </h2>
         <div class="next-card rv d2">
-          <div class="nh">Start with an environment assessment.</div>
+          <div class="nh">
+            <lightning-formatted-rich-text value={chClosing.cardHead}></lightning-formatted-rich-text>
+          </div>
           <p>
-            Even if you're only exploring, you'll walk away with a genuine,
-            audited read on your migration, the size, the risk, the effort,
-            whether or not we go further. No months of discovery required.
+            <lightning-formatted-rich-text value={chClosing.body}></lightning-formatted-rich-text>
           </p>
           <div class="next-actions">
-            <button class="cta" onclick={handleOpenBooking}>
-              Book the assessment →
-            </button>
+            <button class="cta" onclick={handleOpenBooking}>{chClosing.ctaLabel}</button>
             <a
-              href="https://www.publicissapient.com"
+              href={chClosing.altCtaUrl}
               target="_blank"
               rel="noopener"
               class="cta line"
-            >
-              Explore Publicis Sapient
-            </a>
+            >{chClosing.altCtaLabel}</a>
           </div>
           <div class="next-meta">
             <span>
@@ -484,11 +367,7 @@
               · <span class={contactEmailTokClass}>{contactEmailDisplay}</span>
             </span>
             <span>
-              <a
-                href="https://www.publicissapient.com"
-                target="_blank"
-                rel="noopener"
-              >
+              <a href={chClosing.altCtaUrl} target="_blank" rel="noopener">
                 publicissapient.com
               </a>
             </span>
@@ -496,6 +375,24 @@
         </div>
       </div>
     </section>
+
+    <!-- The assistant, previewed in place. On the live page he floats in the
+         corner and only the rep sees him; in the editor he is drawn in the
+         flow so the rail can scroll to him and the copy being edited is
+         visible, which floating over the editor never was. -->
+    <template if:true={showAssistantPreview}>
+      <section class="asst-dock" data-section="assistant">
+        <p class="asst-note">Floats in the corner of the live page. Only the rep sees it.</p>
+        <c-ma-agent-bubble
+          docked
+          assistant-name={assistantName}
+          assistant-role={assistantRole}
+          label={assistantLabel}
+          greeting={assistantGreeting}
+          placeholder={assistantPlaceholder}
+        ></c-ma-agent-bubble>
+      </section>
+    </template>
 
     <footer class="pf" data-section="footer">
       <span class="wm"><span class="tick"></span> {footerLeft}</span>
@@ -524,6 +421,11 @@
       <c-ma-agent-bubble
         session-token={agentSessionToken}
         config-id={savedRecordId}
+        assistant-name={assistantName}
+        assistant-role={assistantRole}
+        label={assistantLabel}
+        greeting={assistantGreeting}
+        placeholder={assistantPlaceholder}
         onagentdelta={handleAgentDelta}
       ></c-ma-agent-bubble>
     </template>

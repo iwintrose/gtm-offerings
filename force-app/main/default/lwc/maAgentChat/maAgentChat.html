@@ -1,7 +1,7 @@
 <template>
     <div class="chat-container">
         <div class="messages" lwc:ref="messageList">
-            <template for:each={messages} for:item="msg">
+            <template for:each={visibleMessages} for:item="msg">
                 <div key={msg.id} class={msg.cssClass}>
                     <div class="bubble">{msg.text}</div>
                 </div>
@@ -17,11 +17,11 @@
         <div class="input-row">
             <textarea
                 class="chat-input"
-                placeholder="Ask me to update company, industry, accent color…"
+                placeholder={placeholder}
                 value={draft}
                 onchange={handleDraftChange}
                 onkeydown={handleKeyDown}
-                disabled={busy}
+                disabled={inputDisabled}
             ></textarea>
             <button class="send-btn" onclick={handleSend} disabled={sendDisabled}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">

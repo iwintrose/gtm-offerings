@@ -11,6 +11,7 @@ import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPa
 import verifyAndIssueToken from '@salesforce/apex/MaLinkAuthController.verifyAndIssueToken';
 import logEvent from '@salesforce/apex/MaLinkEventController.logEvent';
 import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/maConfigData';
+import { CHAPTER_DEFAULTS } from 'c/maConfiguratorCopy';
 import USER_ID from '@salesforce/user/Id';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import USER_NAME_FIELD from '@salesforce/schema/User.Name';
@@ -25,7 +26,6 @@ function buildBuilderUrl(orgUrl) {
     return `${orgUrl}/lightning/setup/SetupNetworks/home`;
 }
 
-const GENERIC_WHY_HEAD = 'Martech depth, plus a platform no one else brings.';
 const OFFERING_LABEL = 'Migration Accelerator';
 // Default only. The offering is set on the page in Experience Builder, so a
 // second offering is a page assignment rather than a code change.
@@ -240,7 +240,6 @@ export default class MaConfigurator extends LightningElement {
      * has a safe "nothing selected" fallback, so the page just renders the
      * generic view for a beat rather than erroring while this loads. */
     @track _industries = [];
-    @track _storySetting = null;
 
     _cmsDefaults = {};
     // MA_Page_Content__c flat map: key = 'section::field', value = resolved string
@@ -322,6 +321,55 @@ export default class MaConfigurator extends LightningElement {
         const raw = this._cms[key];
         if (!raw) return null;
         try { return JSON.parse(raw); } catch (e) { return null; }
+    }
+
+    /**
+     * One chapter, resolved.
+     *
+     * Every field falls back to the words the template used to hardcode, so a
+     * page whose content has not been seeded -- a brand-new offering, or this
+     * one before the migration ran -- renders exactly as it always did. What
+     * changes is that an editor can now replace any of it.
+     */
+    _chapter(sectionKey) {
+        const base = CHAPTER_DEFAULTS[sectionKey] || {};
+        const out = {};
+        Object.keys(base).forEach((field) => {
+            const addr = `${sectionKey}::${field}`;
+            if (Array.isArray(base[field])) {
+                const parsed = this._cj(addr);
+                out[field] = Array.isArray(parsed) && parsed.length ? parsed : base[field];
+            } else {
+                const raw = this._cms[addr];
+                out[field] = (raw === undefined || raw === null || raw === '') ? base[field] : raw;
+            }
+        });
+        return out;
+    }
+
+    /* One getter per chapter. The template reads them as ch<Name>.field, which
+     * keeps the markup readable and means adding a field to a chapter is an
+     * edit to the copy module and the template, not to this class. */
+    get chPartner()      { return this._chapter('partner'); }
+    get chChallenge()    { return this._chapter('challenge'); }
+    get chApproach()     { return this._chapter('approach'); }
+    get chProof()        { return this._chapter('proof'); }
+    get chDeliverables() { return this._decorate(this._chapter('deliverables')); }
+    get chEngagement()   { return this._chapter('engagement'); }
+    get chWhy()          { return this._chapter('why'); }
+    get chClosing()      { return this._chapter('closing'); }
+
+    /** The deliverables are numbered and banded in pairs, and a template
+     *  cannot count, so the index each card needs is computed here. */
+    _decorate(chapter) {
+        return {
+            ...chapter,
+            cards: (chapter.cards || []).map((c, i) => ({
+                ...c,
+                num: String(i + 1).padStart(2, '0'),
+                cls: i % 2 === 1 ? 'dcard new' : 'dcard'
+            }))
+        };
     }
 
     /** The starting numbers, read from the configurator's defaults section. */
@@ -601,6 +649,27 @@ export default class MaConfigurator extends LightningElement {
         return this.isConfigManager && !this._preview;
     }
 
+    /**
+     * The assistant, previewed in place.
+     *
+     * In the editor he is a section of this page like any other, so he is
+     * drawn in the flow with a data-section the rail can scroll to, and drawn
+     * whether or not that section is the one selected -- a section that only
+     * exists while it is selected has no rect for the rail to find.
+     */
+    get showAssistantPreview() {
+        return this._preview && !!this._cms['assistant::assistantName'];
+    }
+
+    /* The assistant's own copy, from the Assistant section of this page. Each
+     * getter falls back inside the component, so an offering that has not
+     * written its own still gets a working helper. */
+    get assistantName() { return this._ct('assistant::assistantName') || ''; }
+    get assistantRole() { return this._ct('assistant::assistantRole') || ''; }
+    get assistantLabel() { return this._ct('assistant::fabLabel') || ''; }
+    get assistantGreeting() { return this._ct('assistant::greeting') || ''; }
+    get assistantPlaceholder() { return this._ct('assistant::inputPlaceholder') || ''; }
+
     get hasCompany() {
         return !!(this.company && this.company.trim());
     }
@@ -839,7 +908,7 @@ export default class MaConfigurator extends LightningElement {
         // An industry-specific heading still wins: it is more specific than
         // the page-level one, which is the generic case.
         if (this.industry) return this.industry.whyHead;
-        return this._ct('why::head') || GENERIC_WHY_HEAD;
+        return this.chWhy.head;
     }
 
     get footerLeft() {
@@ -851,19 +920,24 @@ export default class MaConfigurator extends LightningElement {
             || 'Migration Accelerator, prepared with the Publicis Sapient Marketing Automation practice.';
     }
 
+    /* The no-industry view. These used to read a custom setting that was
+     * retired with the story CMS controller and never replaced, so the generic
+     * page rendered an empty chip row and an empty dependency flow while the
+     * values sat seeded and unread on the Configurator defaults section. They
+     * read that section now, which is where the editor edits them. */
     get chips() {
         if (this.industry) return this.industry.uniquePoints;
-        return this._storySetting ? this._storySetting.genericChips : [];
+        return this._cj('defaults::genericChips') || [];
     }
 
     get demoRoot() {
         if (this.industry) return this.industry.demoRoot;
-        return this._storySetting ? this._storySetting.genericDemoRoot : '';
+        return this._ct('defaults::genericDemoRoot') || '';
     }
 
     get demoDeps() {
         if (this.industry) return this.industry.demoDeps;
-        return this._storySetting ? this._storySetting.genericDemoDeps : [];
+        return this._cj('defaults::genericDemoDeps') || [];
     }
 
     // ------------------------------------------------------------ proof panel

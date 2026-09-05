@@ -11,12 +11,18 @@
  * would drift the first time a layout gained a field.
  */
 
+import { CHAPTERS } from 'c/maConfiguratorCopy';
+
 // Layouts that render around the page rather than in the section sequence.
 // They are declared here so the contract check covers them like any other.
 // They are split so an editor can see what they are changing: with both in one
 // section, selecting it scrolled the preview to the masthead whether you were
 // editing the brand name or the footer.
-const FRAME_LAYOUTS = ['page-header', 'page-footer'];
+//
+// The assistant is here for the same reason and one more: it is a control the
+// page carries, not a beat in the page. One per page, never added twice, and
+// the page's own renderer decides where it sits.
+const FRAME_LAYOUTS = ['page-header', 'page-footer', 'assistant'];
 
 // Pages that belong to the framework rather than to any one offering. The
 // offerings front door is the example: it sits above offerings and lists them,
@@ -43,6 +49,33 @@ const LAYOUT_FIELDS = {
                'defaultDependencyCount', 'defaultHealthScore', 'genericDemoRoot'],
         rich: [],
         json: ['genericDemoDeps', 'genericChips', 'swatches']
+    },
+    // The helper in the corner of a configurator: who it is and what it says
+    // before anyone has typed. It lives on the offering's own configurator
+    // page, so a second offering gets its own character and its own opening
+    // line rather than inheriting this one's.
+    'assistant': {
+        text: ['assistantName', 'assistantRole', 'fabLabel', 'greeting', 'inputPlaceholder'],
+        rich: [],
+        json: []
+    },
+    // The configurator's chapters. Each one is a beat of the page a BD sends a
+    // prospect, and each was typed into the template until it became a
+    // section: unreachable from the editor, and identical for every offering
+    // that ever used this template.
+    'chapter-cards':  { text: ['eyebrow'], rich: ['head', 'lede'], json: ['cards'] },
+    'chapter-lede':   { text: ['eyebrow'], rich: ['head', 'lede'], json: [] },
+    'chapter-proof': {
+        text: ['eyebrow', 'panelTitle', 'ctaLabel', 'assetsLabel', 'healthLabel',
+               'depsLabel', 'depHead', 'statusLine'],
+        rich: ['head', 'lede', 'ctaText', 'foot'],
+        json: []
+    },
+    'chapter-phases': { text: ['eyebrow', 'footnote'], rich: ['head', 'lede'], json: ['phases'] },
+    'chapter-close': {
+        text: ['eyebrow', 'ctaLabel', 'altCtaLabel', 'altCtaUrl'],
+        rich: ['head', 'cardHead', 'body'],
+        json: []
     },
     'industry-tile': {
         text: ['industryLabel'],
@@ -75,7 +108,13 @@ const LAYOUT_LABELS = {
     'offering-tile': 'Offering tile',
     'offering-defaults': 'Configurator defaults',
     'industry-tile': 'Industry',
-    'industry-profile': 'Industry angle'
+    'industry-profile': 'Industry angle',
+    'assistant': 'Assistant',
+    'chapter-cards': 'Chapter with cards',
+    'chapter-lede': 'Chapter, text only',
+    'chapter-proof': 'Chapter with proof panel',
+    'chapter-phases': 'Chapter with phases',
+    'chapter-close': 'Chapter with the ask'
 };
 
 const LAYOUT_HINTS = {
@@ -92,7 +131,13 @@ const LAYOUT_HINTS = {
     'offering-tile': 'The short badge, name and description shown on the offerings page.',
     'offering-defaults': 'What a configurator shows before a rep customises it: platforms, counts, demo and colour swatches.',
     'industry-tile': 'One industry in the shared list: its name and the blurb on its card.',
-    'industry-profile': 'What this offering says to one industry: their problem, the solution, the proof and the demo.'
+    'industry-profile': 'What this offering says to one industry: their problem, the solution, the proof and the demo.',
+    'assistant': 'The helper in the corner of this page: its name, its role, the label on its button, the line it opens with and the prompt in its input.',
+    'chapter-cards': 'A chapter: eyebrow, heading, a lede, and a row of cards.',
+    'chapter-lede': 'A chapter that is just the eyebrow, heading and a lede.',
+    'chapter-proof': 'The live proof panel and every word around it. The numbers come from the defaults or the saved link.',
+    'chapter-phases': 'A chapter whose body is the phases of an engagement.',
+    'chapter-close': 'The last chapter: the ask, the button and the link beside it.'
 };
 
 /**
@@ -125,11 +170,39 @@ function humaniseFieldKey(key) {
         .trim();
 }
 
-// Layouts an editor may add to a page. The header and footer are excluded:
-// they are not beats in the sequence, and a second one would render a second
-// masthead.
-function addableLayouts() {
-    return Object.keys(LAYOUT_FIELDS)
+/**
+ * Which layouts each page's renderer can actually draw.
+ *
+ * Offering every layout on every page was harmless while the vocabulary was
+ * one shared story shape. It stopped being harmless when the configurator got
+ * chapters: a chapter added to a story page is a section the story renderer
+ * has no branch for, so it saves, publishes, and draws nothing. The picker
+ * asks the renderer's own list instead.
+ *
+ * A template not listed here gets everything that is not page chrome, which is
+ * the old behaviour and the right default for a renderer that loops over
+ * whatever sections it is given.
+ */
+const TEMPLATE_LAYOUTS = {
+    story: ['hero', 'lede-chips', 'route-proof', 'card-grid', 'stat', 'use-pitch', 'faq', 'closing'],
+    configurator: ['chapter-cards', 'chapter-lede', 'chapter-proof', 'chapter-phases',
+                   'chapter-close', 'industry-profile', 'offering-defaults'],
+    'offerings-listing': ['offering-tile'],
+    // The offerings page draws its tiles from the offerings themselves, so
+    // there is nothing to add to it beyond the chrome it already has.
+    'offerings-page': [],
+    'industry-chooser': ['industry-tile']
+};
+
+// Layouts an editor may add to a page. The header, footer and assistant are
+// excluded: they are not beats in the sequence, and a second one would render
+// a second masthead.
+function addableLayouts(templateType) {
+    const allowed = TEMPLATE_LAYOUTS[templateType];
+    const keys = allowed
+        ? allowed.filter((k) => LAYOUT_FIELDS[k])
+        : Object.keys(LAYOUT_FIELDS).filter((k) => FRAME_LAYOUTS.indexOf(k) === -1);
+    return keys
         .filter((k) => FRAME_LAYOUTS.indexOf(k) === -1)
         .map((k) => ({
             value: k,
@@ -197,11 +270,19 @@ const STARTER_PAGES = {
     ],
     'configurator': [
         { sectionKey: 'header',   label: 'Header',       layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
-        { sectionKey: 'intro',    label: 'Intro',        layoutType: 'hero',        width: 'standard', helpText: 'What this configuration is, for the person it was sent to.' },
-        { sectionKey: 'why',      label: 'Why us',       layoutType: 'card-grid',   width: 'standard', helpText: 'The case, one card per point.' },
-        { sectionKey: 'proof',    label: 'Proof',        layoutType: 'stat',        width: 'standard', helpText: 'The number that makes the case concrete.' },
-        { sectionKey: 'closing',  label: 'Closing CTA',  layoutType: 'closing',     width: 'standard', helpText: 'The last screen and the button.' },
-        { sectionKey: 'footer',   label: 'Footer',       layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
+        // The chapters, in the order the page draws them. They come from the
+        // renderer's own copy module so that adding a chapter is one edit, not
+        // three that have to agree.
+        ...CHAPTERS.map((c) => ({
+            sectionKey: c.sectionKey,
+            label: c.label,
+            layoutType: c.layoutType,
+            width: 'standard',
+            helpText: c.helpText
+        })),
+        { sectionKey: 'footer',   label: 'Footer',       layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' },
+        { sectionKey: 'defaults', label: 'Configurator defaults', layoutType: 'offering-defaults', width: 'standard', helpText: 'What this page shows before a rep customises it: platforms, counts, the demo campaign and the colour swatches.' },
+        { sectionKey: 'assistant', label: 'Assistant',   layoutType: 'assistant',   width: 'standard', helpText: 'The helper in the corner of this page. Only the rep sees it; a prospect on a shared link does not.' }
     ]
 };
 
@@ -255,6 +336,7 @@ export {
     CTA_ICONS,
     ctaGlyph,
     FRAME_LAYOUTS,
+    TEMPLATE_LAYOUTS,
     LAYOUT_FIELDS,
     LAYOUT_LABELS,
     LAYOUT_HINTS,
