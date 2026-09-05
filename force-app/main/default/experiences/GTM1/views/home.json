@@ -25,14 +25,6 @@
       "componentName" : "forceCommunity:section",
       "id" : "14fcac0b-630a-40f3-a97d-7a4fd685a2c6",
       "regions" : [ {
-        "components" : [ {
-          "componentAttributes" : { },
-          "componentName" : "c:maStory",
-          "id" : "0c103fd1-91a1-4e63-95a0-f8f09bdd0580",
-          "renderPriority" : "NEUTRAL",
-          "renditionMap" : { },
-          "type" : "component"
-        } ],
         "id" : "5dbac92d-8372-4651-a557-9ad397133fd4",
         "regionLabel" : "Column 1",
         "regionName" : "1",
@@ -51,7 +43,7 @@
       "componentAttributes" : {
         "customHeadTags" : "",
         "description" : "",
-        "title" : "The Migration Accelerator"
+        "title" : "Publicis Sapient"
       },
       "componentName" : "forceCommunity:seoAssistant",
       "id" : "f35a124b-4b9c-4cd5-8be1-afba1a5230df",

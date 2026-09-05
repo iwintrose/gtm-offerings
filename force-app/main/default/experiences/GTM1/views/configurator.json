@@ -2,8 +2,8 @@
   "appPageId" : "2ccc52cc-3526-4666-b109-aff8cc07e506",
   "componentName" : "siteforce:dynamicLayout",
   "dataProviders" : [ ],
-  "id" : "32117df2-c16e-4d04-8ba5-9f5cbce4c528",
-  "label" : "Home",
+  "id" : "f5566dab-fcc9-4490-9691-2b7d7c876b7c",
+  "label" : "Configurator",
   "regions" : [ {
     "components" : [ {
       "componentAttributes" : {
@@ -11,9 +11,9 @@
         "backgroundOverlay" : "rgba(0,0,0,0.5)",
         "contentAreaWidth" : 100,
         "sectionConfig" : {
-          "UUID" : "14fcac0b-630a-40f3-a97d-7a4fd685a2c6",
+          "UUID" : "4d150dac-fa0a-4138-b511-846b9361488b",
           "columns" : [ {
-            "UUID" : "5dbac92d-8372-4651-a557-9ad397133fd4",
+            "UUID" : "51644554-9693-482a-8ed1-23cc6c660760",
             "columnKey" : "1",
             "columnName" : "Column 1",
             "columnWidth" : "12",
@@ -23,10 +23,17 @@
         "sectionHeight" : 300
       },
       "componentName" : "forceCommunity:section",
-      "id" : "14fcac0b-630a-40f3-a97d-7a4fd685a2c6",
+      "id" : "4d150dac-fa0a-4138-b511-846b9361488b",
       "regions" : [ {
-        "components" : [ ],
-        "id" : "5dbac92d-8372-4651-a557-9ad397133fd4",
+        "components" : [ {
+          "componentAttributes" : { },
+          "componentName" : "c:maConfigurator",
+          "id" : "2968a14f-791c-46d0-9f46-ba1a7df73dd3",
+          "renderPriority" : "NEUTRAL",
+          "renditionMap" : { },
+          "type" : "component"
+        } ],
+        "id" : "51644554-9693-482a-8ed1-23cc6c660760",
         "regionLabel" : "Column 1",
         "regionName" : "1",
         "renditionMap" : { },
@@ -36,7 +43,7 @@
       "renditionMap" : { },
       "type" : "component"
     } ],
-    "id" : "26533d05-a38f-4abd-b7ce-409cde343b42",
+    "id" : "585cd21e-fbc3-4789-a870-15effe79cd54",
     "regionName" : "content",
     "type" : "region"
   }, {
@@ -44,18 +51,18 @@
       "componentAttributes" : {
         "customHeadTags" : "",
         "description" : "",
-        "title" : "Publicis Sapient"
+        "title" : "Configurator"
       },
       "componentName" : "forceCommunity:seoAssistant",
-      "id" : "f35a124b-4b9c-4cd5-8be1-afba1a5230df",
+      "id" : "f611a042-3435-4c52-a2ca-9ebb1bf2137a",
       "renditionMap" : { },
       "type" : "component"
     } ],
-    "id" : "4e0edb64-f0f6-44db-a883-582d35469fe5",
+    "id" : "b4efcda7-5502-4955-90c9-e1149777e4ca",
     "regionName" : "sfdcHiddenRegion",
     "type" : "region"
   } ],
   "themeLayoutType" : "Inner",
   "type" : "view",
-  "viewType" : "home"
+  "viewType" : "custom-configurator"
 }
