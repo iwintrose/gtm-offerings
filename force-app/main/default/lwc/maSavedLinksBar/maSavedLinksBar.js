@@ -1,6 +1,7 @@
 import { LightningElement, api } from 'lwc';
 import isGuest from '@salesforce/user/isGuest';
 import getMyConfigurations from '@salesforce/apex/MaSavedConfigurationController.getMyConfigurations';
+import getConfiguratorPageUrl from '@salesforce/apex/MaSavedConfigurationController.getConfiguratorPageUrl';
 import deleteConfiguration from '@salesforce/apex/MaSavedConfigurationController.deleteConfiguration';
 import setActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
 import getOrgBaseUrl from '@salesforce/apex/MaSavedConfigurationController.getOrgBaseUrl';
@@ -10,6 +11,8 @@ import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 export default class MaSavedLinksBar extends LightningElement {
     _industryLabels = {};
+    /** Where the configurator lives, so a short link can be built for any row. */
+    _configuratorBase = '';
 
     hasAccess = false;
     isOpen = false;
@@ -62,6 +65,10 @@ export default class MaSavedLinksBar extends LightningElement {
      */
     async loadConfigurations() {
         try {
+            if (!this._configuratorBase) {
+                try { this._configuratorBase = await getConfiguratorPageUrl(); }
+                catch (e) { this._configuratorBase = ''; }
+            }
             const data = await getMyConfigurations();
             this.hasAccess = true;
             this.groups = this.groupRecords(data);
@@ -242,7 +249,13 @@ export default class MaSavedLinksBar extends LightningElement {
                     ? `${sameDeal} links on this same deal`
                     : '',
                 recordNumber: rec.Name,
-                url: appendCfgId(rec.Generated_URL__c, rec.Id),
+                // The link to send. The record holds every value now, so the
+                // link only has to say which record -- the long form is kept
+                // for continuity but it is not the thing to copy.
+                url: this._configuratorBase
+                    ? `${this._configuratorBase}?cfgId=${rec.Id}`
+                    : appendCfgId(rec.Generated_URL__c, rec.Id),
+                fullUrl: appendCfgId(rec.Generated_URL__c, rec.Id),
                 owner: rec.Owner ? rec.Owner.Name : '',
                 date: rec.CreatedDate
                     ? new Date(rec.CreatedDate).toLocaleDateString()
