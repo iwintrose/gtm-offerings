@@ -626,13 +626,17 @@ export default class GtmContentManager extends LightningElement {
      */
     get isFrameworkPage() { return this.selectedOffering === FRAMEWORK_KEY; }
 
-    get canChangeStructure() { return !this.isFrameworkPage; }
+    /**
+     * What ships fixed on the framework is the set of PAGES, not the sections.
+     *
+     * An earlier pass locked sections too, which took away editing the thing
+     * the framework is mostly made of. Its two pages cannot be added to or
+     * removed -- they come from templatesFor(), so there is no route to a third
+     * one -- and everything inside them is edited like anywhere else.
+     */
+    get canChangeStructure() { return true; }
 
-    get structureLockNote() {
-        return 'The framework ships configured. Edit the words freely — the set of sections is part of the product.';
-    }
-
-    get hasLayoutOptions() { return this.layoutOptions.length > 0 && this.canChangeStructure; }
+    get hasLayoutOptions() { return this.layoutOptions.length > 0; }
 
     get noLayoutsReason() {
         return this.selectedTemplate === 'offerings-page'
@@ -672,7 +676,6 @@ export default class GtmContentManager extends LightningElement {
     }
 
     handleOpenAdd() {
-        if (!this.canChangeStructure) return;
         this.addOpen = true;
         this.addLayout = '';
         this.addLabel = '';
@@ -733,9 +736,6 @@ export default class GtmContentManager extends LightningElement {
     }
 
     handleAskDelete(event) {
-        // Half a lock is not a lock: without this the Add button is hidden on
-        // the framework and its sections can still be deleted one by one.
-        if (!this.canChangeStructure) return;
         const key = event.currentTarget.dataset.key;
         const section = this.sections.find((s) => s.sectionKey === key);
         if (!section) return;

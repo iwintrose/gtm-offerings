@@ -80,17 +80,13 @@
             <span class="cx">with Publicis Sapient</span>
           </div>
         </template>
-        <div class="eyebrow rv">Publicis Sapient · {industryTag}</div>
+        <div class="eyebrow rv">{chCover.eyebrow}</div>
         <h1 class="rv d1">
-          <span class={clientTokClass}>{clientDisplay}</span>'s migration should
-          have taken months.<br />We did the first pass in&nbsp;<span class="accent">an afternoon.</span>
+          <lightning-formatted-rich-text value={chCover.head}></lightning-formatted-rich-text>
         </h1>
         <div class="rule rv d2"></div>
         <p class="lede rv d2">
-          Your migration, de-risked from day one — moving off&nbsp;<span class={sourceTokClass}>{sourceDisplay}</span> without the months
-          of manual discovery, the scope surprises, or the go-live risk. Here's
-          how we get you there as your delivery partner, not just a tool, and
-          what the first step looks like.
+          <lightning-formatted-rich-text value={chCover.lede}></lightning-formatted-rich-text>
         </p>
         <template if:true={showIndustryDefault}>
           <p class="lede rv d2 ind-slot">
@@ -277,6 +273,11 @@
         <h2 class="rv d1">
           <lightning-formatted-rich-text value={chDeliverables.head}></lightning-formatted-rich-text>
         </h2>
+        <template if:true={chDeliverables.lede}>
+          <p class="lede rv d2">
+            <lightning-formatted-rich-text value={chDeliverables.lede}></lightning-formatted-rich-text>
+          </p>
+        </template>
         <div class="deliv rv d2">
           <template for:each={chDeliverables.cards} for:item="card">
             <div key={card.title} class={card.cls}>
@@ -320,6 +321,11 @@
       <div class="wrap">
         <div class="eyebrow rv">{chWhy.eyebrow}</div>
         <h2 class="rv d1">{whyHead}</h2>
+        <template if:true={chWhy.lede}>
+          <p class="lede rv d1">
+            <lightning-formatted-rich-text value={chWhy.lede}></lightning-formatted-rich-text>
+          </p>
+        </template>
         <template if:true={hasIndustry}>
           <p class="lede rv d1 why-line">{whyLine}</p>
         </template>

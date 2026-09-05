@@ -195,14 +195,9 @@
               </template>
             </div>
             <div class="gcm-rail-foot">
-              <template if:true={canChangeStructure}>
-                <button class="gcm-add" onclick={handleOpenAdd} disabled={isSaving}>
-                  <span class="gcm-add-plus">+</span> Add section
-                </button>
-              </template>
-              <template if:false={canChangeStructure}>
-                <p class="gcm-locked">{structureLockNote}</p>
-              </template>
+              <button class="gcm-add" onclick={handleOpenAdd} disabled={isSaving}>
+                <span class="gcm-add-plus">+</span> Add section
+              </button>
               <p class="gcm-hint">{railHint}</p>
             </div>
           </aside>

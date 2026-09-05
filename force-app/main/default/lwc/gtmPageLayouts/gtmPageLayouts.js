@@ -77,10 +77,17 @@ const LAYOUT_FIELDS = {
         rich: ['head', 'cardHead', 'body'],
         json: []
     },
+    // One industry, in the one place that owns industries.
+    //
+    // This used to be split: the framework held the name and the picker blurb,
+    // and each offering's configurator held six more sections saying what that
+    // offering says to each industry. The configurator draws ONE cover, not
+    // six, so the editor listed six sections for a single element of the page
+    // and an industry's copy lived in two places at once. It lives here.
     'industry-tile': {
-        text: ['industryLabel'],
-        rich: ['pickerBlurb'],
-        json: []
+        text: ['industryLabel', 'whyHead', 'demoRoot'],
+        rich: ['pickerBlurb', 'coverSub', 'problem', 'useCase', 'solution', 'proofLine', 'whyLine'],
+        json: ['uniquePoints', 'demoDeps']
     },
     // How one offering pitches itself to one industry. This is offering copy,
     // not taxonomy: it lives on that offering's configurator page, so two
@@ -186,7 +193,7 @@ function humaniseFieldKey(key) {
 const TEMPLATE_LAYOUTS = {
     story: ['hero', 'lede-chips', 'route-proof', 'card-grid', 'stat', 'use-pitch', 'faq', 'closing'],
     configurator: ['chapter-cards', 'chapter-lede', 'chapter-proof', 'chapter-phases',
-                   'chapter-close', 'industry-profile', 'offering-defaults'],
+                   'chapter-close', 'offering-defaults'],
     'offerings-listing': ['offering-tile'],
     // The offerings page draws its tiles from the offerings themselves, so
     // there is nothing to add to it beyond the chrome it already has.
@@ -270,6 +277,7 @@ const STARTER_PAGES = {
     ],
     'configurator': [
         { sectionKey: 'header',   label: 'Header',       layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
+        { sectionKey: 'cover',    label: 'Cover',        layoutType: 'chapter-lede', width: 'standard', helpText: 'The opening screen. The line about the industry comes from the industry itself, edited on the framework\u2019s Industry Chooser.' },
         // The chapters, in the order the page draws them. They come from the
         // renderer's own copy module so that adding a chapter is one edit, not
         // three that have to agree.
@@ -280,9 +288,11 @@ const STARTER_PAGES = {
             width: 'standard',
             helpText: c.helpText
         })),
+        // In the order the page draws them: the assistant floats above the
+        // footer, so it is listed above it too.
+        { sectionKey: 'assistant', label: 'Assistant',   layoutType: 'assistant',   width: 'standard', helpText: 'The helper in the corner of this page. Only the rep sees it; a prospect on a shared link does not.' },
         { sectionKey: 'footer',   label: 'Footer',       layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' },
-        { sectionKey: 'defaults', label: 'Configurator defaults', layoutType: 'offering-defaults', width: 'standard', helpText: 'What this page shows before a rep customises it: platforms, counts, the demo campaign and the colour swatches.' },
-        { sectionKey: 'assistant', label: 'Assistant',   layoutType: 'assistant',   width: 'standard', helpText: 'The helper in the corner of this page. Only the rep sees it; a prospect on a shared link does not.' }
+        { sectionKey: 'defaults', label: 'Configurator defaults', layoutType: 'offering-defaults', width: 'standard', helpText: 'Settings, not a beat of the page: what it shows before a rep customises it — platforms, counts, the demo campaign and the colour swatches.' },
     ]
 };
 

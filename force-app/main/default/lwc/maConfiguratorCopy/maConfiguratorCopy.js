@@ -19,11 +19,34 @@
  */
 
 /**
- * Ordered. sectionKey is the address every content row hangs off, so it is not
- * free to change once seeded; label and helpText are what the editor's rail
- * shows, and are data afterwards.
+ * Ordered, twice over. The chapters are in the order the page draws them, and
+ * the fields inside each chapter are too -- because that key order becomes the
+ * order of the boxes in the editor, and an editor working down a page whose
+ * boxes are in a different order from the page is doing a translation on every
+ * edit. scripts/check-configurator-bindings.mjs asserts the two agree.
+ *
+ * sectionKey is the address every content row hangs off, so it is not free to
+ * change once seeded; label and helpText are what the editor's rail shows, and
+ * are data afterwards.
  */
 const CHAPTERS = [
+    {
+        sectionKey: 'cover',
+        label: 'Cover',
+        layoutType: 'chapter-lede',
+        helpText: 'The opening screen. {client} and {source} are filled in from the link; the line about the industry comes from the industry itself, edited on the framework\u2019s Industry Chooser.',
+        fields: {
+            // The cover was the one part of the page nobody could edit,
+            // because its sentences are assembled from the client and the
+            // platform at render time and a record cannot hold "<company>'s
+            // migration should have taken months". It can hold the sentence
+            // with the name left as a token, which is what these are: {client}
+            // and {source} are substituted when the page draws.
+            eyebrow: 'Publicis Sapient · {industry}',
+            head: "{client}'s migration should have taken months.<br />We did the first pass in <span class=\"accent\">an afternoon.</span>",
+            lede: "Your migration, de-risked from day one — moving off {source} without the months of manual discovery, the scope surprises, or the go-live risk. Here's how we get you there as your delivery partner, not just a tool, and what the first step looks like."
+        }
+    },
     {
         sectionKey: 'partner',
         label: 'How we work with you',
@@ -113,13 +136,14 @@ const CHAPTERS = [
             eyebrow: '06 — How we work together',
             head: 'Start small. Prove it. Scale.',
             lede: "You don't have to commit to the whole migration to see the value. It begins with a focused environment assessment, low commitment, high signal, and grows from there.",
-            footnote: 'Your first step is just the assessment.',
             phases: [
                 { step: 'Start here', title: 'Assess',    body: 'A fixed-scope read of your environment, and a health score you can act on.' },
                 { step: 'Design',     title: 'Blueprint', body: 'What moves, what changes, what retires, decided with you, backed by data.' },
                 { step: 'Sequence',   title: 'Plan',      body: 'A dependency-aware, wave-by-wave plan your teams can execute against.' },
                 { step: 'Build',      title: 'Execute',   body: 'Build-ready specs, and for supported objects, a live cutover with rollback.' }
-            ]
+            ],
+            // Drawn under the phases, so it is edited under them too.
+            footnote: 'Your first step is just the assessment.'
         }
     },
     {
@@ -149,8 +173,8 @@ const CHAPTERS = [
             cardHead: 'Start with an environment assessment.',
             body: "Even if you're only exploring, you'll walk away with a genuine, audited read on your migration, the size, the risk, the effort, whether or not we go further. No months of discovery required.",
             ctaLabel: 'Book the assessment →',
-            altCtaLabel: 'Explore Publicis Sapient',
-            altCtaUrl: 'https://www.publicissapient.com'
+            altCtaUrl: 'https://www.publicissapient.com',
+            altCtaLabel: 'Explore Publicis Sapient'
         }
     }
 ];

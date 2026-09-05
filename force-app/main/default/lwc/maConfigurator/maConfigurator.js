@@ -79,9 +79,6 @@ export default class MaConfigurator extends LightningElement {
     get previewSectionKey() { return this._previewSectionKey; }
     set previewSectionKey(value) {
         this._previewSectionKey = value || '';
-        if (this._previewSectionKey.indexOf('industry-') === 0) {
-            this.industryKey = this._previewSectionKey.substring(9);
-        }
     }
     _previewSectionKey = '';
 
@@ -91,8 +88,10 @@ export default class MaConfigurator extends LightningElement {
      * rail had nothing to scroll to -- which is why clicking did nothing.
      */
     get previewIndustrySection() {
-        const ind = this.industry;
-        return ind && ind.industryKey ? `industry-${ind.industryKey}` : 'cover';
+        // Always the cover now. It used to resolve to industry-<key> because
+        // the configurator held one section per industry; industries moved to
+        // the framework, which owns them, and the page draws one cover.
+        return 'cover';
     }
 
     /** Where each section sits, so the editor's rail and this stay in step. */
@@ -358,6 +357,23 @@ export default class MaConfigurator extends LightningElement {
     /* One getter per chapter. The template reads them as ch<Name>.field, which
      * keeps the markup readable and means adding a field to a chapter is an
      * edit to the copy module and the template, not to this class. */
+    /**
+     * The cover, with the names filled in.
+     *
+     * Its sentences name the client and the platform, so they cannot be stored
+     * as they read. They are stored with {client}, {source} and {industry} left
+     * in, and substituted here — which is what makes the one part of the page
+     * that was never editable editable.
+     */
+    get chCover() {
+        const c = this._chapter('cover');
+        const swap = (v) => String(v || '')
+            .replace(/\{client\}/g, this.clientDisplay)
+            .replace(/\{source\}/g, this.sourceDisplay)
+            .replace(/\{industry\}/g, this.industryTag);
+        return { eyebrow: swap(c.eyebrow), head: swap(c.head), lede: swap(c.lede) };
+    }
+
     get chPartner()      { return this._chapter('partner'); }
     get chChallenge()    { return this._chapter('challenge'); }
     get chApproach()     { return this._chapter('approach'); }

@@ -11,8 +11,11 @@
  *      it, so it is blank forever);
  *   2. the layout declares a field nothing renders (an editor types into a box
  *      that changes nothing);
- *   3. the copy module and the layout disagree about a chapter's fields (the
- *      generated seed and the renderer's fallbacks drift apart).
+ *   3. the copy module and the layout disagree about a chapter's fields;
+ *   4. the copy module lists a chapter's fields in a different order from the
+ *      order the page draws them. That order becomes the order of the boxes in
+ *      the editor, so a mismatch makes an editor translate between the page
+ *      they are reading and the form they are typing into.
  *
  * Usage: scripts/lwc-node-harness.sh, then `node <dir>/check-configurator-bindings.mjs <repoRoot>`
  */
@@ -27,7 +30,7 @@ const html = readFileSync(`${root}/force-app/main/default/lwc/maConfigurator/maC
 // The template reads chapters through a getter named for the section, so the
 // getter name is how a binding is traced back to a section.
 const GETTER = {
-    chPartner: 'partner', chChallenge: 'challenge', chApproach: 'approach',
+    chCover: 'cover', chPartner: 'partner', chChallenge: 'challenge', chApproach: 'approach',
     chProof: 'proof', chDeliverables: 'deliverables', chEngagement: 'engagement',
     chWhy: 'why', chClosing: 'closing'
 };
@@ -108,6 +111,25 @@ for (const chapter of CHAPTERS) {
         if (chapter.sectionKey === 'why' && f === 'head') continue;   // drawn via whyHead
         if (f === 'lede' && !chapter.fields.lede) continue;           // deliberately empty
         bad.push(`${chapter.sectionKey}: '${f}' is declared and seeded but the template never renders it — an edit to it would do nothing`);
+    }
+}
+
+// The order the template first mentions each field is the order the page draws
+// it; the copy module's key order is the order the editor shows it.
+for (const chapter of CHAPTERS) {
+    const getter = Object.keys(GETTER).find((g) => GETTER[g] === chapter.sectionKey);
+    if (!getter) continue;
+    const drawn = [];
+    const re = new RegExp(`\\{${getter}\\.(\\w+)\\}`, 'g');
+    let m;
+    while ((m = re.exec(html))) if (!drawn.includes(m[1])) drawn.push(m[1]);
+
+    // Only fields the template names directly can be ordered against it; one
+    // drawn through another getter (why's heading) has no position here.
+    const editorOrder = Object.keys(chapter.fields).filter((f) => drawn.includes(f)).join(',');
+    const pageOrder   = drawn.filter((f) => f in chapter.fields).join(',');
+    if (editorOrder !== pageOrder) {
+        bad.push(`${chapter.sectionKey}: the page draws [${pageOrder}] but the editor lists [${editorOrder}]`);
     }
 }
 

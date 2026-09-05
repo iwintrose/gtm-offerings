@@ -177,7 +177,10 @@ export default class OfferingChooser extends LightningElement {
                 isLive: live,
                 // A placeholder gets no href, so it is not a link.
                 href: live ? this.industryUrl : undefined,
-                tileClass: live ? 'tile live' : 'tile soon'
+                tileClass: live ? 'tile live' : 'tile soon',
+                // The tile is this offering's own Offerings Listing section,
+                // so the editor can scroll to the thing it is editing.
+                sectionKey: 'tile'
             };
         });
     }

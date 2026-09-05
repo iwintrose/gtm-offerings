@@ -25,7 +25,7 @@
         <!-- One element per iteration so the key has somewhere to live: a live
              tile links onward, a placeholder has no href and does not. -->
         <template for:each={tiles} for:item="t">
-          <a key={t.id} class={t.tileClass} href={t.href}>
+          <a key={t.id} class={t.tileClass} href={t.href} data-section={t.sectionKey}>
             <template if:true={t.isLive}>
               <div class="tile-accent-bar"></div>
             </template>

@@ -31,7 +31,7 @@ const TEMPLATE = 'configurator';
 // industry, added and removed by a BA, and already numbered. Leaving them a
 // range of their own is what keeps this from renumbering content it did not
 // write, or colliding with it.
-const ORDER = ['header', ...CHAPTERS.map((c) => c.sectionKey), 'footer', 'assistant', 'defaults'];
+const ORDER = ['header', ...CHAPTERS.map((c) => c.sectionKey), 'assistant', 'footer', 'defaults'];
 const INDUSTRY_BLOCK_END = 90;
 const sortFor = (i) => (i === 0 ? 10 : INDUSTRY_BLOCK_END + i * 10);
 

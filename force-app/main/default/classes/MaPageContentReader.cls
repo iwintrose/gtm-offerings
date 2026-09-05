@@ -14,6 +14,11 @@
  */
 public without sharing class MaPageContentReader {
 
+    /** Where industries live: the framework's own industry chooser page. */
+    private static final String INDUSTRY_OWNER    = 'gtm';
+    private static final String INDUSTRY_TEMPLATE = 'industry-chooser';
+
+
     /**
      * Resolves every active content row for a template into a flat map keyed
      * 'section::field'. Industry-scoped rows win over offering-wide defaults
@@ -258,13 +263,21 @@ public without sharing class MaPageContentReader {
         List<IndustryProfile> out = new List<IndustryProfile>();
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) return out;
 
+        // Industries belong to the framework, not to an offering.
+        //
+        // The arguments are kept because every caller passes them and the
+        // signature is public, but they no longer choose where the copy is
+        // read from: an industry has one home. The configurator draws one
+        // cover, so it had no business holding six industry sections -- the
+        // editor listed six rows for a single element of the page, and the
+        // same industry's copy existed twice.
         Map<String, IndustryProfile> bySection = new Map<String, IndustryProfile>();
         for (MA_Page_Content__c rec : [
             SELECT Section_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c
             FROM   MA_Page_Content__c
-            WHERE  Offering_Key__c  = :offeringKey
-            AND    Template_Type__c = :templateType
+            WHERE  Offering_Key__c  = :INDUSTRY_OWNER
+            AND    Template_Type__c = :INDUSTRY_TEMPLATE
             AND    Active__c        = true
             AND    Section_Key__c LIKE 'industry-%'
             ORDER BY Section_Key__c

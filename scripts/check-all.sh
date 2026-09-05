@@ -19,6 +19,8 @@ HARNESS="$("$ROOT/scripts/lwc-node-harness.sh")"
 run "configurator bindings"  node "$HARNESS/check-configurator-bindings.mjs" "$ROOT"
 
 if [ "$STATIC_ONLY" = "0" ]; then
+  run "page + field order (every page)" node "$HARNESS/check-page-order.mjs" "$ROOT" "$ORG"
+
   for pair in "migration-accelerator configurator" "migration-accelerator story" \
               "migration-accelerator offerings-listing" "gtm offerings-page" "gtm industry-chooser"; do
     # shellcheck disable=SC2086
