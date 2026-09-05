@@ -13,7 +13,7 @@ import USER_ID from '@salesforce/user/Id';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import USER_NAME_FIELD from '@salesforce/schema/User.Name';
 import USER_EMAIL_FIELD from '@salesforce/schema/User.Email';
-import { isHex6, EXAMPLE } from 'c/gtmConfigData';
+import { isHex6 } from 'c/gtmConfigData';
 
 const OFFERING = 'migration-accelerator';
 
@@ -56,11 +56,21 @@ export default class GtmConfigWizard extends LightningElement {
         if (this._isOpen && this._knownRecordId && !this._seededFromRecord) {
             if (this.company) this._company = this.company;
             if (this.industry) this._industry = this.industry;
-            if (isHex6(this.accent)) this._accent = this.accent;
             if (this.state && Object.keys(this.state).length) {
                 this._state = { ...this.state, ...this._state };
             }
             this._seededFromRecord = true;
+        }
+        // Accent gets its own guard, checked independently on every open
+        // rather than folded into the flag above. A record can genuinely
+        // have no accent on file yet (nothing chosen, nothing saved), and
+        // a still-in-flight parent load arriving a beat late shouldn't
+        // permanently lock the wizard onto a color that never actually
+        // came from the record -- this keeps trying each time it opens
+        // until a real value shows up, instead of failing once and never
+        // being given another chance for the rest of the session.
+        if (this._isOpen && this._knownRecordId && !isHex6(this._accent) && isHex6(this.accent)) {
+            this._accent = this.accent;
         }
     }
     _isOpen = false;
@@ -175,7 +185,6 @@ export default class GtmConfigWizard extends LightningElement {
     @track _existingUrl = '';
     @track _existingActive = true;
     @track _replacing = false;
-    @track _existingCopyLabel = 'Copy link';
     _siteBaseUrl = '';
     _currentUser = null;
 

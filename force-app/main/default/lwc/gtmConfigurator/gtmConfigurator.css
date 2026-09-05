@@ -1291,17 +1291,6 @@ b {
 .tbtn-gus c-gtm-mascot { display: inline-flex; flex: none; }
 .tbtn-gus .tbtn-gus-lbl { font-size: 12.5px; font-weight: 600; letter-spacing: .01em; }
 
-/* The way back to being yourself, on the gate a rep should never have seen. */
-.pw-rep-link {
-  display: inline-block;
-  margin-top: 1rem;
-  font-size: 0.76rem;
-  color: var(--ink-soft);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.pw-rep-link:hover { color: var(--coral); }
-
 /* The assistant's dock, drawn only in the editor's preview. It is a caption
    plus the thing being captioned, so it reads as an annotation of the page
    rather than a block the prospect will see. */

@@ -11,27 +11,6 @@
 
       <div class="mw-scroll">
 
-        <!-- ══════════ THE LINK THAT ALREADY EXISTS ══════════
-             Opening the wizard on a saved link used to look like starting a
-             new one, and saving quietly overwrote it. Say which link this is,
-             and make overwrite a choice rather than the default. -->
-        <template if:true={hasExistingLink}>
-          <div class="mw-existing">
-            <div class="mw-existing-top">
-              <span class={existingDotClass}></span>
-              <span class="mw-existing-title">{existingTitle}</span>
-              <span class="mw-existing-state">{existingStateLabel}</span>
-            </div>
-            <input type="text" class="mw-url" readonly value={existingUrl} />
-            <div class="mw-existing-acts">
-              <button type="button" class="mw-btn" onclick={handleCopyExisting}>{_existingCopyLabel}</button>
-              <button type="button" class="mw-btn" onclick={handleStartNewLink}>Make a new link instead</button>
-              <button type="button" class="mw-btn" onclick={handleToggleExistingActive}>{existingToggleLabel}</button>
-            </div>
-            <p class="mw-existing-note">{existingNote}</p>
-          </div>
-        </template>
-
         <!-- ══════════ PATH CHOOSER ══════════ -->
         <template if:true={showChooser}>
           <div class="mw-choice">
