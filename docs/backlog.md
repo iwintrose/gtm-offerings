@@ -129,15 +129,17 @@ at the old `maAssessmentDetail` — would have broken for every CRM user;
 `chooseIndustry`'s Experience Builder label was still "MA Choose Industry";
 two `scripts/data/*.apex` seed scripts still called deleted classes.
 
-**Not resolved — needs Don's Setup access.** `MA_Config_Manager`,
-`MA_Story_Guest`, `MA_Assessment_Guest` refuse deletion ("used in an
-experience") even with zero `PermissionSetAssignment` rows left — some
-Setup-UI-only reference (likely a CMS Workspace membership) not visible
-from here. They're fully unassigned and grant nothing to anyone now, just
-orphaned metadata. To finish: Setup → Permission Sets → open each →
-whatever "used in an experience" points at (check Digital Experiences →
-[site] → Administration → CMS-adjacent settings, or the permission set's
-own detail page for a "Used by" reference) → clear it → delete the set.
+**Resolved.** `MA_Config_Manager`, `MA_Story_Guest`, `MA_Assessment_Guest`
+refused deletion ("used in an experience") even with zero
+`PermissionSetAssignment` rows left. Actual cause, found by querying
+`NetworkMemberGroup` directly: all three were still registered as
+authenticated-member permission sets on *both* sites (`GTM` and
+`GTM Accelerator`) — a leftover from before the D6 rename, unrelated to
+`PermissionSetAssignment` or any CMS Workspace. Isiah removed them from
+both sites' Administration → Members lists in Setup; destructive deploy
+then succeeded cleanly (dry-run and real, 0 errors). Local source files
+removed to match. `check-all.sh` dangling-references check: none.
+
 
 **D7 — `gtmPageBrowser` ("Pages" tab) has the wrong shape.** A rep should
 not be able to freely browse every offering × every template — that's the
