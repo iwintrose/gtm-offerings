@@ -506,5 +506,20 @@
         </div>
       </div>
     </template>
+
+    <template if:true={accessBlocked}>
+      <div class="expired on">
+        <div>
+          <div class="xt">This page needs a link.</div>
+          <p>
+            You've reached this page without one. If Publicis Sapient sent you
+            a link, please use that; otherwise reach out to your contact.
+          </p>
+          <a class="pw-rep-link" href={siteLoginUrl}>
+            Publicis Sapient? Sign in &rarr;
+          </a>
+        </div>
+      </div>
+    </template>
   </div>
 </template>

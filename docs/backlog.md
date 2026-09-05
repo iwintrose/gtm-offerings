@@ -54,12 +54,14 @@ is already authenticated. The industry chooser is redundant as a *page* — the
 wizard already asks the same question — but stays as the *authoring surface*
 where the industry copy lives. Content home is not the same as a rendered page.
 
-Sequence: story viewer (done) → deploy pages to GTM → **Don publishes and
-activates GTM** → guest permissions, Apex repoint, rewrite the four links →
-verify → **Don deactivates GTM Accelerator** → reseed with permutations.
+Sequence: story viewer (done) → deploy pages to GTM (done) → **Don publishes
+and activates GTM** (done — confirmed Live) → guest permissions, Apex repoint,
+rewrite the four links (done) → verify (done at the code/record level;
+browser screenshot blocked — see Known and accepted) → **Don deactivates GTM
+Accelerator** → reseed with permutations.
 
-Only three actions are Don's; Salesforce refuses them over every API. Everything
-else is Claude's.
+Only three actions are Don's; Salesforce refuses them over every API. Two are
+done. Reseeding is what's left.
 
 *(superseded)* **D3 — the old framing.** Not yet answered. Offerings page + Industry Chooser are
 framework; the Configurator belongs to the offering; all three serve from one
@@ -72,6 +74,31 @@ walkthrough with you."* Claude explaining it again in prose has failed three
 times, so the next attempt is a walkthrough against the real records — one
 engagement link, and every row both concepts produced from it. Then decide
 whether a submissions list earns a screen. Blocks #16.
+
+**D5 — Self-service link recovery on the bare `/gtm/s/configurator`.** Not a
+decision yet. Today a guest with no `?cfgId=` gets a static "this page needs a
+link, reach out to your rep" screen (built and live). You floated something
+richer: enter your email + the password your rep gave you, resolve to the
+right link, and — you weren't sure — maybe a "resend my password" if it's been
+forgotten.
+
+The email + password lookup is straightforward and safe to build: no new abuse
+surface, since the password is a credential they already hold. The "email me
+my password" piece is a materially different feature — a guest-facing form
+that sends email based on typed input is a live enumeration and open-relay
+target (type any exec's email, learn whether they have an active link; hammer
+the endpoint as free outbound mail) and needs its own security pass before it
+exists at all, not a quick add.
+
+> **Claude's proposed default:** build the email + password lookup now
+> (v1) — matches an existing MA_Saved_Configuration__c by contact email *and*
+> its own password together, one guest Apex method, no email sending. Not
+> found and expired both render the same existing "reach out to your Rep"
+> screen, exactly as you suggested — no separate wrong-password oracle to
+> enumerate against. Park "resend to email" as its own item, flagged for
+> `security-review` before it's built, not folded into this one.
+>
+> Needs a yes before it's built — this is guest-facing and auth-adjacent.
 
 ---
 
@@ -102,7 +129,15 @@ Chapters as sections · Gus editable per offering · deals + funnel on the
 overview · requests/submissions untangled in the data · container-query preview
 fix · deal picker default · interaction sitemap + dwell + identity stitching ·
 form resume with partial save · page + field order aligned across all five
-pages · industries moved to the framework · offering feedback loop (#25).
+pages · industries moved to the framework · offering feedback loop (#25) ·
+gtmPageBrowser replacing the story viewer · Configurator's external route
+deployed to `/gtm` · `getSiteBaseUrl()` repointed onto `urlPathPrefix`
+instead of the site label · guest permission-set parity between the GTM and
+GTM Accelerator guest users · the four saved links rewritten to `/gtm` ·
+bare `/gtm/s/configurator` (no `?cfgId=`) blocked from guests, visible only
+to a signed-in Salesforce user · configurable Home redirect (Custom Label,
+editable in Setup without a deploy) · two more dead-code removals
+(`OfferingSummary.storyUrl`, the unused `getSiteHomePageUrl` import).
 
 ---
 

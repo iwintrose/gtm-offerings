@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>GTM_Home_Redirect_Url</fullName>
+        <categories>GTM</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Where /gtm's bare home page redirects a visitor with no saved link</shortDescription>
+        <value>https://www.publicissapient.com/partners/salesforce</value>
+    </labels>
+</CustomLabels>

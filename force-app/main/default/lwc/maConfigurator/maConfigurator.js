@@ -771,6 +771,21 @@ export default class MaConfigurator extends LightningElement {
         return !this.isConfigManager;
     }
 
+    /**
+     * A guest with no saved-configuration id has nothing to see: no client
+     * name, no deal, nothing a real recipient's link would carry. Without
+     * this, the bare public URL (no ?cfgId=) rendered the template's built-in
+     * defaults to anyone who found it -- not a specific prospect's page, just
+     * the product itself, fully visible with no link and no password.
+     *
+     * A signed-in Salesforce user (isConfigManager) is exempt: that is the
+     * internal preview case -- a rep on the org's own session, not a
+     * stranger who wandered onto the site.
+     */
+    get accessBlocked() {
+        return !this.isConfigManager && !this.savedRecordId;
+    }
+
     get showPasswordGate() {
         return (
             !!this.savedRecordId &&

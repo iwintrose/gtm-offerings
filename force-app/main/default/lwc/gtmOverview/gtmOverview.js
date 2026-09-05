@@ -6,10 +6,6 @@ import getDeals from '@salesforce/apex/MaHomeSnapshotController.getDeals';
 import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
 import getFeedbackFor from '@salesforce/apex/GtmFeedbackController.getFeedbackFor';
 import submitFeedback from '@salesforce/apex/GtmFeedbackController.submitFeedback';
-// Owned by the prospect-page-wizard branch, which is deployed to this org.
-// Do not add a local copy of MaSavedConfigurationController without merging
-// that branch first — this branch's copy of that class is far behind it.
-import getSiteHomePageUrl from '@salesforce/apex/MaSavedConfigurationController.getSiteHomePageUrl';
 
 const TEMPLATE_LABELS = {
     story: 'Story',
