@@ -638,8 +638,22 @@ public with sharing class MaSavedConfigurationController {
                 return existingLink[0].Opportunity__c;
             }
         }
+        // Two deals on one account carrying the identical auto-generated name
+        // is the same guessing problem in a new place -- a rep picking from
+        // the list would have no way to tell them apart. The first keeps the
+        // clean name; a later one says when it was opened.
+        String baseName = 'Migration Accelerator — '
+            + (String.isNotBlank(company) ? company.trim() : 'Assessment');
+        String oppName = baseName;
+        Integer clash = [
+            SELECT COUNT() FROM Opportunity WHERE AccountId = :accountId AND Name = :baseName
+        ];
+        if (clash > 0) {
+            oppName = baseName + ' (' + Date.today().format() + ')';
+        }
+
         Opportunity opp = new Opportunity(
-            Name = 'Migration Accelerator — ' + (String.isNotBlank(company) ? company.trim() : 'Assessment'),
+            Name = oppName,
             AccountId = accountId,
             StageName = 'Prospecting',
             CloseDate = Date.today().addDays(90)
