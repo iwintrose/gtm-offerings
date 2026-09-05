@@ -16,7 +16,9 @@ const PAGE_ICONS = {
     'configurator': 'utility:setup',
     'offerings-listing': 'utility:tile_card_list',
     'offerings-page': 'utility:apps',
-    'industry-chooser': 'utility:company'
+    'industry-chooser': 'utility:company',
+    'faq-bd': 'utility:knowledge_base',
+    'faq-content-manager': 'utility:knowledge_base'
 };
 
 export default class GtmContentHome extends NavigationMixin(LightningElement) {

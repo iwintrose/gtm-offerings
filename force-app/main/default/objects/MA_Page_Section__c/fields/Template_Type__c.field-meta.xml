@@ -35,6 +35,16 @@
                 <default>false</default>
                 <label>configurator</label>
             </value>
+            <value>
+                <fullName>faq-bd</fullName>
+                <default>false</default>
+                <label>faq-bd</label>
+            </value>
+            <value>
+                <fullName>faq-content-manager</fullName>
+                <default>false</default>
+                <label>faq-content-manager</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

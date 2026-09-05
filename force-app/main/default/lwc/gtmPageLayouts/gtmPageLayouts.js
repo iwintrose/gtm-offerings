@@ -198,7 +198,12 @@ const TEMPLATE_LAYOUTS = {
     // The offerings page draws its tiles from the offerings themselves, so
     // there is nothing to add to it beyond the chrome it already has.
     'offerings-page': [],
-    'industry-chooser': ['industry-tile']
+    'industry-chooser': ['industry-tile'],
+    // Each app's help panel is one section, in the one layout that already
+    // knows how to hold a list of questions and answers — no new layout type
+    // needed for a shape the story page already draws.
+    'faq-bd': ['faq'],
+    'faq-content-manager': ['faq']
 };
 
 // Layouts an editor may add to a page. The header, footer and assistant are
@@ -275,6 +280,15 @@ const STARTER_PAGES = {
         { sectionKey: 'intro',  label: 'Intro',  layoutType: 'hero',        width: 'standard', helpText: 'Step label, heading and the line under it. The tiles below come from each offering.' },
         { sectionKey: 'footer', label: 'Footer', layoutType: 'page-footer', width: 'standard', helpText: 'The two lines along the bottom of the page.' }
     ],
+    // The help panel inside each app. One section, the same 'faq' layout the
+    // story page already uses — a heading plus a list of questions and
+    // answers, nothing else.
+    'faq-bd': [
+        { sectionKey: 'faq', label: 'FAQ', layoutType: 'faq', width: 'standard', helpText: 'The questions and answers shown in the BD app’s help panel.' }
+    ],
+    'faq-content-manager': [
+        { sectionKey: 'faq', label: 'FAQ', layoutType: 'faq', width: 'standard', helpText: 'The questions and answers shown in the Content Manager app’s help panel.' }
+    ],
     'configurator': [
         { sectionKey: 'header',   label: 'Header',       layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
         { sectionKey: 'cover',    label: 'Cover',        layoutType: 'chapter-lede', width: 'standard', helpText: 'The opening screen. The line about the industry comes from the industry itself, edited on the framework\u2019s Industry Chooser.' },
@@ -320,7 +334,11 @@ function starterFor(templateType) {
 // section per industry, so two offerings can pitch the same industry
 // differently.
 const OFFERING_TEMPLATES = ['story', 'configurator', 'offerings-listing'];
-const FRAMEWORK_TEMPLATES = ['offerings-page', 'industry-chooser'];
+// B1: the static, CMS-editable FAQ panel each app carries. Framework-level —
+// the panel is chrome for the app itself, not copy about an offering — so it
+// lives beside the offerings page and the industry chooser rather than under
+// migration-accelerator or any other single offering.
+const FRAMEWORK_TEMPLATES = ['offerings-page', 'industry-chooser', 'faq-bd', 'faq-content-manager'];
 
 function templatesFor(offeringKey) {
     return offeringKey === FRAMEWORK_KEY ? FRAMEWORK_TEMPLATES : OFFERING_TEMPLATES;
@@ -331,7 +349,9 @@ const TEMPLATE_LABELS = {
     configurator: 'Configurator',
     'industry-chooser': 'Industry Chooser',
     'offerings-listing': 'Offerings Listing',
-    'offerings-page': 'Offerings Page'
+    'offerings-page': 'Offerings Page',
+    'faq-bd': 'BD App Help (FAQ)',
+    'faq-content-manager': 'Content Manager Help (FAQ)'
 };
 
 

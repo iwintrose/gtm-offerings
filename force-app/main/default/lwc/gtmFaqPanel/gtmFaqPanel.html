@@ -1,0 +1,55 @@
+<template>
+  <div class={rootClass}>
+    <template if:true={open}>
+      <section class="fp-panel" role="dialog" aria-label={panelLabel}>
+        <header class="fp-head">
+          <lightning-icon icon-name="utility:help" size="x-small" class="fp-head-ico"></lightning-icon>
+          <div class="fp-head-id">
+            <template if:true={hasEyebrow}><span class="fp-eyebrow">{eyebrow}</span></template>
+            <span class="fp-title">{heading}</span>
+          </div>
+          <button type="button" class="fp-x" aria-label="Close help" onclick={handleClose}>&times;</button>
+        </header>
+
+        <div class="fp-body">
+          <template if:true={loading}>
+            <div class="fp-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+          </template>
+
+          <template if:true={showError}>
+            <p class="fp-empty fp-empty--err">{errorMessage}</p>
+          </template>
+
+          <template if:true={showEmpty}>
+            <p class="fp-empty">Nothing here yet. Content for this panel is added in the Content Manager app.</p>
+          </template>
+
+          <template if:true={hasItems}>
+            <div class="fp-list">
+              <template for:each={items} for:item="it">
+                <div key={it.id} class={it.itemClass}>
+                  <button type="button" class="fp-q" data-id={it.id} onclick={handleItemToggle}
+                          aria-expanded={it.ariaExpanded}>
+                    <span>{it.question}</span>
+                    <span class={it.plusClass}>+</span>
+                  </button>
+                  <div class="fp-a">
+                    <div class="fp-a-in">{it.answer}</div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </section>
+    </template>
+
+    <button type="button" class="fp-fab" onclick={handleToggle}
+            aria-expanded={fabAriaExpanded} title={fabTitle}>
+      <lightning-icon icon-name="utility:help" size="x-small" class="fp-fab-ico"></lightning-icon>
+      <template if:false={open}>
+        <span class="fp-fab-lbl">{fabLabel}</span>
+      </template>
+    </button>
+  </div>
+</template>

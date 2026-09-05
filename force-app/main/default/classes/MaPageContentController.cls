@@ -29,7 +29,7 @@ public without sharing class MaPageContentController {
         // behind it are framework-level; every offering's configurator reads
         // the same set.
         return offeringKey == FRAMEWORK_KEY
-            ? new List<String>{ 'offerings-page', 'industry-chooser' }
+            ? new List<String>{ 'offerings-page', 'industry-chooser', 'faq-bd', 'faq-content-manager' }
             : new List<String>{ 'story', 'configurator', 'offerings-listing' };
     }
 

@@ -96,9 +96,12 @@ export default class GtmPageBrowser extends NavigationMixin(LightningElement) {
         const entity = this.entities.find((e) => e.key === this.entityKey);
         if (!entity) return [];
         // Offerings Listing is one tile drawn inside the offerings page, not a
-        // page anyone reads on its own.
+        // page anyone reads on its own. The two app help panels are read in
+        // place, inside the app they belong to — there is no standalone
+        // renderer for them here, the way there is for a story or a
+        // configurator.
         return entity.pages
-            .filter((t) => t !== 'offerings-listing')
+            .filter((t) => t !== 'offerings-listing' && t !== 'faq-bd' && t !== 'faq-content-manager')
             .map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
     }
 
