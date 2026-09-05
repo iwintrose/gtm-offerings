@@ -60,8 +60,14 @@ rewrite the four links (done) → verify (done at the code/record level;
 browser screenshot blocked — see Known and accepted) → **Don deactivates GTM
 Accelerator** → reseed with permutations.
 
-Only three actions are Don's; Salesforce refuses them over every API. Two are
-done. Reseeding is what's left.
+> Correction: only *activation* (Inactive → Live, one-time) needed Setup UI.
+> Routine publish does not — `sf community publish -n <name>` works fine and
+> is now the standard step after any ExperienceBundle metadata deploy. A
+> metadata deploy only writes the site's draft; nothing is live until
+> published. Learned the hard way when the Home redirect deployed clean but
+> the real browser still showed blank until publish ran.
+
+One Don action is left: deactivating GTM Accelerator, then reseeding.
 
 *(superseded)* **D3 — the old framing.** Not yet answered. Offerings page + Industry Chooser are
 framework; the Configurator belongs to the offering; all three serve from one
