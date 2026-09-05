@@ -95,11 +95,35 @@ export default class GtmContentManager extends LightningElement {
     _requestedOffering = '';
     _requestedTemplate = '';
 
+    /** True once the offering list has loaded, so a later request can act. */
+    _ready = false;
+
     @wire(CurrentPageReference)
     capturePageRef(ref) {
         if (!ref || !ref.state) return;
-        this._requestedOffering = ref.state.c__offering || '';
-        this._requestedTemplate = ref.state.c__template || '';
+        const offering = ref.state.c__offering || '';
+        const template = ref.state.c__template || '';
+        if (offering === this._requestedOffering && template === this._requestedTemplate) return;
+
+        this._requestedOffering = offering;
+        this._requestedTemplate = template;
+
+        // connectedCallback runs once. Coming back from the home page a second
+        // time reuses this component, so only this wire fires -- and it used
+        // to record the request and stop there, leaving whatever page was
+        // already open on screen. That is why every page but the first one
+        // opened looked like it went somewhere else.
+        if (this._ready && offering) this.openRequestedPage();
+    }
+
+    /** Open the page the home page asked for, on an already-live editor. */
+    openRequestedPage() {
+        this.selectedOffering = this._requestedOffering;
+        this.selectedTemplate = '';
+        this.sections = [];
+        this.records = [];
+        this.activeKey = '';
+        this.loadTemplates();
     }
 
     // ─── lifecycle ────────────────────────────────────────────────────────────
@@ -121,7 +145,15 @@ export default class GtmContentManager extends LightningElement {
                 return null;
             })
             .catch((err) => { this.loadError = this.messageFrom(err) || 'Offerings could not be loaded.'; })
-            .finally(() => { this.isLoading = false; });
+            .finally(() => {
+                this.isLoading = false;
+                this._ready = true;
+                // The wire can land before this promise settles, in which case
+                // the request arrived while there was nothing to apply it to.
+                if (this._requestedOffering && this._requestedOffering !== this.selectedOffering) {
+                    this.openRequestedPage();
+                }
+            });
     }
 
     messageFrom(err) {

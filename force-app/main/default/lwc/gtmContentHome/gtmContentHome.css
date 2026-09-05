@@ -96,8 +96,17 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .off-stat { flex: none; }
-.off-rename-row { display: flex; align-items: center; gap: .35rem; }
-.off-rename-in { flex: 1 1 auto; min-width: 0; }
+/* The rename used to put the field and two buttons on one line inside a card
+   header, which is only as wide as half the grid -- the input ended up a few
+   characters wide and you could not read what you were typing. It gets the
+   full width of the card now and the buttons sit under it. */
+.off-rename-row { display: flex; flex-direction: column; gap: .4rem; width: 100%; }
+.off-rename-in { width: 100%; }
+.off-rename-acts { display: flex; gap: .35rem; }
+.off-rename-note { white-space: normal; }
+
+/* Renaming needs room, so the header grows for it rather than squeezing. */
+.off-head:has(.off-rename-row) { min-height: 0; align-items: flex-start; }
 
 .off-body { flex: 1 1 auto; display: flex; flex-direction: column; }
 .off-body .pg-list { flex: 1 1 auto; }

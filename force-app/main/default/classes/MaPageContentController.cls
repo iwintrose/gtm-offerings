@@ -380,6 +380,19 @@ public without sharing class MaPageContentController {
             FROM   MA_Page_Section__c WHERE Active__c = true
             GROUP BY Offering_Key__c, Template_Type__c
         ]) {
+            // An offering that has pages but no metadata row yet is a real
+            // offering: custom metadata only deploys asynchronously, so one
+            // created a moment ago would otherwise vanish from its own app
+            // until the deployment landed. The metadata carries the site path;
+            // the pages are what make it exist.
+            String discovered = (String) ar.get('o');
+            if (!byKey.containsKey(discovered)) {
+                OfferingSummary o = new OfferingSummary();
+                o.offeringKey = discovered;
+                o.label       = discovered;
+                byKey.put(discovered, o);
+                home.offerings.add(o);
+            }
             PageSummary p = new PageSummary();
             p.offeringKey  = (String) ar.get('o');
             p.templateType = (String) ar.get('t');
@@ -430,6 +443,91 @@ public without sharing class MaPageContentController {
 
         home.activity = getPageActivity();
         return home;
+    }
+
+    /**
+     * Create an offering from a name.
+     *
+     * The name is the whole input: the key is derived from it, the offering's
+     * own tile is written so it appears on the offerings page immediately, and
+     * the metadata row is enqueued for the site path. Custom metadata deploys
+     * asynchronously, so the pages -- which are ordinary records -- are what
+     * make the offering real straight away; getHomeSummary picks it up from
+     * them whether or not the deployment has landed.
+     */
+    @AuraEnabled
+    public static String createOffering(String name) {
+        String clean = name == null ? '' : name.trim();
+        if (String.isBlank(clean)) {
+            throw new AuraHandledException('Give the offering a name.');
+        }
+        if (clean.length() > 80) clean = clean.substring(0, 80);
+
+        String key = clean.toLowerCase().replaceAll('[^a-z0-9]+', '-')
+                          .replaceAll('^-+|-+$', '');
+        if (String.isBlank(key)) {
+            throw new AuraHandledException('That name has no letters or numbers to build a key from.');
+        }
+        if (key == FRAMEWORK_KEY) {
+            throw new AuraHandledException('That name is reserved for the framework.');
+        }
+        Integer existing = [
+            SELECT COUNT() FROM MA_Page_Section__c WHERE Offering_Key__c = :key
+        ];
+        if (existing > 0) {
+            throw new AuraHandledException('An offering called "' + clean + '" already exists.');
+        }
+
+        // Its entry on the offerings page: the one thing a new offering needs
+        // in order to be visible anywhere.
+        MA_Page_Section__c tile = new MA_Page_Section__c(
+            Section_Address__c = key + '::offerings-listing::tile',
+            Offering_Key__c    = key,
+            Template_Type__c   = 'offerings-listing',
+            Section_Key__c     = 'tile',
+            Label__c           = 'Offerings page entry',
+            Layout_Type__c     = 'offering-tile',
+            Width__c           = 'standard',
+            Sort_Order__c      = 10,
+            Active__c          = true,
+            Status__c          = 'Published'
+        );
+        insert tile;
+
+        List<MA_Page_Content__c> rows = new List<MA_Page_Content__c>{
+            new MA_Page_Content__c(
+                Content_Address__c = key + '::offerings-listing::tile::name',
+                Offering_Key__c = key, Template_Type__c = 'offerings-listing',
+                Section_Key__c = 'tile', Field_Key__c = 'name', Field_Type__c = 'text',
+                Label__c = 'Name', Active__c = true, Status__c = 'Published',
+                Text_Value__c = clean),
+            new MA_Page_Content__c(
+                Content_Address__c = key + '::offerings-listing::tile::mark',
+                Offering_Key__c = key, Template_Type__c = 'offerings-listing',
+                Section_Key__c = 'tile', Field_Key__c = 'mark', Field_Type__c = 'text',
+                Label__c = 'Mark', Active__c = true, Status__c = 'Published',
+                Text_Value__c = markFor(clean)),
+            new MA_Page_Content__c(
+                Content_Address__c = key + '::offerings-listing::tile::description',
+                Offering_Key__c = key, Template_Type__c = 'offerings-listing',
+                Section_Key__c = 'tile', Field_Key__c = 'description', Field_Type__c = 'rich',
+                Label__c = 'Description', Active__c = true, Status__c = 'Published',
+                Rich_Value__c = 'Describe ' + clean + ' here.')
+        };
+        insert rows;
+        return key;
+    }
+
+    /** Initials, so a new offering's tile has a badge before anyone edits it. */
+    private static String markFor(String name) {
+        List<String> parts = name.split('\\s+');
+        String out = '';
+        for (String part : parts) {
+            if (String.isBlank(part)) continue;
+            out += part.substring(0, 1).toUpperCase();
+            if (out.length() >= 2) break;
+        }
+        return out;
     }
 
     /**

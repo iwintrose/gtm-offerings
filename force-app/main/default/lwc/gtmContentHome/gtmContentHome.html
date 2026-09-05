@@ -14,8 +14,9 @@
         </div>
         <div class="slds-page-header__col-actions">
           <lightning-button-group>
-            <lightning-button label="New page" icon-name="utility:new"
-                              onclick={handleOpenNewPage}></lightning-button>
+            <lightning-button label="New offering" icon-name="utility:new"
+                              variant="brand"
+                              onclick={handleOpenNewOffering}></lightning-button>
             <lightning-button label="Refresh" icon-name="utility:refresh"
                               onclick={handleRefresh}></lightning-button>
           </lightning-button-group>
@@ -78,11 +79,14 @@
                                          label="Offering name" value={renameValue}
                                          onchange={handleRenameInput}
                                          onkeydown={handleRenameKey}></lightning-input>
-                        <lightning-button label="Save" variant="brand" class="off-rename-save"
-                                          onclick={handleSaveRename}></lightning-button>
-                        <lightning-button label="Cancel" onclick={handleCancelRename}></lightning-button>
+                        <div class="off-rename-acts">
+                          <lightning-button label="Save" variant="brand"
+                                            onclick={handleSaveRename}></lightning-button>
+                          <lightning-button label="Cancel"
+                                            onclick={handleCancelRename}></lightning-button>
+                        </div>
                       </div>
-                      <p class="off-key">Renaming this changes the name on the offerings page too.</p>
+                      <p class="off-key off-rename-note">Renaming this changes the name on the offerings page too.</p>
                     </template>
                   </div>
                   <div class="slds-no-flex">
@@ -162,6 +166,30 @@
       </div>
     </template>
   </div>
+
+    <template if:true={newOfferingOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="noTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="noTitle">New offering</h2>
+            <p>Name it. Its pages come next.</p>
+          </header>
+          <div class="modal-b">
+            <lightning-input label="Offering name" value={newOfferingName}
+                             placeholder="e.g. Data Cloud Accelerator"
+                             onchange={handleNewOfferingInput}
+                             onkeydown={handleNewOfferingKey}></lightning-input>
+            <p class="modal-note">{newOfferingHint}</p>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseNewOffering}></lightning-button>
+            <lightning-button label="Create offering" variant="brand"
+                              disabled={createOfferingDisabled}
+                              onclick={handleCreateOffering}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
 
     <template if:true={newPageOpen}>
       <section role="dialog" aria-modal="true" aria-labelledby="npTitle" class="scrim">

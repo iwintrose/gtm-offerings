@@ -78,7 +78,13 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     loadOfferings() {
         return getHomeSummary()
             .then((data) => {
-                this.offerings = ((data && data.offerings) || []).map((o) => {
+                // The framework is authoring scaffolding, not an offering a
+                // rep sells. It belongs in the Content Manager, which is the
+                // BA's app; showing it here asks a BD person to reason about
+                // the CMS to find the thing they actually came for.
+                this.offerings = ((data && data.offerings) || [])
+                    .filter((o) => o.isFramework !== true)
+                    .map((o) => {
                     const built = (o.pages || []).filter((p) => (p.sectionCount || 0) > 0);
                     const fields = (o.pages || []).reduce((n, p) => n + (p.fieldCount || 0), 0);
                     const story = built.find((p) => p.templateType === 'story');
@@ -151,38 +157,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
 
     get showEmptyOfferings() { return this.offeringsLoaded && !this.offerings.length; }
 
-    /**
-     * The rep's entry point, and the reason this button is on this page: it
-     * sends them to the site's own "Choose your industry" page with ?wizard=1,
-     * so picking an industry drops them straight into the configurator wizard.
-     * Building a page for an offering is a different job for a different
-     * person, and lives in the Content Manager.
-     */
-    handleNewProspectPage() {
-        if (this.navBusy) return;
-        this.navBusy = true;
-        getSiteHomePageUrl()
-            .then((url) => {
-                if (!url) {
-                    this.loadError = 'The Accelerator site could not be found, so the wizard cannot be opened.';
-                    return;
-                }
-                const sep = url.indexOf('?') > -1 ? '&' : '?';
-                this[NavigationMixin.Navigate]({
-                    type: 'standard__webPage',
-                    attributes: { url: `${url}${sep}wizard=1` }
-                });
-            })
-            .catch((err) => {
-                this.loadError = this.messageFrom(err) || 'The wizard could not be opened.';
-            })
-            .finally(() => { this.navBusy = false; });
-    }
-
-    handleEditOffering(event) {
-        this.openEditor(event.currentTarget.dataset.offering, '');
-    }
-
+    
     // Deep-links the editor rather than dropping you on its first page, which
     // is the "landed somewhere I did not choose" problem the home page exists
     /**

@@ -4,6 +4,7 @@ import createPage from '@salesforce/apex/MaPageSectionController.createPage';
 import { starterFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
 import renameOffering from '@salesforce/apex/MaPageContentController.renameOffering';
+import createOffering from '@salesforce/apex/MaPageContentController.createOffering';
 
 
 // Every template the picklist allows, so the home can show what an offering
@@ -32,6 +33,10 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     // rename
     @track renamingKey = '';
     @track renameValue = '';
+
+    // new offering
+    @track newOfferingOpen = false;
+    @track newOfferingName = '';
 
     connectedCallback() { this.load(); }
 
@@ -170,6 +175,52 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     get npDisabled() { return !this.npOffering || !this.npTemplate; }
 
 
+    // ─── a new offering ───────────────────────────────────────────────────────
+    // "New page" was the wrong question at this level. A page belongs to an
+    // offering, and every card already offers its own "New page for this
+    // offering"; what the header could not do was start the offering itself.
+
+    handleOpenNewOffering() {
+        this.newOfferingOpen = true;
+        this.newOfferingName = '';
+    }
+
+    handleCloseNewOffering() { this.newOfferingOpen = false; }
+    handleNewOfferingInput(event) { this.newOfferingName = event.target.value; }
+    handleNewOfferingKey(event) {
+        if (event.key === 'Enter') this.handleCreateOffering();
+        if (event.key === 'Escape') this.handleCloseNewOffering();
+    }
+
+    get createOfferingDisabled() { return !(this.newOfferingName || '').trim(); }
+
+    get newOfferingHint() {
+        const name = (this.newOfferingName || '').trim();
+        if (!name) return 'The name is what reps see on the offerings page.';
+        const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        return key
+            ? `Creates its entry on the offerings page, keyed ${key}. Its pages come next.`
+            : 'That name needs at least one letter or number.';
+    }
+
+    handleCreateOffering() {
+        const name = (this.newOfferingName || '').trim();
+        if (!name) return;
+        this.isLoading = true;
+        createOffering({ name })
+            .then((key) => {
+                this.newOfferingOpen = false;
+                this.newOfferingName = '';
+                // Straight into the new offering's own listing page, which is
+                // the only page it has and the one that needs writing.
+                this.openEditor(key, 'offerings-listing');
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The offering could not be created.';
+                this.isLoading = false;
+            });
+    }
+
     handleOpenNewPage() {
         this.newPageOpen = true;
         this.npOffering = this.offerings.length === 1 ? this.offerings[0].offeringKey : '';
@@ -282,6 +333,9 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         this.npTemplate = templatesFor(key)[0] || '';
     }
 
+    // Reads the org again. Page counts and the activity feed change when
+    // someone else publishes, and this view does not listen for that -- so
+    // this is how you find out without leaving and coming back.
     handleRefresh() { this.load(); }
     handleDismissError() { this.loadError = ''; }
 }
