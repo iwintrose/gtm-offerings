@@ -21,16 +21,44 @@ Legend — **Hurts:** `blocks` a demo · `daily` friction · `polish`
 
 ---
 
-## Decisions needed before Claude builds
+## Decisions
 
-These are the ones where guessing has already cost us once.
+Answered decisions stay here with their answer, so neither of us re-litigates
+them. An answer that contradicts something already built says so.
 
-| # | The question | Why it matters |
-|---|---|---|
-| D1 | **Gus** — one assistant with per-offering *persona*, or per-offering *capability* too? You said tone and personality vary, function is consistent, and the customizer experience is per offering page. Does Gus's list of things-he-can-change differ between offerings, or is it always "the fields on this page"? | Decides whether Gus's config is one record per offering or one per offering-page. Wrong guess = rebuild. |
-| D2 | **Feedback visibility** — `getFeedbackFor` returns *everyone's* notes on an offering, not just yours. Deliberate: a BD about to raise "the proof number is stale" should see it was raised last week. With one user you can't tell. Right call before more people are in? | Cheap to change now, awkward later. |
-| D3 | **Site split** — Offerings page + Industry Chooser are framework; Configurator belongs to the offering. Today all three serve from one Experience site. Split them, or accept one site and drop the URL ambition? | The `/gtm/maaccelerator/` URL you wanted needs this. Salesforce URL prefixes are a single path segment, so the URL alone can't be done. |
-| D4 | **Requests vs submissions** (#16) — Claude's read: they're the same act recorded twice, and the Assessment Request is the one worth a screen. Submissions are funnel events and already show on the link's own page. Agree, or do you want a submissions list too? | You've asked three times and said you still don't understand the difference. Claude answering again in prose clearly isn't working. |
+### Answered
+
+**D1 — Gus.** *Framework persona and tone; per-offering capability.*
+One Gus everywhere: same name, same voice, one place to edit him. What differs
+per offering is what he can **do** on that offering's pages.
+
+> ⚠️ **This inverts what is built.** The `assistant` section currently sits on
+> `migration-accelerator::configurator` and holds name, role, button label,
+> greeting and input prompt — persona, at the offering level, which is exactly
+> backwards. Rework: move persona to the framework, and replace the
+> per-offering section with a *capability* declaration (which fields Gus may
+> change on that page) rather than copy. See #21.
+
+**D2 — Feedback visibility.** *BD sees their own; the Content Manager sees all.*
+`getFeedbackFor` currently returns everyone's notes to everyone. It gets a
+`Submitted_By__c = :UserInfo.getUserId()` filter; `getOpenFeedback` stays
+unfiltered, because anyone with the Content Manager is a writer.
+Also raised: **the feedback card's padding and margins are unfinished** — text
+sits too close to the card edge. Folded in as B5.
+
+### Open
+
+**D3 — Site split.** Not yet answered. Offerings page + Industry Chooser are
+framework; the Configurator belongs to the offering; all three serve from one
+Experience site today. Splitting them is the only route to the URL shape you
+wanted, because a Salesforce site prefix is a single path segment and cannot be
+`/gtm/maaccelerator/`.
+
+**D4 — Requests vs submissions.** Not a decision yet: *"I still need a
+walkthrough with you."* Claude explaining it again in prose has failed three
+times, so the next attempt is a walkthrough against the real records — one
+engagement link, and every row both concepts produced from it. Then decide
+whether a submissions list earns a screen. Blocks #16.
 
 ---
 
@@ -41,6 +69,7 @@ These are the ones where guessing has already cost us once.
 | B1 | **FAQ / help widget** for both apps (#18). Static panel per app, content in the CMS so it's editable. | polish | high |
 | B2 | **Resend an engagement link** — a BD can set and clear a link password but there's no "send this again" action. Real gap found while answering the guest-account question. | daily | high |
 | B3 | **Contact-side analytics** — link events now carry `Contact__c` after identity stitching, but nothing on the Contact record shows it. | daily | high |
+| B5 | **Feedback card padding** — text sits too close to the card edge; the panel is unfinished. Raised with D2. | polish | high |
 | B4 | **Delete the retired CMS content** — 17 records, all labelled `RETIRED —`. Select-all → Manage → Delete in the CMS workspace, then the destructive deploy for the five types. Claude cannot do this from here (no Apex delete, no ConnectApi delete, CLI redacts the token). | polish | high |
 
 ---
