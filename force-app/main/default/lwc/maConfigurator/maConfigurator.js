@@ -661,6 +661,11 @@ export default class MaConfigurator extends LightningElement {
         return this._preview && !!this._cms['assistant::assistantName'];
     }
 
+    /* A valueless attribute on a custom element is not reliably a boolean
+     * across LWC versions, and this one decides whether the assistant is inert.
+     * Binding an explicit true removes the doubt. */
+    get alwaysTrue() { return true; }
+
     /* The assistant's own copy, from the Assistant section of this page. Each
      * getter falls back inside the component, so an offering that has not
      * written its own still gets a working helper. */
@@ -901,8 +906,6 @@ export default class MaConfigurator extends LightningElement {
     get whyLine() {
         return this.industry ? this.industry.whyLine : '';
     }
-
-    _ct(key) { return this._cms[key] || null; }
 
     get whyHead() {
         // An industry-specific heading still wins: it is more specific than
