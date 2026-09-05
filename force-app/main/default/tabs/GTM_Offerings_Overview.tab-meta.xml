@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Overview</label>
-    <motif>Custom1: Home</motif>
+    <motif>Custom18: Bar Chart</motif>
     <flexiPage>GTM_Offerings_Overview</flexiPage>
 </CustomTab>
