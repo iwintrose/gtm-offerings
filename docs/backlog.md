@@ -100,6 +100,25 @@ exists at all, not a quick add.
 >
 > Needs a yes before it's built — this is guest-facing and auth-adjacent.
 
+**D6 — `MA_`/`Ma` prefix leaks the single-offering assumption.** Raised again
+while granting `MA_Assessment_Guest`: it and the Apex classes it grants
+(`MaLinkAuthController`, `MaConfigurationStatusController`,
+`MaAssessmentRequestController`) are named for Migration Accelerator
+specifically, but the mechanism is framework-level — link auth, password
+gating, and request submission work identically for any offering, not just
+this one. Same pattern likely holds across most `MA_`-prefixed permission
+sets, custom objects/fields, and Apex classes in the org.
+
+Not a quick fix: Apex class and permission set API names can't be renamed in
+place via metadata — each is create-new, migrate every reference (LWC
+imports, other Apex, permission sets, profiles), reassign guest/user
+permission sets, then delete the old one. On a live guest-facing site, doing
+that carelessly is exactly the kind of thing that breaks password
+verification for someone's real link mid-migration. Needs a real inventory
+and an ordered plan (probably `spec-author` + `backend-engineer`, done as its
+own tracked piece of work) before touching it — not something to fold into
+whatever else is in flight when it comes up.
+
 ---
 
 ## Ready to build — no decision needed
