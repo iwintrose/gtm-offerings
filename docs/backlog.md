@@ -131,10 +131,9 @@ whatever else is in flight when it comes up.
 
 | # | Item | Hurts | Sure |
 |---|---|---|---|
-| B1 | **FAQ / help widget** for both apps (#18). Static panel per app, content in the CMS so it's editable. | polish | high |
+| B1 | **FAQ / help widget** for both apps (#18). Static panel per app, content in the CMS so it's editable. *In progress — dispatched to frontend-engineer.* | polish | high |
 | B2 | **Resend an engagement link** — a BD can set and clear a link password but there's no "send this again" action. Real gap found while answering the guest-account question. | daily | high |
 | B3 | **Contact-side analytics** — link events now carry `Contact__c` after identity stitching, but nothing on the Contact record shows it. | daily | high |
-| B5 | **Feedback card padding** — text sits too close to the card edge; the panel is unfinished. Raised with D2. | polish | high |
 | B4 | **Delete the retired CMS content** — 17 records, all labelled `RETIRED —`. Select-all → Manage → Delete in the CMS workspace, then the destructive deploy for the five types. Claude cannot do this from here (no Apex delete, no ConnectApi delete, CLI redacts the token). | polish | high |
 
 ---
@@ -162,7 +161,8 @@ GTM Accelerator guest users · the four saved links rewritten to `/gtm` ·
 bare `/gtm/s/configurator` (no `?cfgId=`) blocked from guests, visible only
 to a signed-in Salesforce user · configurable Home redirect (Custom Label,
 editable in Setup without a deploy) · two more dead-code removals
-(`OfferingSummary.storyUrl`, the unused `getSiteHomePageUrl` import).
+(`OfferingSummary.storyUrl`, the unused `getSiteHomePageUrl` import) ·
+B5, feedback card padding.
 
 ---
 
