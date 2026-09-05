@@ -3,6 +3,7 @@ import saveConfiguration from '@salesforce/apex/MaSavedConfigurationController.s
 import setConfigActive from '@salesforce/apex/MaSavedConfigurationController.setActive';
 import searchContacts from '@salesforce/apex/MaSavedConfigurationController.searchContacts';
 import getAccountDeals from '@salesforce/apex/MaSavedConfigurationController.getAccountDeals';
+import findAccountByName from '@salesforce/apex/MaSavedConfigurationController.findAccountByName';
 import getConfiguratorPageUrl from '@salesforce/apex/MaSavedConfigurationController.getConfiguratorPageUrl';
 import fetchLogoDataUri from '@salesforce/apex/MaBrandLookupController.fetchLogoDataUri';
 import getPageLayout from '@salesforce/apex/MaPageContentReader.getPageLayout';
@@ -91,6 +92,10 @@ export default class MaConfigWizard extends LightningElement {
     @track _deals = [];
     @track _dealId = '';
     @track _dealsLoading = false;
+    // The account the deals belong to, when it came from a typed company name
+    // rather than a chosen contact.
+    @track _matchedAccount = null;
+    _dealLookupTimer;
     @track _contactSearchTerm = '';
     @track _contactResults = [];
     @track _contactSearchBusy = false;
@@ -283,6 +288,7 @@ export default class MaConfigWizard extends LightningElement {
     handleCompanyInput(event) {
         this._company = event.currentTarget.value;
         this._contactSearchTerm = this._company;
+        this.lookupDealsForTypedCompany();
         if (this._companyInvalid && this._company.trim()) {
             this._companyInvalid = false;
             this._saveError = '';
@@ -325,6 +331,45 @@ export default class MaConfigWizard extends LightningElement {
     }
 
     // ---------------------------------------------------------------- deals
+
+    /**
+     * A typed company name also finds the deals.
+     *
+     * Picking a contact was the only thing that supplied an account, so a rep
+     * who typed the client instead never saw the picker and got a new deal
+     * created without being asked -- the same gap this feature exists to
+     * close, left open for half the people using it.
+     */
+    lookupDealsForTypedCompany() {
+        if (this._selectedContact) return;
+        const name = (this._company || '').trim();
+        clearTimeout(this._dealLookupTimer);
+        if (name.length < 2) {
+            this._matchedAccount = null;
+            this._deals = [];
+            return;
+        }
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._dealLookupTimer = setTimeout(async () => {
+            try {
+                const match = await findAccountByName({ company: name });
+                this._matchedAccount = match || null;
+                if (match) await this.loadDeals(match.accountId);
+                else this._deals = [];
+            } catch (e) {
+                this._matchedAccount = null;
+                this._deals = [];
+            }
+        }, 350);
+    }
+
+    get matchedAccountNote() {
+        if (this._selectedContact || !this._matchedAccount) return '';
+        return this._matchedAccount.isExact
+            ? `Deals below are ${this._matchedAccount.name}'s.`
+            : `Closest account is ${this._matchedAccount.name} — saving under a `
+              + 'different spelling creates a new account instead.';
+    }
 
     async loadDeals(accountId) {
         this._deals = [];

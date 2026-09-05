@@ -129,6 +129,44 @@ public with sharing class MaSavedConfigurationController {
         return out;
     }
 
+    /**
+     * The account behind a typed company name, so the deal picker works for a
+     * rep who types the client instead of picking a contact.
+     *
+     * Without this the picker only appeared once a contact was selected --
+     * that was what supplied the account -- so a rep who typed the name got
+     * the old behaviour and a new deal created without being asked. Matching
+     * is the same rule saving uses: exact name first, so the account the link
+     * will actually be attached to is the one whose deals are offered.
+     */
+    @AuraEnabled(cacheable=false)
+    public static AccountMatch findAccountByName(String company) {
+        if (String.isBlank(company)) return null;
+        String name = company.trim();
+
+        List<Account> exact = [SELECT Id, Name FROM Account WHERE Name = :name LIMIT 1];
+        List<Account> hits = exact;
+        if (hits.isEmpty()) {
+            // A near match is offered but flagged, because saving on an
+            // inexact name creates a new account rather than using this one.
+            String pattern = '%' + name + '%';
+            hits = [SELECT Id, Name FROM Account WHERE Name LIKE :pattern ORDER BY Name LIMIT 2];
+            if (hits.size() != 1) return null;
+        }
+
+        AccountMatch m = new AccountMatch();
+        m.accountId = hits[0].Id;
+        m.name      = hits[0].Name;
+        m.isExact   = !exact.isEmpty();
+        return m;
+    }
+
+    public class AccountMatch {
+        @AuraEnabled public Id      accountId { get; set; }
+        @AuraEnabled public String  name      { get; set; }
+        @AuraEnabled public Boolean isExact   { get; set; }
+    }
+
     public class DealOption {
         @AuraEnabled public Id      opportunityId { get; set; }
         @AuraEnabled public String  name          { get; set; }

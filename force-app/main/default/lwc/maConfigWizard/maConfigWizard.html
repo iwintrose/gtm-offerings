@@ -123,9 +123,14 @@
                     <button type="button" class="mw-mini-link" onclick={handleChangeContact}>Change</button>
                   </div>
 
-                  <!-- Which deal. A client can have several at once, so this
-                       asks instead of quietly creating another one. -->
-                  <template if:true={hasDeals}>
+                </template>
+
+                <!-- Which deal. A client can have several at once, so this
+                     asks instead of quietly creating another one. Shown
+                     whether the account came from a chosen contact or from a
+                     typed company name. -->
+                <template if:true={hasDeals}>
+                  <div>
                     <p class="mw-q mw-q--sub">Which deal is this link for?</p>
                     <div class="mw-deals">
                       <template for:each={dealOptions} for:item="d">
@@ -140,10 +145,13 @@
                         <span class="mw-deal-meta">Creates one for this client</span>
                       </button>
                     </div>
+                    <template if:true={matchedAccountNote}>
+                      <p class="mw-deal-note">{matchedAccountNote}</p>
+                    </template>
                     <template if:true={dealWarning}>
                       <p class="mw-deal-warn" role="status">{dealWarning}</p>
                     </template>
-                  </template>
+                  </div>
                 </template>
               </div>
             </template>
