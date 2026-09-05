@@ -23,7 +23,7 @@
         <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
         <button class="gcm-crumb" onclick={handleBackToPages}>All pages</button>
         <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
-        <span class="gcm-crumb-current">{selectedTemplate}</span>
+        <span class="gcm-crumb-current">{selectedTemplateLabel}</span>
       </template>
 
       <span class={saveStateClass} title="Edits save as a draft while you type">
@@ -41,9 +41,6 @@
               onclick={handleToggleReorder}>
             </lightning-button>
           </template>
-          <lightning-button label="Refresh"
-                            title="Reload this page from the org. Nothing is discarded."
-                            onclick={handleRefresh}></lightning-button>
         </lightning-button-group>
         <template if:true={hasDrafts}>
           <div class="gcm-changes">

@@ -199,17 +199,6 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
         return parts.join(' · ');
     }
 
-    get contentManagerUrl() { return '/lightning/n/GTM_Content_Home'; }
-
-    // The Content Manager is a tab in this app's sibling app, so it opens
-    // there rather than as a stranded browser tab.
-    handleOpenContentManager() {
-        this[NavigationMixin.Navigate]({
-            type: 'standard__app',
-            attributes: { appTarget: 'standard__GTM_Content_Manager' }
-        });
-    }
-
     get showEmptyOfferings() { return this.offeringsLoaded && !this.offerings.length; }
 
     

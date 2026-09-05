@@ -378,6 +378,14 @@ export default class MaConfigWizard extends LightningElement {
         this._dealsLoading = true;
         try {
             this._deals = (await getAccountDeals({ accountId })) || [];
+            // Default to the deal that is already open rather than to a new
+            // one. Two contacts at the same client, saved back to back, used to
+            // produce two opportunities -- the second called "<Client> —
+            // <Offering> (2026-09-05)" -- because "new deal" was preselected
+            // and nothing made a rep notice. One open deal is not a choice, so
+            // it is made for them; two or more is a real choice, so it is not.
+            const open = this._deals.filter((d) => !d.isClosed);
+            this._dealId = open.length === 1 ? open[0].opportunityId : '';
         } catch (e) {
             // Not being able to list the deals is not a reason to block the
             // link: leaving the choice empty still creates a new one, which is
@@ -424,6 +432,23 @@ export default class MaConfigWizard extends LightningElement {
         return 'This deal already has a link. Saving here makes a second one — '
              + 'open the existing link instead if you meant to change it.';
     }
+
+    /**
+     * Said only when choosing "new deal" would actually add one.
+     *
+     * A rep sending a second contact at the same client a page of their own is
+     * doing something ordinary; ending up with two opportunities for it is not.
+     */
+    get newDealWarning() {
+        if (this._dealId) return '';
+        const open = this._deals.filter((d) => !d.isClosed);
+        if (!open.length) return '';
+        return open.length === 1
+            ? `${open[0].name} is already open for this client. A new deal here means two.`
+            : `This client already has ${open.length} open deals. A new deal here makes another.`;
+    }
+
+    get showNewDealWarning() { return !!this.newDealWarning; }
 
     handlePickDeal(event) {
         this._dealId = event.currentTarget.dataset.id;

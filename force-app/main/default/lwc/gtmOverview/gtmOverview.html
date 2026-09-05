@@ -8,19 +8,14 @@
         <div class="slds-page-header__col-title">
           <lightning-icon icon-name="standard:portal" size="medium"></lightning-icon>
           <div class="slds-media__body">
-            <p class="ov-eyebrow">Overview</p>
             <h1 class="ov-title">GTM Offerings</h1>
             <p class="ov-meta">{headerMeta}</p>
           </div>
         </div>
         <div class="slds-page-header__col-actions">
-          <lightning-button-group>
-            <lightning-button label="New prospect page" icon-name="utility:new"
-                              variant="brand" disabled={navBusy}
-                              onclick={handleNewProspectPage}></lightning-button>
-            <lightning-button label="Content Manager" icon-name="utility:edit"
-                              onclick={handleOpenContentManager}></lightning-button>
-          </lightning-button-group>
+          <lightning-button label="New prospect page" icon-name="utility:new"
+                            variant="brand" disabled={navBusy}
+                            onclick={handleNewProspectPage}></lightning-button>
         </div>
       </div>
     </div>

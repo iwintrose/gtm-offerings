@@ -31,7 +31,9 @@
               </template>
             </span>
           </div>
-          <p class="fld-key">{f.fieldKey}</p>
+          <template if:true={f.showKey}>
+            <p class="fld-key">{f.fieldKey}</p>
+          </template>
 
           <!-- plain text -->
           <template if:true={f.isTextShort}>

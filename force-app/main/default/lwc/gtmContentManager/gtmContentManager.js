@@ -589,11 +589,6 @@ export default class GtmContentManager extends LightningElement {
             .finally(() => { this.isSaving = false; });
     }
 
-    handleRefresh() {
-        if (this.selectedTemplate) this.loadPage();
-        else if (this.selectedOffering) this.loadTemplates();
-    }
-
     handleDismissError() { this.loadError = ''; }
 
     // ─── add / delete sections ────────────────────────────────────────────────
@@ -607,6 +602,12 @@ export default class GtmContentManager extends LightningElement {
             fieldLabel: `${l.fieldCount} field${l.fieldCount === 1 ? '' : 's'}`,
             cardClass: l.value === this.addLayout ? 'card card--on' : 'card'
         }));
+    }
+
+    /* The breadcrumb showed 'offerings-listing' -- the key the code addresses a
+     * template by, not a name anyone would say out loud. */
+    get selectedTemplateLabel() {
+        return TEMPLATE_LABELS[this.selectedTemplate] || this.selectedTemplate;
     }
 
     get hasLayoutOptions() { return this.layoutOptions.length > 0; }

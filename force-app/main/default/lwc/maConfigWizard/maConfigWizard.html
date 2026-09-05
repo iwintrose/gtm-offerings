@@ -151,6 +151,9 @@
                     <template if:true={dealWarning}>
                       <p class="mw-deal-warn" role="status">{dealWarning}</p>
                     </template>
+                    <template if:true={showNewDealWarning}>
+                      <p class="mw-deal-warn" role="status">{newDealWarning}</p>
+                    </template>
                   </div>
                 </template>
               </div>
