@@ -5,6 +5,7 @@ import isActive from '@salesforce/apex/GtmConfigurationStatusController.isActive
 import getConfiguration from '@salesforce/apex/GtmSavedConfigurationController.getConfiguration';
 import getPublicConfiguration from '@salesforce/apex/GtmConfigurationReader.getPublicConfiguration';
 import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
+import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
 import getSiteInfo from '@salesforce/apex/GtmPageContentReader.getSiteInfo';
 import checkPasswordRequired from '@salesforce/apex/GtmLinkAuthController.checkPasswordRequired';
@@ -307,6 +308,24 @@ export default class GtmConfigurator extends LightningElement {
                 this._loadError = 'Page content could not be loaded; showing built-in defaults.';
                 // eslint-disable-next-line no-console
                 console.error('[gtmConfigurator] getPageLayout failed:', JSON.stringify(err));
+            });
+
+        // Gus is one assistant for every offering (D8) -- his persona lives at
+        // the framework level (offeringKey 'gtm'), not under this offering's
+        // own configurator page, so it's a second, independent fetch merged
+        // into the same _cms bag the assistant::* getters already read from.
+        getPageLayout({
+            offeringKey: FRAMEWORK_KEY,
+            templateType: 'assistant',
+            industryKey: null
+        })
+            .then((layout) => {
+                if (!layout || !layout.content) return;
+                this._cms = { ...this._cms, ...layout.content };
+            })
+            .catch((err) => {
+                // eslint-disable-next-line no-console
+                console.error('[gtmConfigurator] framework assistant getPageLayout failed:', JSON.stringify(err));
             });
 
         this._scrollHandler = this.handleScroll.bind(this);
