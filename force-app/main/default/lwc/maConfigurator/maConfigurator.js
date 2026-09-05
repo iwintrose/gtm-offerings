@@ -65,6 +65,34 @@ export default class MaConfigurator extends LightningElement {
         this.tokenState = { ...this._defaultsFromCms(), ...this.tokenState };
     }
 
+    /**
+     * The section the editor has selected.
+     *
+     * The industry sections are not separate blocks on this page -- each one is
+     * the copy the whole page is personalised with -- so choosing one in the
+     * rail switches which industry is being previewed, and the cover is where
+     * that copy appears.
+     */
+    @api
+    get previewSectionKey() { return this._previewSectionKey; }
+    set previewSectionKey(value) {
+        this._previewSectionKey = value || '';
+        if (this._previewSectionKey.indexOf('industry-') === 0) {
+            this.industryKey = this._previewSectionKey.substring(9);
+        }
+    }
+    _previewSectionKey = '';
+
+    /**
+     * Which industry section the cover currently stands for, so the editor can
+     * scroll to it. Without a key here the cover belongs to no section and the
+     * rail had nothing to scroll to -- which is why clicking did nothing.
+     */
+    get previewIndustrySection() {
+        const ind = this.industry;
+        return ind && ind.industryKey ? `industry-${ind.industryKey}` : 'cover';
+    }
+
     /** Where each section sits, so the editor's rail and this stay in step. */
     @api
     getSectionRects() {
@@ -560,6 +588,17 @@ export default class MaConfigurator extends LightningElement {
 
     get showCustomizeButton() {
         return this.isConfigManager;
+    }
+
+    /**
+     * Gus is a control on the live page, not part of the page.
+     *
+     * His bubble is position:fixed, so inside the editor's preview it escaped
+     * the frame and floated over the editor itself. The preview is meant to
+     * show what the page says, and he is not something the page says.
+     */
+    get showAssistant() {
+        return this.isConfigManager && !this._preview;
     }
 
     get hasCompany() {

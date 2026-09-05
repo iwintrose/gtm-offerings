@@ -14,7 +14,7 @@ import createSection from '@salesforce/apex/MaPageSectionController.createSectio
 import deleteSection from '@salesforce/apex/MaPageSectionController.deleteSection';
 import restoreSection from '@salesforce/apex/MaPageSectionController.restoreSection';
 // One definition of what a layout is made of, shared with the renderer.
-import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
+import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS} from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
 // MaPageContentController.resolveValue.
@@ -284,6 +284,10 @@ export default class GtmContentManager extends LightningElement {
             return {
                 ...s,
                 icon: SECTION_ICONS[s.layoutType] || 'utility:record',
+                // The rail said "page-header" and "industry-profile" -- the
+                // keys the code addresses layouts by, not names anybody would
+                // choose. The same module already carries the human ones.
+                layoutLabel: LAYOUT_LABELS[s.layoutType] || s.layoutType,
                 isDirty: this.dirtyKeys.indexOf(s.sectionKey) > -1,
                 fieldCount: this.records.filter((r) => r.sectionKey === s.sectionKey).length,
                 itemClass: 'sec'

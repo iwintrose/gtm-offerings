@@ -4,7 +4,7 @@
       <div class="load-error" role="status">{_loadError}</div>
     </template>
 
-    <div class="psbar">
+    <div class="psbar" data-section="header">
       <span class="wm"><span class="tick"></span> Publicis <b>Sapient</b></span>
       <div class="bar-right">
         <a class="backlink" href={industryUrl}>← Industry</a>
@@ -71,7 +71,7 @@
     </template>
 
     <!-- 00 COVER -->
-    <section class="chap cover">
+    <section class="chap cover" data-section={previewIndustrySection}>
       <div class="wrap">
         <template if:true={hasCompany}>
           <div class="cobrand rv">
@@ -414,7 +414,7 @@
     </section>
 
     <!-- 07 WHY PS -->
-    <section class="chap">
+    <section data-section="why" class="chap">
       <span class="chap-num">07</span>
       <div class="wrap">
         <div class="eyebrow rv">07 — Why Publicis Sapient</div>
@@ -497,7 +497,7 @@
       </div>
     </section>
 
-    <footer class="pf">
+    <footer class="pf" data-section="footer">
       <span class="wm"><span class="tick"></span> {footerLeft}</span>
       <span>{footerRight}</span>
     </footer>
@@ -520,7 +520,7 @@
     <!-- The assistant sits in the corner, not inside the Customize form. It
          only appears for the rep, the same rule the Customize button follows:
          a prospect on a shared link has nothing to configure. -->
-    <template if:true={showCustomizeButton}>
+    <template if:true={showAssistant}>
       <c-ma-agent-bubble
         session-token={agentSessionToken}
         config-id={savedRecordId}

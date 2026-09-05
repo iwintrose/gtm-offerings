@@ -287,7 +287,14 @@ export default class GtmPagePreview extends LightningElement {
             'c-ma-story, c-offering-chooser, c-choose-industry, c-ma-configurator'
         );
         if (!el || typeof el.getSectionRects !== 'function') return [];
-        return el.getSectionRects();
+
+        // Only sections this page actually has. An offerings-listing is
+        // previewed inside the offerings page, so the renderer reports that
+        // page's header, intro and footer -- none of which belong to the page
+        // being edited. Scrolling then selected a section the editor did not
+        // have, and the tile being edited vanished from the panel.
+        const own = new Set((this.sections || []).map((s) => s.sectionKey));
+        return el.getSectionRects().filter((r) => own.has(r.sectionKey));
     }
 
     /**
