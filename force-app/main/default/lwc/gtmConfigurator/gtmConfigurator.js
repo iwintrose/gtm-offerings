@@ -297,7 +297,13 @@ export default class GtmConfigurator extends LightningElement {
         })
             .then((layout) => {
                 if (!layout || !layout.content) return;
-                this._cms = layout.content;
+                // Merge, not replace: the framework-level assistant fetch below
+                // runs concurrently and lands in the same _cms bag. Whichever
+                // of the two resolves second must not wipe out the other's
+                // fields with a plain assignment (code-reviewer caught this
+                // race -- Gus would silently vanish whenever the assistant
+                // call happened to resolve first).
+                this._cms = { ...this._cms, ...layout.content };
                 // The starting numbers on this page are content now, seeded on
                 // the configurator's own defaults section, rather than a custom
                 // setting read through the retired story CMS controller.

@@ -119,6 +119,13 @@
                   <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
                   <span>{o.addLabel}</span>
                 </button>
+                <template if:true={o.showSettings}>
+                  <button class="off-foot-settings" data-key={o.key} data-template={o.settingsTemplate}
+                          onclick={handleOpenSettings} title={o.settingsHint}>
+                    <lightning-icon icon-name="utility:settings" size="xx-small"></lightning-icon>
+                    <span>Settings</span>
+                  </button>
+                </template>
               </footer>
             </article>
           </template>

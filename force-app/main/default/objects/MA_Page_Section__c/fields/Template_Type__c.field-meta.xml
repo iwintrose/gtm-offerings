@@ -45,6 +45,11 @@
                 <default>false</default>
                 <label>faq-content-manager</label>
             </value>
+            <value>
+                <fullName>assistant</fullName>
+                <default>false</default>
+                <label>assistant</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

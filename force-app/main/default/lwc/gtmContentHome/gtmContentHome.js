@@ -10,6 +10,15 @@ import createOffering from '@salesforce/apex/GtmPageContentController.createOffe
 // Every template the picklist allows, so the home can show what an offering
 // has NOT built yet rather than only what it has.
 
+// D8: framework templateTypes that are a setting, not a page -- something
+// this app has one fixed instance of, not something a BA composes or a
+// prospect ever sees end to end. They stay registered in FRAMEWORK_TEMPLATES
+// (the editor, the breadcrumb and "what templateTypes exist" all need to know
+// about them) but this view keeps them out of the pages list and the "New
+// framework page" picker, and surfaces them through their own Settings link
+// instead.
+const SETTINGS_TEMPLATES = ['assistant'];
+
 // A page reads as what it is before its name is read.
 const PAGE_ICONS = {
     'story': 'utility:socialshare',
@@ -89,33 +98,58 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                     ? 'slds-badge slds-badge_lightest off-stat'
                     : 'slds-badge off-stat',
                 addLabel: o.isFramework ? 'New framework page' : 'New page for this offering',
+                // Settings is a direct line into one templateType, bypassing
+                // the pages list, for the same reason on both kinds of card:
+                // what it points to is not a beat of a page a prospect reads
+                // top to bottom, it's a fixed thing this card's owner
+                // configures once. An offering's is the Configurator's
+                // "defaults" section (swatches, default source/target
+                // platform, demo numbers) -- content on that offering's own
+                // configurator page, buried inside a big multi-section
+                // editor. The Framework's is Gus (D8): one assistant shared
+                // by every offering's configurator, addressed
+                // gtm::assistant::assistant rather than any one offering's
+                // page, and deliberately absent from the pages list below
+                // for the same reason -- it isn't one.
+                showSettings: true,
+                settingsTemplate: o.isFramework ? 'assistant' : 'configurator',
+                settingsHint: o.isFramework
+                    ? 'Gus: the name, role, greeting and prompts of the assistant every offering’s configurator shares'
+                    : 'Swatches, default platforms and demo numbers for this offering’s links',
                 builtCount: built.length,
                 fieldTotal: o.pages.reduce((n, p) => n + (p.fieldCount || 0), 0),
                 summary: built.length === 1
                     ? '1 page ready to edit'
                     : `${built.length} pages ready to edit`,
-                pages: templatesFor(o.offeringKey).map((t) => {
-                    const p = byType[t];
-                    const sections = p ? (p.sectionCount || 0) : 0;
-                    const fields = p ? (p.fieldCount || 0) : 0;
-                    const isBuilt = sections > 0;
-                    return {
-                        id: `${o.offeringKey}-${t}`,
-                        templateType: t,
-                        offeringKey: o.offeringKey,
-                        label: TEMPLATE_LABELS[t] || t,
-                        isBuilt,
-                        detail: isBuilt
-                            ? `${sections} sections · ${fields} fields`
-                            : 'No sections yet — open it to build the first one',
-                        // "Not editable" was wrong: an empty page is exactly
-                        // where you go to build it. It has nothing in it, which
-                        // is a different thing from being closed.
-                        badge: isBuilt ? '' : 'Empty',
-                        icon: PAGE_ICONS[t] || 'utility:page',
-                        rowClass: isBuilt ? 'pg' : 'pg pg--unbuilt'
-                    };
-                })
+                // Settings templateTypes (currently just 'assistant') are
+                // registered with templatesFor() so the editor and breadcrumb
+                // know what they are, but they are not a page in the sequence
+                // this list is for -- they get their own Settings link below.
+                pages: templatesFor(o.offeringKey)
+                    .filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1)
+                    .map((t) => {
+                        const p = byType[t];
+                        const sections = p ? (p.sectionCount || 0) : 0;
+                        const fields = p ? (p.fieldCount || 0) : 0;
+                        const isBuilt = sections > 0;
+                        return {
+                            id: `${o.offeringKey}-${t}`,
+                            templateType: t,
+                            offeringKey: o.offeringKey,
+                            label: TEMPLATE_LABELS[t] || t,
+                            isBuilt,
+                            detail: isBuilt
+                                ? `${sections} sections · ${fields} fields`
+                                : 'No sections yet — open it to build the first one',
+                            // "Not editable" was wrong: an empty page is
+                            // exactly where you go to build it. It has
+                            // nothing in it, which is a different thing from
+                            // being closed.
+                            badge: isBuilt ? '' : 'Empty',
+                            icon: PAGE_ICONS[t] || 'utility:page',
+                            rowClass: isBuilt ? 'pg' : 'pg pg--unbuilt'
+                        };
+                    })
             };
         });
     }
@@ -170,8 +204,16 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         return this.offerings.map((o) => ({ label: o.label, value: o.offeringKey }));
     }
 
+    // Settings templateTypes are excluded here too: "New page" builds a page
+    // from a starter shape, and a settings templateType is not one -- it has
+    // exactly one instance, already migrated in, reachable through its own
+    // Settings link rather than through "new".
     get templateOptions() {
-        return templatesFor(this.npOffering).map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
+        return this.pageTemplatesFor(this.npOffering).map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
+    }
+
+    pageTemplatesFor(offeringKey) {
+        return templatesFor(offeringKey).filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1);
     }
 
     get npDisabled() { return !this.npOffering || !this.npTemplate; }
@@ -226,7 +268,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     handleOpenNewPage() {
         this.newPageOpen = true;
         this.npOffering = this.offerings.length === 1 ? this.offerings[0].offeringKey : '';
-        this.npTemplate = this.npOffering ? (templatesFor(this.npOffering)[0] || '') : 'story';
+        this.npTemplate = this.npOffering ? (this.pageTemplatesFor(this.npOffering)[0] || '') : 'story';
     }
 
     handleCloseNewPage() { this.newPageOpen = false; }
@@ -234,7 +276,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         this.npOffering = event.detail.value;
         // The framework and an offering own different pages, so a template
         // chosen under one is not necessarily offered by the other.
-        const allowed = templatesFor(this.npOffering);
+        const allowed = this.pageTemplatesFor(this.npOffering);
         if (allowed.indexOf(this.npTemplate) === -1) this.npTemplate = allowed[0] || '';
     }
     handleNpTemplate(event) { this.npTemplate = event.detail.value; }
@@ -332,7 +374,16 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         const key = event.currentTarget.dataset.key;
         this.newPageOpen = true;
         this.npOffering = key;
-        this.npTemplate = templatesFor(key)[0] || '';
+        this.npTemplate = this.pageTemplatesFor(key)[0] || '';
+    }
+
+    // Straight into the settings templateType this card carries -- an
+    // offering's Configurator "defaults" section, or the Framework's
+    // assistant. Opens the same editor the pages list would, on a
+    // templateType that list deliberately does not show.
+    handleOpenSettings(event) {
+        const { key, template } = event.currentTarget.dataset;
+        this.openEditor(key, template);
     }
 
     // Reads the org again. Page counts and the activity feed change when

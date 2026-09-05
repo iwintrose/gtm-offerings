@@ -113,13 +113,29 @@
 .off-body { flex: 1 1 auto; display: flex; flex-direction: column; }
 .off-body .pg-list { flex: 1 1 auto; }
 
-.off-foot { padding: .4rem .5rem; border-top: 1px solid #f3f3f3; background: #fafaf9; }
+.off-foot {
+    padding: .4rem .5rem; border-top: 1px solid #f3f3f3; background: #fafaf9;
+    display: flex; align-items: center; gap: .5rem;
+}
 .off-foot-btn {
-    display: flex; align-items: center; gap: .35rem; width: 100%;
+    display: flex; align-items: center; gap: .35rem; flex: 1 1 auto; min-width: 0;
     border: 0; background: none; cursor: pointer; padding: .3rem .35rem;
     font: inherit; font-size: 12px; color: #0176d3; border-radius: 3px;
 }
 .off-foot-btn:hover { background: #eef4ff; }
+
+/* Settings is a different kind of action from "add a page" -- muted and
+   right-aligned rather than styled like the primary blue action, and set off
+   by a divider so it doesn't read as one more item in the same list. */
+.off-foot-settings {
+    display: flex; align-items: center; gap: .3rem; flex: none;
+    border: 0; border-left: 1px solid #e5e5e5; background: none; cursor: pointer;
+    padding: .3rem .35rem .3rem .6rem; margin-left: .1rem;
+    font: inherit; font-size: 12px; color: #706e6b; border-radius: 0;
+}
+.off-foot-settings:hover { color: #0176d3; }
+.off-foot-settings lightning-icon { --sds-c-icon-color-foreground-default: #706e6b; }
+.off-foot-settings:hover lightning-icon { --sds-c-icon-color-foreground-default: #0176d3; }
 
 .pg-icon { flex: none; --sds-c-icon-color-foreground-default: #747474; }
 .side-card { border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;

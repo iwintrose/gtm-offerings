@@ -203,7 +203,10 @@ const TEMPLATE_LAYOUTS = {
     // knows how to hold a list of questions and answers — no new layout type
     // needed for a shape the story page already draws.
     'faq-bd': ['faq'],
-    'faq-content-manager': ['faq']
+    'faq-content-manager': ['faq'],
+    // The assistant settings page is exactly its one frame-layout section and
+    // nothing else -- there is no beat to add a second thing to.
+    assistant: []
 };
 
 // Layouts an editor may add to a page. The header, footer and assistant are
@@ -289,6 +292,15 @@ const STARTER_PAGES = {
     'faq-content-manager': [
         { sectionKey: 'faq', label: 'FAQ', layoutType: 'faq', width: 'standard', helpText: 'The questions and answers shown in the Content Manager app’s help panel.' }
     ],
+    // D8: Gus the assistant, framework-wide rather than pinned to one
+    // offering's configurator. One frame-layout section, addressed
+    // gtm::assistant::assistant -- not reachable through "New framework
+    // page" (see SETTINGS_TEMPLATES in c/gtmContentHome), but modelled here
+    // for the same reason every other framework page is: so createPage can
+    // rebuild it from nothing if it is ever deleted.
+    assistant: [
+        { sectionKey: 'assistant', label: 'Assistant', layoutType: 'assistant', width: 'standard', helpText: 'The one assistant character every offering’s configurator shows: name, role, greeting, button label and input prompt.' }
+    ],
     'configurator': [
         { sectionKey: 'header',   label: 'Header',       layoutType: 'page-header', width: 'standard', helpText: 'The brand name and tag shown in the masthead.' },
         { sectionKey: 'cover',    label: 'Cover',        layoutType: 'chapter-lede', width: 'standard', helpText: 'The opening screen. The line about the industry comes from the industry itself, edited on the framework\u2019s Industry Chooser.' },
@@ -338,7 +350,14 @@ const OFFERING_TEMPLATES = ['story', 'configurator', 'offerings-listing'];
 // the panel is chrome for the app itself, not copy about an offering — so it
 // lives beside the offerings page and the industry chooser rather than under
 // migration-accelerator or any other single offering.
-const FRAMEWORK_TEMPLATES = ['offerings-page', 'industry-chooser', 'faq-bd', 'faq-content-manager'];
+//
+// D8: 'assistant' joins this list for the same reason -- Gus is one character
+// shared by every offering's configurator, not copy that belongs to
+// migration-accelerator, so his name/role/greeting move to the framework. He
+// is a setting rather than a page (nobody reads him top to bottom the way they
+// read the offerings page), which is why c/gtmContentHome renders him apart
+// from the pages list even though he is registered here beside them.
+const FRAMEWORK_TEMPLATES = ['offerings-page', 'industry-chooser', 'faq-bd', 'faq-content-manager', 'assistant'];
 
 function templatesFor(offeringKey) {
     return offeringKey === FRAMEWORK_KEY ? FRAMEWORK_TEMPLATES : OFFERING_TEMPLATES;
@@ -351,7 +370,8 @@ const TEMPLATE_LABELS = {
     'offerings-listing': 'Offerings Listing',
     'offerings-page': 'Offerings Page',
     'faq-bd': 'BD App Help (FAQ)',
-    'faq-content-manager': 'Content Manager Help (FAQ)'
+    'faq-content-manager': 'Content Manager Help (FAQ)',
+    assistant: 'Assistant'
 };
 
 

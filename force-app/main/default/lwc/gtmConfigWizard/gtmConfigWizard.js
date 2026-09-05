@@ -15,8 +15,6 @@ import USER_NAME_FIELD from '@salesforce/schema/User.Name';
 import USER_EMAIL_FIELD from '@salesforce/schema/User.Email';
 import { isHex6 } from 'c/gtmConfigData';
 
-const OFFERING = 'migration-accelerator';
-
 // Publicis Sapient's own brand red -- the Quick Link path's fallback accent
 // when the rep gives no website to auto-detect a brand colour from. Chosen
 // deliberately over this app's own generic swatch-list default so a link
@@ -75,6 +73,18 @@ export default class GtmConfigWizard extends LightningElement {
     }
     _isOpen = false;
     _seededFromRecord = false;
+
+    /** Which offering's Configurator "defaults" content (swatches, default
+     * source/target platform, demo numbers) this wizard reads and writes --
+     * gtmConfigurator is the only known caller, and it always has its own
+     * offeringKey by the time this renders. The fallback below only matters
+     * for a caller that hasn't been updated to pass it, so a second offering
+     * never silently reads or saves against the first offering's defaults. */
+    @api offeringKey = '';
+
+    get _offering() {
+        return this.offeringKey || 'migration-accelerator';
+    }
 
     /** The record's current values, as loaded by the parent. Read once,
      *  on open -- see the isOpen setter above. */
@@ -251,7 +261,7 @@ export default class GtmConfigWizard extends LightningElement {
 
         // The swatches and the platforms a link starts from are content on the
         // configurator's own defaults section, not a custom setting.
-        getPageLayout({ offeringKey: OFFERING, templateType: 'configurator', industryKey: null })
+        getPageLayout({ offeringKey: this._offering, templateType: 'configurator', industryKey: null })
             .then((layout) => {
                 const c = (layout && layout.content) || {};
                 let swatches = [];
@@ -893,7 +903,7 @@ export default class GtmConfigWizard extends LightningElement {
             const recordId = await saveConfiguration({
                 input: {
                     recordId: this._knownRecordId || null,
-                    offering: OFFERING,
+                    offering: this._offering,
                     industry: this._industry,
                     company: (this._company || '').trim(),
                     generatedUrl: url,
