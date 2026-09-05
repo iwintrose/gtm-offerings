@@ -12,6 +12,31 @@
             <value><fullName>Form Opened</fullName><default>false</default><label>Form Opened</label></value>
             <value><fullName>Form Submitted</fullName><default>false</default><label>Form Submitted</label></value>
             <value><fullName>Drop-off</fullName><default>false</default><label>Drop-off</label></value>
+            <value>
+                <fullName>Section Viewed</fullName>
+                <default>false</default>
+                <label>Section Viewed</label>
+            </value>
+            <value>
+                <fullName>CTA Clicked</fullName>
+                <default>false</default>
+                <label>CTA Clicked</label>
+            </value>
+            <value>
+                <fullName>Form Field</fullName>
+                <default>false</default>
+                <label>Form Field</label>
+            </value>
+            <value>
+                <fullName>Form Resumed</fullName>
+                <default>false</default>
+                <label>Form Resumed</label>
+            </value>
+            <value>
+                <fullName>Session End</fullName>
+                <default>false</default>
+                <label>Session End</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Contact__c</fullName>
+    <description>Who this turned out to be. A visitor is anonymous until they submit the form; on submission the whole session is stamped with the Contact, so the reading that led to the request is attributable to a person. This is identity stitching, the same idea as Marketing Cloud Personalization resolving an anonymous profile to a known one.</description>
+    <label>Contact</label>
+    <referenceTo>Contact</referenceTo>
+    <relationshipLabel>Link Events</relationshipLabel>
+    <relationshipName>Link_Events</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

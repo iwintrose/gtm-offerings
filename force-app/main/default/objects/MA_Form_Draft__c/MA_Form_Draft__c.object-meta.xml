@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>A part-finished assessment form, so a prospect who leaves can pick up where they left off. Holds only what that visitor typed on that link; it is replaced on every keystroke pause and deleted the moment the form is submitted.</description>
+    <enableActivities>false</enableActivities>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <label>Form Draft</label>
+    <pluralLabel>Form Drafts</pluralLabel>
+    <nameField>
+        <displayFormat>FD-{0000}</displayFormat>
+        <label>Form Draft Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

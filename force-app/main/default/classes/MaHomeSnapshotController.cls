@@ -214,4 +214,115 @@ public with sharing class MaHomeSnapshotController {
 
         return byConfig.values();
     }
+
+    /** One chapter of a page, and what visitors did with it. */
+    public class SitemapNode {
+        @AuraEnabled public String  sectionKey  { get; set; }
+        @AuraEnabled public String  label       { get; set; }
+        @AuraEnabled public Decimal sortOrder   { get; set; }
+        @AuraEnabled public Integer readers     { get; set; }
+        @AuraEnabled public Decimal totalDwell  { get; set; }
+        @AuraEnabled public Decimal avgDwell    { get; set; }
+        @AuraEnabled public Integer clicks      { get; set; }
+        @AuraEnabled public Boolean isLastSeen  { get; set; }
+    }
+
+    /**
+     * The interaction sitemap for one engagement link.
+     *
+     * A page view says the link was opened. It does not say whether the proof
+     * panel was reached or the closing ask was ever seen, which is the part a
+     * BD can act on -- and "where did they stop reading" is a different and
+     * better question than "did they convert".
+     *
+     * Marketing Cloud Personalization and Adobe both need a sitemap for this:
+     * a hand-maintained map of URLs to named page types, kept in step with the
+     * site by somebody. Here the page is already stored as ordered, named
+     * sections, so the sitemap is the page's own structure and cannot drift
+     * from it.
+     */
+    @AuraEnabled(cacheable=false)
+    public static List<SitemapNode> getLinkSitemap(String configId) {
+        List<SitemapNode> out = new List<SitemapNode>();
+        if (String.isBlank(configId)) return out;
+
+        List<MA_Saved_Configuration__c> cfg = [
+            SELECT Offering__c, Industry__c
+            FROM MA_Saved_Configuration__c WHERE Id = :configId LIMIT 1
+        ];
+        if (cfg.isEmpty()) return out;
+        // The one industry section this link's reader is shown. The others are
+        // structurally unreachable for this link, so listing them would be six
+        // rows of zero that mean nothing went wrong.
+        String ownIndustry = String.isBlank(cfg[0].Industry__c)
+            ? null : 'industry-' + cfg[0].Industry__c;
+
+        // The sections of the page this link points at, in the order it draws
+        // them: the map has to include chapters nobody reached, because those
+        // are the finding.
+        Map<String, SitemapNode> byKey = new Map<String, SitemapNode>();
+        for (MA_Page_Section__c sec : [
+            SELECT Section_Key__c, Label__c, Sort_Order__c, Layout_Type__c
+            FROM   MA_Page_Section__c
+            WHERE  Offering_Key__c  = :cfg[0].Offering__c
+            AND    Template_Type__c = 'configurator'
+            AND    Active__c = true AND Status__c = 'Published'
+            ORDER BY Sort_Order__c ASC NULLS LAST
+            LIMIT  200
+        ]) {
+            // Only what a reader can actually land on. The assistant is a
+            // control, the defaults are settings, and neither is a beat of the
+            // page -- a map that lists them reports 0 readers on things that
+            // have no readers by design.
+            if (sec.Layout_Type__c == 'assistant'
+                || sec.Layout_Type__c == 'offering-defaults') continue;
+            if (sec.Layout_Type__c == 'industry-profile'
+                && sec.Section_Key__c != ownIndustry) continue;
+
+            SitemapNode n = new SitemapNode();
+            n.sectionKey = sec.Section_Key__c;
+            n.label      = sec.Layout_Type__c == 'industry-profile'
+                ? sec.Label__c + ' (cover)' : sec.Label__c;
+            n.sortOrder  = sec.Sort_Order__c;
+            n.readers    = 0;
+            n.clicks     = 0;
+            n.totalDwell = 0;
+            n.avgDwell   = 0;
+            n.isLastSeen = false;
+            byKey.put(sec.Section_Key__c, n);
+            out.add(n);
+        }
+        if (out.isEmpty()) return out;
+
+        for (AggregateResult ar : [
+            SELECT Step__c step, Event_Type__c evt,
+                   COUNT_DISTINCT(Session_Id__c) sessions, COUNT(Id) hits, SUM(Dwell_Seconds__c) dwell
+            FROM   MA_Link_Event__c
+            WHERE  Saved_Configuration__c = :configId AND Step__c != null
+            GROUP BY Step__c, Event_Type__c
+        ]) {
+            SitemapNode n = byKey.get((String) ar.get('step'));
+            if (n == null) continue;
+            String evt = (String) ar.get('evt');
+            if (evt == 'Section Viewed') {
+                n.readers    = (Integer) ar.get('sessions');
+                Decimal d    = (Decimal) ar.get('dwell');
+                n.totalDwell = d == null ? 0 : d.setScale(1);
+                n.avgDwell   = n.readers > 0 ? (n.totalDwell / n.readers).setScale(1) : 0;
+            } else if (evt == 'CTA Clicked') {
+                n.clicks = (Integer) ar.get('hits');
+            }
+        }
+
+        // Where reading stops is the finding, so it is marked rather than left
+        // for someone to spot by comparing numbers down a column.
+        Integer best = 0;
+        for (SitemapNode n : out) if (n.readers > best) best = n.readers;
+        SitemapNode lastReached = null;
+        for (SitemapNode n : out) if (n.readers > 0) lastReached = n;
+        if (lastReached != null && best > 0 && lastReached.sortOrder != null) {
+            lastReached.isLastSeen = true;
+        }
+        return out;
+    }
 }

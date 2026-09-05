@@ -439,8 +439,10 @@
       submission-token={submissionToken}
       prefill-company={company}
       prefill-platform={sourcePlatformPrefill}
+      session-id={visitSessionId}
       onclose={handleCloseBooking}
       onsubmitted={handleBookingSubmitted}
+      onformresumed={handleFormResumed}
     ></c-ma-config-booking>
 
     <template if:true={showGateLoading}>

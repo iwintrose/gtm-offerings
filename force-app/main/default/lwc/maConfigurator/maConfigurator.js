@@ -10,6 +10,8 @@ import getSiteInfo from '@salesforce/apex/MaPageContentReader.getSiteInfo';
 import checkPasswordRequired from '@salesforce/apex/MaLinkAuthController.checkPasswordRequired';
 import verifyAndIssueToken from '@salesforce/apex/MaLinkAuthController.verifyAndIssueToken';
 import logEvent from '@salesforce/apex/MaLinkEventController.logEvent';
+import logEvents from '@salesforce/apex/MaLinkEventController.logEvents';
+import identifySession from '@salesforce/apex/MaLinkEventController.identifySession';
 import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/maConfigData';
 import { CHAPTER_DEFAULTS } from 'c/maConfiguratorCopy';
 import USER_ID from '@salesforce/user/Id';
@@ -304,7 +306,13 @@ export default class MaConfigurator extends LightningElement {
         this._scrollHandler = this.handleScroll.bind(this);
         this._keyHandler = this.handleKeydown.bind(this);
         this._visibilityHandler = () => {
-            if (document.visibilityState === 'hidden' && this._formOpened && !this._formSubmitted) {
+            if (document.visibilityState !== 'hidden') return;
+            // Everything gets one last chance to be recorded before the tab is
+            // gone: a trail flushed only on a timer loses the end of every visit.
+            this._closeOpenSections();
+            this._track('Session End');
+            this._flush();
+            if (this._formOpened && !this._formSubmitted) {
                 this._logEvent('Drop-off');
             }
         };
@@ -406,6 +414,9 @@ export default class MaConfigurator extends LightningElement {
         if (this._visibilityHandler) {
             document.removeEventListener('visibilitychange', this._visibilityHandler);
         }
+        if (this._sectionObserver) { this._sectionObserver.disconnect(); this._sectionObserver = null; }
+        this._closeOpenSections();
+        this._flush();
         if (this._observer) {
             this._observer.disconnect();
             this._observer = undefined;
@@ -413,6 +424,10 @@ export default class MaConfigurator extends LightningElement {
     }
 
     renderedCallback() {
+        // Sections only exist once the content has resolved, so this cannot be
+        // done at connect. Guarded, because renderedCallback runs on every
+        // keystroke the customiser makes.
+        if (!this._sectionObserver) this._watchSections();
         this._revealed.forEach((el) => {
             if (el && el.classList && !el.classList.contains('in')) {
                 el.classList.add('in');
@@ -794,6 +809,10 @@ export default class MaConfigurator extends LightningElement {
     // ---------------------------------------------------------- the assistant
 
     /** One token per visit, so the agent's replies can be matched to this tab. */
+    /** The id of this visit, so a draft written during it can be tied back to
+     *  the trail of what was read before it. */
+    get visitSessionId() { return this._sessionId || ''; }
+
     get agentSessionToken() {
         if (!this._agentToken) {
             this._agentToken = (typeof crypto !== 'undefined' && crypto.randomUUID)
@@ -956,6 +975,9 @@ export default class MaConfigurator extends LightningElement {
     handleReveal() {
         if (this.proofOn) return;
         this.proofOn = true;
+        // The one thing on this page a reader has to choose to do. Whether they
+        // do it is the strongest signal the page gives short of the form.
+        this._track('CTA Clicked', 'proof', 'Revealed the assessment');
 
         const assets = this.numberFrom('ASSET_COUNT', 4128);
         const deps = this.numberFrom('DEPENDENCY_COUNT', 9640);
@@ -1180,6 +1202,7 @@ export default class MaConfigurator extends LightningElement {
             this._formOpened = true;
             this._logEvent('Form Opened');
         }
+        this._track('CTA Clicked', 'closing', 'Opened the assessment form');
     }
 
     handleCloseBooking() {
@@ -1188,8 +1211,27 @@ export default class MaConfigurator extends LightningElement {
 
     handleBookingSubmitted(event) {
         this._formSubmitted = true;
-        const arId = event.detail ? event.detail.assessmentRequestId : null;
-        this._logEvent('Form Submitted', null, arId);
+        const detail = event.detail || {};
+        this._logEvent('Form Submitted', null, detail.assessmentRequestId || null);
+        this._track('CTA Clicked', 'closing', 'Submitted the assessment');
+        this._flush();
+
+        // Everything they read before this was anonymous. Now that they have
+        // said who they are, the whole session becomes theirs -- so the trail
+        // that led to the request is attributable to the person who left it.
+        if (detail.contactId && this.savedRecordId) {
+            identifySession({
+                configId: this.savedRecordId,
+                sessionId: this._sessionId,
+                contactId: detail.contactId
+            }).catch(() => { /* the request itself already succeeded */ });
+        }
+    }
+
+    /** A resumed form is worth knowing about: it means the link did its job on
+     *  a second visit, which a first-visit-only funnel would never show. */
+    handleFormResumed() {
+        this._track('Form Resumed', 'assessment');
     }
 
     handleKeydown(event) {
@@ -1366,6 +1408,105 @@ export default class MaConfigurator extends LightningElement {
     numberFrom(key, fallback) {
         const parsed = parseFloat(this.tokenValue(key).replace(/[^0-9.]/g, ''));
         return isNaN(parsed) ? fallback : Math.round(parsed);
+    }
+
+    /**
+     * The interaction trail: which chapters were read, for how long, and what
+     * was pressed.
+     *
+     * A page view says the link was opened. It does not say whether the proof
+     * panel was reached or the pricing chapter was skipped, which is the part a
+     * BD can act on. The page is already modelled as named sections, so an
+     * IntersectionObserver over them produces an attributed trail for free --
+     * the sitemap that Marketing Cloud Personalization and Adobe both make you
+     * build and maintain by hand is, here, the page's own structure.
+     *
+     * Batched: a single read of this page leaves a dozen or more section
+     * events, and a round trip each would put the prospect's connection to work
+     * while they read.
+     */
+    _queue = [];
+    _seq = 0;
+    _flushTimer = null;
+    _sectionObserver = null;
+    _visibleSince = new Map();
+
+    _track(eventType, step, target, dwellSeconds) {
+        if (!this.isProspectLink || !this.savedRecordId || this.isConfigManager) return;
+        this._seq += 1;
+        this._queue.push({
+            eventType,
+            step: step || null,
+            target: target || null,
+            dwellSeconds: dwellSeconds == null ? null : Math.round(dwellSeconds * 10) / 10,
+            sequence: this._seq
+        });
+        // A queue this long means something is firing in a loop; send it and
+        // start again rather than growing without bound.
+        if (this._queue.length >= 25) this._flush();
+        else this._scheduleFlush();
+    }
+
+    _scheduleFlush() {
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        clearTimeout(this._flushTimer);
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        this._flushTimer = setTimeout(() => this._flush(), 4000);
+    }
+
+    _flush() {
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        clearTimeout(this._flushTimer);
+        if (!this._queue.length) return;
+        const batch = this._queue;
+        this._queue = [];
+        logEvents({
+            configId: this.savedRecordId,
+            sessionId: this._sessionId,
+            events: batch
+        }).catch(() => { /* best-effort, like every other event on this page */ });
+    }
+
+    /**
+     * Dwell, measured as time actually on screen.
+     *
+     * Time-on-page counts a tab someone walked away from; this counts a section
+     * from when it comes into view to when it leaves, and only reports a stay
+     * long enough to be reading rather than scrolling past.
+     */
+    _watchSections() {
+        if (typeof IntersectionObserver === 'undefined') return;
+        if (!this.isProspectLink || this.isConfigManager) return;
+
+        this._sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                const key = entry.target.dataset.section;
+                if (!key) return;
+                if (entry.isIntersecting) {
+                    if (!this._visibleSince.has(key)) this._visibleSince.set(key, Date.now());
+                    return;
+                }
+                const since = this._visibleSince.get(key);
+                if (!since) return;
+                this._visibleSince.delete(key);
+                const seconds = (Date.now() - since) / 1000;
+                // Under a second is a scroll, not a read.
+                if (seconds >= 1) this._track('Section Viewed', key, null, seconds);
+            });
+        }, { threshold: 0.35 });
+
+        this.template.querySelectorAll('[data-section]')
+            .forEach((el) => this._sectionObserver.observe(el));
+    }
+
+    /** Anything still on screen when they go has been dwelt on until now. */
+    _closeOpenSections() {
+        const now = Date.now();
+        this._visibleSince.forEach((since, key) => {
+            const seconds = (now - since) / 1000;
+            if (seconds >= 1) this._track('Section Viewed', key, null, seconds);
+        });
+        this._visibleSince.clear();
     }
 
     _logEvent(eventType, step, assessmentRequestId) {

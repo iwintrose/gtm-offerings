@@ -12,6 +12,11 @@
             under a minute.
           </p>
         </div>
+        <template if:true={resumed}>
+          <p class="bk-resumed" role="status">
+            <span class="bk-resumed-dot"></span>{resumeNote}
+          </p>
+        </template>
         <form class="bk-body" onsubmit={handleSubmit}>
           <div class="bk-row">
             <div class={nameFieldClass}>
