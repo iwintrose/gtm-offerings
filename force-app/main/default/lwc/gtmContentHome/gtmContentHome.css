@@ -53,9 +53,13 @@
     box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
     display: flex; flex-direction: column;
 }
-/* The one card that is not an offering says so with an edge, not a colour
-   wash: it is a different kind of thing, not a more important one. */
-.off--framework { border-top: 3px solid #0176d3; }
+/* Every card carries the same 3px rail; the colour is what differs, and it
+   matches the card's own icon. The framework had the only accent, which read
+   as "this one is special" rather than "these are two kinds of thing" -- an
+   exception where a system was wanted. */
+.off { border-top: 3px solid #747474; }
+.off--framework { border-top-color: #06a59a; }
+.off:not(.off--framework) { border-top-color: #9050e9; }
 
 .off-head { padding: .75rem .75rem .5rem; border-bottom: 1px solid #f3f3f3; }
 .off-head .slds-media { display: flex; align-items: center; gap: .6rem; }
@@ -156,4 +160,45 @@
 .modal-f {
     padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
     display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
+}
+
+/* ── flare, where it carries meaning ───────────────────────────────────────
+   Salesforce's own surfaces are calm, so the character here comes from
+   rhythm and response rather than ornament: cards that answer the pointer,
+   page rows that show where they lead, numbers that read as numbers. */
+
+.off {
+  transition: box-shadow .14s ease, transform .14s ease, border-color .14s ease;
+}
+.off:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .09);
+  transform: translateY(-1px);
+}
+
+/* A page row is a doorway. The chevron leans toward the door on approach. */
+.pg { transition: background .12s ease, border-color .12s ease; }
+.pg .pg-go { transition: transform .14s ease, opacity .14s ease; opacity: .45; }
+.pg:hover .pg-go { transform: translateX(3px); opacity: 1; }
+
+/* An empty page is not a failure state, so it reads as an invitation rather
+   than a warning: dashed, quiet, and it firms up when you approach it. */
+.pg--unbuilt { border-style: dashed; border-color: #d8d8d8; }
+.pg--unbuilt:hover { border-style: solid; }
+.pg-flag {
+  background: #f3f3f3;
+  color: #6b6b6b;
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* The count on a card header is a fact, so it is set like one. */
+.off-stat { font-variant-numeric: tabular-nums; }
+
+.home-title { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .off, .pg, .pg .pg-go { transition: none; }
+  .off:hover { transform: none; }
+  .pg:hover .pg-go { transform: none; }
 }

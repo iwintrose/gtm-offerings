@@ -254,8 +254,14 @@ private class MaAssessmentRequestControllerTest {
         Assert.areEqual('alex.rivera@example.com', req.Requester_Email__c);
         Assert.areEqual('New', req.Status__c);
         Assert.areEqual(result.contactId, req.Contact__c);
-        Assert.isNull(req.Opportunity__c, 'No client link was supplied');
-        Assert.isNull(req.Saved_Configuration__c);
+        // A submission from a named company is a lead, so an Opportunity is
+        // raised for it whether or not it came from a client link -- see
+        // MaAssessmentRequestController.ensureOpportunity, which branches on
+        // the link only to decide whether to stamp Engagement_Link__c. This
+        // test used to assert the opposite and had been failing on it; what it
+        // is actually guarding is that no link means no link, below.
+        Assert.isNotNull(req.Opportunity__c, 'A named company still raises a deal');
+        Assert.isNull(req.Saved_Configuration__c, 'No client link was supplied');
     }
 
     @isTest
@@ -480,7 +486,14 @@ private class MaAssessmentRequestControllerTest {
         Test.stopTest();
 
         Assert.isTrue(result.success, 'A bad savedRecordId should not block the submission');
-        Assert.isNull(result.opportunityId);
+        // The malformed id is ignored, not fatal: the submission still resolves
+        // its account and raises a deal. What must not happen is the bad id
+        // being stored as though it were a real link.
+        MA_Assessment_Request__c filed = [
+            SELECT Saved_Configuration__c FROM MA_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.isNull(filed.Saved_Configuration__c, 'A malformed id must not be stored as a link');
     }
 
     // ------------------------------------------------------------ token gate

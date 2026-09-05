@@ -54,16 +54,16 @@
   top: calc(100% + 0.4rem);
   right: 0;
   z-index: 100;
-  min-width: 300px;
-  max-width: 400px;
-  max-height: 60vh;
+  min-width: 340px;
+  max-width: 440px;
+  max-height: 68vh;
   overflow-y: auto;
   background: var(--paper, #fff);
   color: var(--ink, #1a1a1a);
   border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
-  border-radius: 10px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
-  padding: 0.5rem;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42), 0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 0.4rem;
 }
 
 .sl-panel.open {
@@ -91,12 +91,24 @@
 }
 
 .sl-offering-name {
-  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.66rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.55;
-  margin: 0.5rem 0.5rem 0.2rem;
+  letter-spacing: 0.1em;
+  opacity: 0.45;
+  margin: 0.7rem 0.55rem 0.35rem;
+}
+/* A hairline that runs out from the label, so sections read as sections
+   without another box around them. */
+.sl-offering-name::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.18;
 }
 
 .sl-industry {
@@ -106,33 +118,39 @@
 .sl-industry-name {
   font-size: 0.7rem;
   font-weight: 600;
-  opacity: 0.5;
-  margin: 0.3rem 0.5rem 0.15rem;
+  opacity: 0.38;
+  margin: 0.45rem 0.55rem 0.2rem;
 }
 
 .sl-link {
+  position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
-  padding: 0.45rem 0.5rem;
-  border-radius: 8px;
+  gap: 0.6rem;
+  padding: 0.6rem 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background .12s ease, border-color .12s ease;
 }
 
 .sl-link:hover {
-  background: rgba(127, 127, 127, 0.08);
+  background: rgba(127, 127, 127, 0.09);
+  border-color: rgba(127, 127, 127, 0.18);
 }
 
 .sl-dot {
   flex: none;
-  width: 7px;
-  height: 7px;
-  margin-top: 0.4rem;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.42rem;
   border-radius: 50%;
-  background: #1a7a3a;
+  background: #2e9e52;
+  box-shadow: 0 0 0 3px rgba(46, 158, 82, 0.18);
 }
 
 .sl-dot.off {
-  background: #9a9a9a;
+  background: #8d8d8d;
+  box-shadow: 0 0 0 3px rgba(141, 141, 141, 0.15);
 }
 
 .sl-link-main {
@@ -140,11 +158,15 @@
   min-width: 0;
 }
 
+/* The client's name is the label, not an alert. It used to be painted in the
+   brand coral, which reads as a warning in a list where warnings also exist.
+   The accent moves to the hover, where it means "this is a link". */
 .sl-link-name {
   display: block;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--sl-accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: inherit;
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -152,7 +174,9 @@
 }
 
 .sl-link-name:hover {
+  color: var(--sl-accent);
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .sl-link.inactive .sl-link-name {
@@ -179,23 +203,40 @@
   opacity: 1;
 }
 
+/* The list is something you read; the controls are something you reach for.
+   They stay legible but recede until the row is under the pointer -- and stay
+   put whatever their state, so nothing jumps as you move down the list. */
 .sl-link-actions {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
   flex: none;
+  opacity: 0.35;
+  transition: opacity .12s ease;
+}
+
+.sl-link:hover .sl-link-actions,
+.sl-link:focus-within .sl-link-actions {
+  opacity: 1;
 }
 
 .sl-toggle-active {
   background: transparent;
-  border: 1px solid var(--line, rgba(127, 127, 127, 0.3));
-  border-radius: 6px;
+  border: 1px solid rgba(127, 127, 127, 0.32);
+  border-radius: 999px;
   cursor: pointer;
-  opacity: 0.6;
-  font-size: 0.65rem;
-  padding: 0.2rem 0.4rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.22rem 0.62rem;
   color: inherit;
   white-space: nowrap;
+  transition: border-color .12s ease, background .12s ease;
+}
+
+.sl-toggle-active:hover {
+  border-color: currentColor;
+  background: rgba(127, 127, 127, 0.12);
 }
 
 .sl-toggle-active:hover {
@@ -217,38 +258,60 @@
   opacity: 1;
 }
 
-/* The deal a link was built for. A client with several links is normal; not
-   knowing which deal each belongs to is the problem this solves. */
+/* ── the deal ──────────────────────────────────────────────────────────────
+   Which deal a link belongs to is the thing that stops two links for one
+   client being a guess, so it gets a line of its own rather than being
+   crushed into the meta row. */
 .sl-deal {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 3px;
-  font-size: 11px;
-  color: #5b5a6b;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  min-width: 0;
 }
-.sl-deal-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sl-deal-stage {
-  flex: none;
-  padding: 0 6px;
-  border: 1px solid #d6d6de;
-  border-radius: 999px;
-  font-size: 10px;
-  color: #6b6a78;
-}
-.sl-deal--none { color: #8a8798; font-style: italic; }
 
-/* Two links on the SAME deal, which is probably a mistake rather than a
-   second conversation. */
+.sl-deal-name {
+  font-size: 0.72rem;
+  opacity: 0.62;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sl-deal--none {
+  opacity: 0.75;
+  font-style: italic;
+}
+
+/* The stage, coloured by how far along it is. Early is cool and quiet, the
+   middle warms up, won is green, lost is muted red -- so a column of these
+   reads as a pipeline at a glance instead of a column of words. */
+.sl-stage {
+  flex: none;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.sl-stage--early { color: #6f8fb5; }
+.sl-stage--mid   { color: #b8892b; }
+.sl-stage--late  { color: #c2703a; }
+.sl-stage--won   { color: #2e9e52; }
+.sl-stage--lost  { color: #a8555a; }
+
+/* Two links on one deal, which is usually accidental. */
 .sl-dupe {
   display: inline-block;
-  margin-top: 3px;
-  padding: 1px 7px;
-  border: 1px solid #b8892b;
+  margin-top: 0.35rem;
+  padding: 0.08rem 0.55rem;
   border-radius: 999px;
-  background: rgba(184, 137, 43, 0.12);
-  color: #8a6520;
-  font-size: 10.5px;
+  border: 1px solid rgba(184, 137, 43, 0.55);
+  background: rgba(184, 137, 43, 0.14);
+  color: #c99a3d;
+  font-size: 0.64rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
 }

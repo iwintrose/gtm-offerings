@@ -43,7 +43,7 @@
                                                 <div class="sl-deal" title="The opportunity this link was built for">
                                                     <span class="sl-deal-name">{link.dealName}</span>
                                                     <template if:true={link.dealStage}>
-                                                        <span class="sl-deal-stage">{link.dealStage}</span>
+                                                        <span class={link.dealStageClass}>{link.dealStage}</span>
                                                     </template>
                                                 </div>
                                             </template>

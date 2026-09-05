@@ -270,11 +270,11 @@ public without sharing class MaAssessmentRequestController {
             Id opportunityId = ctx.opportunityId;
             Boolean linkedToEngagementLink = isId(savedRecordId);
             if (opportunityId == null) {
-                String offeringLabel = offeringLabel(ctx.offering);
-                String company = String.isNotBlank(ctx.company) ? ctx.company : 'New Prospect';
-
+                // One naming authority, shared with the link-saving path --
+                // see MaDealNaming. This used to build its own name with a
+                // different word order and a different dash.
                 Opportunity opp = new Opportunity(
-                    Name = company + ' - ' + offeringLabel,
+                    Name = MaDealNaming.nameFor(ctx.company, ctx.offering, ctx.accountId),
                     AccountId = ctx.accountId,
                     StageName = 'Qualification',
                     CloseDate = Date.today().addDays(90),
@@ -335,25 +335,6 @@ public without sharing class MaAssessmentRequestController {
         );
     }
 
-    private static String offeringLabel(String offeringKey) {
-        if (String.isBlank(offeringKey)) {
-            return 'Assessment Follow-up';
-        }
-        try {
-            List<MA_Offering__mdt> rows = [
-                SELECT Label__c
-                FROM MA_Offering__mdt
-                WHERE Offering_Key__c = :offeringKey
-                LIMIT 1
-            ];
-            if (!rows.isEmpty() && String.isNotBlank(rows[0].Label__c)) {
-                return rows[0].Label__c;
-            }
-        } catch (Exception e) {
-            // Fall through to the raw key below.
-        }
-        return offeringKey;
-    }
 
     private static Decimal offeringAnnualTarget(String offeringKey) {
         if (String.isBlank(offeringKey)) {

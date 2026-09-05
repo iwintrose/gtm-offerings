@@ -70,6 +70,8 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                 canRename: o.canRename === true,
                 isEditing: this.renamingKey === o.offeringKey,
                 icon: o.isFramework ? 'standard:hierarchy' : 'standard:product',
+                // The rail on the card and the icon are the same colour on
+                // purpose: one signal for "what kind of thing is this".
                 subtitle: o.isFramework
                     ? 'Sits above every offering'
                     : o.offeringKey,

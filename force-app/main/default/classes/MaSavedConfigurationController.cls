@@ -251,7 +251,8 @@ public with sharing class MaSavedConfigurationController {
             accountId,
             trimTo(input.company, MAX_COMPANY),
             parseDecimal(input.estimatedValue),
-            input.opportunityId
+            input.opportunityId,
+            input.offering
         );
         // Same rule as the client-submission flow: an Opportunity never
         // sits without the Contact it's known to belong to.
@@ -647,7 +648,8 @@ public with sharing class MaSavedConfigurationController {
      * Account, no Opportunity.
      */
     private static Id resolveOpportunity(String recordId, Id accountId, String company,
-                                         Decimal amount, String chosenOpportunityId) {
+                                         Decimal amount, String chosenOpportunityId,
+                                         String offeringKey) {
         if (accountId == null) return null;
 
         // The rep's own choice wins. Without this the wizard could only ever
@@ -676,22 +678,12 @@ public with sharing class MaSavedConfigurationController {
                 return existingLink[0].Opportunity__c;
             }
         }
-        // Two deals on one account carrying the identical auto-generated name
-        // is the same guessing problem in a new place -- a rep picking from
-        // the list would have no way to tell them apart. The first keeps the
-        // clean name; a later one says when it was opened.
-        String baseName = 'Migration Accelerator — '
-            + (String.isNotBlank(company) ? company.trim() : 'Assessment');
-        String oppName = baseName;
-        Integer clash = [
-            SELECT COUNT() FROM Opportunity WHERE AccountId = :accountId AND Name = :baseName
-        ];
-        if (clash > 0) {
-            oppName = baseName + ' (' + Date.today().format() + ')';
-        }
-
+        // One naming authority, shared with the assessment-request path --
+        // see MaDealNaming for why this is not two conventions any more. The
+        // offering was hardcoded here, which would have been wrong the day a
+        // second offering existed.
         Opportunity opp = new Opportunity(
-            Name = oppName,
+            Name = MaDealNaming.nameFor(company, offeringKey, accountId),
             AccountId = accountId,
             StageName = 'Prospecting',
             CloseDate = Date.today().addDays(90)

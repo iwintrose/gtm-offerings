@@ -164,3 +164,31 @@
     padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
     display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
 }
+
+/* ── same language as the Content Manager home ─────────────────────────────
+   These are sibling pages and should feel like one product: the same card
+   rail, the same response to the pointer, the same restraint. */
+.ov-card, .ocard {
+  border-top: 3px solid #747474;
+  transition: box-shadow .14s ease, transform .14s ease;
+}
+.ov-col--stats { border-top-color: #0176d3; }
+.ov-col--work  { border-top-color: #fe9339; }
+.ocard         { border-top-color: #9050e9; }
+
+.ov-card:hover, .ocard:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .09);
+  transform: translateY(-1px);
+}
+
+/* The numbers are the point of the snapshot, so they get to be numbers:
+   aligned, tabular, and large enough to read across the room. */
+.tile-value, .ov-title { font-variant-numeric: tabular-nums; }
+
+.row { transition: background .12s ease; }
+.row:hover { background: #f6f9fe; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-card, .ocard, .row { transition: none; }
+  .ov-card:hover, .ocard:hover { transform: none; }
+}

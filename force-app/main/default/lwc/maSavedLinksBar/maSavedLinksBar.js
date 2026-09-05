@@ -232,6 +232,10 @@ export default class MaSavedLinksBar extends LightningElement {
                 // you can see they belong to different deals.
                 dealName: rec.Opportunity__r ? rec.Opportunity__r.Name : '',
                 dealStage: rec.Opportunity__r ? rec.Opportunity__r.StageName : '',
+                // Colour by how far along the deal is, so the list can be
+                // read at a glance instead of word by word. Decoration that
+                // carries no information is just noise.
+                dealStageClass: stageClass(rec.Opportunity__r ? rec.Opportunity__r.StageName : ''),
                 noDeal: !rec.Opportunity__c,
                 shared: sameDeal > 1,
                 sharedLabel: sameDeal > 1
@@ -291,6 +295,28 @@ function appendCfgId(url, id) {
 
 /** "migration-accelerator" -> "Migration Accelerator". Works for any
  * future offering/industry slug without a lookup table to maintain. */
+/**
+ * Where a deal sits, as a class rather than a literal stage name.
+ *
+ * Stage names are configurable per org, so this reads the shape of the word
+ * rather than matching an exact list -- an org that renames "Qualification"
+ * still lands somewhere sensible instead of falling off the end.
+ */
+function stageClass(stage) {
+    const s = (stage || '').toLowerCase();
+    if (!s) return 'sl-stage';
+    if (s.indexOf('closed') === 0 || s.indexOf('won') >= 0) {
+        return s.indexOf('lost') >= 0 ? 'sl-stage sl-stage--lost' : 'sl-stage sl-stage--won';
+    }
+    if (s.indexOf('negoti') >= 0 || s.indexOf('propos') >= 0 || s.indexOf('contract') >= 0) {
+        return 'sl-stage sl-stage--late';
+    }
+    if (s.indexOf('value') >= 0 || s.indexOf('decision') >= 0 || s.indexOf('percept') >= 0) {
+        return 'sl-stage sl-stage--mid';
+    }
+    return 'sl-stage sl-stage--early';
+}
+
 function formatLabel(slug) {
     if (!slug) return slug;
     return slug

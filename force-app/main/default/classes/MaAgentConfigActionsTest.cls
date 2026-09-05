@@ -26,6 +26,9 @@ private class MaAgentConfigActionsTest {
     @IsTest
     static void getState_withSavedConfig_returnsPayloadValues() {
         MA_Saved_Configuration__c cfg = new MA_Saved_Configuration__c(
+            // Offering__c is required on the object; the insert has been
+            // failing on it rather than testing anything.
+            Offering__c = 'migration-accelerator',
             Config_Payload__c = '{"company":"Acme","industry":"tech","accent":"#FF5733","objectsCount":800,"depsCount":120,"healthScore":72,"note":"Test note"}'
         );
         insert cfg;
@@ -53,6 +56,7 @@ private class MaAgentConfigActionsTest {
     @IsTest
     static void getState_malformedPayload_returnsDefaults() {
         MA_Saved_Configuration__c cfg = new MA_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
             Config_Payload__c = 'NOT VALID JSON {'
         );
         insert cfg;
