@@ -14,7 +14,7 @@ import createSection from '@salesforce/apex/MaPageSectionController.createSectio
 import deleteSection from '@salesforce/apex/MaPageSectionController.deleteSection';
 import restoreSection from '@salesforce/apex/MaPageSectionController.restoreSection';
 // One definition of what a layout is made of, shared with the renderer.
-import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS} from 'c/gtmPageLayouts';
+import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS, FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
 // MaPageContentController.resolveValue.
@@ -70,7 +70,11 @@ export default class GtmContentManager extends LightningElement {
     @track records = [];
     @track activeKey = '';
 
-    @track isLoading = false;
+    // True from the first paint, not from the first fetch. It used to start
+    // false and only flip once connectedCallback got as far as calling Apex,
+    // so the very first frame drew neither the spinner nor the editor -- which
+    // is the blank panel you see before the editor appears.
+    @track isLoading = true;
     @track isSaving = false;
     @track loadError = '';
     @track saveMessage = '';
@@ -610,7 +614,25 @@ export default class GtmContentManager extends LightningElement {
         return TEMPLATE_LABELS[this.selectedTemplate] || this.selectedTemplate;
     }
 
-    get hasLayoutOptions() { return this.layoutOptions.length > 0; }
+    /**
+     * The framework ships configured.
+     *
+     * Its two pages -- the offerings front door and the industry chooser --
+     * are the shape of the product, not content a BA composes per engagement.
+     * Their words are entirely editable and their sections can be reordered;
+     * what is closed is adding and removing sections, because a section added
+     * to the offerings page has no renderer behind it and a section removed
+     * takes a structural part of the product with it.
+     */
+    get isFrameworkPage() { return this.selectedOffering === FRAMEWORK_KEY; }
+
+    get canChangeStructure() { return !this.isFrameworkPage; }
+
+    get structureLockNote() {
+        return 'The framework ships configured. Edit the words freely — the set of sections is part of the product.';
+    }
+
+    get hasLayoutOptions() { return this.layoutOptions.length > 0 && this.canChangeStructure; }
 
     get noLayoutsReason() {
         return this.selectedTemplate === 'offerings-page'
@@ -650,6 +672,7 @@ export default class GtmContentManager extends LightningElement {
     }
 
     handleOpenAdd() {
+        if (!this.canChangeStructure) return;
         this.addOpen = true;
         this.addLayout = '';
         this.addLabel = '';
@@ -710,6 +733,9 @@ export default class GtmContentManager extends LightningElement {
     }
 
     handleAskDelete(event) {
+        // Half a lock is not a lock: without this the Add button is hidden on
+        // the framework and its sections can still be deleted one by one.
+        if (!this.canChangeStructure) return;
         const key = event.currentTarget.dataset.key;
         const section = this.sections.find((s) => s.sectionKey === key);
         if (!section) return;
@@ -874,6 +900,29 @@ export default class GtmContentManager extends LightningElement {
     }
 
     get hasLivePage() { return !!this.livePageUrl; }
+    /**
+     * The offering's pages, as a picker.
+     *
+     * Switching offering was one click on a combobox; switching page meant
+     * going back to the page list and choosing again. They are the same kind of
+     * move, so they now look and cost the same.
+     */
+    get pageOptions() {
+        return this.templates.map((t) => ({
+            label: t.isBuilt ? t.label : `${t.label} — empty`,
+            value: t.templateType
+        }));
+    }
+
+    handlePageChange(event) {
+        const next = event.detail.value;
+        if (!next || next === this.selectedTemplate) return;
+        if (!this.templates.find((t) => t.templateType === next)) return;
+        this.selectedTemplate = next;
+        this.activeKey = '';
+        this.loadPage();
+    }
+
     get hasSections() { return !this.isLoading && this.sections.length > 0; }
     get showPagePicker() { return this.hasOffering && !this.hasTemplate && !this.isLoading; }
     get showEditor() { return this.hasOffering && this.hasTemplate && !this.isLoading; }

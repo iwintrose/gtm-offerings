@@ -262,6 +262,30 @@ export default class GtmPagePreview extends LightningElement {
         window.addEventListener('pointerup', up);
     }
 
+    /**
+     * The preview is for reading, not for using.
+     *
+     * Everything in it is real: real anchors to the live site, real buttons
+     * that open a booking modal or reveal a panel. An editor clicking one while
+     * checking their copy either loses the editor or fires an action meant for
+     * a prospect. Stopped at the frame so no renderer has to know it is being
+     * previewed.
+     *
+     * Scrolling, selecting and the rail's own scroll-spy are untouched: this
+     * only cancels a click that would navigate or act.
+     */
+    handlePreviewClick(event) {
+        // Every click, not just the ones that look actionable. Checking the
+        // target with closest() does not work here: the page renders inside its
+        // own shadow root, so a click on an anchor in there is retargeted to
+        // the host element by the time it reaches this handler, and the check
+        // would pass exactly the links it was meant to stop.
+        //
+        // Selecting text still works -- that is mousedown and drag, not click.
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     // ─── scroll sync ──────────────────────────────────────────────────────────
 
     handleIntent() {

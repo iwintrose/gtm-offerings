@@ -23,7 +23,16 @@
         <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
         <button class="gcm-crumb" onclick={handleBackToPages}>All pages</button>
         <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
-        <span class="gcm-crumb-current">{selectedTemplateLabel}</span>
+        <!-- A picker, not a label: moving between an offering's pages is the
+             same kind of move as changing offering, so it costs the same. -->
+        <lightning-combobox
+          label="Page"
+          variant="label-hidden"
+          value={selectedTemplate}
+          options={pageOptions}
+          onchange={handlePageChange}
+          class="gcm-pick gcm-pick--page">
+        </lightning-combobox>
       </template>
 
       <span class={saveStateClass} title="Edits save as a draft while you type">
@@ -186,9 +195,14 @@
               </template>
             </div>
             <div class="gcm-rail-foot">
-              <button class="gcm-add" onclick={handleOpenAdd} disabled={isSaving}>
-                <span class="gcm-add-plus">+</span> Add section
-              </button>
+              <template if:true={canChangeStructure}>
+                <button class="gcm-add" onclick={handleOpenAdd} disabled={isSaving}>
+                  <span class="gcm-add-plus">+</span> Add section
+                </button>
+              </template>
+              <template if:false={canChangeStructure}>
+                <p class="gcm-locked">{structureLockNote}</p>
+              </template>
               <p class="gcm-hint">{railHint}</p>
             </div>
           </aside>

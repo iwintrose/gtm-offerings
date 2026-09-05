@@ -39,7 +39,13 @@
     <div class="pv-stage">
       <div class="pv-scroll" onscroll={handleScroll} onwheel={handleIntent}
            onpointerdown={handleIntent} onkeydown={handleIntent}>
-        <div class="dev-slot">
+        <!-- Clicks are swallowed here, at the frame, rather than in each
+             renderer: the preview is a picture of the page, and an editor who
+             taps a call-to-action while reading their own copy should not be
+             navigated away from the editor -- or, worse, taken to a live
+             prospect page in the same tab. Capture phase, so it lands before
+             any handler inside the page. -->
+        <div class="dev-slot" onclickcapture={handlePreviewClick}>
           <div class="device" onscroll={handleScroll} onwheel={handleIntent}
                onpointerdown={handleIntent} onkeydown={handleIntent}>
             <!-- The renderer follows the page being edited: each page is
