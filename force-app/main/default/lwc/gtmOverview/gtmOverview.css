@@ -198,3 +198,18 @@
 /* The offerings section holds offerings, so it carries their colour. Every
    card on the page now has a rail; none is an exception. */
 .ov-offerings { border-top-color: #9050e9; }
+
+/* Same SLDS grid trap as the Content Manager home: `.slds-card + .slds-card`
+   adds a rem of top margin to every card after the first, which in a grid is
+   every card but the leftmost of the first row. */
+.ov-cols > .ov-card + .ov-card,
+.ov-cols > .ov-card { margin: 0; }
+.cards > .ocard + .ocard,
+.cards > .ocard { margin: 0; }
+.ov-offerings { margin-top: 1rem; }
+.ov-cols > .ov-card > .slds-card__header,
+.ov-cols > .ov-card > .slds-card__body,
+.cards > .ocard > .slds-card__header,
+.cards > .ocard > .slds-card__body { margin: 0; }
+.side > .side-card + .side-card,
+.side > .side-card { margin: 0; }

@@ -228,3 +228,19 @@
   .off:hover { transform: none; }
   .pg:hover .pg-go { transform: none; }
 }
+
+/* ── SLDS spacing that a grid must not inherit ─────────────────────────────
+   SLDS ships `.slds-card + .slds-card { margin-top: 1rem }` for cards stacked
+   down a page. In a grid every card after the first is an adjacent sibling,
+   so each one was pushed a rem below its neighbour while the grid stretched
+   them to a common bottom -- the cards looked bottom-aligned because the
+   margin ate the top. The same blueprint puts margins on the header, body and
+   footer, which this file already spaces itself.
+
+   The selectors are two classes deep on purpose: `.slds-card + .slds-card` is
+   specificity (0,2,0) and would otherwise win. */
+.off-grid > .off + .off,
+.off-grid > .off { margin: 0; }
+.off-grid > .off > .slds-card__header,
+.off-grid > .off > .slds-card__body,
+.off-grid > .off > .slds-card__footer { margin: 0; }
