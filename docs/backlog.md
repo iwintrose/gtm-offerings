@@ -158,11 +158,18 @@ inside GTM Offerings:
   editor** — no Customize/Gus chrome, none of what Claude called "the
   editor things on the left two columns." Just what was sent.
 
-**In progress.** `code-reviewer`'s pass on the D6 hand-made fixes came back
-clean (no P0s); `frontend-engineer` is now building this, scoped to
-`gtmPageBrowser` (and a new `@api viewOnly`-style flag on `gtmConfigurator`
-it's asked the orchestrating session to apply directly, to avoid a
-collision with the same accent-bug fix work).
+**Done.** `frontend-engineer` rebuilt `gtmPageBrowser`'s non-Story path as
+`gtmRepLinkFinder` — Account → Contact → Link, backed by
+`GtmRepLinkFinderController.getContactsWithLinks` (`with sharing`, not
+guest-reachable, 4 passing tests). The orchestrating session finished the
+piece `frontend-engineer` deferred back: `@api viewOnly` on
+`gtmConfigurator` (gates `showCustomizeButton`, `showAssistant`, the
+saved-links bar) and on `gtmStageActions` (gates `showRail` — the whole
+action rail hides rather than repurposing client-facing status copy for a
+rep's own view), wired `view-only` into `gtmRepLinkFinder`'s rendered
+`<c-gtm-configurator>`. Dry-run + real deploy clean, both sites (`GTM` and
+the still-live legacy `GTM Accelerator`) published, `check-all.sh` and the
+`GtmRepLinkFinderControllerTest` suite green, pushed (`b445e29`, `b3d2804`).
 
 **D8 — Gus's persona and the Configurator's defaults are both stuck inside
 a page, when neither really belongs to one.** Two things, same shape:
