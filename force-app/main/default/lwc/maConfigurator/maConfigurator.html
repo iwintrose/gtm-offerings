@@ -7,8 +7,8 @@
     <div class="psbar" data-section="header">
       <span class="wm"><span class="tick"></span> Publicis <b>Sapient</b></span>
       <div class="bar-right">
-        <a class="backlink" href={industryUrl}>← Industry</a>
         <template if:true={showCustomizeButton}>
+          <a class="backlink" href={industryUrl}>← Industry</a>
           <a class="backlink" href={offeringsUrl}>← Offerings</a>
         </template>
         <c-ma-saved-links-bar lwc:ref="savedLinksBar"></c-ma-saved-links-bar>

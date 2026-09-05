@@ -354,7 +354,6 @@ public without sharing class MaPageContentController {
         HomeSummary home = new HomeSummary();
 
         Map<String, OfferingSummary> byKey = new Map<String, OfferingSummary>();
-        String host = siteHost();
 
         OfferingSummary fwSummary = new OfferingSummary();
         fwSummary.offeringKey = FRAMEWORK_KEY;
@@ -363,12 +362,11 @@ public without sharing class MaPageContentController {
         home.offerings.add(fwSummary);
 
         for (MA_Offering__mdt off : [
-            SELECT Offering_Key__c, Label__c, Site_Path__c FROM MA_Offering__mdt ORDER BY Label__c
+            SELECT Offering_Key__c, Label__c FROM MA_Offering__mdt ORDER BY Label__c
         ]) {
             OfferingSummary o = new OfferingSummary();
             o.offeringKey = off.Offering_Key__c;
             o.label       = off.Label__c;
-            o.storyUrl    = publicUrlFor(host, off.Site_Path__c);
             byKey.put(o.offeringKey, o);
             home.offerings.add(o);
         }
@@ -598,10 +596,6 @@ public without sharing class MaPageContentController {
     public class OfferingSummary {
         @AuraEnabled public String offeringKey { get; set; }
         @AuraEnabled public String label       { get; set; }
-        // Absolute URL of the offering's public story, or blank when it has no
-        // live site. The overview links here rather than to an industry
-        // chooser: the story is what a colleague actually gets sent.
-        @AuraEnabled public String storyUrl    { get; set; }
         // The framework is not an offering: it owns the pages that sit above
         // them, is always shown first, and has no name of its own to change.
         @AuraEnabled public Boolean isFramework = false;

@@ -401,7 +401,7 @@ public with sharing class MaSavedConfigurationController {
      *
      * ConnectApi.Communities is a native platform API, not an HTTP callout --
      * safe to call from the same transaction as a DML save. Read-only,
-     * returns null if the "GTM Accelerator" site isn't found rather than
+     * returns null if the /gtm site isn't found rather than
      * throwing, since a missing site here should degrade gracefully (the
      * standalone launcher just won't be able to build a link) rather than
      * break anything else on the page.
@@ -428,7 +428,13 @@ public with sharing class MaSavedConfigurationController {
     private static String getSiteBaseUrl() {
         try {
             for (ConnectApi.Community c : ConnectApi.Communities.getCommunities().communities) {
-                if (c.name == 'GTM Accelerator' && String.isNotBlank(c.siteUrl)) {
+                // Matched on the URL path prefix, not the display name: the
+                // prefix is what a saved link actually depends on, and it
+                // stays put across a site rename (the label a rep sees is
+                // free to change -- "GTM - not live yet" becomes "GTM" at
+                // go-live -- without silently breaking every link already
+                // sent out).
+                if (c.urlPathPrefix == 'gtm' && String.isNotBlank(c.siteUrl)) {
                     return c.siteUrl + '/s';
                 }
             }

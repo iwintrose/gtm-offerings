@@ -1,0 +1,81 @@
+{
+  "appPageId": "2ccc52cc-3526-4666-b109-aff8cc07e506",
+  "componentName": "siteforce:dynamicLayout",
+  "dataProviders": [],
+  "id": "f5566dab-fcc9-4490-9691-2b7d7c876b7c",
+  "label": "Configurator",
+  "regions": [
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "background": "background: rgba(0,0,0,0)",
+            "backgroundOverlay": "rgba(0,0,0,0.5)",
+            "contentAreaWidth": 100,
+            "sectionConfig": {
+              "UUID": "4d150dac-fa0a-4138-b511-846b9361488b",
+              "columns": [
+                {
+                  "UUID": "51644554-9693-482a-8ed1-23cc6c660760",
+                  "columnKey": "1",
+                  "columnName": "Column 1",
+                  "columnWidth": "12",
+                  "seedComponents": []
+                }
+              ]
+            },
+            "sectionHeight": 300
+          },
+          "componentName": "forceCommunity:section",
+          "id": "4d150dac-fa0a-4138-b511-846b9361488b",
+          "regions": [
+            {
+              "components": [
+                {
+                  "componentAttributes": {},
+                  "componentName": "c:maConfigurator",
+                  "id": "2968a14f-791c-46d0-9f46-ba1a7df73dd3",
+                  "renderPriority": "NEUTRAL",
+                  "renditionMap": {},
+                  "type": "component"
+                }
+              ],
+              "id": "51644554-9693-482a-8ed1-23cc6c660760",
+              "regionLabel": "Column 1",
+              "regionName": "1",
+              "renditionMap": {},
+              "type": "region"
+            }
+          ],
+          "renderPriority": "NEUTRAL",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "585cd21e-fbc3-4789-a870-15effe79cd54",
+      "regionName": "content",
+      "type": "region"
+    },
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "customHeadTags": "",
+            "description": "",
+            "title": "Configurator"
+          },
+          "componentName": "forceCommunity:seoAssistant",
+          "id": "f611a042-3435-4c52-a2ca-9ebb1bf2137a",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "b4efcda7-5502-4955-90c9-e1149777e4ca",
+      "regionName": "sfdcHiddenRegion",
+      "type": "region"
+    }
+  ],
+  "themeLayoutType": "Inner",
+  "type": "view",
+  "viewType": "custom-configurator"
+}
