@@ -158,16 +158,44 @@ inside GTM Offerings:
   editor** — no Customize/Gus chrome, none of what Claude called "the
   editor things on the left two columns." Just what was sent.
 
-Not touched yet — `gtmPageBrowser`/`gtmConfigurator` are what the
-in-flight `code-reviewer` pass is looking at (D6 hand-made fixes); building
-this now would collide with whatever comes back from that. Real open
-question before this gets built: does "just a view" mean a genuinely new
-mode on `gtmConfigurator` (something distinct from the existing
-`isConfigManager` rep/guest split), or does the existing rep view already
-read as clean enough once Gus/Customize simply aren't opened — need to
-look at what's actually on screen for a rep today before deciding whether
-this is a new component, a flag, or nothing more than a different
-entry point into what already exists.
+**In progress.** `code-reviewer`'s pass on the D6 hand-made fixes came back
+clean (no P0s); `frontend-engineer` is now building this, scoped to
+`gtmPageBrowser` (and a new `@api viewOnly`-style flag on `gtmConfigurator`
+it's asked the orchestrating session to apply directly, to avoid a
+collision with the same accent-bug fix work).
+
+**D8 — Gus's persona and the Configurator's defaults are both stuck inside
+a page, when neither really belongs to one.** Two things, same shape:
+
+- **Gus.** D1 already decided this — "one Gus everywhere; what differs per
+  offering is what he can do" — but it was never built. Confirmed: the
+  `assistant` section (name, role, greeting, fab label, input placeholder)
+  still lives at `migration-accelerator::configurator::assistant`, exactly
+  where D1 said it wrongly was. It's read by nothing else — `gtmConfigurator`
+  is the only reader, hardcoded to that one offering's page — and it's
+  invisible on the Framework's own card in the Content Manager home;
+  finding it means opening Migration Accelerator's Configurator page
+  specifically and knowing to look in its section rail. `git log` confirms
+  this was the original design, not a regression — nobody ever built the
+  move.
+- **Configurator defaults** (the swatch list, default source/target
+  platform, generic demo numbers — `defaults::*` under
+  `migration-accelerator::configurator`) — same shape: only reachable by
+  opening that one page, and `gtmConfigWizard.js` hardcodes
+  `OFFERING = 'migration-accelerator'` when reading them, so a second
+  offering would silently keep reading the first one's swatches and
+  defaults rather than its own.
+
+Your framing: these aren't really *pages* — nobody visits "Gus's settings"
+or "the defaults" as a page a prospect or rep reads — they're closer to
+**assets**, and belong on the Framework's card and each Offering's own card
+on the Content Manager home, not buried inside one specific page's editor.
+Agreed on the shape; still need a name for the category (you said "let's
+find a name" — candidates to react to: **Assets**, **Settings**, **Config**)
+and a decision on the mechanism: a new, non-page-scoped content record type
+addressed by `offeringKey::assetKey` (parallel to how pages are addressed
+today, just without a `templateType`), versus something else. Not started —
+logging for a decision pass, not guessing at the model.
 
 ---
 
@@ -177,7 +205,7 @@ entry point into what already exists.
 |---|---|---|---|
 | B2 | **Resend an engagement link** — a BD can set and clear a link password but there's no "send this again" action. Real gap found while answering the guest-account question. | daily | high |
 | B3 | **Contact-side analytics** — link events now carry `Contact__c` after identity stitching, but nothing on the Contact record shows it. | daily | high |
-| B6 | **Page names in the GTM Content Manager should be editable** by anyone with access to that app. Today `TEMPLATE_LABELS` (`Story`, `Configurator`, `Offerings Page`, `FAQ — BD App`, …) is a hardcoded JS constant in `gtmPageLayouts.js` — a Content Manager user can edit page *content* but not what the page is *called* in their own picker. Needs a content-model decision (own field on the page-content record? a new small addressable content key alongside each page's sections, following the same pattern B1 used?) — well-scoped, same shape as B1, not blocked on a decision, just blocked on `gtmPageLayouts.js` currently being actively rewritten by the D6 rename. Pick up once D6 lands. | daily | high |
+| B6 | **Page names in the GTM Content Manager should be editable** by the Content/BA role (confirmed: the role that has access to that app, not a broader audience). Today `TEMPLATE_LABELS` (`Story`, `Configurator`, `Offerings Page`, `FAQ — BD App`, …) is a hardcoded JS constant in `gtmPageLayouts.js` — a Content Manager user can edit page *content* but not what the page is *called* in their own picker. Needs a content-model decision (own field on the page-content record? a new small addressable content key alongside each page's sections, following the same pattern B1 used?) — well-scoped, same shape as B1. **Unblocked** — D6 landed, `gtmPageLayouts.js` is stable again. | daily | high |
 
 ---
 
