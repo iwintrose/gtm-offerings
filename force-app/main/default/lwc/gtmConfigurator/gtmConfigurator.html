@@ -11,7 +11,9 @@
           <a class="backlink" href={industryUrl}>← Industry</a>
           <a class="backlink" href={offeringsUrl}>← Offerings</a>
         </template>
-        <c-gtm-saved-links-bar lwc:ref="savedLinksBar"></c-gtm-saved-links-bar>
+        <template if:false={viewOnly}>
+          <c-gtm-saved-links-bar lwc:ref="savedLinksBar"></c-gtm-saved-links-bar>
+        </template>
         <!-- The gap on .cta already separates these two flex items; the
              &nbsp; that used to be here doubled it. -->
         <button class="cta" onclick={handleOpenBooking}>
@@ -33,6 +35,7 @@
     <c-gtm-stage-actions
       config-id={savedRecordId}
       is-config-manager={isConfigManager}
+      view-only={viewOnly}
       onstagesent={handleStageSent}
       onpreviewclient={handleStagePreview}
     ></c-gtm-stage-actions>

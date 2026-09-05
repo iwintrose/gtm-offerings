@@ -18,6 +18,13 @@ const CLIENT_MSGS = {
 export default class GtmStageActions extends LightningElement {
     @api configId      = '';
     @api isConfigManager = false;
+    /** A rep looking at a link they already sent (gtmRepLinkFinder / D7) is
+     *  reading it, not managing the deal from here -- the client-facing
+     *  status copy below ("Your brief is with our team...") is written to
+     *  the client, and would read wrong shown back to the rep who sent it.
+     *  Hide the whole rail rather than repurpose that copy for an audience
+     *  it wasn't written for. */
+    @api viewOnly = false;
 
     @track _ctx      = null;
     @track sending   = false;
@@ -32,7 +39,7 @@ export default class GtmStageActions extends LightningElement {
     // ── Visibility ────────────────────────────────────────────────────────────
 
     get stage()     { return this._ctx?.stage || ''; }
-    get showRail()  { return !!this.stage; }
+    get showRail()  { return !!this.stage && !this.viewOnly; }
 
     get showStartProposal() { return this.stage === 'Assessment'; }
     get showSaveDraft()     { return this.stage === 'In_Review'; }

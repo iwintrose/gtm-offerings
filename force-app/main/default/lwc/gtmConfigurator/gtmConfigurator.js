@@ -52,6 +52,13 @@ export default class GtmConfigurator extends LightningElement {
     @api industryUrl = '/choose-industry';
     @api accentColor = ''; // deprecated — colour is set via saved links / Customize panel
 
+    /** True when a rep is looking at a specific link they already sent
+     *  (gtmRepLinkFinder / D7) — reading it, not managing it. Same content
+     *  as the ordinary rep view, minus the editing chrome: no Customize/Gus,
+     *  no saved-links bar, no stage actions. Never true for a guest or for
+     *  the ordinary standalone/embedded rep view -- default off. */
+    @api viewOnly = false;
+
     // Preview mode. The GTM Content Manager hands over the draft it is editing;
     // this renders that instead of fetching, so the editor previews the page
     // itself rather than a stand-in for it.
@@ -666,7 +673,7 @@ export default class GtmConfigurator extends LightningElement {
     }
 
     get showCustomizeButton() {
-        return this.isConfigManager;
+        return this.isConfigManager && !this.viewOnly;
     }
 
     /**
@@ -677,7 +684,7 @@ export default class GtmConfigurator extends LightningElement {
      * show what the page says, and he is not something the page says.
      */
     get showAssistant() {
-        return this.isConfigManager && !this._preview;
+        return this.isConfigManager && !this._preview && !this.viewOnly;
     }
 
     /**
