@@ -31,6 +31,10 @@
         <tab>GTM_Offerings_Overview</tab>
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
+    <tabVisibilities>
+        <tab>GTM_Story_Viewer</tab>
+        <visibility>DefaultOn</visibility>
+    </tabVisibilities>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>true</allowDelete>

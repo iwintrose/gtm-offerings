@@ -48,7 +48,20 @@ sits too close to the card edge. Folded in as B5.
 
 ### Open
 
-**D3 — Site split.** Not yet answered. Offerings page + Industry Chooser are
+**D3 — ANSWERED: A2.** One public site at `/gtm` hosting the configurator and
+nothing else; the offerings list and the story live in Lightning, where the BD
+is already authenticated. The industry chooser is redundant as a *page* — the
+wizard already asks the same question — but stays as the *authoring surface*
+where the industry copy lives. Content home is not the same as a rendered page.
+
+Sequence: story viewer (done) → deploy pages to GTM → **Don publishes and
+activates GTM** → guest permissions, Apex repoint, rewrite the four links →
+verify → **Don deactivates GTM Accelerator** → reseed with permutations.
+
+Only three actions are Don's; Salesforce refuses them over every API. Everything
+else is Claude's.
+
+*(superseded)* **D3 — the old framing.** Not yet answered. Offerings page + Industry Chooser are
 framework; the Configurator belongs to the offering; all three serve from one
 Experience site today. Splitting them is the only route to the URL shape you
 wanted, because a Salesforce site prefix is a single path segment and cannot be

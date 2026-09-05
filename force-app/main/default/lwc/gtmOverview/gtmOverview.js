@@ -158,11 +158,12 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                     return {
                         offeringKey: o.offeringKey,
                         label: o.label,
-                        // A story link only appears when the page is modelled
-                        // and the offering has a live site; a dead link is
-                        // worse than no link.
-                        hasStory: !!story && !!o.storyUrl,
-                        storyUrl: o.storyUrl || '',
+                        // The story is read in the app now, so the only thing
+                        // that gates the button is whether the page has been
+                        // built. It used to also require a live public site —
+                        // which would have hidden the button the moment that
+                        // site was retired, for a page that no longer needs it.
+                        hasStory: !!story,
                         summary: built.length
                             ? `${built.length} page${built.length === 1 ? '' : 's'} built · ${fields} fields`
                             : 'No pages modelled yet',
@@ -296,6 +297,23 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                     ? `${o.openFeedback} open` : '',
                 notes: mine
             };
+        });
+    }
+
+    /**
+     * The story opens in the app, not on the public site.
+     *
+     * It used to be an external link to /s/story. Nobody outside the firm ever
+     * reads it, and sending a rep to the site domain is what left them a guest
+     * — the sign-in loop they kept hitting. Same renderer, inside Lightning,
+     * where they are already themselves.
+     */
+    handleReadStory(event) {
+        const offering = event.currentTarget.dataset.offering;
+        this[NavigationMixin.Navigate]({
+            type: 'standard__navItemPage',
+            attributes: { apiName: 'GTM_Story_Viewer' },
+            state: { c__offering: offering }
         });
     }
 

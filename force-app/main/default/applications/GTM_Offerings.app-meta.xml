@@ -9,6 +9,7 @@
     <label>GTM Offerings</label>
     <navType>Standard</navType>
     <tabs>GTM_Offerings_Overview</tabs>
+    <tabs>GTM_Story_Viewer</tabs>
     <tabs>MA_Saved_Configuration__c</tabs>
     <tabs>MA_Assessment_Request__c</tabs>
     <tabs>standard-Opportunity</tabs>

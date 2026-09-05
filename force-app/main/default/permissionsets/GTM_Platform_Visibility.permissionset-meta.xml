@@ -36,6 +36,10 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
+        <tab>GTM_Story_Viewer</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
         <tab>MA_Saved_Configuration__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>

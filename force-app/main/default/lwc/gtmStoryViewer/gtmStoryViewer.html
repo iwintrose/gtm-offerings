@@ -1,0 +1,43 @@
+<template>
+  <div class="sv">
+    <div class="slds-page-header sv-head">
+      <div class="slds-page-header__row">
+        <div class="slds-page-header__col-title">
+          <lightning-icon icon-name="standard:article" size="medium" class="sv-ico"></lightning-icon>
+          <div class="slds-media__body">
+            <p class="slds-page-header__name-title sv-eyebrow">The story</p>
+            <h1 class="sv-title">{currentLabel}</h1>
+            <p class="slds-page-header__name-meta sv-meta">Internal. This is not what a prospect is sent.</p>
+          </div>
+        </div>
+        <div class="slds-page-header__col-actions sv-actions">
+          <template if:true={showPicker}>
+            <lightning-combobox label="Offering" variant="label-hidden"
+                                value={selected} options={offerings}
+                                onchange={handlePick} class="sv-pick"></lightning-combobox>
+          </template>
+          <lightning-button label="Back to offerings" icon-name="utility:back"
+                            onclick={handleBack}></lightning-button>
+        </div>
+      </div>
+    </div>
+
+    <template if:true={loading}>
+      <div class="sv-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+    </template>
+
+    <template if:true={error}><p class="sv-msg sv-msg--err">{error}</p></template>
+
+    <template if:true={showEmpty}>
+      <p class="sv-msg">No offering has a story built yet. Build one in the GTM Content Manager and it appears here.</p>
+    </template>
+
+    <!-- The same renderer the public site uses, so there is one story and no
+         second copy to drift from it. -->
+    <template if:true={hasStory}>
+      <div class="sv-stage">
+        <c-ma-story offering-key={selected} key={selected}></c-ma-story>
+      </div>
+    </template>
+  </div>
+</template>

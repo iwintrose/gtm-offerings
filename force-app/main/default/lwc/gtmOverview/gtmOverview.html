@@ -171,8 +171,8 @@
             <p class="ocard-sum">{o.summary}</p>
             <div class="ocard-acts">
               <template if:true={o.hasStory}>
-                <a class="ocard-btn ocard-btn--primary" href={o.storyUrl}
-                   target="_blank" rel="noopener">Read the story &#8599;</a>
+                <button class="ocard-btn ocard-btn--primary" data-offering={o.offeringKey}
+                        onclick={handleReadStory}>Read the story</button>
               </template>
               <button class="ocard-btn" data-offering={o.offeringKey}
                       onclick={handleToggleFeedback}>{o.toggleLabel}</button>
