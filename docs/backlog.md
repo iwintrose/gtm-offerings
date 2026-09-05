@@ -75,11 +75,42 @@ Experience site today. Splitting them is the only route to the URL shape you
 wanted, because a Salesforce site prefix is a single path segment and cannot be
 `/gtm/maaccelerator/`.
 
-**D4 — Requests vs submissions.** Not a decision yet: *"I still need a
-walkthrough with you."* Claude explaining it again in prose has failed three
-times, so the next attempt is a walkthrough against the real records — one
-engagement link, and every row both concepts produced from it. Then decide
-whether a submissions list earns a screen. Blocks #16.
+**D4 — Requests vs submissions.** Walked against one real engagement link
+instead of more prose — **MUCH Music**, `MA_Saved_Configuration__c`
+`a00gK00001JtV7lQAF`, Contact Marcus Rivera. Every row it produced:
+
+- **The request** — exactly one `MA_Assessment_Request__c` row, **AR-0017**:
+  Company, Requester Name/Email, `Status__c` (New → Contacted → Scheduled →
+  Completed → No Show — a sales pipeline), `Submitted_At__c`, linked to the
+  Opportunity/Account/Contact. This is the durable BD record a rep works —
+  `GtmStageActionsController` drives the whole proposal flow off its
+  `Status__c`.
+- **The submission** — one row (`Form Submitted`) inside this link's full
+  `MA_Link_Event__c` trail, alongside 3 lighter breadcrumbs (`Page View` x2,
+  `Form Opened`). It carries a lookup *forward* to the request it produced
+  (`Assessment_Request__c = AR-0017`).
+
+So they were never duplicates of each other or two names for the same
+thing: **submissions are analytics/audit-trail entries** (what a visitor
+did, and when — page views, form opens, the submit moment, drop-offs),
+**requests are the one canonical BD record** a submission produces. A
+link can rack up many submission-adjacent events; it produces at most one
+request.
+
+**Resolved — no new screen.** Found `lwc/gtmLinkActivity` already fully
+built (timeline of `Page View`/`Form Opened`/`Form Submitted`/`Drop-off`,
+reads the Request's own `Saved_Configuration__c` lookup, queries that
+config's `Link_Events__r` related list) — `js-meta.xml` already scoped to
+`MA_Assessment_Request__c` record pages — but never placed on any page
+(confirmed via `check-all.sh`'s orphaned-components list and a grep across
+every flexipage: nothing referenced it). Retrieved
+`Assessment_Request_Record_Page2` into source for the first time (it was
+live in the org, untracked — same gap noted during D6), added an
+"Activity" sidebar tab wired to it, next to Collaborate. Dry-run + real
+deploy clean. A submissions *list* would just be a filtered view of
+`MA_Link_Event__c` with no BD-workable content beyond what the request
+already has — the actual gap was this one already-built component sitting
+unused, not a missing screen. Closes #16.
 
 **D5 — Self-service link recovery on the bare `/gtm/s/configurator`.** Not a
 decision yet. Today a guest with no `?cfgId=` gets a static "this page needs a
