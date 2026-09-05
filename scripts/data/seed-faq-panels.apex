@@ -75,7 +75,7 @@ Map<String, Object> pages = new Map<String, Object>{
 };
 
 List<MA_Page_Section__c> sectionsToUpsert = new List<MA_Page_Section__c>();
-List<MaPageContentController.ContentRecord> contentToUpsert = new List<MaPageContentController.ContentRecord>();
+List<GtmPageContentController.ContentRecord> contentToUpsert = new List<GtmPageContentController.ContentRecord>();
 
 for (String templateType : pages.keySet()) {
     Map<String, String> fields = (Map<String, String>) pages.get(templateType);
@@ -95,7 +95,7 @@ for (String templateType : pages.keySet()) {
 
     Integer order = 10;
     for (String fieldKey : new List<String>{ 'eyebrow', 'head', 'items' }) {
-        MaPageContentController.ContentRecord r = new MaPageContentController.ContentRecord();
+        GtmPageContentController.ContentRecord r = new GtmPageContentController.ContentRecord();
         r.offeringKey  = OFK;
         r.templateType = templateType;
         r.sectionKey   = 'faq';
@@ -115,7 +115,7 @@ for (String templateType : pages.keySet()) {
 
 try {
     upsert sectionsToUpsert Section_Address__c;
-    List<String> ids = MaPageContentController.saveContentRecords(contentToUpsert);
+    List<String> ids = GtmPageContentController.saveContentRecords(contentToUpsert);
     Integer ok = 0;
     for (String id : ids) {
         if (String.isNotBlank(id)) ok++;

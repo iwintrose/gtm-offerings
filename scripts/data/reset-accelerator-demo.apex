@@ -8,7 +8,7 @@
  * this app did not create.
  *
  * Then rebuilds a coherent set: four clients across four industries, each with
- * a contact, one opportunity named by MaDealNaming, one engagement link whose
+ * a contact, one opportunity named by GtmDealNaming, one engagement link whose
  * payload holds every value (the accent included, so nothing lives only in a
  * URL), an assessment request, and the interaction events behind the overview.
  *
@@ -74,7 +74,7 @@ List<Opportunity> opps = new List<Opportunity>();
 for (List<String> s : spec) {
     Id acct = acctByName.get(s[0]);
     opps.add(new Opportunity(
-        Name = MaDealNaming.nameFor(s[0], 'migration-accelerator', null),
+        Name = GtmDealNaming.nameFor(s[0], 'migration-accelerator', null),
         AccountId = acct, StageName = 'Qualification',
         CloseDate = Date.today().addDays(90)));
 }
@@ -92,7 +92,7 @@ for (List<String> s : spec) {
 
 // ─── 4. the engagement links ─────────────────────────────────────────────────
 // Every value sits in the payload. Nothing lives only in a URL any more.
-String base = MaSavedConfigurationController.getConfiguratorPageUrl();
+String base = GtmSavedConfigurationController.getConfiguratorPageUrl();
 List<MA_Saved_Configuration__c> links = new List<MA_Saved_Configuration__c>();
 for (List<String> s : spec) {
     Id acct = acctByName.get(s[0]);
