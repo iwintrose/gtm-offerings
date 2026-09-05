@@ -159,22 +159,57 @@
       </div>
       <div class="slds-card__body ov-card-b">
       <div class="cards">
-        <template for:each={offerings} for:item="o">
+        <template for:each={offeringCards} for:item="o">
           <article key={o.offeringKey} class="slds-card ocard">
             <div class="slds-card__header ocard-top">
               <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
               <div class="ocard-id">
                 <span class="ocard-name">{o.label}</span>
-                <span class="ocard-key">{o.offeringKey}</span>
+                <span class="ocard-key">{o.pageList}</span>
               </div>
             </div>
             <p class="ocard-sum">{o.summary}</p>
             <div class="ocard-acts">
               <template if:true={o.hasStory}>
                 <a class="ocard-btn ocard-btn--primary" href={o.storyUrl}
-                   target="_blank" rel="noopener">View the story &#8599;</a>
+                   target="_blank" rel="noopener">Read the story &#8599;</a>
               </template>
+              <button class="ocard-btn" data-offering={o.offeringKey}
+                      onclick={handleToggleFeedback}>{o.toggleLabel}</button>
+            </div>
 
+            <!-- Somewhere to say something about what you just read, and to see
+                 what came back. Closed by default: the card is for reading. -->
+            <div class={o.panelClass}>
+              <template if:true={o.isOpen}>
+                <textarea class="fb-input" placeholder="What did you notice? A claim that will not survive a client, a number that is stale, something missing."
+                          value={draft} onchange={handleDraftChange}></textarea>
+                <div class="fb-send">
+                  <button class="ocard-btn ocard-btn--primary" disabled={sendDisabled}
+                          onclick={handleSendFeedback}>Send to the writers</button>
+                </div>
+                <template if:true={o.notes.length}>
+                  <ul class="notes">
+                    <template for:each={o.notes} for:item="n">
+                      <li key={n.key} class="note">
+                        <div class="note-head">
+                          <span class="note-who">{n.who}</span>
+                          <template if:true={n.page}><span class="note-page">{n.page}</span></template>
+                          <span class={n.statusClass}>{n.status}</span>
+                          <span class="note-when">{n.when}</span>
+                        </div>
+                        <p class="note-body">{n.body}</p>
+                        <template if:true={n.hasResponse}>
+                          <p class="note-reply"><span class="note-reply-k">Writers</span>{n.response}</p>
+                        </template>
+                        <template if:true={n.needsYou}>
+                          <p class="note-ask">They have asked you something — reply on the record.</p>
+                        </template>
+                      </li>
+                    </template>
+                  </ul>
+                </template>
+              </template>
             </div>
           </article>
         </template>

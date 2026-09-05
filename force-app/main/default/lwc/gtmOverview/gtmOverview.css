@@ -330,3 +330,65 @@
 .aside-l { min-width: 0; }
 .aside-v { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
 .aside-v--warn { color: #a1500a; }
+
+/* ── Offering feedback ─────────────────────────────────────────────────────
+   Closed by default: the card is for reading about an offering, and a form
+   sitting open on every card turns a reading surface into a form. */
+.ocard-panel { display: none; }
+.ocard-panel--on {
+    display: block;
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid #ececec;
+}
+.fb-input {
+    width: 100%;
+    min-height: 4.5rem;
+    padding: .5rem .6rem;
+    border: 1px solid #d8d8d8;
+    border-radius: 4px;
+    font: inherit;
+    font-size: 12.5px;
+    resize: vertical;
+}
+.fb-input:focus { outline: 2px solid #0176d3; outline-offset: -1px; border-color: #0176d3; }
+.fb-send { display: flex; justify-content: flex-end; margin-top: .5rem; }
+
+.notes { list-style: none; margin: .9rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+.note { padding-top: .7rem; border-top: 1px solid #f0f0f0; }
+.note:first-child { border-top: 0; padding-top: 0; }
+.note-head { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; font-size: 11.5px; }
+.note-who { font-weight: 600; color: #181818; }
+.note-page { color: #747474; }
+.note-when { margin-left: auto; color: #9a9a9a; }
+.note-body { margin: .3rem 0 0; font-size: 12.5px; color: #3b3b3b; }
+
+/* The reply is the half that makes this a loop rather than a suggestion box,
+   so it is indented under the note it answers rather than listed beside it. */
+.note-reply {
+    margin: .4rem 0 0 .6rem;
+    padding-left: .6rem;
+    border-left: 2px solid #d7e5f5;
+    font-size: 12.5px;
+    color: #3b3b3b;
+}
+.note-reply-k {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #0b3d75;
+}
+.note-ask { margin: .35rem 0 0; font-size: 11.5px; font-weight: 600; color: #a1500a; }
+
+.note-pill {
+    padding: .05rem .4rem;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 600;
+}
+.note-pill--new             { background: #dce9fb; color: #0b3d75; }
+.note-pill--needs-more-info { background: #fdeacb; color: #7a4a05; }
+.note-pill--in-progress     { background: #ece3fb; color: #43308a; }
+.note-pill--resolved        { background: #d7f0e0; color: #14532d; }
+.note-pill--declined        { background: #ececec; color: #545454; }

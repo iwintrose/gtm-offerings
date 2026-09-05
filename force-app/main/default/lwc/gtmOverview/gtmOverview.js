@@ -4,6 +4,8 @@ import getSnapshot from '@salesforce/apex/MaHomeSnapshotController.getSnapshot';
 import getRecentNewAssessmentRequests from '@salesforce/apex/MaHomeSnapshotController.getRecentNewAssessmentRequests';
 import getDeals from '@salesforce/apex/MaHomeSnapshotController.getDeals';
 import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
+import getFeedbackFor from '@salesforce/apex/GtmFeedbackController.getFeedbackFor';
+import submitFeedback from '@salesforce/apex/GtmFeedbackController.submitFeedback';
 // Owned by the prospect-page-wizard branch, which is deployed to this org.
 // Do not add a local copy of MaSavedConfigurationController without merging
 // that branch first — this branch's copy of that class is far behind it.
@@ -36,6 +38,12 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     @track offeringsLoaded = false;
 
     @track navBusy = false;
+
+    /** Which offering's panel is open, and what is being typed into it. */
+    @track openOffering = '';
+    @track feedback = [];
+    @track draft = '';
+    @track sending = false;
 
     /**
      * Everything this page shows is "what has happened lately", so it is read
@@ -157,7 +165,17 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                         storyUrl: o.storyUrl || '',
                         summary: built.length
                             ? `${built.length} page${built.length === 1 ? '' : 's'} built · ${fields} fields`
-                            : 'No pages modelled yet'
+                            : 'No pages modelled yet',
+                        // Named pages rather than a count: "Story, Configurator"
+                        // tells a BD what exists to read; "2 pages" does not.
+                        pageList: built
+                            .map((p) => TEMPLATE_LABELS[p.templateType] || p.templateType)
+                            .join(' · '),
+                        configuratorUrl: o.configuratorUrl || '',
+                        hasConfigurator: !!o.configuratorUrl,
+                        isOpen: false,
+                        toggleLabel: 'Feedback',
+                        panelClass: 'ocard-panel'
                     };
                 });
             })
@@ -253,6 +271,79 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
         const parts = [offerings === 1 ? '1 offering' : `${offerings} offerings`];
         parts.push(waiting === 1 ? '1 request waiting' : `${waiting} requests waiting`);
         return parts.join(' · ');
+    }
+
+    /**
+     * The offerings section, as something to read rather than a row of links.
+     *
+     * It listed each offering and a link to its story. A BD person could go and
+     * read what the offering says and had nowhere to say "that claim does not
+     * survive a CFO" — so the only route back to whoever writes it was a
+     * conversation nobody recorded. Each card now says what the offering has,
+     * and opens a panel to say something about it.
+     */
+    get offeringCards() {
+        return this.offerings.map((o) => {
+            const open = o.offeringKey === this.openOffering;
+            const mine = open ? this.feedback : [];
+            return {
+                ...o,
+                isOpen: open,
+                toggleLabel: open ? 'Close' : 'Feedback',
+                panelClass: open ? 'ocard-panel ocard-panel--on' : 'ocard-panel',
+                openCount: (o.openFeedback || 0),
+                openLabel: (o.openFeedback || 0) > 0
+                    ? `${o.openFeedback} open` : '',
+                notes: mine
+            };
+        });
+    }
+
+    handleToggleFeedback(event) {
+        const key = event.currentTarget.dataset.offering;
+        if (this.openOffering === key) { this.openOffering = ''; this.feedback = []; return; }
+        this.openOffering = key;
+        this.draft = '';
+        this.feedback = [];
+        getFeedbackFor({ offeringKey: key })
+            .then((rows) => { this.feedback = (rows || []).map((r) => this.shapeNote(r)); })
+            .catch((e) => { this.loadError = this.messageFrom(e) || 'Feedback could not be loaded.'; });
+    }
+
+    /** One note, as it reads to the person looking at it. */
+    shapeNote(r) {
+        const answered = !!r.response;
+        return {
+            key: r.recordId,
+            name: r.name,
+            body: r.body,
+            who: r.isMine ? 'You' : (r.submittedBy || 'Someone'),
+            when: r.createdDate ? new Date(r.createdDate).toLocaleDateString() : '',
+            status: r.status,
+            statusClass: `note-pill note-pill--${(r.status || 'New').toLowerCase().replace(/\s+/g, '-')}`,
+            page: r.templateType ? (TEMPLATE_LABELS[r.templateType] || r.templateType) : '',
+            hasResponse: answered,
+            response: r.response,
+            // The one state that needs the reader to do something.
+            needsYou: r.status === 'Needs More Info' && r.isMine
+        };
+    }
+
+    handleDraftChange(event) { this.draft = event.target.value; }
+
+    get sendDisabled() { return this.sending || !this.draft.trim(); }
+
+    handleSendFeedback() {
+        const body = (this.draft || '').trim();
+        if (!body || !this.openOffering) return;
+        this.sending = true;
+        submitFeedback({ offeringKey: this.openOffering, templateType: '', body })
+            .then((row) => {
+                if (row) this.feedback = [this.shapeNote(row), ...this.feedback];
+                this.draft = '';
+            })
+            .catch((e) => { this.loadError = this.messageFrom(e) || 'That could not be saved.'; })
+            .finally(() => { this.sending = false; });
     }
 
     get showEmptyOfferings() { return this.offeringsLoaded && !this.offerings.length; }

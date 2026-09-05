@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>A note from someone selling an offering to the people who write it. Named GTM_ rather than MA_ because feedback is a framework concept: every offering gets it, not just Migration Accelerator.</description>
+    <enableActivities>false</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <label>Offering Feedback</label>
+    <pluralLabel>Offering Feedback</pluralLabel>
+    <nameField>
+        <displayFormat>FB-{0000}</displayFormat>
+        <label>Feedback Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
