@@ -133,7 +133,7 @@ whatever else is in flight when it comes up.
 |---|---|---|---|
 | B2 | **Resend an engagement link** — a BD can set and clear a link password but there's no "send this again" action. Real gap found while answering the guest-account question. | daily | high |
 | B3 | **Contact-side analytics** — link events now carry `Contact__c` after identity stitching, but nothing on the Contact record shows it. | daily | high |
-| B4 | **Delete the retired CMS content.** Content records: done — Don deleted them, confirmed in the recycle bin. Remaining: the 5 `managedContentType` metadata definitions themselves (destructive deploy, in progress alongside D6). | polish | high |
+| B6 | **Page names in the GTM Content Manager should be editable** by anyone with access to that app. Today `TEMPLATE_LABELS` (`Story`, `Configurator`, `Offerings Page`, `FAQ — BD App`, …) is a hardcoded JS constant in `gtmPageLayouts.js` — a Content Manager user can edit page *content* but not what the page is *called* in their own picker. Needs a content-model decision (own field on the page-content record? a new small addressable content key alongside each page's sections, following the same pattern B1 used?) — well-scoped, same shape as B1, not blocked on a decision, just blocked on `gtmPageLayouts.js` currently being actively rewritten by the D6 rename. Pick up once D6 lands. | daily | high |
 
 ---
 
@@ -161,7 +161,9 @@ bare `/gtm/s/configurator` (no `?cfgId=`) blocked from guests, visible only
 to a signed-in Salesforce user · configurable Home redirect (Custom Label,
 editable in Setup without a deploy) · two more dead-code removals
 (`OfferingSummary.storyUrl`, the unused `getSiteHomePageUrl` import) ·
-B5, feedback card padding · B1, the CMS-editable FAQ widget on both apps.
+B5, feedback card padding · B1, the CMS-editable FAQ widget on both apps ·
+B4, the retired CMS content (records deleted by Don, the 5 dead
+managedContentType definitions removed).
 
 ---
 

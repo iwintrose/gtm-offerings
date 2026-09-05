@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Guest access, one narrow class at a time: Apex access is per class, not per method. GtmFormDraftController is the only write - one bearer-token-addressed draft of what the visitor typed, on an active link, reading nothing else back.</description>
+    <label>GTM Story Guest</label>
+    <classAccesses>
+        <apexClass>GtmPageContentReader</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmViewerContext</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmConfigurationReader</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmFormDraftController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>MA_Form_Draft__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <fieldPermissions>
+        <editable>true</editable><field>MA_Form_Draft__c.Draft_JSON__c</field><readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable><field>MA_Form_Draft__c.Furthest_Field__c</field><readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable><field>MA_Form_Draft__c.Session_Id__c</field><readable>true</readable>
+    </fieldPermissions>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>MA_Offering__mdt</name>
+    </customMetadataTypeAccesses>
+</PermissionSet>
