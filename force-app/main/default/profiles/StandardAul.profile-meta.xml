@@ -32,7 +32,7 @@
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
     <tabVisibilities>
-        <tab>GTM_Story_Viewer</tab>
+        <tab>GTM_Pages</tab>
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
     <objectPermissions>

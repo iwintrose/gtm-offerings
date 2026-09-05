@@ -312,8 +312,8 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
         const offering = event.currentTarget.dataset.offering;
         this[NavigationMixin.Navigate]({
             type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Story_Viewer' },
-            state: { c__offering: offering }
+            attributes: { apiName: 'GTM_Pages' },
+            state: { c__offering: offering, c__template: 'story' }
         });
     }
 
