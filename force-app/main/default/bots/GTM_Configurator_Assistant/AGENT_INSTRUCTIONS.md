@@ -2,7 +2,7 @@
 
 > Paste this into Einstein Copilot Studio → Agent Instructions when activating
 > the GTM_Configurator_Assistant agent. These instructions govern the agent's
-> behaviour inside the maConfigCustomize panel.
+> behaviour inside the gtmConfigCustomize panel.
 
 ---
 

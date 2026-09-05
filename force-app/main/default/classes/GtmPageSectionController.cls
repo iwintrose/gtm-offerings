@@ -2,18 +2,18 @@
  * The shape of a page: which sections exist, in what order, and which fields
  * each of them has a record for.
  *
- * Split from MaPageContentController on the line between structure and value.
+ * Split from GtmPageContentController on the line between structure and value.
  * This class decides what a page is made of; that one holds what is written in
  * it. Creating a section creates its content rows because a section without
  * them renders built-in fallbacks and looks like content nobody can edit —
  * that is a structural act, not an edit.
  */
-public with sharing class MaPageSectionController {
+public with sharing class GtmPageSectionController {
 
     /**
      * Sections for the editor: every row including inactive ones, so the rail
      * can show and restore a section that has been switched off. Distinct from
-     * MaPageContentReader.getPageLayout, which is cacheable, guest-facing and
+     * GtmPageContentReader.getPageLayout, which is cacheable, guest-facing and
      * returns only what renders.
      */
     @AuraEnabled(cacheable=false)
@@ -149,7 +149,7 @@ public with sharing class MaPageSectionController {
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
             throw new AuraHandledException('An offering and a page are both required.');
         }
-        String key = MaContentAddress.normaliseKey(sectionKey);
+        String key = GtmContentAddress.normaliseKey(sectionKey);
         if (String.isBlank(key)) {
             throw new AuraHandledException(
                 'A section needs a name made of letters or numbers.'
@@ -173,7 +173,7 @@ public with sharing class MaPageSectionController {
         }
 
         MA_Page_Section__c sec = new MA_Page_Section__c();
-        sec.Section_Address__c = MaContentAddress.forSection(offeringKey, templateType, key);
+        sec.Section_Address__c = GtmContentAddress.forSection(offeringKey, templateType, key);
         sec.Offering_Key__c    = offeringKey;
         sec.Template_Type__c   = templateType;
         sec.Section_Key__c     = key;
@@ -192,7 +192,7 @@ public with sharing class MaPageSectionController {
             if (f == null || String.isBlank(f.fieldKey)) continue;
             position += 10;
             MA_Page_Content__c row = new MA_Page_Content__c();
-            row.Content_Address__c = MaContentAddress.forField(offeringKey, templateType, key, f.fieldKey);
+            row.Content_Address__c = GtmContentAddress.forField(offeringKey, templateType, key, f.fieldKey);
             row.Offering_Key__c    = offeringKey;
             row.Template_Type__c   = templateType;
             row.Section_Key__c     = key;
@@ -330,7 +330,7 @@ public with sharing class MaPageSectionController {
                 'A field type must be one of: ' + String.join(new List<String>(VALUE_TYPES), ', ') + '.'
             );
         }
-        String address = MaContentAddress.forField(offeringKey, templateType, sectionKey, fieldKey);
+        String address = GtmContentAddress.forField(offeringKey, templateType, sectionKey, fieldKey);
         if (![SELECT Id FROM MA_Page_Content__c WHERE Content_Address__c = :address LIMIT 1].isEmpty()) {
             throw new AuraHandledException('That field already exists on this section.');
         }
@@ -596,12 +596,12 @@ public with sharing class MaPageSectionController {
         List<MA_Page_Content__c> newRows = new List<MA_Page_Content__c>();
         Decimal order = 0;
         for (SectionSeed seed : sections) {
-            String key = MaContentAddress.normaliseKey(seed.sectionKey);
+            String key = GtmContentAddress.normaliseKey(seed.sectionKey);
             if (String.isBlank(key)) continue;
             order += 10;
 
             MA_Page_Section__c sec = new MA_Page_Section__c();
-            sec.Section_Address__c = MaContentAddress.forSection(offeringKey, templateType, key);
+            sec.Section_Address__c = GtmContentAddress.forSection(offeringKey, templateType, key);
             sec.Offering_Key__c    = offeringKey;
             sec.Template_Type__c   = templateType;
             sec.Section_Key__c     = key;
@@ -621,7 +621,7 @@ public with sharing class MaPageSectionController {
                 if (f == null || String.isBlank(f.fieldKey)) continue;
                 position += 10;
                 MA_Page_Content__c row = new MA_Page_Content__c();
-                row.Content_Address__c = MaContentAddress.forField(offeringKey, templateType, key, f.fieldKey);
+                row.Content_Address__c = GtmContentAddress.forField(offeringKey, templateType, key, f.fieldKey);
                 row.Offering_Key__c    = offeringKey;
                 row.Template_Type__c   = templateType;
                 row.Section_Key__c     = key;

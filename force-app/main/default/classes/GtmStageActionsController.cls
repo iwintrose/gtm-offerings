@@ -8,7 +8,7 @@
  * client config records regardless of ownership. The entry points are narrow
  * and validate every input before touching data.
  */
-public without sharing class MaStageActionsController {
+public without sharing class GtmStageActionsController {
 
     static final Set<String> VALID_STAGES = new Set<String>{
         'Assessment', 'In_Review', 'Draft', 'Sent'
@@ -138,7 +138,7 @@ public without sharing class MaStageActionsController {
             Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ msg });
         } catch (Exception e) {
             // Log but do not surface to the rep — the stage is already updated
-            System.debug('MaStageActionsController.sendProposalEmailIfPresent: ' + e.getMessage());
+            System.debug('GtmStageActionsController.sendProposalEmailIfPresent: ' + e.getMessage());
         }
     }
 

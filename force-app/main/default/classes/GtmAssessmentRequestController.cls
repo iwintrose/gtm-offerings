@@ -10,7 +10,7 @@
  * and takes the notification destination from custom metadata rather than from
  * the caller so the endpoint cannot be used as an open mail relay.
  */
-public without sharing class MaAssessmentRequestController {
+public without sharing class GtmAssessmentRequestController {
     private static final String DEFAULT_CONFIG = 'Default';
     private static final Integer MAX_SHORT = 255;
     private static final Integer MAX_LONG = 4000;
@@ -62,7 +62,7 @@ public without sharing class MaAssessmentRequestController {
         @AuraEnabled
         public String savedRecordId { get; set; }
         /**
-         * HMAC token issued by MaLinkAuthController.verifyAndIssueToken().
+         * HMAC token issued by GtmLinkAuthController.verifyAndIssueToken().
          * Required when the engagement link has a password set; ignored
          * (not checked) for direct bookings and unprotected links.
          */
@@ -221,7 +221,7 @@ public without sharing class MaAssessmentRequestController {
 
     /**
      * Same exact-name-match find-or-create as
-     * MaSavedConfigurationController.resolveAccount -- kept as its own copy
+     * GtmSavedConfigurationController.resolveAccount -- kept as its own copy
      * rather than a shared utility because the two callers run under
      * different sharing contexts (this class is without sharing and
      * guest-reachable; that one is with sharing and rep-only) and each
@@ -271,10 +271,10 @@ public without sharing class MaAssessmentRequestController {
             Boolean linkedToEngagementLink = isId(savedRecordId);
             if (opportunityId == null) {
                 // One naming authority, shared with the link-saving path --
-                // see MaDealNaming. This used to build its own name with a
+                // see GtmDealNaming. This used to build its own name with a
                 // different word order and a different dash.
                 Opportunity opp = new Opportunity(
-                    Name = MaDealNaming.nameFor(ctx.company, ctx.offering, ctx.accountId),
+                    Name = GtmDealNaming.nameFor(ctx.company, ctx.offering, ctx.accountId),
                     AccountId = ctx.accountId,
                     StageName = 'Qualification',
                     CloseDate = Date.today().addDays(90),
@@ -684,7 +684,7 @@ public without sharing class MaAssessmentRequestController {
             throw new AuraHandledException('Submission token does not match this link. Please refresh and try again.');
         }
 
-        // Must be within the valid window (30 min, matching MaLinkAuthController).
+        // Must be within the valid window (30 min, matching GtmLinkAuthController).
         Long nowEpoch = System.now().getTime() / 1000L;
         if (nowEpoch - tokenEpoch > 1800L) {
             throw new AuraHandledException(

@@ -2,13 +2,13 @@
  * Guest-reachable, deliberately tiny: the ONE thing a client's browser
  * needs to know about a saved configuration is whether it's still active.
  * Runs `without sharing` because the guest user has no object access at
- * all -- same pattern as MaAssessmentRequestController. Never expose
+ * all -- same pattern as GtmAssessmentRequestController. Never expose
  * Company__c, Config_Payload__c, or anything else here; that's exactly
- * the kind of scope creep MaSavedConfigurationController (rep-only,
+ * the kind of scope creep GtmSavedConfigurationController (rep-only,
  * `with sharing`, never granted to the guest permission set) exists to
  * avoid.
  */
-public without sharing class MaConfigurationStatusController {
+public without sharing class GtmConfigurationStatusController {
     /**
      * A blank/unrecognized id (a generic or pre-record link) is treated as
      * active -- there's nothing to gate. A real id that's been switched

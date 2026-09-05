@@ -4,7 +4,7 @@
  * created underneath them. These pin the behaviour that replaced it.
  */
 @isTest
-private class MaSavedConfigurationDealTest {
+private class GtmSavedConfigurationDealTest {
 
     private static Account makeAccount() {
         Account a = new Account(Name = 'Deal Choice Co');
@@ -21,8 +21,8 @@ private class MaSavedConfigurationDealTest {
         return o;
     }
 
-    private static MaSavedConfigurationController.SaveInput baseInput(Id accountId) {
-        MaSavedConfigurationController.SaveInput in0 = new MaSavedConfigurationController.SaveInput();
+    private static GtmSavedConfigurationController.SaveInput baseInput(Id accountId) {
+        GtmSavedConfigurationController.SaveInput in0 = new GtmSavedConfigurationController.SaveInput();
         in0.offering      = 'migration-accelerator';
         in0.industry      = 'media';
         in0.company       = 'Deal Choice Co';
@@ -38,11 +38,11 @@ private class MaSavedConfigurationDealTest {
         Opportunity existing = makeOpp(a.Id, 'Live deal already running');
         Integer before = [SELECT COUNT() FROM Opportunity WHERE AccountId = :a.Id];
 
-        MaSavedConfigurationController.SaveInput in0 = baseInput(a.Id);
+        GtmSavedConfigurationController.SaveInput in0 = baseInput(a.Id);
         in0.opportunityId = String.valueOf(existing.Id);
 
         Test.startTest();
-        Id linkId = MaSavedConfigurationController.saveConfiguration(in0);
+        Id linkId = GtmSavedConfigurationController.saveConfiguration(in0);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -61,7 +61,7 @@ private class MaSavedConfigurationDealTest {
         Integer before = [SELECT COUNT() FROM Opportunity WHERE AccountId = :a.Id];
 
         Test.startTest();
-        Id linkId = MaSavedConfigurationController.saveConfiguration(baseInput(a.Id));
+        Id linkId = GtmSavedConfigurationController.saveConfiguration(baseInput(a.Id));
         Test.stopTest();
 
         System.assertEquals(before + 1, [SELECT COUNT() FROM Opportunity WHERE AccountId = :a.Id],
@@ -77,11 +77,11 @@ private class MaSavedConfigurationDealTest {
         insert other;
         Opportunity theirs = makeOpp(other.Id, 'Not this client\'s deal');
 
-        MaSavedConfigurationController.SaveInput in0 = baseInput(a.Id);
+        GtmSavedConfigurationController.SaveInput in0 = baseInput(a.Id);
         in0.opportunityId = String.valueOf(theirs.Id);
 
         Test.startTest();
-        Id linkId = MaSavedConfigurationController.saveConfiguration(in0);
+        Id linkId = GtmSavedConfigurationController.saveConfiguration(in0);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -97,17 +97,17 @@ private class MaSavedConfigurationDealTest {
         Opportunity taken = makeOpp(a.Id, 'Deal with a link');
         Opportunity free  = makeOpp(a.Id, 'Deal with none');
 
-        MaSavedConfigurationController.SaveInput in0 = baseInput(a.Id);
+        GtmSavedConfigurationController.SaveInput in0 = baseInput(a.Id);
         in0.opportunityId = String.valueOf(taken.Id);
-        MaSavedConfigurationController.saveConfiguration(in0);
+        GtmSavedConfigurationController.saveConfiguration(in0);
 
         Test.startTest();
-        List<MaSavedConfigurationController.DealOption> deals =
-            MaSavedConfigurationController.getAccountDeals(String.valueOf(a.Id));
+        List<GtmSavedConfigurationController.DealOption> deals =
+            GtmSavedConfigurationController.getAccountDeals(String.valueOf(a.Id));
         Test.stopTest();
 
         Map<Id, Integer> counts = new Map<Id, Integer>();
-        for (MaSavedConfigurationController.DealOption d : deals) {
+        for (GtmSavedConfigurationController.DealOption d : deals) {
             counts.put(d.opportunityId, d.linkCount);
         }
         System.assertEquals(1, counts.get(taken.Id), 'the deal with a link says so');

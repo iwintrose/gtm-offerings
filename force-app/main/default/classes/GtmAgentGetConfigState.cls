@@ -2,7 +2,7 @@
  * Agentforce invocable action: read current GTM configurator state.
  * Returns config values and available industry keys for the AI assistant.
  */
-public without sharing class MaAgentGetConfigState {
+public without sharing class GtmAgentGetConfigState {
 
     public class Input {
         @InvocableVariable(required=false label='Config Id'
@@ -56,13 +56,13 @@ public without sharing class MaAgentGetConfigState {
                 try {
                     Map<String, Object> payload =
                         (Map<String, Object>) JSON.deserializeUntyped(saved[0].Config_Payload__c);
-                    out.company      = MaAgentConfigActions.strOf(payload, 'company');
-                    out.industry     = MaAgentConfigActions.strOf(payload, 'industry');
-                    out.accent       = MaAgentConfigActions.strOf(payload, 'accent');
-                    out.objectsCount = MaAgentConfigActions.intOf(payload, 'objectsCount');
-                    out.depsCount    = MaAgentConfigActions.intOf(payload, 'depsCount');
-                    out.healthScore  = MaAgentConfigActions.intOf(payload, 'healthScore');
-                    out.note         = MaAgentConfigActions.strOf(payload, 'note');
+                    out.company      = GtmAgentConfigActions.strOf(payload, 'company');
+                    out.industry     = GtmAgentConfigActions.strOf(payload, 'industry');
+                    out.accent       = GtmAgentConfigActions.strOf(payload, 'accent');
+                    out.objectsCount = GtmAgentConfigActions.intOf(payload, 'objectsCount');
+                    out.depsCount    = GtmAgentConfigActions.intOf(payload, 'depsCount');
+                    out.healthScore  = GtmAgentConfigActions.intOf(payload, 'healthScore');
+                    out.note         = GtmAgentConfigActions.strOf(payload, 'note');
                 } catch (Exception e) {
                     // Malformed payload — return defaults
                 }

@@ -10,10 +10,10 @@
  * the problem structurally instead of hoping a vendor adds the header.
  *
  * `with sharing`, rep-only: not guest-reachable, matches
- * MaSavedConfigurationController's access model for the rest of the
+ * GtmSavedConfigurationController's access model for the rest of the
  * Customize panel.
  */
-public with sharing class MaBrandLookupController {
+public with sharing class GtmBrandLookupController {
     private static final Integer TIMEOUT_MS = 8000;
 
     @AuraEnabled

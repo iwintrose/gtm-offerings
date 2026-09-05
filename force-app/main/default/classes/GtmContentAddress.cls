@@ -7,7 +7,7 @@
  * belong to it, so how it is spelled — and what a key is allowed to contain —
  * is a single rule, not a convention each caller re-implements.
  */
-public with sharing class MaContentAddress {
+public with sharing class GtmContentAddress {
 
     public static final String SEPARATOR = '::';
 

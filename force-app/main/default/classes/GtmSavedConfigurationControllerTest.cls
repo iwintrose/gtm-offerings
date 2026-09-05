@@ -1,8 +1,8 @@
 @IsTest
-private class MaSavedConfigurationControllerTest {
+private class GtmSavedConfigurationControllerTest {
     @IsTest
     static void savesNewConfiguration() {
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.offering = 'migration-accelerator';
         input.industry = 'fintech';
         input.company = 'Acme Bank';
@@ -10,7 +10,7 @@ private class MaSavedConfigurationControllerTest {
         input.configPayload = '{"SOURCE_PLATFORM":"Eloqua"}';
 
         Test.startTest();
-        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -33,14 +33,14 @@ private class MaSavedConfigurationControllerTest {
         );
         insert existing;
 
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.recordId = existing.Id;
         input.offering = 'migration-accelerator';
         input.company = 'New Name';
         input.generatedUrl = existing.Generated_URL__c;
 
         Test.startTest();
-        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
         System.assertEquals(existing.Id, recordId);
@@ -52,11 +52,11 @@ private class MaSavedConfigurationControllerTest {
 
     @IsTest
     static void rejectsSaveWithoutGeneratedUrl() {
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.offering = 'migration-accelerator';
 
         try {
-            MaSavedConfigurationController.saveConfiguration(input);
+            GtmSavedConfigurationController.saveConfiguration(input);
             System.assert(false, 'Expected an AuraHandledException.');
         } catch (AuraHandledException e) {
             System.assert(true);
@@ -75,7 +75,7 @@ private class MaSavedConfigurationControllerTest {
         );
 
         Test.startTest();
-        List<MA_Saved_Configuration__c> results = MaSavedConfigurationController.getMyConfigurations();
+        List<MA_Saved_Configuration__c> results = GtmSavedConfigurationController.getMyConfigurations();
         Test.stopTest();
 
         System.assertEquals(2, results.size());
@@ -90,7 +90,7 @@ private class MaSavedConfigurationControllerTest {
         insert existing;
 
         Test.startTest();
-        MaSavedConfigurationController.deleteConfiguration(existing.Id);
+        GtmSavedConfigurationController.deleteConfiguration(existing.Id);
         Test.stopTest();
 
         System.assertEquals(
@@ -108,19 +108,19 @@ private class MaSavedConfigurationControllerTest {
         insert existing;
 
         Test.startTest();
-        MaSavedConfigurationController.setActive(existing.Id, false);
+        GtmSavedConfigurationController.setActive(existing.Id, false);
         Test.stopTest();
 
         MA_Saved_Configuration__c updated = [
             SELECT Active__c FROM MA_Saved_Configuration__c WHERE Id = :existing.Id
         ];
         System.assertEquals(false, updated.Active__c);
-        System.assertEquals(1, MaSavedConfigurationController.getMyConfigurations().size());
+        System.assertEquals(1, GtmSavedConfigurationController.getMyConfigurations().size());
     }
 
     @IsTest
     static void savingResolvesAccountAndContactAutomatically() {
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.offering = 'migration-accelerator';
         input.industry = 'fintech';
         input.company = 'Acme Bank';
@@ -130,7 +130,7 @@ private class MaSavedConfigurationControllerTest {
         input.estimatedValue = '$120,000';
 
         Test.startTest();
-        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -153,13 +153,13 @@ private class MaSavedConfigurationControllerTest {
         Account existing = new Account(Name = 'Acme Bank');
         insert existing;
 
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.offering = 'migration-accelerator';
         input.company = 'Acme Bank';
         input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
 
         Test.startTest();
-        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -171,13 +171,13 @@ private class MaSavedConfigurationControllerTest {
 
     @IsTest
     static void savingWithoutClientContactEmailLeavesContactBlank() {
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.offering = 'migration-accelerator';
         input.company = 'Acme Bank';
         input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
 
         Test.startTest();
-        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -188,26 +188,26 @@ private class MaSavedConfigurationControllerTest {
 
     @IsTest
     static void resavingWithBlankContactAndValueDoesNotWipeThemOut() {
-        MaSavedConfigurationController.SaveInput first = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput first = new GtmSavedConfigurationController.SaveInput();
         first.offering = 'migration-accelerator';
         first.company = 'Acme Bank';
         first.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
         first.clientContactName = 'Jordan Lee';
         first.clientContactEmail = 'jordan.lee@acmebank.example.com';
         first.estimatedValue = '90000';
-        Id recordId = MaSavedConfigurationController.saveConfiguration(first);
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(first);
 
         // Simulates reopening this link for editing: the Customize panel
         // doesn't reload Contact/Estimated Value from the record, so a
         // resave sends them blank unless the rep retypes them.
-        MaSavedConfigurationController.SaveInput second = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput second = new GtmSavedConfigurationController.SaveInput();
         second.recordId = recordId;
         second.offering = 'migration-accelerator';
         second.company = 'Acme Bank';
         second.generatedUrl = first.generatedUrl;
 
         Test.startTest();
-        MaSavedConfigurationController.saveConfiguration(second);
+        GtmSavedConfigurationController.saveConfiguration(second);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -227,13 +227,13 @@ private class MaSavedConfigurationControllerTest {
         Id staleId = existing.Id;
         delete existing;
 
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.recordId = staleId;
         input.offering = 'migration-accelerator';
         input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator';
 
         try {
-            MaSavedConfigurationController.saveConfiguration(input);
+            GtmSavedConfigurationController.saveConfiguration(input);
             System.assert(false, 'Expected an AuraHandledException, not a raw DmlException.');
         } catch (AuraHandledException e) {
             System.assert(true);
@@ -251,7 +251,7 @@ private class MaSavedConfigurationControllerTest {
         delete existing;
 
         try {
-            MaSavedConfigurationController.deleteConfiguration(staleId);
+            GtmSavedConfigurationController.deleteConfiguration(staleId);
             System.assert(false, 'Expected an AuraHandledException, not a raw DmlException.');
         } catch (AuraHandledException e) {
             System.assert(true);
@@ -266,12 +266,12 @@ private class MaSavedConfigurationControllerTest {
         insert new Contact(FirstName = 'Alex', LastName = 'Rivera', Email = 'alex.rivera@other.example.com');
 
         Test.startTest();
-        List<MaSavedConfigurationController.ContactSearchResult> byName =
-            MaSavedConfigurationController.searchContacts('Jordan');
-        List<MaSavedConfigurationController.ContactSearchResult> byEmail =
-            MaSavedConfigurationController.searchContacts('alex.rivera@');
-        List<MaSavedConfigurationController.ContactSearchResult> tooShort =
-            MaSavedConfigurationController.searchContacts('j');
+        List<GtmSavedConfigurationController.ContactSearchResult> byName =
+            GtmSavedConfigurationController.searchContacts('Jordan');
+        List<GtmSavedConfigurationController.ContactSearchResult> byEmail =
+            GtmSavedConfigurationController.searchContacts('alex.rivera@');
+        List<GtmSavedConfigurationController.ContactSearchResult> tooShort =
+            GtmSavedConfigurationController.searchContacts('j');
         Test.stopTest();
 
         Assert.areEqual(1, byName.size(), 'Should match by name');
@@ -295,12 +295,12 @@ private class MaSavedConfigurationControllerTest {
         insert new Contact(FirstName = 'Someone', LastName = 'Else', Email = 'se@example.com', AccountId = other.Id);
 
         Test.startTest();
-        List<MaSavedConfigurationController.ContactSearchResult> results =
-            MaSavedConfigurationController.searchContacts('Acme Bank');
+        List<GtmSavedConfigurationController.ContactSearchResult> results =
+            GtmSavedConfigurationController.searchContacts('Acme Bank');
         Test.stopTest();
 
         Assert.areEqual(2, results.size(), 'Should return every Contact on the matching Account, not just a name/email hit');
-        for (MaSavedConfigurationController.ContactSearchResult r : results) {
+        for (GtmSavedConfigurationController.ContactSearchResult r : results) {
             Assert.areEqual('Acme Bank', r.accountName);
         }
     }
@@ -317,7 +317,7 @@ private class MaSavedConfigurationControllerTest {
         );
         insert realContact;
 
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.offering = 'migration-accelerator';
         // Deliberately mismatched from the selected Contact's real Account
         // name -- proves the selection wins over Company-text resolution,
@@ -328,7 +328,7 @@ private class MaSavedConfigurationControllerTest {
         input.accountId = realAccount.Id;
 
         Test.startTest();
-        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -341,7 +341,7 @@ private class MaSavedConfigurationControllerTest {
 
     @IsTest
     static void savingFallsBackToFuzzyResolveWhenContactIdIsGarbage() {
-        MaSavedConfigurationController.SaveInput input = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
         input.offering = 'migration-accelerator';
         input.company = 'Acme Bank';
         input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
@@ -351,7 +351,7 @@ private class MaSavedConfigurationControllerTest {
         input.accountId = 'also-not-a-real-id';
 
         Test.startTest();
-        Id recordId = MaSavedConfigurationController.saveConfiguration(input);
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
         MA_Saved_Configuration__c saved = [
@@ -376,7 +376,7 @@ private class MaSavedConfigurationControllerTest {
         delete existing;
 
         try {
-            MaSavedConfigurationController.setActive(staleId, false);
+            GtmSavedConfigurationController.setActive(staleId, false);
             System.assert(false, 'Expected an AuraHandledException, not a raw DmlException.');
         } catch (AuraHandledException e) {
             System.assert(true);

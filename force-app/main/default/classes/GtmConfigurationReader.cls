@@ -13,10 +13,10 @@
  * is that the details are no longer travelling next to it.
  *
  * `without sharing` because the guest user has no object access at all --
- * the same pattern as MaConfigurationStatusController, which reads this
+ * the same pattern as GtmConfigurationStatusController, which reads this
  * object for guests today.
  *
- * This deliberately widens what a guest may read, and MaConfigurationStatus-
+ * This deliberately widens what a guest may read, and GtmConfigurationStatus-
  * Controller's comment warns against exactly that. The warning is about scope
  * creep on a class whose job is one boolean, and it is right. This is a
  * separate class with a stated job, and the trade it makes is a considered
@@ -25,12 +25,12 @@
  *
  * Two rules keep it honest:
  *   - Link_Password__c is never selected. Whether a link is protected is
- *     MaLinkAuthController's answer; the value itself is nobody's.
+ *     GtmLinkAuthController's answer; the value itself is nobody's.
  *   - A link switched off returns its status and nothing else. A disabled
  *     link should stop being a way to read client details, not just stop
  *     rendering.
  */
-public without sharing class MaConfigurationReader {
+public without sharing class GtmConfigurationReader {
 
     @AuraEnabled(cacheable=false)
     public static PublicConfig getPublicConfiguration(String recordId) {

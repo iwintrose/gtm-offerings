@@ -1,5 +1,5 @@
 @IsTest
-private class MaBrandLookupControllerTest {
+private class GtmBrandLookupControllerTest {
     private class MockResponse implements HttpCalloutMock {
         Integer statusCode;
         String contentType;
@@ -30,7 +30,7 @@ private class MaBrandLookupControllerTest {
         Test.setMock(HttpCalloutMock.class, new MockResponse(200, 'image/png', fakeImage));
 
         Test.startTest();
-        String result = MaBrandLookupController.fetchLogoDataUri('supernus.com');
+        String result = GtmBrandLookupController.fetchLogoDataUri('supernus.com');
         Test.stopTest();
 
         Assert.isNotNull(result);
@@ -43,7 +43,7 @@ private class MaBrandLookupControllerTest {
         Test.setMock(HttpCalloutMock.class, new MockResponse(404, null, null));
 
         Test.startTest();
-        String result = MaBrandLookupController.fetchLogoDataUri('nonexistent-domain.example');
+        String result = GtmBrandLookupController.fetchLogoDataUri('nonexistent-domain.example');
         Test.stopTest();
 
         Assert.isNull(result);
@@ -53,7 +53,7 @@ private class MaBrandLookupControllerTest {
     static void rejectsBlankDomain() {
         Boolean threw = false;
         try {
-            MaBrandLookupController.fetchLogoDataUri('   ');
+            GtmBrandLookupController.fetchLogoDataUri('   ');
         } catch (AuraHandledException e) {
             threw = true;
         }
@@ -68,7 +68,7 @@ private class MaBrandLookupControllerTest {
         );
 
         Test.startTest();
-        String result = MaBrandLookupController.fetchLogoDataUri('example.com');
+        String result = GtmBrandLookupController.fetchLogoDataUri('example.com');
         Test.stopTest();
 
         Assert.isNull(result, 'A non-image response should not be treated as a logo');

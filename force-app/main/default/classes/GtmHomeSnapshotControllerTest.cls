@@ -1,5 +1,5 @@
 @IsTest
-private class MaHomeSnapshotControllerTest {
+private class GtmHomeSnapshotControllerTest {
     @IsTest
     static void summarizesActiveLinksAndOpenAssessments() {
         MA_Saved_Configuration__c activeWithValue = new MA_Saved_Configuration__c(
@@ -46,7 +46,7 @@ private class MaHomeSnapshotControllerTest {
         update activeWithValue;
 
         Test.startTest();
-        MaHomeSnapshotController.Snapshot snap = MaHomeSnapshotController.getSnapshot();
+        GtmHomeSnapshotController.Snapshot snap = GtmHomeSnapshotController.getSnapshot();
         Test.stopTest();
 
         Assert.areEqual(2, snap.activeEngagementCount);
@@ -68,8 +68,8 @@ private class MaHomeSnapshotControllerTest {
         );
 
         Test.startTest();
-        List<MaHomeSnapshotController.RequestSummary> results =
-            MaHomeSnapshotController.getRecentNewAssessmentRequests();
+        List<GtmHomeSnapshotController.RequestSummary> results =
+            GtmHomeSnapshotController.getRecentNewAssessmentRequests();
         Test.stopTest();
 
         Assert.areEqual(1, results.size(), 'Only Status = New should be returned');
@@ -80,7 +80,7 @@ private class MaHomeSnapshotControllerTest {
     @IsTest
     static void returnsZeroesWhenNothingExists() {
         Test.startTest();
-        MaHomeSnapshotController.Snapshot snap = MaHomeSnapshotController.getSnapshot();
+        GtmHomeSnapshotController.Snapshot snap = GtmHomeSnapshotController.getSnapshot();
         Test.stopTest();
 
         Assert.areEqual(0, snap.activeEngagementCount);
@@ -141,17 +141,17 @@ private class MaHomeSnapshotControllerTest {
         };
 
         Test.startTest();
-        List<MaHomeSnapshotController.DealSummary> deals = MaHomeSnapshotController.getDeals();
-        MaHomeSnapshotController.Snapshot snap = MaHomeSnapshotController.getSnapshot();
+        List<GtmHomeSnapshotController.DealSummary> deals = GtmHomeSnapshotController.getDeals();
+        GtmHomeSnapshotController.Snapshot snap = GtmHomeSnapshotController.getSnapshot();
         Test.stopTest();
 
         Assert.areEqual(2, deals.size(), 'A configuration with no opportunity is not a deal');
 
-        Map<Id, MaHomeSnapshotController.DealSummary> byConfig =
-            new Map<Id, MaHomeSnapshotController.DealSummary>();
-        for (MaHomeSnapshotController.DealSummary d : deals) byConfig.put(d.configId, d);
+        Map<Id, GtmHomeSnapshotController.DealSummary> byConfig =
+            new Map<Id, GtmHomeSnapshotController.DealSummary>();
+        for (GtmHomeSnapshotController.DealSummary d : deals) byConfig.put(d.configId, d);
 
-        MaHomeSnapshotController.DealSummary won = byConfig.get(converted.Id);
+        GtmHomeSnapshotController.DealSummary won = byConfig.get(converted.Id);
         Assert.areEqual('Acme Bank — Migration Accelerator', won.opportunityName);
         Assert.areEqual('Acme Bank', won.accountName);
         Assert.areEqual('Qualification', won.stageName);
@@ -163,7 +163,7 @@ private class MaHomeSnapshotControllerTest {
         Assert.areEqual('New', won.requestStatus);
         Assert.isNotNull(won.lastActivity);
 
-        MaHomeSnapshotController.DealSummary lost = byConfig.get(stalled.Id);
+        GtmHomeSnapshotController.DealSummary lost = byConfig.get(stalled.Id);
         Assert.areEqual(1, lost.views);
         Assert.isTrue(lost.formOpened);
         Assert.isFalse(lost.formSubmitted, 'This is the deal worth chasing');
@@ -184,8 +184,8 @@ private class MaHomeSnapshotControllerTest {
         insert new MA_Link_Event__c(Saved_Configuration__c = untouched.Id, Event_Type__c = 'Page View');
 
         Test.startTest();
-        MaHomeSnapshotController.Snapshot snap = MaHomeSnapshotController.getSnapshot();
-        List<MaHomeSnapshotController.DealSummary> deals = MaHomeSnapshotController.getDeals();
+        GtmHomeSnapshotController.Snapshot snap = GtmHomeSnapshotController.getSnapshot();
+        List<GtmHomeSnapshotController.DealSummary> deals = GtmHomeSnapshotController.getDeals();
         Test.stopTest();
 
         Assert.areEqual(0, snap.stalledCount, 'Reading the page is not starting the form');

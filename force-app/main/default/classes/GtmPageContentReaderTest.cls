@@ -1,5 +1,5 @@
 @IsTest
-private class MaPageContentReaderTest {
+private class GtmPageContentReaderTest {
 
     private static final String OFFERING = 'ma-migrator';
     private static final String TMPL = 'story';
@@ -32,7 +32,7 @@ private class MaPageContentReaderTest {
         };
 
         Test.startTest();
-        Map<String, String> result = MaPageContentReader.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentReader.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals('Eyebrow copy', result.get('hero::eyebrow'), 'text reads Text_Value__c');
@@ -48,7 +48,7 @@ private class MaPageContentReaderTest {
         };
 
         Test.startTest();
-        Map<String, String> result = MaPageContentReader.getPageContent(OFFERING, TMPL, 'retail');
+        Map<String, String> result = GtmPageContentReader.getPageContent(OFFERING, TMPL, 'retail');
         Test.stopTest();
 
         System.assertEquals('Retail', result.get('hero::headline'), 'Industry-scoped row should win');
@@ -62,7 +62,7 @@ private class MaPageContentReaderTest {
         };
 
         Test.startTest();
-        Map<String, String> result = MaPageContentReader.getPageContent(OFFERING, TMPL, 'retail');
+        Map<String, String> result = GtmPageContentReader.getPageContent(OFFERING, TMPL, 'retail');
         Test.stopTest();
 
         System.assertEquals('Generic', result.get('hero::headline'), 'Offering default still resolves');
@@ -76,7 +76,7 @@ private class MaPageContentReaderTest {
         insert rec;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentReader.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentReader.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assert(!result.containsKey('hero::headline'), 'Inactive rows must not resolve');
@@ -89,7 +89,7 @@ private class MaPageContentReaderTest {
         insert other;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentReader.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentReader.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assert(!result.containsKey('hero::headline'), 'Rows from another template must not resolve');
@@ -98,8 +98,8 @@ private class MaPageContentReaderTest {
     @IsTest
     static void blankArgumentsReturnEmptyMap() {
         Test.startTest();
-        Map<String, String> noOffering = MaPageContentReader.getPageContent('', TMPL, null);
-        Map<String, String> noTemplate = MaPageContentReader.getPageContent(OFFERING, null, null);
+        Map<String, String> noOffering = GtmPageContentReader.getPageContent('', TMPL, null);
+        Map<String, String> noTemplate = GtmPageContentReader.getPageContent(OFFERING, null, null);
         Test.stopTest();
 
         System.assert(noOffering.isEmpty(), 'Blank offering key returns an empty map');
@@ -131,8 +131,8 @@ private class MaPageContentReaderTest {
         };
 
         Test.startTest();
-        MaPageContentReader.PageLayout layout =
-            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        GtmPageContentReader.PageLayout layout =
+            GtmPageContentReader.getPageLayout(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals(3, layout.sections.size(), 'All active sections return');
@@ -156,8 +156,8 @@ private class MaPageContentReaderTest {
         update secs;
 
         Test.startTest();
-        MaPageContentReader.PageLayout layout =
-            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        GtmPageContentReader.PageLayout layout =
+            GtmPageContentReader.getPageLayout(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals('faq', layout.sections[0].sectionKey, 'FAQ moved above the hero');
@@ -171,8 +171,8 @@ private class MaPageContentReaderTest {
         insert new List<MA_Page_Section__c>{ section('hero', 'hero', 10), hidden };
 
         Test.startTest();
-        MaPageContentReader.PageLayout layout =
-            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        GtmPageContentReader.PageLayout layout =
+            GtmPageContentReader.getPageLayout(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals(1, layout.sections.size(), 'Inactive sections do not render');
@@ -185,8 +185,8 @@ private class MaPageContentReaderTest {
         insert row('hero', 'eyebrow', 'text', 'Eyebrow copy', null, null, null, 1);
 
         Test.startTest();
-        MaPageContentReader.PageLayout layout =
-            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        GtmPageContentReader.PageLayout layout =
+            GtmPageContentReader.getPageLayout(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals(1, layout.sections.size(), 'Structure returns');
@@ -202,8 +202,8 @@ private class MaPageContentReaderTest {
         insert other;
 
         Test.startTest();
-        MaPageContentReader.PageLayout layout =
-            MaPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        GtmPageContentReader.PageLayout layout =
+            GtmPageContentReader.getPageLayout(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assert(layout.sections.isEmpty(), 'Another offering\'s sections must not leak in');

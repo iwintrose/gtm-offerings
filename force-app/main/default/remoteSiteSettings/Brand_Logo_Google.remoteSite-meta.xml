@@ -3,5 +3,5 @@
     <url>https://www.google.com</url>
     <isActive>true</isActive>
     <disableProtocolSecurity>false</disableProtocolSecurity>
-    <description>Fallback source for the Customize panel's brand-color lookup (MaBrandLookupController), fetched server-side.</description>
+    <description>Fallback source for the Customize panel's brand-color lookup (GtmBrandLookupController), fetched server-side.</description>
 </RemoteSiteSetting>

@@ -1,9 +1,9 @@
 /**
  * Public, read-only reader for MA_Page_Content__c.
  *
- * Why this class exists instead of reusing MaPageContentController:
+ * Why this class exists instead of reusing GtmPageContentController:
  * Apex class access is granted per CLASS, not per method. Granting an
- * Experience Cloud guest user access to MaPageContentController would also
+ * Experience Cloud guest user access to GtmPageContentController would also
  * expose its @AuraEnabled write methods (saveContentRecord,
  * saveContentRecords, deleteContentRecord) to anonymous site traffic. This
  * class exposes the read path only, so the guest profile can resolve page
@@ -12,7 +12,7 @@
  * without sharing: content rows are owned by the admin who authored them, so
  * a guest user running with sharing would resolve zero rows.
  */
-public without sharing class MaPageContentReader {
+public without sharing class GtmPageContentReader {
 
     /** Where industries live: the framework's own industry chooser page. */
     private static final String INDUSTRY_OWNER    = 'gtm';

@@ -120,8 +120,8 @@ fi
 
 echo ""
 echo "==> Done. Manual steps this script can't do for you (see DEPLOYMENT.md):"
-echo "    - Assign MA_Config_Manager to whichever users should manage links"
-echo "    - Assign MA_Assessment_Guest to the target Experience Cloud site's Guest User profile"
+echo "    - Assign GTM_Config_Manager to whichever users should manage links"
+echo "    - Assign GTM_Assessment_Guest to the target Experience Cloud site's Guest User profile"
 echo "    - Activate + publish the Experience Cloud site in Setup > Digital Experiences"
 echo "    - Edit the MA_Offering__mdt 'Migration Accelerator' record's target"
 echo "      values (Setup > Custom Metadata Types) -- the seeded numbers are placeholders"

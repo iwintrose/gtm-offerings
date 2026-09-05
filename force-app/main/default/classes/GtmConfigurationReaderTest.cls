@@ -4,7 +4,7 @@
  * runs as the real guest user rather than as the running user.
  */
 @isTest
-private class MaConfigurationReaderTest {
+private class GtmConfigurationReaderTest {
 
     private static User guestUser() {
         List<User> gs = [SELECT Id FROM User WHERE UserType = 'Guest' AND IsActive = true LIMIT 1];
@@ -31,9 +31,9 @@ private class MaConfigurationReaderTest {
         if (g == null) return; // no guest in this org; nothing to assert against
 
         Test.startTest();
-        MaConfigurationReader.PublicConfig got;
+        GtmConfigurationReader.PublicConfig got;
         System.runAs(g) {
-            got = MaConfigurationReader.getPublicConfiguration(String.valueOf(cid));
+            got = GtmConfigurationReader.getPublicConfiguration(String.valueOf(cid));
         }
         Test.stopTest();
 
@@ -50,9 +50,9 @@ private class MaConfigurationReaderTest {
         if (g == null) return;
 
         Test.startTest();
-        MaConfigurationReader.PublicConfig got;
+        GtmConfigurationReader.PublicConfig got;
         System.runAs(g) {
-            got = MaConfigurationReader.getPublicConfiguration(String.valueOf(cid));
+            got = GtmConfigurationReader.getPublicConfiguration(String.valueOf(cid));
         }
         Test.stopTest();
 
@@ -64,9 +64,9 @@ private class MaConfigurationReaderTest {
     @isTest
     static void aBadIdIsNullRatherThanAnException() {
         Test.startTest();
-        System.assertEquals(null, MaConfigurationReader.getPublicConfiguration('not-an-id'));
-        System.assertEquals(null, MaConfigurationReader.getPublicConfiguration(''));
-        System.assertEquals(null, MaConfigurationReader.getPublicConfiguration(null));
+        System.assertEquals(null, GtmConfigurationReader.getPublicConfiguration('not-an-id'));
+        System.assertEquals(null, GtmConfigurationReader.getPublicConfiguration(''));
+        System.assertEquals(null, GtmConfigurationReader.getPublicConfiguration(null));
         Test.stopTest();
     }
 
@@ -76,7 +76,7 @@ private class MaConfigurationReaderTest {
         if (g == null) return;
         Test.startTest();
         Boolean repFlag;
-        System.runAs(g) { repFlag = MaViewerContext.isRep(); }
+        System.runAs(g) { repFlag = GtmViewerContext.isRep(); }
         Test.stopTest();
         System.assertEquals(false, repFlag, 'the site guest is not a rep');
     }

@@ -3,11 +3,11 @@
  *
  * This exists as its own class because Apex access is granted per class, not
  * per method. The guest user needs exactly one answer -- "am I a rep?" -- and
- * granting that through MaSavedConfigurationController would have handed the
+ * granting that through GtmSavedConfigurationController would have handed the
  * public saveConfiguration, deleteConfiguration and searchContacts along with
  * it. One question, one class, nothing else reachable.
  */
-public with sharing class MaViewerContext {
+public with sharing class GtmViewerContext {
 
     /**
      * Whether the viewer is a rep, and so may see rep-only UI: Gus, the saved

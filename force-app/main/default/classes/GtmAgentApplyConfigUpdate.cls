@@ -3,7 +3,7 @@
  * Validates the delta, then publishes an MA_Config_Update__e platform event
  * that the maConfigCustomize LWC is subscribed to via empApi.
  */
-public without sharing class MaAgentApplyConfigUpdate {
+public without sharing class GtmAgentApplyConfigUpdate {
 
     public class Input {
         @InvocableVariable(required=true label='Session Token'
@@ -61,10 +61,10 @@ public without sharing class MaAgentApplyConfigUpdate {
         Map<String, Object> clean = new Map<String, Object>();
         List<String> errors = new List<String>();
         for (String key : raw.keySet()) {
-            if (!MaAgentConfigActions.ALLOWED_DELTA_KEYS.contains(key)) {
+            if (!GtmAgentConfigActions.ALLOWED_DELTA_KEYS.contains(key)) {
                 continue;
             }
-            String err = MaAgentConfigActions.validateDeltaField(key, raw.get(key));
+            String err = GtmAgentConfigActions.validateDeltaField(key, raw.get(key));
             if (err != null) {
                 errors.add(err);
             } else {

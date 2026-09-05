@@ -1,7 +1,7 @@
 @isTest
-private class MaAssessmentRequestControllerTest {
-    private static MaAssessmentRequestController.RequestInput sampleInput() {
-        MaAssessmentRequestController.RequestInput input = new MaAssessmentRequestController.RequestInput();
+private class GtmAssessmentRequestControllerTest {
+    private static GtmAssessmentRequestController.RequestInput sampleInput() {
+        GtmAssessmentRequestController.RequestInput input = new GtmAssessmentRequestController.RequestInput();
         input.name = 'Alex Rivera';
         input.email = 'alex.rivera@example.com';
         input.company = 'Northwind Retail';
@@ -30,11 +30,11 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void createsContactAndTaskForNewEmail() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(sampleInput());
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(sampleInput());
         Test.stopTest();
 
         Assert.isTrue(result.success, 'Submission should succeed');
@@ -73,11 +73,11 @@ private class MaAssessmentRequestControllerTest {
         );
         insert seeded;
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(sampleInput());
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(sampleInput());
         Test.stopTest();
 
         Assert.isFalse(result.contactCreated, 'Existing Contact should be reused');
@@ -104,11 +104,11 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void logsEventWhenConfigured() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Event');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Event');
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(sampleInput());
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(sampleInput());
         Test.stopTest();
 
         Assert.areEqual(
@@ -120,11 +120,11 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void skipsContactWhenDisabled() {
-        MaAssessmentRequestController.configOverride = config(false, false, 'Task');
+        GtmAssessmentRequestController.configOverride = config(false, false, 'Task');
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(sampleInput());
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(sampleInput());
         Test.stopTest();
 
         Assert.isTrue(result.success);
@@ -134,11 +134,11 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void sendsEmailWhenEnabled() {
-        MaAssessmentRequestController.configOverride = config(false, true, 'Task');
+        GtmAssessmentRequestController.configOverride = config(false, true, 'Task');
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(sampleInput());
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(sampleInput());
         Test.stopTest();
 
         Assert.isTrue(result.success, 'Submission should succeed with email on');
@@ -146,13 +146,13 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void rejectsMissingName() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.name = '   ';
 
         Boolean threw = false;
         try {
-            MaAssessmentRequestController.submitRequest(input);
+            GtmAssessmentRequestController.submitRequest(input);
         } catch (AuraHandledException e) {
             threw = true;
         }
@@ -161,13 +161,13 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void rejectsMalformedEmail() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.email = 'not-an-email';
 
         Boolean threw = false;
         try {
-            MaAssessmentRequestController.submitRequest(input);
+            GtmAssessmentRequestController.submitRequest(input);
         } catch (AuraHandledException e) {
             threw = true;
         }
@@ -179,7 +179,7 @@ private class MaAssessmentRequestControllerTest {
     static void rejectsNullInput() {
         Boolean threw = false;
         try {
-            MaAssessmentRequestController.submitRequest(null);
+            GtmAssessmentRequestController.submitRequest(null);
         } catch (AuraHandledException e) {
             threw = true;
         }
@@ -190,14 +190,14 @@ private class MaAssessmentRequestControllerTest {
     static void succeedsWithNoCompanyOrProspect() {
         // No company/prospect means no Account resolved, so Contact is created
         // without an AccountId — submission should still succeed.
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.company = null;
         input.prospect = null;
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Assert.isTrue(result.success, 'Submission should succeed without company');
@@ -206,13 +206,13 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void usesSingleWordNameAsLastName() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.name = 'Cher';
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Contact created = [SELECT FirstName, LastName FROM Contact WHERE Id = :result.contactId];
@@ -224,8 +224,8 @@ private class MaAssessmentRequestControllerTest {
     static void readsDeployedConfigWhenNoOverride() {
         // Exercises the CMDT query path; the deployed Default record drives it.
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(sampleInput());
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(sampleInput());
         Test.stopTest();
 
         Assert.isTrue(result.success, 'Deployed config should be readable');
@@ -233,11 +233,11 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void createsAssessmentRequestRecord() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(sampleInput());
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(sampleInput());
         Test.stopTest();
 
         Assert.isNotNull(
@@ -256,7 +256,7 @@ private class MaAssessmentRequestControllerTest {
         Assert.areEqual(result.contactId, req.Contact__c);
         // A submission from a named company is a lead, so an Opportunity is
         // raised for it whether or not it came from a client link -- see
-        // MaAssessmentRequestController.ensureOpportunity, which branches on
+        // GtmAssessmentRequestController.ensureOpportunity, which branches on
         // the link only to decide whether to stamp Engagement_Link__c. This
         // test used to assert the opposite and had been failing on it; what it
         // is actually guarding is that no link means no link, below.
@@ -288,13 +288,13 @@ private class MaAssessmentRequestControllerTest {
         );
         insert savedConfig;
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Assert.areEqual(opp.Id, result.opportunityId, 'Opportunity should carry through to the result');
@@ -330,13 +330,13 @@ private class MaAssessmentRequestControllerTest {
         );
         insert savedConfig;
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Assert.isNotNull(result.opportunityId, 'An Opportunity should be auto-created');
@@ -372,13 +372,13 @@ private class MaAssessmentRequestControllerTest {
         );
         insert savedConfig;
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Opportunity opp = [SELECT Amount FROM Opportunity WHERE Id = :result.opportunityId];
@@ -403,13 +403,13 @@ private class MaAssessmentRequestControllerTest {
         );
         insert savedConfig;
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Assert.areEqual(existingOpp.Id, result.opportunityId);
@@ -418,14 +418,14 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void directBookingWithNoEngagementLinkStillResolvesAccount() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = null;
         input.company = 'Northwind Retail';
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         MA_Assessment_Request__c req = [
@@ -457,14 +457,14 @@ private class MaAssessmentRequestControllerTest {
         );
         insert savedConfig;
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
         input.company = 'Northwind Retail (typo)';
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         MA_Assessment_Request__c req = [
@@ -476,13 +476,13 @@ private class MaAssessmentRequestControllerTest {
 
     @isTest
     static void failsOpenOnMalformedSavedRecordId() {
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = 'not-a-real-id';
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Assert.isTrue(result.success, 'A bad savedRecordId should not block the submission');
@@ -512,14 +512,14 @@ private class MaAssessmentRequestControllerTest {
         );
         insert savedConfig;
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
         input.submissionToken = null; // no token
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Assert.isTrue(result.success, 'No token should be needed for an unprotected link');
@@ -536,15 +536,15 @@ private class MaAssessmentRequestControllerTest {
         );
         insert savedConfig;
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
         input.submissionToken = null;
 
         Boolean threw = false;
         Test.startTest();
         try {
-            MaAssessmentRequestController.submitRequest(input);
+            GtmAssessmentRequestController.submitRequest(input);
         } catch (AuraHandledException e) {
             threw = true;
         }
@@ -565,18 +565,18 @@ private class MaAssessmentRequestControllerTest {
         insert savedConfig;
 
         // Issue a real token the same way the LWC auth flow would.
-        MaLinkAuthController.VerifyResult auth =
-            MaLinkAuthController.verifyAndIssueToken(savedConfig.Id, 'secret123');
+        GtmLinkAuthController.VerifyResult auth =
+            GtmLinkAuthController.verifyAndIssueToken(savedConfig.Id, 'secret123');
         Assert.isTrue(auth.matched, 'verifyAndIssueToken should succeed with correct password');
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
         input.submissionToken = auth.submissionToken;
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Assert.isTrue(result.success, 'A valid token should allow submission to proceed');
@@ -593,22 +593,22 @@ private class MaAssessmentRequestControllerTest {
         );
         insert savedConfig;
 
-        MaLinkAuthController.VerifyResult auth =
-            MaLinkAuthController.verifyAndIssueToken(savedConfig.Id, 'secret123');
+        GtmLinkAuthController.VerifyResult auth =
+            GtmLinkAuthController.verifyAndIssueToken(savedConfig.Id, 'secret123');
 
         // Tamper with the HMAC portion.
         List<String> parts = auth.submissionToken.split(':');
         String tamperedToken = parts[0] + ':' + parts[1] + ':' + 'deadbeef0000000000000000000000000000000000000000000000000000dead';
 
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = savedConfig.Id;
         input.submissionToken = tamperedToken;
 
         Boolean threw = false;
         Test.startTest();
         try {
-            MaAssessmentRequestController.submitRequest(input);
+            GtmAssessmentRequestController.submitRequest(input);
         } catch (AuraHandledException e) {
             threw = true;
         }
@@ -621,14 +621,14 @@ private class MaAssessmentRequestControllerTest {
     static void directBookingWithNoSavedRecordIdNeverNeedsToken() {
         // Even if a caller somehow passes a token, it should be silently
         // ignored when there is no savedRecordId (no password-protected link).
-        MaAssessmentRequestController.configOverride = config(true, false, 'Task');
-        MaAssessmentRequestController.RequestInput input = sampleInput();
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
         input.savedRecordId = null;
         input.submissionToken = 'garbage-token';
 
         Test.startTest();
-        MaAssessmentRequestController.RequestResult result =
-            MaAssessmentRequestController.submitRequest(input);
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
         Assert.isTrue(result.success, 'A garbage token should be ignored for a direct booking');

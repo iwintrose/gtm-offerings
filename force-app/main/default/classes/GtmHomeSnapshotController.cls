@@ -3,7 +3,7 @@
  * read, no per-record data, so it's safe to show org-wide regardless of
  * who's looking.
  */
-public with sharing class MaHomeSnapshotController {
+public with sharing class GtmHomeSnapshotController {
     public class Snapshot {
         @AuraEnabled public Integer activeEngagementCount { get; set; }
         @AuraEnabled public Integer newAssessmentCount    { get; set; }

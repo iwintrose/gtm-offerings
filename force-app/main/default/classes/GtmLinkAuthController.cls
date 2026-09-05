@@ -15,7 +15,7 @@
  * Secret: the stored Link_Password__c (never transmitted to the caller).
  * Validity window: 30 minutes (matches typical session length).
  */
-public without sharing class MaLinkAuthController {
+public without sharing class GtmLinkAuthController {
 
     private static final Integer TOKEN_WINDOW_SECONDS = 1800; // 30 min
 

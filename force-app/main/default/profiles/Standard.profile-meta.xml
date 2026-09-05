@@ -8,15 +8,15 @@
         <visible>true</visible>
     </applicationVisibilities>
     <classAccesses>
-        <apexClass>MaSavedConfigurationController</apexClass>
+        <apexClass>GtmSavedConfigurationController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>MaBrandLookupController</apexClass>
+        <apexClass>GtmBrandLookupController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>MaHomeSnapshotController</apexClass>
+        <apexClass>GtmHomeSnapshotController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <tabVisibilities>

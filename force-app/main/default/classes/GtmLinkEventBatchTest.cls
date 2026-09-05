@@ -3,7 +3,7 @@
  * anonymous read into a named one.
  */
 @IsTest
-private class MaLinkEventBatchTest {
+private class GtmLinkEventBatchTest {
 
     private static MA_Saved_Configuration__c link() {
         MA_Saved_Configuration__c c = new MA_Saved_Configuration__c(
@@ -14,8 +14,8 @@ private class MaLinkEventBatchTest {
         return c;
     }
 
-    private static MaLinkEventController.EventInput evt(String type, String step, Integer seq, Decimal dwell) {
-        MaLinkEventController.EventInput e = new MaLinkEventController.EventInput();
+    private static GtmLinkEventController.EventInput evt(String type, String step, Integer seq, Decimal dwell) {
+        GtmLinkEventController.EventInput e = new GtmLinkEventController.EventInput();
         e.eventType = type; e.step = step; e.sequence = seq; e.dwellSeconds = dwell;
         return e;
     }
@@ -23,14 +23,14 @@ private class MaLinkEventBatchTest {
     @IsTest
     static void aVisitsTrailArrivesInOneCall() {
         MA_Saved_Configuration__c c = link();
-        List<MaLinkEventController.EventInput> batch = new List<MaLinkEventController.EventInput>{
+        List<GtmLinkEventController.EventInput> batch = new List<GtmLinkEventController.EventInput>{
             evt('Section Viewed', 'header',    1, 2.44),
             evt('Section Viewed', 'challenge', 2, 9.06),
             evt('Session End',    null,        3, null)
         };
 
         Test.startTest();
-        MaLinkEventController.logEvents(c.Id, 'sess-1', batch);
+        GtmLinkEventController.logEvents(c.Id, 'sess-1', batch);
         Test.stopTest();
 
         List<MA_Link_Event__c> rows = [
@@ -50,11 +50,11 @@ private class MaLinkEventBatchTest {
     @IsTest
     static void aRunawayBatchIsCapped() {
         MA_Saved_Configuration__c c = link();
-        List<MaLinkEventController.EventInput> batch = new List<MaLinkEventController.EventInput>();
+        List<GtmLinkEventController.EventInput> batch = new List<GtmLinkEventController.EventInput>();
         for (Integer i = 0; i < 200; i++) batch.add(evt('Section Viewed', 'header', i, 1.0));
 
         Test.startTest();
-        MaLinkEventController.logEvents(c.Id, 'sess-2', batch);
+        GtmLinkEventController.logEvents(c.Id, 'sess-2', batch);
         Test.stopTest();
 
         Assert.areEqual(60, [SELECT COUNT() FROM MA_Link_Event__c WHERE Session_Id__c = 'sess-2'],
@@ -64,10 +64,10 @@ private class MaLinkEventBatchTest {
     @IsTest
     static void aBadLinkOrEmptyBatchWritesNothing() {
         Test.startTest();
-        MaLinkEventController.logEvents('not-an-id', 'sess-3', new List<MaLinkEventController.EventInput>{
+        GtmLinkEventController.logEvents('not-an-id', 'sess-3', new List<GtmLinkEventController.EventInput>{
             evt('Section Viewed', 'header', 1, 1.0)
         });
-        MaLinkEventController.logEvents(link().Id, 'sess-3', null);
+        GtmLinkEventController.logEvents(link().Id, 'sess-3', null);
         Test.stopTest();
 
         Assert.areEqual(0, [SELECT COUNT() FROM MA_Link_Event__c WHERE Session_Id__c = 'sess-3']);
@@ -83,13 +83,13 @@ private class MaLinkEventBatchTest {
         MA_Saved_Configuration__c c = link();
         Contact who = new Contact(FirstName = 'Ann', LastName = 'Reyes', Email = 'ann@example.com');
         insert who;
-        MaLinkEventController.logEvents(c.Id, 'sess-4', new List<MaLinkEventController.EventInput>{
+        GtmLinkEventController.logEvents(c.Id, 'sess-4', new List<GtmLinkEventController.EventInput>{
             evt('Section Viewed', 'header', 1, 2.0),
             evt('Section Viewed', 'proof',  2, 8.0)
         });
 
         Test.startTest();
-        MaLinkEventController.identifySession(c.Id, 'sess-4', who.Id);
+        GtmLinkEventController.identifySession(c.Id, 'sess-4', who.Id);
         Test.stopTest();
 
         Assert.areEqual(2, [SELECT COUNT() FROM MA_Link_Event__c
@@ -102,12 +102,12 @@ private class MaLinkEventBatchTest {
         MA_Saved_Configuration__c c = link();
         Contact who = new Contact(FirstName = 'Ann', LastName = 'Reyes', Email = 'ann@example.com');
         insert who;
-        MaLinkEventController.logEvents(c.Id, 'mine',      new List<MaLinkEventController.EventInput>{ evt('Page View', null, 1, null) });
-        MaLinkEventController.logEvents(c.Id, 'somebody-else', new List<MaLinkEventController.EventInput>{ evt('Page View', null, 1, null) });
+        GtmLinkEventController.logEvents(c.Id, 'mine',      new List<GtmLinkEventController.EventInput>{ evt('Page View', null, 1, null) });
+        GtmLinkEventController.logEvents(c.Id, 'somebody-else', new List<GtmLinkEventController.EventInput>{ evt('Page View', null, 1, null) });
 
         Test.startTest();
-        MaLinkEventController.identifySession(c.Id, 'mine', who.Id);
-        MaLinkEventController.identifySession(c.Id, 'mine', 'not-a-contact-id');
+        GtmLinkEventController.identifySession(c.Id, 'mine', who.Id);
+        GtmLinkEventController.identifySession(c.Id, 'mine', 'not-a-contact-id');
         Test.stopTest();
 
         Assert.areEqual(1, [SELECT COUNT() FROM MA_Link_Event__c WHERE Contact__c = :who.Id]);

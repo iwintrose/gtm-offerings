@@ -1,9 +1,9 @@
 /**
  * Shared helpers and types for the GTM Configurator Agentforce actions.
- * Invocable methods live in MaAgentGetConfigState and MaAgentApplyConfigUpdate
+ * Invocable methods live in GtmAgentGetConfigState and GtmAgentApplyConfigUpdate
  * (Salesforce allows only one @InvocableMethod per class).
  */
-public without sharing class MaAgentConfigActions {
+public without sharing class GtmAgentConfigActions {
 
     public static final Set<String> ALLOWED_DELTA_KEYS = new Set<String>{
         'company', 'industry', 'accent', 'objectsCount', 'depsCount', 'healthScore', 'note'

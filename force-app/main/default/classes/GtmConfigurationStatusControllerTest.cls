@@ -1,5 +1,5 @@
 @IsTest
-private class MaConfigurationStatusControllerTest {
+private class GtmConfigurationStatusControllerTest {
     @IsTest
     static void activeRecordReturnsTrue() {
         MA_Saved_Configuration__c rec = new MA_Saved_Configuration__c(
@@ -9,7 +9,7 @@ private class MaConfigurationStatusControllerTest {
         );
         insert rec;
 
-        System.assertEquals(true, MaConfigurationStatusController.isActive(rec.Id));
+        System.assertEquals(true, GtmConfigurationStatusController.isActive(rec.Id));
     }
 
     @IsTest
@@ -21,18 +21,18 @@ private class MaConfigurationStatusControllerTest {
         );
         insert rec;
 
-        System.assertEquals(false, MaConfigurationStatusController.isActive(rec.Id));
+        System.assertEquals(false, GtmConfigurationStatusController.isActive(rec.Id));
     }
 
     @IsTest
     static void blankIdIsTreatedAsActive() {
-        System.assertEquals(true, MaConfigurationStatusController.isActive(null));
-        System.assertEquals(true, MaConfigurationStatusController.isActive(''));
+        System.assertEquals(true, GtmConfigurationStatusController.isActive(null));
+        System.assertEquals(true, GtmConfigurationStatusController.isActive(''));
     }
 
     @IsTest
     static void malformedIdIsTreatedAsActive() {
-        System.assertEquals(true, MaConfigurationStatusController.isActive('not-a-real-id'));
+        System.assertEquals(true, GtmConfigurationStatusController.isActive('not-a-real-id'));
     }
 
     @IsTest
@@ -45,6 +45,6 @@ private class MaConfigurationStatusControllerTest {
         Id deletedId = rec.Id;
         delete rec;
 
-        System.assertEquals(false, MaConfigurationStatusController.isActive(deletedId));
+        System.assertEquals(false, GtmConfigurationStatusController.isActive(deletedId));
     }
 }

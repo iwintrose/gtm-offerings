@@ -6,7 +6,7 @@
  * again.
  */
 @isTest
-private class MaDealNamingTest {
+private class GtmDealNamingTest {
 
     private static Account makeAccount(String name) {
         Account a = new Account(Name = name);
@@ -18,7 +18,7 @@ private class MaDealNamingTest {
     static void theNameIsClientThenOffering() {
         Account a = makeAccount('Naming Co');
         Test.startTest();
-        String n = MaDealNaming.nameFor('Naming Co', 'migration-accelerator', a.Id);
+        String n = GtmDealNaming.nameFor('Naming Co', 'migration-accelerator', a.Id);
         Test.stopTest();
 
         System.assert(n.startsWith('Naming Co'),
@@ -33,13 +33,13 @@ private class MaDealNamingTest {
     static void theOfferingComesFromMetadataNotFromCode() {
         Account a = makeAccount('Label Co');
         Test.startTest();
-        String known   = MaDealNaming.nameFor('Label Co', 'migration-accelerator', a.Id);
-        String unknown = MaDealNaming.nameFor('Label Co', 'no-such-offering', a.Id);
-        String blank   = MaDealNaming.nameFor('Label Co', '', a.Id);
+        String known   = GtmDealNaming.nameFor('Label Co', 'migration-accelerator', a.Id);
+        String unknown = GtmDealNaming.nameFor('Label Co', 'no-such-offering', a.Id);
+        String blank   = GtmDealNaming.nameFor('Label Co', '', a.Id);
         Test.stopTest();
 
         System.assertEquals('Migration Accelerator',
-            MaDealNaming.offeringLabel('migration-accelerator'),
+            GtmDealNaming.offeringLabel('migration-accelerator'),
             'a real offering resolves to its own label, not a hardcoded one');
         System.assert(known.endsWith('Migration Accelerator'), known);
         System.assert(unknown.endsWith('Assessment Follow-up'),
@@ -50,12 +50,12 @@ private class MaDealNamingTest {
     @isTest
     static void aSecondDealOnOneAccountIsDistinguishable() {
         Account a = makeAccount('Clash Co');
-        String first = MaDealNaming.nameFor('Clash Co', 'migration-accelerator', a.Id);
+        String first = GtmDealNaming.nameFor('Clash Co', 'migration-accelerator', a.Id);
         insert new Opportunity(Name = first, AccountId = a.Id,
             StageName = 'Prospecting', CloseDate = Date.today().addDays(30));
 
         Test.startTest();
-        String second = MaDealNaming.nameFor('Clash Co', 'migration-accelerator', a.Id);
+        String second = GtmDealNaming.nameFor('Clash Co', 'migration-accelerator', a.Id);
         Test.stopTest();
 
         System.assertNotEquals(first, second,
@@ -68,7 +68,7 @@ private class MaDealNamingTest {
         Account a = makeAccount('Both Paths Co');
 
         // The path a rep takes: saving an engagement link.
-        MaSavedConfigurationController.SaveInput in0 = new MaSavedConfigurationController.SaveInput();
+        GtmSavedConfigurationController.SaveInput in0 = new GtmSavedConfigurationController.SaveInput();
         in0.offering      = 'migration-accelerator';
         in0.industry      = 'media';
         in0.company       = 'Both Paths Co';
@@ -77,7 +77,7 @@ private class MaDealNamingTest {
         in0.accountId     = String.valueOf(a.Id);
 
         Test.startTest();
-        Id linkId = MaSavedConfigurationController.saveConfiguration(in0);
+        Id linkId = GtmSavedConfigurationController.saveConfiguration(in0);
         Test.stopTest();
 
         Id oppId = [SELECT Opportunity__c FROM MA_Saved_Configuration__c WHERE Id = :linkId].Opportunity__c;
@@ -87,7 +87,7 @@ private class MaDealNamingTest {
             'the rep path must use the shared convention: ' + repName);
         System.assert(repName.contains('Migration Accelerator'),
             'and the offering label must be looked up, not hardcoded: ' + repName);
-        System.assertEquals(MaDealNaming.nameFor('Both Paths Co', 'migration-accelerator', null),
+        System.assertEquals(GtmDealNaming.nameFor('Both Paths Co', 'migration-accelerator', null),
             repName.split(' \\(')[0],
             'what the rep path produced must match what the naming authority says');
     }

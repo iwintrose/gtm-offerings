@@ -9,10 +9,10 @@
  * Callout/DML ordering: all HTTP callouts happen before any DML. Config changes
  * are NOT published as MA_Config_Update__e here — they are returned as a JSON
  * delta to the LWC, which dispatches them directly via _applyDelta(). The
- * Agentforce path uses the platform event (MaAgentApplyConfigUpdate publishes it
+ * Agentforce path uses the platform event (GtmAgentApplyConfigUpdate publishes it
  * and the empApi subscription in maConfigCustomize picks it up).
  */
-public without sharing class MaAgentProxyController {
+public without sharing class GtmAgentProxyController {
 
     static final String ANTHROPIC_URL    = 'https://api.anthropic.com/v1/messages';
     static final String DEFAULT_MODEL    = 'claude-sonnet-5';
@@ -172,10 +172,10 @@ public without sharing class MaAgentProxyController {
         String cfgId = (String) input.get('config_id');
         if (String.isBlank(cfgId)) cfgId = configId;
 
-        MaAgentGetConfigState.Input inp = new MaAgentGetConfigState.Input();
+        GtmAgentGetConfigState.Input inp = new GtmAgentGetConfigState.Input();
         inp.configId = cfgId;
-        MaAgentGetConfigState.Output out =
-            MaAgentGetConfigState.execute(new List<MaAgentGetConfigState.Input>{ inp })[0];
+        GtmAgentGetConfigState.Output out =
+            GtmAgentGetConfigState.execute(new List<GtmAgentGetConfigState.Input>{ inp })[0];
 
         return JSON.serialize(new Map<String,Object>{
             'company'             => out.company,
@@ -211,8 +211,8 @@ public without sharing class MaAgentProxyController {
         Map<String,Object> clean  = new Map<String,Object>();
         List<String> errors       = new List<String>();
         for (String key : raw.keySet()) {
-            if (!MaAgentConfigActions.ALLOWED_DELTA_KEYS.contains(key)) continue;
-            String err = MaAgentConfigActions.validateDeltaField(key, raw.get(key));
+            if (!GtmAgentConfigActions.ALLOWED_DELTA_KEYS.contains(key)) continue;
+            String err = GtmAgentConfigActions.validateDeltaField(key, raw.get(key));
             if (err != null) {
                 errors.add(err);
             } else {

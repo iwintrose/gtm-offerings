@@ -1,5 +1,5 @@
 @IsTest
-private class MaLinkAuthControllerTest {
+private class GtmLinkAuthControllerTest {
 
     @TestSetup
     static void setup() {
@@ -22,7 +22,7 @@ private class MaLinkAuthControllerTest {
             SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
-        Boolean result = MaLinkAuthController.checkPasswordRequired(rec.Id);
+        Boolean result = GtmLinkAuthController.checkPasswordRequired(rec.Id);
         Test.stopTest();
         System.assertEquals(true, result, 'Should return true when password is set');
     }
@@ -33,7 +33,7 @@ private class MaLinkAuthControllerTest {
             SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'No Password Corp' LIMIT 1
         ];
         Test.startTest();
-        Boolean result = MaLinkAuthController.checkPasswordRequired(rec.Id);
+        Boolean result = GtmLinkAuthController.checkPasswordRequired(rec.Id);
         Test.stopTest();
         System.assertEquals(false, result, 'Should return false when no password');
     }
@@ -41,7 +41,7 @@ private class MaLinkAuthControllerTest {
     @IsTest
     static void testCheckPasswordRequired_blankId() {
         Test.startTest();
-        Boolean result = MaLinkAuthController.checkPasswordRequired('');
+        Boolean result = GtmLinkAuthController.checkPasswordRequired('');
         Test.stopTest();
         System.assertEquals(false, result);
     }
@@ -52,7 +52,7 @@ private class MaLinkAuthControllerTest {
             SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
-        Boolean result = MaLinkAuthController.verifyPassword(rec.Id, 'secret123');
+        Boolean result = GtmLinkAuthController.verifyPassword(rec.Id, 'secret123');
         Test.stopTest();
         System.assertEquals(true, result, 'Correct password should verify');
         List<Task> tasks = [SELECT Subject FROM Task WHERE WhatId = :rec.Id];
@@ -66,7 +66,7 @@ private class MaLinkAuthControllerTest {
             SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
-        Boolean result = MaLinkAuthController.verifyPassword(rec.Id, 'wrongpassword');
+        Boolean result = GtmLinkAuthController.verifyPassword(rec.Id, 'wrongpassword');
         Test.stopTest();
         System.assertEquals(false, result, 'Wrong password should fail');
         List<Task> tasks = [SELECT Subject FROM Task WHERE WhatId = :rec.Id];
@@ -77,8 +77,8 @@ private class MaLinkAuthControllerTest {
     @IsTest
     static void testVerifyPassword_blankInputs() {
         Test.startTest();
-        System.assertEquals(false, MaLinkAuthController.verifyPassword('', 'secret'));
-        System.assertEquals(false, MaLinkAuthController.verifyPassword('badid', ''));
+        System.assertEquals(false, GtmLinkAuthController.verifyPassword('', 'secret'));
+        System.assertEquals(false, GtmLinkAuthController.verifyPassword('badid', ''));
         Test.stopTest();
     }
 
@@ -90,8 +90,8 @@ private class MaLinkAuthControllerTest {
             SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
-        MaLinkAuthController.VerifyResult res =
-            MaLinkAuthController.verifyAndIssueToken(rec.Id, 'secret123');
+        GtmLinkAuthController.VerifyResult res =
+            GtmLinkAuthController.verifyAndIssueToken(rec.Id, 'secret123');
         Test.stopTest();
 
         System.assertEquals(true, res.matched, 'Correct password should match');
@@ -116,8 +116,8 @@ private class MaLinkAuthControllerTest {
             SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
-        MaLinkAuthController.VerifyResult res =
-            MaLinkAuthController.verifyAndIssueToken(rec.Id, 'wrongpassword');
+        GtmLinkAuthController.VerifyResult res =
+            GtmLinkAuthController.verifyAndIssueToken(rec.Id, 'wrongpassword');
         Test.stopTest();
 
         System.assertEquals(false, res.matched, 'Wrong password should not match');
@@ -134,8 +134,8 @@ private class MaLinkAuthControllerTest {
             SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'No Password Corp' LIMIT 1
         ];
         Test.startTest();
-        MaLinkAuthController.VerifyResult res =
-            MaLinkAuthController.verifyAndIssueToken(rec.Id, 'anypassword');
+        GtmLinkAuthController.VerifyResult res =
+            GtmLinkAuthController.verifyAndIssueToken(rec.Id, 'anypassword');
         Test.stopTest();
 
         System.assertEquals(false, res.matched, 'Record with no password should not match');
@@ -145,10 +145,10 @@ private class MaLinkAuthControllerTest {
     @IsTest
     static void testVerifyAndIssueToken_blankInputs_returnsFalse() {
         Test.startTest();
-        MaLinkAuthController.VerifyResult res1 =
-            MaLinkAuthController.verifyAndIssueToken('', 'secret123');
-        MaLinkAuthController.VerifyResult res2 =
-            MaLinkAuthController.verifyAndIssueToken('badid', '');
+        GtmLinkAuthController.VerifyResult res1 =
+            GtmLinkAuthController.verifyAndIssueToken('', 'secret123');
+        GtmLinkAuthController.VerifyResult res2 =
+            GtmLinkAuthController.verifyAndIssueToken('badid', '');
         Test.stopTest();
 
         System.assertEquals(false, res1.matched);

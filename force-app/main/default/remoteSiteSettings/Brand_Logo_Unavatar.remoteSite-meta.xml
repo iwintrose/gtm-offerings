@@ -3,5 +3,5 @@
     <url>https://unavatar.io</url>
     <isActive>true</isActive>
     <disableProtocolSecurity>false</disableProtocolSecurity>
-    <description>Server-side fetch for the Customize panel's brand-color lookup (MaBrandLookupController). Fetching here instead of from the browser sidesteps CORS entirely -- Apex callouts aren't subject to it.</description>
+    <description>Server-side fetch for the Customize panel's brand-color lookup (GtmBrandLookupController). Fetching here instead of from the browser sidesteps CORS entirely -- Apex callouts aren't subject to it.</description>
 </RemoteSiteSetting>

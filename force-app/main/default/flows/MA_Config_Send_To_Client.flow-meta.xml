@@ -11,6 +11,7 @@
     </processMetadataValues>
     <processType>AutoLaunchedFlow</processType>
     <runInMode>SystemModeWithoutSharing</runInMode>
+    <status>Obsolete</status>
 
     <start>
         <locationX>56</locationX>
@@ -57,7 +58,7 @@
         <label>Send Proposal Email</label>
         <locationX>176</locationX>
         <locationY>240</locationY>
-        <actionName>MaStageActionsController</actionName>
+        <actionName>GtmStageActionsController</actionName>
         <actionType>apex</actionType>
         <inputParameters>
             <name>configId</name>

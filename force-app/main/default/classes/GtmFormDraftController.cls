@@ -25,7 +25,7 @@
  * without sharing because the rows are owned by the automated process user and
  * a guest running with sharing would resolve none of them.
  */
-public without sharing class MaFormDraftController {
+public without sharing class GtmFormDraftController {
 
     // Comfortably more than the assessment form holds, and far less than the
     // field allows: a cap is what stops a write surface becoming a bucket.

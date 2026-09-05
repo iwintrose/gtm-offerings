@@ -9,7 +9,7 @@
  *
  * All methods are without sharing so Experience Cloud guest users can read content.
  */
-public without sharing class MaPageContentController {
+public without sharing class GtmPageContentController {
 
     /**
      * Pages that belong to the framework rather than to any one offering.
@@ -158,40 +158,40 @@ public without sharing class MaPageContentController {
 
 
     // ─── compatibility shims ──────────────────────────────────────────────────
-    // Section methods moved to MaPageSectionController. Lightning caches
+    // Section methods moved to GtmPageSectionController. Lightning caches
     // component bundles in the browser, so a client loaded before that split
     // still imports them from here and would fail with "No apex action
     // available" until its cache cleared. These delegate rather than
     // duplicate, and can be deleted once no cached bundle can still be live.
 
     @AuraEnabled(cacheable=false)
-    public static List<MaPageSectionController.EditorSection> getEditorSections(
+    public static List<GtmPageSectionController.EditorSection> getEditorSections(
         String offeringKey, String templateType
     ) {
-        return MaPageSectionController.getEditorSections(offeringKey, templateType);
+        return GtmPageSectionController.getEditorSections(offeringKey, templateType);
     }
 
     @AuraEnabled
     public static List<String> saveSectionOrder(List<String> sectionIds) {
-        return MaPageSectionController.saveSectionOrder(sectionIds);
+        return GtmPageSectionController.saveSectionOrder(sectionIds);
     }
 
     @AuraEnabled
     public static Boolean setSectionActive(String sectionId, Boolean active) {
-        return MaPageSectionController.setSectionActive(sectionId, active);
+        return GtmPageSectionController.setSectionActive(sectionId, active);
     }
 
     @AuraEnabled
     public static Integer deleteSection(String sectionId) {
-        return MaPageSectionController.deleteSection(sectionId);
+        return GtmPageSectionController.deleteSection(sectionId);
     }
 
     @AuraEnabled
     public static String createSection(
         String offeringKey, String templateType, String sectionKey, String label,
-        String layoutType, String width, List<MaPageSectionController.FieldSeed> fields
+        String layoutType, String width, List<GtmPageSectionController.FieldSeed> fields
     ) {
-        return MaPageSectionController.createSection(
+        return GtmPageSectionController.createSection(
             offeringKey, templateType, sectionKey, label, layoutType, width, fields);
     }
 
@@ -200,7 +200,7 @@ public without sharing class MaPageContentController {
         String offeringKey, String templateType, String sectionKey,
         String fieldKey, String fieldType, String label
     ) {
-        return MaPageSectionController.createField(
+        return GtmPageSectionController.createField(
             offeringKey, templateType, sectionKey, fieldKey, fieldType, label, null);
     }
 
@@ -743,7 +743,7 @@ public without sharing class MaPageContentController {
         Set<String> removedKeys = new Set<String>();
 
         for (MA_Page_Section__c sec : secs) {
-            Map<String, Object> d = MaPageSectionController.draftOf(sec);
+            Map<String, Object> d = GtmPageSectionController.draftOf(sec);
             Boolean wasNew = sec.Status__c == 'Draft';
             if (d.isEmpty() && !wasNew) continue;
 
@@ -948,7 +948,7 @@ public without sharing class MaPageContentController {
             rec.Sort_Order__c      = this.sortOrder == null ? 0 : this.sortOrder;
             rec.Active__c          = this.active == null ? true : this.active;
             // Content_Address__c is a plain Text external ID — Apex must set it.
-            rec.Content_Address__c = MaContentAddress.forField(this.offeringKey, this.templateType, this.sectionKey, this.fieldKey);
+            rec.Content_Address__c = GtmContentAddress.forField(this.offeringKey, this.templateType, this.sectionKey, this.fieldKey);
             return rec;
         }
     }

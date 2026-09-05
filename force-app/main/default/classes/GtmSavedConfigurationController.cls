@@ -1,7 +1,7 @@
 /**
  * Persists and lists configurator links for internal, authenticated reps.
  *
- * Runs `with sharing` deliberately, unlike MaAssessmentRequestController:
+ * Runs `with sharing` deliberately, unlike GtmAssessmentRequestController:
  * this is not guest-reachable, and every visibility rule (a rep sees only
  * their own saved configs; a manager granted "View All" on the object sees
  * everyone's) should come from standard object sharing, not from anything
@@ -9,7 +9,7 @@
  * this class, so a guest calling it fails on class access before any
  * sharing check even runs.
  */
-public with sharing class MaSavedConfigurationController {
+public with sharing class GtmSavedConfigurationController {
     private static final Integer MAX_COMPANY = 255;
     private static final Integer MAX_OFFERING = 100;
     private static final Integer MAX_INDUSTRY = 50;
@@ -363,7 +363,7 @@ public with sharing class MaSavedConfigurationController {
     /**
      * Toggling this does not delete or hide the record from the rep's own
      * Saved Links list -- it only gates what a client sees when visiting
-     * the shared link (see MaConfigurationStatusController, the small
+     * the shared link (see GtmConfigurationStatusController, the small
      * guest-safe class that reads this one field).
      */
     @AuraEnabled
@@ -478,7 +478,7 @@ public with sharing class MaSavedConfigurationController {
      * This lives on the rep-only controller on purpose: it is `with sharing`
      * and the guest permission set is never granted this class, so the payload
      * cannot leak to a prospect through it. The password is deliberately not
-     * returned -- knowing a link is protected is MaLinkAuthController's job,
+     * returned -- knowing a link is protected is GtmLinkAuthController's job,
      * and reading the value is nobody's.
      */
     @AuraEnabled(cacheable=false)
@@ -685,11 +685,11 @@ public with sharing class MaSavedConfigurationController {
             }
         }
         // One naming authority, shared with the assessment-request path --
-        // see MaDealNaming for why this is not two conventions any more. The
+        // see GtmDealNaming for why this is not two conventions any more. The
         // offering was hardcoded here, which would have been wrong the day a
         // second offering existed.
         Opportunity opp = new Opportunity(
-            Name = MaDealNaming.nameFor(company, offeringKey, accountId),
+            Name = GtmDealNaming.nameFor(company, offeringKey, accountId),
             AccountId = accountId,
             StageName = 'Prospecting',
             CloseDate = Date.today().addDays(90)

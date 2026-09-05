@@ -1,5 +1,5 @@
 @IsTest
-private class MaPageContentControllerTest {
+private class GtmPageContentControllerTest {
 
     private static final String OFFERING = 'ma-migrator';
     private static final String TMPL     = 'story';
@@ -30,7 +30,7 @@ private class MaPageContentControllerTest {
 
     @IsTest
     static void getPageContent_returnsEmptyForBlankArgs() {
-        Map<String, String> result = MaPageContentController.getPageContent('', 'story', null);
+        Map<String, String> result = GtmPageContentController.getPageContent('', 'story', null);
         System.assertEquals(0, result.size(), 'Blank offeringKey should yield empty map');
     }
 
@@ -40,7 +40,7 @@ private class MaPageContentControllerTest {
         insert rec;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentController.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assert(result.containsKey('hero::headline'), 'Map should contain hero::headline');
@@ -53,7 +53,7 @@ private class MaPageContentControllerTest {
         insert rec;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentController.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals('<b>Bold</b>', result.get('hero::subhead'));
@@ -65,7 +65,7 @@ private class MaPageContentControllerTest {
         insert rec;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentController.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals('["a","b"]', result.get('problem::chips'));
@@ -80,7 +80,7 @@ private class MaPageContentControllerTest {
         insert recs;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, 'financial-services');
+        Map<String, String> result = GtmPageContentController.getPageContent(OFFERING, TMPL, 'financial-services');
         Test.stopTest();
 
         System.assertEquals('FS headline', result.get('hero::headline'), 'Industry-scoped record should win');
@@ -92,7 +92,7 @@ private class MaPageContentControllerTest {
         insert rec;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentController.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals('Default headline', result.get('hero::headline'));
@@ -105,7 +105,7 @@ private class MaPageContentControllerTest {
         insert rec;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentController.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assert(!result.containsKey('hero::headline'), 'Inactive records should not appear');
@@ -117,7 +117,7 @@ private class MaPageContentControllerTest {
         insert rec;
 
         Test.startTest();
-        Map<String, String> result = MaPageContentController.getPageContent(OFFERING, TMPL, null);
+        Map<String, String> result = GtmPageContentController.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assert(!result.containsKey('hero::headline'), 'Records for a different template should not appear');
@@ -134,7 +134,7 @@ private class MaPageContentControllerTest {
         insert recs;
 
         Test.startTest();
-        List<MaPageContentController.ContentRecord> result = MaPageContentController.getAllContent(OFFERING, TMPL);
+        List<GtmPageContentController.ContentRecord> result = GtmPageContentController.getAllContent(OFFERING, TMPL);
         Test.stopTest();
 
         System.assertEquals(2, result.size());
@@ -149,7 +149,7 @@ private class MaPageContentControllerTest {
         insert recs;
 
         Test.startTest();
-        List<MaPageContentController.ContentRecord> result = MaPageContentController.getAllContent(OFFERING, TMPL);
+        List<GtmPageContentController.ContentRecord> result = GtmPageContentController.getAllContent(OFFERING, TMPL);
         Test.stopTest();
 
         System.assertEquals(2, result.size(), 'getAllContent returns all rows including industry-scoped');
@@ -159,7 +159,7 @@ private class MaPageContentControllerTest {
 
     @IsTest
     static void saveContentRecord_insertsNewRecord() {
-        MaPageContentController.ContentRecord payload = new MaPageContentController.ContentRecord();
+        GtmPageContentController.ContentRecord payload = new GtmPageContentController.ContentRecord();
         payload.offeringKey  = OFFERING;
         payload.templateType = TMPL;
         payload.sectionKey   = 'hero';
@@ -170,7 +170,7 @@ private class MaPageContentControllerTest {
         payload.sortOrder    = 0;
 
         Test.startTest();
-        String newId = MaPageContentController.saveContentRecord(payload);
+        String newId = GtmPageContentController.saveContentRecord(payload);
         Test.stopTest();
 
         System.assertNotEquals(null, newId, 'Save should return an ID');
@@ -180,7 +180,7 @@ private class MaPageContentControllerTest {
 
     @IsTest
     static void saveContentRecord_upsertsByAddress() {
-        MaPageContentController.ContentRecord payload = new MaPageContentController.ContentRecord();
+        GtmPageContentController.ContentRecord payload = new GtmPageContentController.ContentRecord();
         payload.offeringKey  = OFFERING;
         payload.templateType = TMPL;
         payload.sectionKey   = 'hero';
@@ -191,9 +191,9 @@ private class MaPageContentControllerTest {
         payload.sortOrder    = 0;
 
         Test.startTest();
-        String id1 = MaPageContentController.saveContentRecord(payload);
+        String id1 = GtmPageContentController.saveContentRecord(payload);
         payload.textValue = 'Second';
-        String id2 = MaPageContentController.saveContentRecord(payload);
+        String id2 = GtmPageContentController.saveContentRecord(payload);
         Test.stopTest();
 
         System.assertEquals(id1, id2, 'Second save should upsert the same record');
@@ -206,7 +206,7 @@ private class MaPageContentControllerTest {
         Test.startTest();
         Boolean threw = false;
         try {
-            MaPageContentController.saveContentRecord(null);
+            GtmPageContentController.saveContentRecord(null);
         } catch (AuraHandledException ex) {
             threw = true;
         }
@@ -218,9 +218,9 @@ private class MaPageContentControllerTest {
 
     @IsTest
     static void saveContentRecords_insertsBulk() {
-        List<MaPageContentController.ContentRecord> payloads = new List<MaPageContentController.ContentRecord>();
+        List<GtmPageContentController.ContentRecord> payloads = new List<GtmPageContentController.ContentRecord>();
         for (Integer i = 0; i < 5; i++) {
-            MaPageContentController.ContentRecord p = new MaPageContentController.ContentRecord();
+            GtmPageContentController.ContentRecord p = new GtmPageContentController.ContentRecord();
             p.offeringKey  = OFFERING;
             p.templateType = TMPL;
             p.sectionKey   = 'section' + i;
@@ -233,7 +233,7 @@ private class MaPageContentControllerTest {
         }
 
         Test.startTest();
-        List<String> ids = MaPageContentController.saveContentRecords(payloads);
+        List<String> ids = GtmPageContentController.saveContentRecords(payloads);
         Test.stopTest();
 
         System.assertEquals(5, ids.size(), 'Should return 5 IDs');
@@ -248,7 +248,7 @@ private class MaPageContentControllerTest {
         insert rec;
 
         Test.startTest();
-        MaPageContentController.deleteContentRecord(rec.Id);
+        GtmPageContentController.deleteContentRecord(rec.Id);
         Test.stopTest();
 
         System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Content__c WHERE Id = :rec.Id]);
@@ -259,7 +259,7 @@ private class MaPageContentControllerTest {
         Test.startTest();
         Boolean threw = false;
         try {
-            MaPageContentController.deleteContentRecord('');
+            GtmPageContentController.deleteContentRecord('');
         } catch (AuraHandledException ex) {
             threw = true;
         }
@@ -284,13 +284,13 @@ private class MaPageContentControllerTest {
         MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
         insert rec;
 
-        MaPageContentController.DraftEdit edit = new MaPageContentController.DraftEdit();
+        GtmPageContentController.DraftEdit edit = new GtmPageContentController.DraftEdit();
         edit.id = rec.Id;
         edit.value = 'Edited but unpublished';
 
         Test.startTest();
-        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ edit });
-        Map<String, String> live = MaPageContentReader.getPageContent(OFFERING, TMPL, null);
+        GtmPageContentController.saveDrafts(new List<GtmPageContentController.DraftEdit>{ edit });
+        Map<String, String> live = GtmPageContentReader.getPageContent(OFFERING, TMPL, null);
         Test.stopTest();
 
         System.assertEquals('Live copy', live.get('hero::eyebrow'),
@@ -304,13 +304,13 @@ private class MaPageContentControllerTest {
     static void publishMovesDraftIntoTheColumnThePageReads() {
         MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
         insert rec;
-        MaPageContentController.DraftEdit edit = new MaPageContentController.DraftEdit();
+        GtmPageContentController.DraftEdit edit = new GtmPageContentController.DraftEdit();
         edit.id = rec.Id;
         edit.value = 'New copy';
-        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ edit });
+        GtmPageContentController.saveDrafts(new List<GtmPageContentController.DraftEdit>{ edit });
 
         Test.startTest();
-        Integer count = MaPageContentController.publishPage(OFFERING, TMPL);
+        Integer count = GtmPageContentController.publishPage(OFFERING, TMPL);
         Test.stopTest();
 
         System.assertEquals(1, count, 'One field published');
@@ -329,13 +329,13 @@ private class MaPageContentControllerTest {
     static void publishSnapshotsTheOutgoingValue() {
         MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Original');
         insert rec;
-        MaPageContentController.DraftEdit edit = new MaPageContentController.DraftEdit();
+        GtmPageContentController.DraftEdit edit = new GtmPageContentController.DraftEdit();
         edit.id = rec.Id;
         edit.value = 'Replacement';
-        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ edit });
+        GtmPageContentController.saveDrafts(new List<GtmPageContentController.DraftEdit>{ edit });
 
         Test.startTest();
-        MaPageContentController.publishPage(OFFERING, TMPL);
+        GtmPageContentController.publishPage(OFFERING, TMPL);
         Test.stopTest();
 
         MA_Page_Content_Version__c v = [
@@ -353,14 +353,14 @@ private class MaPageContentControllerTest {
         MA_Page_Content__c jsonRec = published('problem', 'chips', 'json', '["old"]');
         insert new List<MA_Page_Content__c>{ richRec, jsonRec };
 
-        MaPageContentController.DraftEdit a = new MaPageContentController.DraftEdit();
+        GtmPageContentController.DraftEdit a = new GtmPageContentController.DraftEdit();
         a.id = richRec.Id; a.value = '<b>new</b>';
-        MaPageContentController.DraftEdit b = new MaPageContentController.DraftEdit();
+        GtmPageContentController.DraftEdit b = new GtmPageContentController.DraftEdit();
         b.id = jsonRec.Id; b.value = '["new"]';
-        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ a, b });
+        GtmPageContentController.saveDrafts(new List<GtmPageContentController.DraftEdit>{ a, b });
 
         Test.startTest();
-        MaPageContentController.publishPage(OFFERING, TMPL);
+        GtmPageContentController.publishPage(OFFERING, TMPL);
         Test.stopTest();
 
         System.assertEquals('<b>new</b>',
@@ -375,13 +375,13 @@ private class MaPageContentControllerTest {
     static void discardLeavesThePublishedValueAlone() {
         MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
         insert rec;
-        MaPageContentController.DraftEdit edit = new MaPageContentController.DraftEdit();
+        GtmPageContentController.DraftEdit edit = new GtmPageContentController.DraftEdit();
         edit.id = rec.Id;
         edit.value = 'Throw me away';
-        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ edit });
+        GtmPageContentController.saveDrafts(new List<GtmPageContentController.DraftEdit>{ edit });
 
         Test.startTest();
-        Integer count = MaPageContentController.discardDrafts(OFFERING, TMPL);
+        Integer count = GtmPageContentController.discardDrafts(OFFERING, TMPL);
         Test.stopTest();
 
         System.assertEquals(1, count, 'One draft discarded');
@@ -398,7 +398,7 @@ private class MaPageContentControllerTest {
     static void publishWithNoDraftsIsANoOp() {
         insert published('hero', 'eyebrow', 'text', 'Live copy');
         Test.startTest();
-        Integer count = MaPageContentController.publishPage(OFFERING, TMPL);
+        Integer count = GtmPageContentController.publishPage(OFFERING, TMPL);
         Test.stopTest();
         System.assertEquals(0, count, 'Nothing to publish');
         System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Content_Version__c],
@@ -413,14 +413,14 @@ private class MaPageContentControllerTest {
         other.Content_Address__c = OFFERING + '::configurator::hero::eyebrow';
         insert new List<MA_Page_Content__c>{ mine, other };
 
-        MaPageContentController.DraftEdit a = new MaPageContentController.DraftEdit();
+        GtmPageContentController.DraftEdit a = new GtmPageContentController.DraftEdit();
         a.id = mine.Id; a.value = 'Mine edited';
-        MaPageContentController.DraftEdit b = new MaPageContentController.DraftEdit();
+        GtmPageContentController.DraftEdit b = new GtmPageContentController.DraftEdit();
         b.id = other.Id; b.value = 'Theirs edited';
-        MaPageContentController.saveDrafts(new List<MaPageContentController.DraftEdit>{ a, b });
+        GtmPageContentController.saveDrafts(new List<GtmPageContentController.DraftEdit>{ a, b });
 
         Test.startTest();
-        Integer count = MaPageContentController.publishPage(OFFERING, TMPL);
+        Integer count = GtmPageContentController.publishPage(OFFERING, TMPL);
         Test.stopTest();
 
         System.assertEquals(1, count, 'Only this page publishes');

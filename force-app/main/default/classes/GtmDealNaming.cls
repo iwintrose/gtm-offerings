@@ -17,7 +17,7 @@
  * list is read by client, and the offering qualifies it. One dash, one order,
  * one source for the offering's label.
  */
-public with sharing class MaDealNaming {
+public with sharing class GtmDealNaming {
 
     /** Used when an offering key is missing or unknown to the metadata. */
     @TestVisible

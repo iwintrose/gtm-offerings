@@ -6,7 +6,7 @@
  * can insert MA_Link_Event__c records without needing a Salesforce login.
  * No data is read back to the caller — insert only.
  */
-public without sharing class MaLinkEventController {
+public without sharing class GtmLinkEventController {
 
     @AuraEnabled(cacheable=false)
     public static void logEvent(

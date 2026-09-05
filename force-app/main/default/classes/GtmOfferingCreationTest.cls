@@ -5,12 +5,12 @@
  * landed. Its pages are ordinary records, and they are what make it real.
  */
 @isTest
-private class MaOfferingCreationTest {
+private class GtmOfferingCreationTest {
 
     @isTest
     static void aNewOfferingExistsImmediately() {
         Test.startTest();
-        String key = MaPageContentController.createOffering('Data Cloud Accelerator');
+        String key = GtmPageContentController.createOffering('Data Cloud Accelerator');
         Test.stopTest();
 
         System.assertEquals('data-cloud-accelerator', key, 'the key comes from the name');
@@ -28,7 +28,7 @@ private class MaOfferingCreationTest {
         System.assertNotEquals(null, byField.get('description'));
 
         Boolean onHome = false;
-        for (MaPageContentController.OfferingSummary o : MaPageContentController.getHomeSummary().offerings) {
+        for (GtmPageContentController.OfferingSummary o : GtmPageContentController.getHomeSummary().offerings) {
             if (o.offeringKey == key) onHome = true;
         }
         System.assert(onHome, 'it must appear without waiting for a metadata deployment');
@@ -36,10 +36,10 @@ private class MaOfferingCreationTest {
 
     @isTest
     static void aNameThatIsAlreadyTakenIsRefused() {
-        MaPageContentController.createOffering('Twice Over');
+        GtmPageContentController.createOffering('Twice Over');
         Boolean refused = false;
         Test.startTest();
-        try { MaPageContentController.createOffering('Twice Over'); }
+        try { GtmPageContentController.createOffering('Twice Over'); }
         catch (Exception e) { refused = true; }
         Test.stopTest();
         System.assert(refused, 'a second offering must not quietly share the first one\'s pages');
@@ -49,9 +49,9 @@ private class MaOfferingCreationTest {
     static void aNameWithNothingInItIsRefused() {
         Integer refusals = 0;
         Test.startTest();
-        try { MaPageContentController.createOffering('   '); } catch (Exception e) { refusals++; }
-        try { MaPageContentController.createOffering('!!!'); } catch (Exception e) { refusals++; }
-        try { MaPageContentController.createOffering('gtm');  } catch (Exception e) { refusals++; }
+        try { GtmPageContentController.createOffering('   '); } catch (Exception e) { refusals++; }
+        try { GtmPageContentController.createOffering('!!!'); } catch (Exception e) { refusals++; }
+        try { GtmPageContentController.createOffering('gtm');  } catch (Exception e) { refusals++; }
         Test.stopTest();
         System.assertEquals(3, refusals,
             'blank, punctuation-only, and the reserved framework key are all refused');

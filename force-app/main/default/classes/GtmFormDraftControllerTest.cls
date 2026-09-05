@@ -4,7 +4,7 @@
  * submitted form stops offering its own answers back.
  */
 @IsTest
-private class MaFormDraftControllerTest {
+private class GtmFormDraftControllerTest {
 
     private static final String KEY  = 'a1b2c3d4e5f60718293a';
     private static final String KEY2 = 'ffffffffffffffffffff';
@@ -25,9 +25,9 @@ private class MaFormDraftControllerTest {
         MA_Saved_Configuration__c c = link(true);
 
         Test.startTest();
-        Assert.isNull(MaFormDraftController.getDraft(c.Id, KEY), 'Nothing typed yet');
-        MaFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
-        MaFormDraftController.DraftView back = MaFormDraftController.getDraft(c.Id, KEY);
+        Assert.isNull(GtmFormDraftController.getDraft(c.Id, KEY), 'Nothing typed yet');
+        GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
+        GtmFormDraftController.DraftView back = GtmFormDraftController.getDraft(c.Id, KEY);
         Test.stopTest();
 
         Assert.isNotNull(back);
@@ -47,9 +47,9 @@ private class MaFormDraftControllerTest {
         MA_Saved_Configuration__c c = link(true);
 
         Test.startTest();
-        MaFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
-        MaFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann","timeline":"Q1"}', 'timeline', 'sess-1');
-        MaFormDraftController.DraftView back = MaFormDraftController.getDraft(c.Id, KEY);
+        GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
+        GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann","timeline":"Q1"}', 'timeline', 'sess-1');
+        GtmFormDraftController.DraftView back = GtmFormDraftController.getDraft(c.Id, KEY);
         Test.stopTest();
 
         Assert.areEqual('{"name":"Ann","timeline":"Q1"}', back.draftJson);
@@ -59,29 +59,29 @@ private class MaFormDraftControllerTest {
     @IsTest
     static void anotherBrowsersKeyGetsNothing() {
         MA_Saved_Configuration__c c = link(true);
-        MaFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
+        GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
 
         Test.startTest();
-        Assert.isNull(MaFormDraftController.getDraft(c.Id, KEY2),
+        Assert.isNull(GtmFormDraftController.getDraft(c.Id, KEY2),
             'A draft is readable only by the browser holding its key');
-        Assert.isNull(MaFormDraftController.getDraft(c.Id, 'short'),
+        Assert.isNull(GtmFormDraftController.getDraft(c.Id, 'short'),
             'A key too short to be random is refused outright');
-        Assert.isNull(MaFormDraftController.getDraft(c.Id, 'has spaces and punctuation!!'),
+        Assert.isNull(GtmFormDraftController.getDraft(c.Id, 'has spaces and punctuation!!'),
             'Only the character set the browser generates is accepted');
-        Assert.isNull(MaFormDraftController.getDraft('not-an-id', KEY));
+        Assert.isNull(GtmFormDraftController.getDraft('not-an-id', KEY));
         Test.stopTest();
     }
 
     @IsTest
     static void submittingStopsTheFormOfferingItsAnswersBack() {
         MA_Saved_Configuration__c c = link(true);
-        MaFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
+        GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
 
         Test.startTest();
-        MaFormDraftController.clearDraft(c.Id, KEY);
+        GtmFormDraftController.clearDraft(c.Id, KEY);
         Test.stopTest();
 
-        Assert.isNull(MaFormDraftController.getDraft(c.Id, KEY),
+        Assert.isNull(GtmFormDraftController.getDraft(c.Id, KEY),
             'A finished form must not hand the visitor their own draft on the next visit');
     }
 
@@ -90,7 +90,7 @@ private class MaFormDraftControllerTest {
         MA_Saved_Configuration__c c = link(false);
 
         Test.startTest();
-        MaFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
+        GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
         Test.stopTest();
 
         Assert.areEqual(0, [SELECT COUNT() FROM MA_Form_Draft__c],
@@ -102,7 +102,7 @@ private class MaFormDraftControllerTest {
         MA_Saved_Configuration__c c = link(true);
 
         Test.startTest();
-        MaFormDraftController.saveDraft(c.Id, KEY, 'x'.repeat(9000), 'name', 'sess-1');
+        GtmFormDraftController.saveDraft(c.Id, KEY, 'x'.repeat(9000), 'name', 'sess-1');
         Test.stopTest();
 
         Assert.areEqual(0, [SELECT COUNT() FROM MA_Form_Draft__c],
