@@ -2,6 +2,7 @@ import { LightningElement, wire, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import getSnapshot from '@salesforce/apex/MaHomeSnapshotController.getSnapshot';
 import getRecentNewAssessmentRequests from '@salesforce/apex/MaHomeSnapshotController.getRecentNewAssessmentRequests';
+import getDeals from '@salesforce/apex/MaHomeSnapshotController.getDeals';
 import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
 // Owned by the prospect-page-wizard branch, which is deployed to this org.
 // Do not add a local copy of MaSavedConfigurationController without merging
@@ -27,6 +28,8 @@ const TEMPLATE_LABELS = {
 export default class GtmOverview extends NavigationMixin(LightningElement) {
     @track snapshot;
     @track requests = [];
+    @track deals = [];
+    @track dealsLoaded = false;
     @track offerings = [];
     @track loadError = '';
     @track requestsLoaded = false;
@@ -55,6 +58,49 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
         }
         this.requestsLoaded = true;
     }
+
+    /**
+     * The deals, and what each recipient did with the page sent for them.
+     *
+     * A request tells you someone asked; the funnel tells you how they got
+     * there and, more usefully, who got close and stopped. Reading them on one
+     * row is the point: "opened, never submitted" is invisible in either list
+     * on its own.
+     */
+    @wire(getDeals)
+    wiredDeals({ data, error }) {
+        if (data) {
+            this.deals = data.map((d) => {
+                const stage = dealStage(d);
+                return {
+                    key: d.configId,
+                    url: `/lightning/r/Opportunity/${d.opportunityId}/view`,
+                    linkUrl: `/lightning/r/MA_Saved_Configuration__c/${d.configId}/view`,
+                    requestUrl: d.requestId ? `/lightning/r/MA_Assessment_Request__c/${d.requestId}/view` : '',
+                    name: d.opportunityName,
+                    account: d.accountName || d.company || '',
+                    industry: d.industryLabel || '',
+                    crmStage: d.stageName || '',
+                    close: d.closeDate ? new Date(d.closeDate).toLocaleDateString() : '',
+                    views: d.views || 0,
+                    viewsLabel: `${d.views || 0} view${(d.views || 0) === 1 ? '' : 's'}`,
+                    hasRequest: !!d.requestId,
+                    requestName: d.requestName || '',
+                    requestStatus: d.requestStatus || '',
+                    stageLabel: stage.label,
+                    stageClass: `pill pill--${stage.tone}`,
+                    lastLabel: d.lastActivity ? new Date(d.lastActivity).toLocaleDateString() : 'no activity yet',
+                    inactive: d.linkActive === false
+                };
+            });
+        } else if (error) {
+            this.loadError = this.messageFrom(error) || 'Deals could not be loaded.';
+        }
+        this.dealsLoaded = true;
+    }
+
+    get hasDeals() { return this.deals.length > 0; }
+    get showEmptyDeals() { return this.dealsLoaded && !this.hasDeals; }
 
     // getHomeSummary is deliberately not cacheable — it has to reflect an edit
     // made a moment ago — so it is called rather than wired. @wire refuses a
@@ -123,8 +169,17 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
             { key: 'links', label: 'Active links', value: fmt(s.activeEngagementCount), icon: 'utility:link', valueClass: 'tile-value' },
             { key: 'new', label: 'New requests', value: fmt(s.newAssessmentCount), icon: 'utility:inbox', valueClass: 'tile-value' },
             { key: 'views', label: 'Page views (7 days)', value: fmt(s.recentViews), icon: 'utility:preview', valueClass: 'tile-value' },
-            // The one number that means something went right gets to say so.
-            { key: 'subs', label: 'Submissions this month', value: fmt(s.submissionsThisMonth), icon: 'utility:check', valueClass: 'tile-value tile-value--good' }
+            // The only tile that names work nobody is doing, so it is the only
+            // one that gets to shout. It replaced "submissions this month",
+            // which counted the same act as "new requests" and told a BD
+            // nothing the row above it had not already said.
+            {
+                key: 'stalled',
+                label: 'Opened, never submitted',
+                value: fmt(s.stalledCount),
+                icon: 'utility:warning',
+                valueClass: s.stalledCount > 0 ? 'tile-value tile-value--warn' : 'tile-value'
+            }
         ];
     }
 
@@ -184,6 +239,21 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
             }
         });
     }
+}
+
+/**
+ * Where a deal has got to, said once.
+ *
+ * The funnel is ordered, so the furthest thing that happened is the whole
+ * story: a submitted form makes an earlier drop-off history, and a drop-off
+ * with no submission is the one state worth chasing.
+ */
+function dealStage(d) {
+    if (d.requestId || d.formSubmitted) return { label: 'Request received', tone: 'good' };
+    if (d.droppedOff)                   return { label: 'Started, then left', tone: 'warn' };
+    if (d.formOpened)                   return { label: 'Opened the form', tone: 'warn' };
+    if (d.views > 0)                    return { label: 'Read the page', tone: 'info' };
+    return { label: 'Not opened yet', tone: 'quiet' };
 }
 
 function fmt(value) {

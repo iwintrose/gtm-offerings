@@ -77,6 +77,64 @@
 
     </div>
 
+    <!-- The deals a page has been sent for, and what came back. This is the
+         join a BD used to have to make in their head: an opportunity, the link
+         prepared for it, and the request that link produced -- or did not. -->
+    <article class="slds-card ov-card ov-deals">
+      <div class="slds-card__header ov-card-h">
+        <lightning-icon icon-name="standard:opportunity" size="small"></lightning-icon>
+        <h2 class="ov-h">Deals in play</h2>
+        <span class="ov-h-note">What each recipient did with the page you sent</span>
+      </div>
+      <div class="slds-card__body ov-card-b">
+        <template if:true={hasDeals}>
+          <div class="deals" role="table" aria-label="Deals in play">
+            <div class="deal deal--head" role="row">
+              <span role="columnheader">Deal</span>
+              <span role="columnheader">CRM stage</span>
+              <span role="columnheader">On the page</span>
+              <span role="columnheader">Request</span>
+              <span role="columnheader">Last activity</span>
+            </div>
+            <template for:each={deals} for:item="d">
+              <div key={d.key} class="deal" role="row">
+                <span class="deal-id" role="cell">
+                  <a class="deal-name" href={d.url}>{d.name}</a>
+                  <span class="deal-sub">{d.account}</span>
+                </span>
+                <span class="deal-crm" role="cell">
+                  <span class="deal-stage">{d.crmStage}</span>
+                  <template if:true={d.close}>
+                    <span class="deal-sub">closes {d.close}</span>
+                  </template>
+                </span>
+                <span role="cell">
+                  <span class={d.stageClass}>{d.stageLabel}</span>
+                  <span class="deal-sub">{d.viewsLabel}</span>
+                </span>
+                <span role="cell">
+                  <template if:true={d.hasRequest}>
+                    <a class="deal-req" href={d.requestUrl}>{d.requestName}</a>
+                    <span class="deal-sub">{d.requestStatus}</span>
+                  </template>
+                  <template if:false={d.hasRequest}>
+                    <span class="deal-none">—</span>
+                  </template>
+                </span>
+                <span class="deal-when" role="cell">
+                  <span>{d.lastLabel}</span>
+                  <a class="deal-sub deal-link" href={d.linkUrl}>Open the link</a>
+                </span>
+              </div>
+            </template>
+          </div>
+        </template>
+        <template if:true={showEmptyDeals}>
+          <p class="ov-empty">No deals yet. Every prospect page you build for an opportunity shows up here with what the recipient did with it.</p>
+        </template>
+      </div>
+    </article>
+
     <!-- offerings, each linking to its own story -->
     <article class="slds-card ov-card ov-offerings">
       <div class="slds-card__header ov-card-h">

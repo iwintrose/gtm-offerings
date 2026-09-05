@@ -114,9 +114,19 @@ for (MA_Saved_Configuration__c l : links) l.Generated_URL__c = base + '?cfgId=' 
 update links;
 
 // ─── 5. requests and the interactions behind them ────────────────────────────
+//
+// Three of the four convert; the fourth opens the form and leaves. That is
+// deliberate, and it is the difference the overview has to be able to show: a
+// request is the record of an ask, a Form Submitted event is the record of the
+// click that made it, and a deal that has one without the other is either a
+// bug or a prospect worth chasing. Seeding a request for the client who
+// dropped off made every deal look identical and hid both.
+Integer CONVERTED = 3;
+
 List<MA_Assessment_Request__c> reqs = new List<MA_Assessment_Request__c>();
 Integer i = 0;
 for (List<String> s : spec) {
+    if (i >= CONVERTED) { i++; continue; }
     Id acct = acctByName.get(s[0]);
     reqs.add(new MA_Assessment_Request__c(
         Requester_Name__c = s[8], Requester_Email__c = s[9],
@@ -139,7 +149,7 @@ for (Integer n = 0; n < links.size(); n++) {
         Event_Type__c = 'Page View', Session_Id__c = session, Step__c = 'proof'));
     events.add(new MA_Link_Event__c(Saved_Configuration__c = links[n].Id,
         Event_Type__c = 'Form Opened', Session_Id__c = session, Step__c = 'assessment'));
-    if (n < 3) {
+    if (n < CONVERTED) {
         events.add(new MA_Link_Event__c(Saved_Configuration__c = links[n].Id,
             Assessment_Request__c = reqs[n].Id,
             Event_Type__c = 'Form Submitted', Session_Id__c = session, Step__c = 'assessment'));

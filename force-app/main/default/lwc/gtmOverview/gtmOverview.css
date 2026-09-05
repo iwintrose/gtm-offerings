@@ -213,3 +213,64 @@
 .cards > .ocard > .slds-card__body { margin: 0; }
 .side > .side-card + .side-card,
 .side > .side-card { margin: 0; }
+
+/* ── Deals in play ─────────────────────────────────────────────────────────
+   A table drawn with grid rather than <table>: the columns have to stay in
+   step across rows, and the last one has to be able to wrap on a narrow
+   window without the others moving. */
+.ov-deals { margin-top: 1rem; }
+.ov-h-note {
+    margin-left: auto;
+    font-size: .75rem;
+    color: #5c5c5c;
+}
+.deals { display: flex; flex-direction: column; }
+.deal {
+    display: grid;
+    grid-template-columns: minmax(190px, 2fr) minmax(120px, 1fr) minmax(150px, 1.2fr) minmax(110px, 1fr) minmax(130px, 1fr);
+    gap: .75rem;
+    align-items: start;
+    padding: .7rem .25rem;
+    border-bottom: 1px solid #e5e5e5;
+}
+.deal:last-child { border-bottom: 0; }
+.deal--head {
+    padding-bottom: .4rem;
+    font-size: .7rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #6b6b6b;
+}
+.deal-id, .deal-crm, .deal-when { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.deal-name { font-weight: 600; color: #0176d3; text-decoration: none; }
+.deal-name:hover { text-decoration: underline; }
+.deal-stage { font-weight: 500; }
+.deal-sub { font-size: .75rem; color: #5c5c5c; }
+.deal-req { color: #0176d3; text-decoration: none; font-weight: 500; }
+.deal-req:hover { text-decoration: underline; }
+.deal-none { color: #9a9a9a; }
+.deal-link { color: #0176d3; text-decoration: none; }
+.deal-link:hover { text-decoration: underline; }
+
+/* One pill per funnel state. Colour carries the meaning, so the shape stays
+   identical: a reader scanning the column is comparing states, not sizes. */
+.pill {
+    display: inline-block;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+.pill--good  { background: #d7f0e0; color: #14532d; }
+.pill--warn  { background: #fdeacb; color: #7a4a05; }
+.pill--info  { background: #dce9fb; color: #0b3d75; }
+.pill--quiet { background: #ececec; color: #545454; }
+
+.tile-value--warn { color: #a1500a; }
+
+@media (max-width: 900px) {
+    /* Stacked, the column headings stop meaning anything, so they go. */
+    .deal--head { display: none; }
+    .deal { grid-template-columns: 1fr 1fr; }
+}
