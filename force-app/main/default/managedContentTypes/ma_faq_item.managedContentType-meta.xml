@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ManagedContentType xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>One FAQ entry (question, answer, verdict) for a GTM Offering&apos;s public page.</description>
+    <description>RETIRED - nothing reads this. Authoring is in the GTM Content Manager. One FAQ entry (question, answer, verdict) for a GTM Offering&apos;s public page.</description>
     <developerName>ma_faq_item</developerName>
     <managedContentNodeTypes>
         <helpText>The question as shown on the page.</helpText>
@@ -41,5 +41,5 @@
         <nodeName>displayOrder</nodeName>
         <nodeType>TEXT</nodeType>
     </managedContentNodeTypes>
-    <masterLabel>MA FAQ Item</masterLabel>
+    <masterLabel>RETIRED — MA FAQ Item</masterLabel>
 </ManagedContentType>

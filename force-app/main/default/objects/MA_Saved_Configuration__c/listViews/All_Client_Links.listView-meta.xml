@@ -2,7 +2,7 @@
 <ListView xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>All_Client_Links</fullName>
     <filterScope>Everything</filterScope>
-    <label>All Client Links</label>
+    <label>All Engagement Links</label>
     <columns>NAME</columns>
     <columns>Account__c</columns>
     <columns>Offering__c</columns>

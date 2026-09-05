@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ManagedContentType xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Per-industry story content for a GTM Offering&apos;s public page (problem/solution copy, proof line, demo data). One record per industry per offering.</description>
+    <description>RETIRED - nothing reads this. Authoring is in the GTM Content Manager. Per-industry story content for a GTM Offering&apos;s public page (problem/solution copy, proof line, demo data). One record per industry per offering.</description>
     <developerName>ma_industry_story</developerName>
     <managedContentNodeTypes>
         <isLocalizable>true</isLocalizable>
@@ -115,5 +115,5 @@
         <nodeName>demoDeps</nodeName>
         <nodeType>MTEXT</nodeType>
     </managedContentNodeTypes>
-    <masterLabel>MA Industry Story</masterLabel>
+    <masterLabel>RETIRED — MA Industry Story</masterLabel>
 </ManagedContentType>

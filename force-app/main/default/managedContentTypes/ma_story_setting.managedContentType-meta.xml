@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ManagedContentType xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Site-wide defaults for a GTM Offering&apos;s public page: proof-number placeholders, the generic (no-industry) demo, and brand swatches. One record per offering.</description>
+    <description>RETIRED - nothing reads this. Authoring is in the GTM Content Manager. Site-wide defaults for a GTM Offering&apos;s public page: proof-number placeholders, the generic (no-industry) demo, and brand swatches. One record per offering.</description>
     <developerName>ma_story_setting</developerName>
     <managedContentNodeTypes>
         <isLocalizable>true</isLocalizable>
@@ -94,5 +94,5 @@
         <nodeName>swatches</nodeName>
         <nodeType>MTEXT</nodeType>
     </managedContentNodeTypes>
-    <masterLabel>MA Story Setting</masterLabel>
+    <masterLabel>RETIRED — MA Story Setting</masterLabel>
 </ManagedContentType>

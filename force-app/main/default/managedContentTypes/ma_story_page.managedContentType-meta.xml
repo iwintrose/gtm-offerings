@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ManagedContentType xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Hero, proof numbers, and narrative beat copy for a GTM Offering&apos;s story pitch page (maStory). One record per offering. 15-field max — mid-page structural sections live in ma_story_body.</description>
+    <description>RETIRED - nothing reads this. Authoring is in the GTM Content Manager. Hero, proof numbers, and narrative beat copy for a GTM Offering&apos;s story pitch page (maStory). One record per offering. 15-field max — mid-page structural sections live in</description>
     <developerName>ma_story_page</developerName>
     <managedContentNodeTypes>
         <isLocalizable>true</isLocalizable>
@@ -120,5 +120,5 @@
         <nodeName>closingSub</nodeName>
         <nodeType>RTE</nodeType>
     </managedContentNodeTypes>
-    <masterLabel>MA Story Page</masterLabel>
+    <masterLabel>RETIRED — MA Story Page</masterLabel>
 </ManagedContentType>

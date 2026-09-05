@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ManagedContentType xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Mid-page structural copy for a GTM Offering&apos;s story pitch page (maStory): route steps, proof demo, capabilities cards, client profile, and BD/pitch-shift section. One record per offering. Companion to ma_story_page.</description>
+    <description>RETIRED - nothing reads this. Authoring is in the GTM Content Manager. Mid-page structural copy for a GTM Offering&apos;s story pitch page (maStory): route steps, proof demo, capabilities cards, client profile, and BD/pitch-shift section. One record per</description>
     <developerName>ma_story_body</developerName>
     <managedContentNodeTypes>
         <isLocalizable>true</isLocalizable>
@@ -121,5 +121,5 @@
         <nodeName>pitchNewChips</nodeName>
         <nodeType>MTEXT</nodeType>
     </managedContentNodeTypes>
-    <masterLabel>MA Story Body</masterLabel>
+    <masterLabel>RETIRED — MA Story Body</masterLabel>
 </ManagedContentType>
