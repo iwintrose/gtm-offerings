@@ -210,10 +210,13 @@ unscrubbed real prospect data: MUCH Music/TD Bank/Medtronic/LA Metro
 contact names and emails). `MA_Config_Update__e` (platform event) has no
 persisted rows — nothing to back up, not a gap.
 
-**Stage 2 — in progress, blocked on one piece.** The three safest objects
-first: `GTM_Offering__mdt`, `GTM_Assessment_Config__mdt`, `GTM_Agent_Settings__c`
-(mirroring their `MA_` originals field-for-field). Object/field metadata
-for all three deployed clean. Data:
+**Stage 2 — done.** The three safest objects first: `GTM_Offering__mdt`,
+`GTM_Assessment_Config__mdt`, `GTM_Agent_Settings__c` (mirroring their `MA_`
+originals field-for-field), plus `GTM_Config_Update__e` — an 11th object
+that had been missing from the original stage breakdown (a platform event
+with zero persisted rows, so it slots in with the other no-data/no-external-
+exposure objects rather than needing its own stage). Object/field metadata
+for all four deployed clean. Data:
 
 - `GTM_Offering.Migration_Accelerator` — deployed and verified live.
 - `GTM_Agent_Settings__c` org defaults — migrated via a one-time Apex
@@ -221,33 +224,42 @@ for all three deployed clean. Data:
   one) rather than a metadata deploy, specifically so the Claude API key
   value never had to pass through anything I could read or print — verified
   live by field presence, not by value.
-- `GTM_Assessment_Config.Default` — **blocked.** Every attempt to deploy
-  this one customMetadata record fails with an opaque org-side
-  `UNKNOWN_EXCEPTION` (error code `-315522575`), reproduced 5+ times: full
-  record, single-field record, different record name, different label —
-  all fail identically. Isolated definitively with a throwaway diagnostic
-  object (`ZZ_Diag_Test__mdt`, created fresh, never touched before): a
-  record deploy against it **also** fails with the identical error,
-  proving this is a **current, org-wide Metadata-API fault specifically on
-  CustomMetadata *record* deploys** in this org right now — not anything
-  wrong with our field/object metadata, not a naming collision, not a
-  propagation-timing issue. CustomMetadata *type* (object) deploys are
-  unaffected; only record deploys are broken. Diagnostic object cleaned up
-  (deployed, then destructively removed) once confirmed. Worth checking
-  Salesforce Trust status for this instance, or retrying later — this
-  isn't something fixable from the metadata side.
+- `GTM_Config_Update__e` — no data (platform events don't persist), nothing
+  to migrate.
+- `GTM_Assessment_Config.Default` — **was blocked, now resolved.** Every
+  standard `sf project deploy` attempt against this one customMetadata
+  record failed identically with an opaque org-side `UNKNOWN_EXCEPTION`
+  (error code `-315522575`) across 8 attempts over two sessions, isolated
+  definitively as an org-wide Metadata-API fault (reproduced even on a
+  throwaway diagnostic object) rather than anything wrong with our
+  metadata. **Worked around** by routing the same record through a
+  different platform entry point: an Apex script using
+  `Metadata.Operations.enqueueDeployment` instead of the CLI's Metadata API
+  deploy path. That succeeded on the first attempt — the record is live,
+  verified by direct query field-for-field against the `MA_` original.
+  Whatever is broken is specific to the CLI/REST Metadata API deploy
+  pipeline, not to CustomMetadata records generally; worth keeping this
+  workaround in mind if another record deploy hits the same wall.
 - Permission set grants (`GTM_Story_Guest`/`GTM_Assessment_Guest` →
   `customMetadataTypeAccesses` on the new types, old `MA_` grants left in
-  place alongside) deployed clean — additive, unaffected by the record
-  issue since they reference the type, not a record.
+  place alongside) deployed clean.
 
-**Still not started:** the Apex rewiring for `GtmAssessmentRequestController`
-/ `GtmAssessmentRequestControllerTest` / `GtmDealNaming` / `GtmAgentProxyController`
-(Stage 2's remaining piece — holding off until `GTM_Assessment_Config__mdt`
-actually has its record, since `GtmAssessmentRequestController` reads it and
-`GTM_Offering__mdt` together). `GtmPageContentController`/`GtmPageContentReader`
-were rewired as part of Stage 3 below (they touch `GTM_Offering__mdt` too,
-already live, so no reason to touch those two files twice).
+Rewired: `GtmAssessmentRequestController`/`GtmAssessmentRequestControllerTest`
+(the `GTM_Assessment_Config__mdt`/`GTM_Offering__mdt` lines — its
+`GTM_Assessment_Request__c` lines were Stage 4's), `GtmDealNaming`,
+`GtmAgentProxyController` (`GTM_Agent_Settings__c`), and
+`GtmAgentApplyConfigUpdate`/`gtmAgentBubble.js` (`GTM_Config_Update__e`,
+including the empApi channel string literal — a type-reference sweep alone
+would have missed it). `GtmPageContentController`/`GtmPageContentReader`
+were already rewired in Stage 3 (they touch `GTM_Offering__mdt` too, no
+reason to touch twice). Also updated five now-stale comment/description
+references to `MA_Offering__mdt.Offering_Key__c` across field metadata and
+LWC `js-meta.xml` property descriptions, for accuracy — cosmetic, not
+functional. No dedicated test class exists for `GtmAgentProxyController` or
+`GtmAgentApplyConfigUpdate` (pre-existing gap, not introduced here); ran a
+one-off Apex sanity check instead (`getOrgDefaults()` resolves, `EventBus.publish`
+on `GTM_Config_Update__e` succeeds) since regression tests couldn't cover it.
+`GtmAssessmentRequestControllerTest` (24) and `GtmDealNamingTest` (4) pass.
 
 **Stage 3 — done.** `MA_Page_Content__c` (206 rows), `MA_Page_Section__c`
 (39 rows), and `MA_Page_Content_Version__c` (16 rows, discovered mid-stage —

@@ -1,6 +1,6 @@
 /**
  * Agentforce invocable action: apply a partial config delta to the LWC panel.
- * Validates the delta, then publishes an MA_Config_Update__e platform event
+ * Validates the delta, then publishes a GTM_Config_Update__e platform event
  * that the maConfigCustomize LWC is subscribed to via empApi.
  */
 public without sharing class GtmAgentApplyConfigUpdate {
@@ -83,7 +83,7 @@ public without sharing class GtmAgentApplyConfigUpdate {
 
         String cleanJson = JSON.serialize(clean);
 
-        MA_Config_Update__e evt = new MA_Config_Update__e(
+        GTM_Config_Update__e evt = new GTM_Config_Update__e(
             Session_Token__c = inp.sessionToken,
             Updates_JSON__c  = cleanJson
         );

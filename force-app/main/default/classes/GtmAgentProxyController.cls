@@ -7,7 +7,7 @@
  * maConfigCustomize.html with <einstein-copilot-chat> and retire this class.
  *
  * Callout/DML ordering: all HTTP callouts happen before any DML. Config changes
- * are NOT published as MA_Config_Update__e here — they are returned as a JSON
+ * are NOT published as GTM_Config_Update__e here — they are returned as a JSON
  * delta to the LWC, which dispatches them directly via _applyDelta(). The
  * Agentforce path uses the platform event (GtmAgentApplyConfigUpdate publishes it
  * and the empApi subscription in maConfigCustomize picks it up).
@@ -282,12 +282,12 @@ public without sharing class GtmAgentProxyController {
     }
 
     private static String getApiKey() {
-        MA_Agent_Settings__c s = MA_Agent_Settings__c.getOrgDefaults();
+        GTM_Agent_Settings__c s = GTM_Agent_Settings__c.getOrgDefaults();
         return s?.Claude_API_Key__c;
     }
 
     private static String getModel() {
-        MA_Agent_Settings__c s = MA_Agent_Settings__c.getOrgDefaults();
+        GTM_Agent_Settings__c s = GTM_Agent_Settings__c.getOrgDefaults();
         String m = s?.Claude_Model__c;
         return String.isBlank(m) ? DEFAULT_MODEL : m;
     }

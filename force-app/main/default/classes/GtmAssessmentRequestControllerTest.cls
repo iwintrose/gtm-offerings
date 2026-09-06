@@ -15,12 +15,12 @@ private class GtmAssessmentRequestControllerTest {
         return input;
     }
 
-    private static MA_Assessment_Config__mdt config(
+    private static GTM_Assessment_Config__mdt config(
         Boolean createContact,
         Boolean sendEmail,
         String activityType
     ) {
-        return new MA_Assessment_Config__mdt(
+        return new GTM_Assessment_Config__mdt(
             Create_Lead__c = createContact,
             Send_Email__c = sendEmail,
             Notify_Email__c = 'assessments@example.com',

@@ -4,7 +4,7 @@ import { subscribe, unsubscribe } from 'lightning/empApi';
 // The Agentforce path: the bot applies a change server-side and publishes it,
 // rather than returning it in a chat reply. Both paths end at the same
 // agentdelta event, so the page has one way to receive a change.
-const CONFIG_UPDATE_CHANNEL = '/event/MA_Config_Update__e';
+const CONFIG_UPDATE_CHANNEL = '/event/GTM_Config_Update__e';
 
 /**
  * The assistant, as a bubble in the corner.

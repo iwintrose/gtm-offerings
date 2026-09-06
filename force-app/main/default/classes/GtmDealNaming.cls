@@ -24,7 +24,7 @@ public with sharing class GtmDealNaming {
     private static final String FALLBACK_OFFERING = 'Assessment Follow-up';
 
     /**
-     * The offering's own label, from MA_Offering__mdt.
+     * The offering's own label, from GTM_Offering__mdt.
      *
      * Both paths used to answer this differently: one looked it up, the other
      * hardcoded 'Migration Accelerator', which would have been wrong the day a
@@ -33,8 +33,8 @@ public with sharing class GtmDealNaming {
     public static String offeringLabel(String offeringKey) {
         if (String.isBlank(offeringKey)) return FALLBACK_OFFERING;
         try {
-            List<MA_Offering__mdt> rows = [
-                SELECT Label__c FROM MA_Offering__mdt
+            List<GTM_Offering__mdt> rows = [
+                SELECT Label__c FROM GTM_Offering__mdt
                 WHERE Offering_Key__c = :offeringKey LIMIT 1
             ];
             if (!rows.isEmpty() && String.isNotBlank(rows[0].Label__c)) {

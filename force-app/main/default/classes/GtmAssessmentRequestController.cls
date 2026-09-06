@@ -17,7 +17,7 @@ public without sharing class GtmAssessmentRequestController {
 
     /** Test seam: lets the test class supply config without inserting CMDT. */
     @TestVisible
-    private static MA_Assessment_Config__mdt configOverride;
+    private static GTM_Assessment_Config__mdt configOverride;
 
     // ---------------------------------------------------------------- types
 
@@ -131,7 +131,7 @@ public without sharing class GtmAssessmentRequestController {
             throw new AuraHandledException('Please enter a valid work email.');
         }
 
-        MA_Assessment_Config__mdt cfg = loadConfig();
+        GTM_Assessment_Config__mdt cfg = loadConfig();
         ConfigContext ctx = resolveConfigContext(input.savedRecordId);
         validateTokenIfRequired(input.savedRecordId, input.submissionToken, ctx);
         // A company name is a company name wherever it shows up in this
@@ -341,9 +341,9 @@ public without sharing class GtmAssessmentRequestController {
             return null;
         }
         try {
-            List<MA_Offering__mdt> rows = [
+            List<GTM_Offering__mdt> rows = [
                 SELECT Annual_Target__c
-                FROM MA_Offering__mdt
+                FROM GTM_Offering__mdt
                 WHERE Offering_Key__c = :offeringKey
                 LIMIT 1
             ];
@@ -459,13 +459,13 @@ public without sharing class GtmAssessmentRequestController {
 
     // ----------------------------------------------------------------- config
 
-    private static MA_Assessment_Config__mdt loadConfig() {
+    private static GTM_Assessment_Config__mdt loadConfig() {
         if (configOverride != null) {
             return configOverride;
         }
-        List<MA_Assessment_Config__mdt> rows = [
+        List<GTM_Assessment_Config__mdt> rows = [
             SELECT Notify_Email__c, Create_Lead__c, Send_Email__c, Activity_Type__c
-            FROM MA_Assessment_Config__mdt
+            FROM GTM_Assessment_Config__mdt
             WHERE DeveloperName = :DEFAULT_CONFIG
             LIMIT 1
         ];
@@ -473,7 +473,7 @@ public without sharing class GtmAssessmentRequestController {
             return rows[0];
         }
         // No config deployed yet — create contact, stay quiet otherwise.
-        return new MA_Assessment_Config__mdt(
+        return new GTM_Assessment_Config__mdt(
             Create_Lead__c = true,
             Send_Email__c = false,
             Activity_Type__c = 'Task'
@@ -490,7 +490,7 @@ public without sharing class GtmAssessmentRequestController {
         RequestInput input,
         String cleanName,
         String cleanEmail,
-        MA_Assessment_Config__mdt cfg,
+        GTM_Assessment_Config__mdt cfg,
         ConfigContext ctx,
         RequestResult result
     ) {
@@ -546,7 +546,7 @@ public without sharing class GtmAssessmentRequestController {
         RequestInput input,
         String cleanName,
         String cleanEmail,
-        MA_Assessment_Config__mdt cfg
+        GTM_Assessment_Config__mdt cfg
     ) {
         if (contactId == null) {
             return;
@@ -589,7 +589,7 @@ public without sharing class GtmAssessmentRequestController {
         RequestInput input,
         String cleanName,
         String cleanEmail,
-        MA_Assessment_Config__mdt cfg
+        GTM_Assessment_Config__mdt cfg
     ) {
         Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
         String notifyEmail = (String) cfg.get('Notify_Email__c');
