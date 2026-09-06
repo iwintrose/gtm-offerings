@@ -3,7 +3,7 @@
  *
  * Every piece of page content is addressed by what it is rather than by a
  * record id: offering::template::section::field. The address is the external
- * id on MA_Page_Content__c and the join between a section and the rows that
+ * id on GTM_Page_Content__c and the join between a section and the rows that
  * belong to it, so how it is spelled — and what a key is allowed to contain —
  * is a single rule, not a convention each caller re-implements.
  */
