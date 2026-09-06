@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Context__c</fullName>
-    <label>What's Prompting the Move</label>
-    <description>Free text captured from the assessment request form.</description>
-    <type>LongTextArea</type>
-    <length>4000</length>
-    <visibleLines>5</visibleLines>
-</CustomField>

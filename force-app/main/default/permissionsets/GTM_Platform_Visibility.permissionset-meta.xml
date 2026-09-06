@@ -44,10 +44,6 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
-        <tab>MA_Assessment_Request__c</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
         <tab>GTM_Assessment_Request__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>

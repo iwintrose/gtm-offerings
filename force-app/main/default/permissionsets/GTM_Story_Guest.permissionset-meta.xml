@@ -24,40 +24,18 @@
         <allowEdit>false</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
-        <object>MA_Form_Draft__c</object>
-        <viewAllRecords>false</viewAllRecords>
-    </objectPermissions>
-    <objectPermissions>
-        <allowCreate>true</allowCreate>
-        <allowDelete>false</allowDelete>
-        <allowEdit>false</allowEdit>
-        <allowRead>true</allowRead>
-        <modifyAllRecords>false</modifyAllRecords>
         <object>GTM_Form_Draft__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <fieldPermissions>
-        <editable>true</editable><field>MA_Form_Draft__c.Draft_JSON__c</field><readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
         <editable>true</editable><field>GTM_Form_Draft__c.Draft_JSON__c</field><readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable><field>MA_Form_Draft__c.Furthest_Field__c</field><readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable><field>GTM_Form_Draft__c.Furthest_Field__c</field><readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable><field>MA_Form_Draft__c.Session_Id__c</field><readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
         <editable>true</editable><field>GTM_Form_Draft__c.Session_Id__c</field><readable>true</readable>
     </fieldPermissions>
-    <customMetadataTypeAccesses>
-        <enabled>true</enabled>
-        <name>MA_Offering__mdt</name>
-    </customMetadataTypeAccesses>
     <customMetadataTypeAccesses>
         <enabled>true</enabled>
         <name>GTM_Offering__mdt</name>

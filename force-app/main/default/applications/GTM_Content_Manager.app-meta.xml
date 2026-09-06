@@ -10,6 +10,5 @@
     <navType>Standard</navType>
     <tabs>GTM_Content_Home</tabs>
     <tabs>GTM_Content_Manager</tabs>
-    <tabs>MA_Page_Content__c</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>

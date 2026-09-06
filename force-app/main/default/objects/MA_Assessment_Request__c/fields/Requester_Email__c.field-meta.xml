@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Requester_Email__c</fullName>
-    <label>Requester Email</label>
-    <description>Used to create/match the Lead and to send an optional confirmation to the requester. Not required for the request to be recorded in Salesforce -- the write itself happens through the authenticated backend regardless.</description>
-    <type>Email</type>
-    <unique>false</unique>
-</CustomField>

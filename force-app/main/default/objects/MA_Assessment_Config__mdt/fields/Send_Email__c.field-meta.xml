@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Send_Email__c</fullName>
-    <label>Send Email</label>
-    <description>Email the submission to Notify Email.</description>
-    <type>Checkbox</type>
-    <defaultValue>false</defaultValue>
-</CustomField>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Notify_Email__c</fullName>
-    <label>Notify Email</label>
-    <description>Where assessment requests are emailed. Server-side only, never taken from the browser.</description>
-    <type>Email</type>
-    <required>false</required>
-    <unique>false</unique>
-</CustomField>

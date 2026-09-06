@@ -340,6 +340,60 @@ whether the new record page auto-activated as the org default for
 Lightning Record Pages) that isn't reliably driven by a metadata-only
 deploy. Check this in the org before relying on it.
 
+**Cutover — Stages 2/3/4's old `MA_` schema deleted.** With all three
+stages' rewiring regression-tested, retired the 10 old objects those
+stages replaced: `MA_Offering__mdt`, `MA_Assessment_Config__mdt`,
+`MA_Agent_Settings__c`, `MA_Config_Update__e` (Stage 2); `MA_Page_Content__c`,
+`MA_Page_Section__c`, `MA_Page_Content_Version__c` (Stage 3);
+`MA_Assessment_Request__c`, `MA_Link_Event__c`, `MA_Form_Draft__c` (Stage 4)
+— schema, remaining records, and the two now-orphaned `MA_Assessment_Request__c`/
+`MA_Page_Content__c` tabs. `MA_Saved_Configuration__c` (Stage 5) and its
+tab are untouched — still the live object.
+
+Found and fixed two real pre-existing gaps while scoping the cutover,
+both of which would otherwise have left something broken or dangling:
+
+- `GTM_Config_Manager` — the permission set reps actually use — had
+  **never** been granted access to `GTM_Page_Content__c`/`GTM_Page_Section__c`
+  at all; Stage 3 cloned grants into every other permission set but missed
+  this one. Since it was also the *only* permission set holding grants for
+  the old objects, deleting those grants without first adding the GTM_
+  equivalents would have left reps with zero object/field access to Page
+  Content/Section. Renamed rather than duplicated, since the old objects
+  were being deleted in the same pass anyway.
+- Three LWC templates (`gtmContentHome`, `gtmOverview`, `gtmContentManager`)
+  had user-visible empty-state copy naming `MA_Offering__mdt` directly
+  ("Add an MA_Offering__mdt record..."). Harmless while the old object
+  still existed; would have been flatly wrong advice once it didn't.
+  Updated to `GTM_Offering__mdt`. One comment-only mention in `gtmStory.html`
+  fixed for the same reason.
+
+Also removed the old `customMetadataTypeAccesses` grants
+(`GTM_Story_Guest`/`GTM_Assessment_Guest`), the old-object `tabSettings`/
+`objectPermissions`/`fieldPermissions` blocks across `GTM_Config_Manager`,
+`GTM_Platform_Visibility`, `GTM_Assessment_Guest`, `GTM_Story_Guest`,
+`Standard`, and `StandardAul` (the two profiles hadn't been touched before
+this pass), and the orphaned tab entries from the `GTM_Offerings`/
+`GTM_Content_Manager` apps — all deployed and verified deployed clean
+before the destructive step, since Salesforce refuses to delete an object
+that a permission set/profile still grants access to.
+
+Deletion itself used `sf project delete source`, check-only first (110
+components validated, 0 failures) then for real (110 deleted, 0 failures).
+Verified independently after the fact — not just trusting the deploy's own
+report — via a live `SELECT COUNT()` against each of the 10 old API names,
+all returning `INVALID_TYPE`. Full regression pass across all 9 touched
+test classes (102 tests) still green post-deletion.
+
+**One known leftover, not blocking anything:** `Assessment_Request_Record_Page2`
+(the old Lightning Record Page for the now-deleted `MA_Assessment_Request__c`)
+could not be deleted via metadata API — Salesforce refuses to delete an
+*active* Lightning page, and deactivating one is a Lightning App Builder UI
+action, not something a deploy can do. It's inert now (its `sobjectType`
+points at a deleted object) and harmless, but it'll sit as an orphaned file
+in both the repo and the org until someone deactivates it in Setup and it's
+deleted in a follow-up pass.
+
 **D7 — `gtmPageBrowser` ("Pages" tab) has the wrong shape.** A rep should
 not be able to freely browse every offering × every template — that's the
 Content Manager's job, not the BD app's. What a rep actually needs, from
