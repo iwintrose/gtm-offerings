@@ -182,6 +182,34 @@ both sites' Administration → Members lists in Setup; destructive deploy
 then succeeded cleanly (dry-run and real, 0 errors). Local source files
 removed to match. `check-all.sh` dangling-references check: none.
 
+**Phase 2 authorized — full `MA_` → `GTM_` custom object/field rename.**
+Confirmed `orgfarm-5c323065da-dev-ed` (org Id `00DgK00000XZieHUAT`) *is*
+production — no separate prod org exists. Full scope run against it: 11
+objects/mdt/settings/events, 108 fields, 34 Apex classes, 14 LWC bundles,
+2 flows, 6 permission sets, 2 profiles, 8 confirmed hardcoded
+API-name-in-string-literal spots a type-reference-only sweep would miss
+(incl. the `/event/MA_Config_Update__e` EMP API channel string — misses
+there fail silently, no compile error), 287 real records. Only
+`MA_Saved_Configuration__c`'s 4 Active rows carry externally-distributed
+Ids (`?cfgId=`); everything else is internal-only. Plan: a small legacy-Id
+redirect lookup for those 4 rows (Salesforce Ids are permanently bound to
+their originating object, so old Ids can never resolve against a new one
+directly) lets `MA_Saved_Configuration__c` actually get renamed too,
+instead of frozen forever — cheap given only 4 rows. Staged: safest
+objects (mdt/setting types) → `Page_Content`/`Page_Section` (internal
+CMS, no external exposure) → `Assessment_Request`/`Link_Event`/`Form_Draft`
+→ `Saved_Configuration` last (needs the redirect). Regression pass after
+each stage, not just at the end.
+
+**Stage 1 — done.** Full backup of all 287 records across the 10
+data-bearing objects (`MA_Page_Content__c` needed an explicit field list,
+not `FIELDS(ALL)` — that shortcut silently caps at 200 rows and was
+truncating its 206), verified against live `COUNT()` per object, zero
+query errors. Delivered directly to Isiah as a zip (not committed — it's
+unscrubbed real prospect data: MUCH Music/TD Bank/Medtronic/LA Metro
+contact names and emails). `MA_Config_Update__e` (platform event) has no
+persisted rows — nothing to back up, not a gap.
+
 
 **D7 — `gtmPageBrowser` ("Pages" tab) has the wrong shape.** A rep should
 not be able to freely browse every offering × every template — that's the
