@@ -33,6 +33,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     @track offeringsLoaded = false;
 
     @track navBusy = false;
+    @track navFailed = false;
 
     @wire(getSnapshot)
     wiredSnapshot({ data, error }) {
@@ -139,6 +140,25 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
 
     get showEmptyOfferings() { return this.offeringsLoaded && !this.offerings.length; }
 
+    // A rep who just clicked this is mid-call or right after one — the label
+    // and sub-copy have to carry the button's state on their own, because a
+    // disabled attribute with no visual change reads as "did that even work?"
+    get newPageLabel() {
+        if (this.navBusy) return 'Opening…';
+        if (this.navFailed) return 'Try again';
+        return 'New Prospect Page';
+    }
+
+    get newPageSub() {
+        if (this.navBusy) return 'Opening the industry picker…';
+        if (this.navFailed) return 'That didn’t go through — click to retry';
+        return 'Pick an industry and build a client configurator';
+    }
+
+    get actClass() {
+        return this.navFailed ? 'act act--failed' : 'act';
+    }
+
     /**
      * The rep's entry point, and the reason this button is on this page: it
      * sends them to the site's own "Choose your industry" page with ?wizard=1,
@@ -149,10 +169,12 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     handleNewProspectPage() {
         if (this.navBusy) return;
         this.navBusy = true;
+        this.navFailed = false;
         getSiteHomePageUrl()
             .then((url) => {
                 if (!url) {
                     this.loadError = 'The Accelerator site could not be found, so the wizard cannot be opened.';
+                    this.navFailed = true;
                     return;
                 }
                 const sep = url.indexOf('?') > -1 ? '&' : '?';
@@ -163,12 +185,14 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
             })
             .catch((err) => {
                 this.loadError = this.messageFrom(err) || 'The wizard could not be opened.';
+                this.navFailed = true;
             })
             .finally(() => { this.navBusy = false; });
     }
 
     handleDismissError() {
         this.loadError = '';
+        this.navFailed = false;
     }
 
     handleEditOffering(event) {

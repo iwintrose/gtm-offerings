@@ -73,6 +73,15 @@
     color: #fff; cursor: pointer; text-align: left; text-decoration: none;
 }
 .act:hover { background: #014486; border-color: #014486; }
+.act:disabled { opacity: 0.85; cursor: wait; }
+.act--failed { background: var(--gtm-danger); border-color: var(--gtm-danger); }
+.act--failed:hover { background: #8f0411; border-color: #8f0411; }
+.act-spinner {
+    width: 15px; height: 15px; flex: 0 0 15px; margin-top: 2px;
+    border: 2px solid rgba(255, 255, 255, 0.4); border-top-color: #fff;
+    border-radius: 50%; animation: act-spin 0.7s linear infinite;
+}
+@keyframes act-spin { to { transform: rotate(360deg); } }
 .act--quiet {
     background: var(--gtm-bg-surface); color: var(--gtm-text); border-color: var(--gtm-border);
 }

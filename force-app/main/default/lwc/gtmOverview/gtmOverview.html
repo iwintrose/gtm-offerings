@@ -47,11 +47,16 @@
       <!-- right: what a rep comes here to do -->
       <section class="ov-col ov-col--act">
         <h2 class="ov-h">Create</h2>
-        <button class="act" onclick={handleNewProspectPage} disabled={navBusy}>
-          <span class="act-plus">+</span>
+        <button class={actClass} onclick={handleNewProspectPage} disabled={navBusy}>
+          <template if:true={navBusy}>
+            <span class="act-spinner" aria-hidden="true"></span>
+          </template>
+          <template if:false={navBusy}>
+            <span class="act-plus">+</span>
+          </template>
           <span class="act-main">
-            <span class="act-label">New Prospect Page</span>
-            <span class="act-sub">Pick an industry and build a client configurator</span>
+            <span class="act-label">{newPageLabel}</span>
+            <span class="act-sub">{newPageSub}</span>
           </span>
         </button>
         <a class="act act--quiet" href={contentManagerUrl}>
