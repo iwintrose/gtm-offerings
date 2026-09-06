@@ -12,6 +12,7 @@
     <tabs>GTM_Pages</tabs>
     <tabs>MA_Saved_Configuration__c</tabs>
     <tabs>MA_Assessment_Request__c</tabs>
+    <tabs>GTM_Assessment_Request__c</tabs>
     <tabs>standard-Opportunity</tabs>
     <tabs>standard-Account</tabs>
     <tabs>standard-Contact</tabs>

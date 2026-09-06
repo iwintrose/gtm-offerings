@@ -370,7 +370,7 @@ public without sharing class GtmAssessmentRequestController {
         try {
             Id cfgId = isId(input.savedRecordId) ? (Id) Id.valueOf(input.savedRecordId) : null;
 
-            MA_Assessment_Request__c req = new MA_Assessment_Request__c(
+            GTM_Assessment_Request__c req = new GTM_Assessment_Request__c(
                 Saved_Configuration__c  = cfgId,
                 Opportunity__c          = ctx.opportunityId,
                 Account__c              = ctx.accountId,

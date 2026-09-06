@@ -61,7 +61,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
             .then((data) => {
                 this.requests = (data || []).map((r) => ({
                     key: r.recordId,
-                    url: `/lightning/r/MA_Assessment_Request__c/${r.recordId}/view`,
+                    url: `/lightning/r/GTM_Assessment_Request__c/${r.recordId}/view`,
                     name: r.requesterName || r.name,
                     meta: [r.company, r.platform].filter(Boolean).join(' · '),
                     date: r.createdDate ? new Date(r.createdDate).toLocaleDateString() : ''
@@ -88,7 +88,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                         key: d.configId,
                         url: `/lightning/r/Opportunity/${d.opportunityId}/view`,
                         linkUrl: `/lightning/r/MA_Saved_Configuration__c/${d.configId}/view`,
-                        requestUrl: d.requestId ? `/lightning/r/MA_Assessment_Request__c/${d.requestId}/view` : '',
+                        requestUrl: d.requestId ? `/lightning/r/GTM_Assessment_Request__c/${d.requestId}/view` : '',
                         name: d.opportunityName,
                         account: d.accountName || d.company || '',
                         industry: d.industryLabel || '',

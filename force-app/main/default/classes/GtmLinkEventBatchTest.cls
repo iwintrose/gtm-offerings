@@ -33,9 +33,9 @@ private class GtmLinkEventBatchTest {
         GtmLinkEventController.logEvents(c.Id, 'sess-1', batch);
         Test.stopTest();
 
-        List<MA_Link_Event__c> rows = [
+        List<GTM_Link_Event__c> rows = [
             SELECT Event_Type__c, Step__c, Dwell_Seconds__c, Sequence__c
-            FROM MA_Link_Event__c WHERE Session_Id__c = 'sess-1'
+            FROM GTM_Link_Event__c WHERE Session_Id__c = 'sess-1'
             ORDER BY Sequence__c ASC
         ];
         Assert.areEqual(3, rows.size());
@@ -57,7 +57,7 @@ private class GtmLinkEventBatchTest {
         GtmLinkEventController.logEvents(c.Id, 'sess-2', batch);
         Test.stopTest();
 
-        Assert.areEqual(60, [SELECT COUNT() FROM MA_Link_Event__c WHERE Session_Id__c = 'sess-2'],
+        Assert.areEqual(60, [SELECT COUNT() FROM GTM_Link_Event__c WHERE Session_Id__c = 'sess-2'],
             'A visit producing this much is a bot or a bug; the tail is not worth the rows');
     }
 
@@ -70,7 +70,7 @@ private class GtmLinkEventBatchTest {
         GtmLinkEventController.logEvents(link().Id, 'sess-3', null);
         Test.stopTest();
 
-        Assert.areEqual(0, [SELECT COUNT() FROM MA_Link_Event__c WHERE Session_Id__c = 'sess-3']);
+        Assert.areEqual(0, [SELECT COUNT() FROM GTM_Link_Event__c WHERE Session_Id__c = 'sess-3']);
     }
 
     /**
@@ -92,7 +92,7 @@ private class GtmLinkEventBatchTest {
         GtmLinkEventController.identifySession(c.Id, 'sess-4', who.Id);
         Test.stopTest();
 
-        Assert.areEqual(2, [SELECT COUNT() FROM MA_Link_Event__c
+        Assert.areEqual(2, [SELECT COUNT() FROM GTM_Link_Event__c
                             WHERE Session_Id__c = 'sess-4' AND Contact__c = :who.Id],
             'Everything read before they said who they are becomes theirs');
     }
@@ -110,8 +110,8 @@ private class GtmLinkEventBatchTest {
         GtmLinkEventController.identifySession(c.Id, 'mine', 'not-a-contact-id');
         Test.stopTest();
 
-        Assert.areEqual(1, [SELECT COUNT() FROM MA_Link_Event__c WHERE Contact__c = :who.Id]);
-        Assert.areEqual(null, [SELECT Contact__c FROM MA_Link_Event__c
+        Assert.areEqual(1, [SELECT COUNT() FROM GTM_Link_Event__c WHERE Contact__c = :who.Id]);
+        Assert.areEqual(null, [SELECT Contact__c FROM GTM_Link_Event__c
                                WHERE Session_Id__c = 'somebody-else' LIMIT 1].Contact__c);
     }
 }

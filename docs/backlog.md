@@ -276,6 +276,57 @@ metadata caches, not a real defect; `check-all.sh`'s live-contract check is
 blocked until that clears, but the application itself is already proven
 correct independent of it. Re-run `check-all.sh` before final cutover.
 
+**Stage 4 — done.** `MA_Assessment_Request__c` (3 rows), `MA_Link_Event__c`
+(16 rows), `MA_Form_Draft__c` (0 rows). No external URL exposure on any of
+the three, so — like Stage 3 — a straightforward hard cutover. All three
+objects' own `Saved_Configuration__c` lookups deliberately still point at
+the OLD `MA_Saved_Configuration__c` (a plain Lookup, repointable later
+without recreating the field, so this is deferred cleanly to Stage 5);
+`GTM_Link_Event__c.Assessment_Request__c` was repointed to the NEW
+`GTM_Assessment_Request__c` since both migrate together in this stage. Hit
+and fixed a real **relationship-name collision**: copied lookup fields kept
+their original `relationshipName` values, which collided with the
+still-live old objects' relationships to the same shared parents (Account/
+Contact/Lead/Opportunity/Engagement Link) — renamed to `GTM_Assessment_Requests`
+/`GTM_Link_Events`/`GTM_Form_Drafts`.
+
+Rewired: `GtmAssessmentRequestController`, `GtmLinkEventController`,
+`GtmFormDraftController`, `GtmStageActionsController` (missed on the first
+pass — caught by a repo-wide grep for the old object names after the
+first batch, not by the original file list), `GtmHomeSnapshotController`
+(second pass — its Page_Content/Section lines were already done in Stage
+3), and all matching test classes. `GtmDealNaming`/`GtmAgentGetConfigState`
+left untouched (Stage 2/5 objects only). LWC: `gtmAssessmentDetail.js` (20
+schema imports), `gtmStageActions.js`/`gtmOverview.js` (hardcoded record
+URLs), and `gtmLinkActivity.js` — the last one needed more than a
+find/replace: its `getRelatedListRecords` call reads via the parent
+(`MA_Saved_Configuration__c`, still Stage 5) child relationship, and that
+relationship's name is now `GTM_Link_Events__r`, not `Link_Events__r`,
+because of the collision rename above — missing this would have silently
+broken the live Engagement Link activity feed. All 44 tests across the five
+touched test classes pass.
+
+Found a real UI gap while rewiring: `GtmAssessmentRequestController` now
+inserts new prospect submissions into `GTM_Assessment_Request__c`, but the
+only native Lightning Record Page/Tab for this object family
+(`Assessment_Request_Record_Page2.flexipage-meta.xml`, the `Assessment
+Requests` tab, both still bound to the OLD object) would have made every
+new submission invisible to a rep browsing natively. Closed the gap:
+cloned a `GTM_Assessment_Request_Record_Page` record page and a
+`GTM_Assessment_Request__c` tab, added the tab to the `GTM_Offerings` app
+and to `GTM_Platform_Visibility`'s tab settings, and cloned the matching
+object/field/tab grants onto the `Standard`/`StandardAul` profiles (these
+two hadn't been touched in Stages 2-3 — first time profile-level access
+needed cloning, not just permission sets). The OLD record page's two
+custom-component facets (`gtmAssessmentDetail`, `gtmLinkActivity`) were
+swapped for static `flexipage:richText` notes rather than left in place,
+since both components' internals now assume the NEW object's schema and
+would error against the 3 legacy records' old-object Ids. **Not verified:**
+whether the new record page auto-activated as the org default for
+`GTM_Assessment_Request__c` — Salesforce sometimes requires a manual
+"Activation" step (Setup → Object Manager → GTM Assessment Request →
+Lightning Record Pages) that isn't reliably driven by a metadata-only
+deploy. Check this in the org before relying on it.
 
 **D7 — `gtmPageBrowser` ("Pages" tab) has the wrong shape.** A rep should
 not be able to freely browse every offering × every template — that's the

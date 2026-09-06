@@ -244,10 +244,10 @@ private class GtmAssessmentRequestControllerTest {
             result.assessmentRequestId,
             'A structured assessment request record should always be filed'
         );
-        MA_Assessment_Request__c req = [
+        GTM_Assessment_Request__c req = [
             SELECT Requester_Name__c, Requester_Email__c, Company__c, Status__c,
                    Contact__c, Opportunity__c, Saved_Configuration__c
-            FROM MA_Assessment_Request__c
+            FROM GTM_Assessment_Request__c
             WHERE Id = :result.assessmentRequestId
         ];
         Assert.areEqual('Alex Rivera', req.Requester_Name__c);
@@ -299,9 +299,9 @@ private class GtmAssessmentRequestControllerTest {
 
         Assert.areEqual(opp.Id, result.opportunityId, 'Opportunity should carry through to the result');
 
-        MA_Assessment_Request__c req = [
+        GTM_Assessment_Request__c req = [
             SELECT Opportunity__c, Saved_Configuration__c, Contact__c
-            FROM MA_Assessment_Request__c
+            FROM GTM_Assessment_Request__c
             WHERE Id = :result.assessmentRequestId
         ];
         Assert.areEqual(opp.Id, req.Opportunity__c);
@@ -428,9 +428,9 @@ private class GtmAssessmentRequestControllerTest {
             GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
-        MA_Assessment_Request__c req = [
+        GTM_Assessment_Request__c req = [
             SELECT Account__c, Account__r.Name
-            FROM MA_Assessment_Request__c
+            FROM GTM_Assessment_Request__c
             WHERE Id = :result.assessmentRequestId
         ];
         Assert.isNotNull(req.Account__c, 'A direct booking should still resolve an Account from the company name');
@@ -467,8 +467,8 @@ private class GtmAssessmentRequestControllerTest {
             GtmAssessmentRequestController.submitRequest(input);
         Test.stopTest();
 
-        MA_Assessment_Request__c req = [
-            SELECT Account__c FROM MA_Assessment_Request__c WHERE Id = :result.assessmentRequestId
+        GTM_Assessment_Request__c req = [
+            SELECT Account__c FROM GTM_Assessment_Request__c WHERE Id = :result.assessmentRequestId
         ];
         Assert.areEqual(existing.Id, req.Account__c);
         Assert.areEqual(0, [SELECT COUNT() FROM Account WHERE Name = 'Northwind Retail (typo)']);
@@ -489,8 +489,8 @@ private class GtmAssessmentRequestControllerTest {
         // The malformed id is ignored, not fatal: the submission still resolves
         // its account and raises a deal. What must not happen is the bad id
         // being stored as though it were a real link.
-        MA_Assessment_Request__c filed = [
-            SELECT Saved_Configuration__c FROM MA_Assessment_Request__c
+        GTM_Assessment_Request__c filed = [
+            SELECT Saved_Configuration__c FROM GTM_Assessment_Request__c
             WHERE Id = :result.assessmentRequestId
         ];
         Assert.isNull(filed.Saved_Configuration__c, 'A malformed id must not be stored as a link');

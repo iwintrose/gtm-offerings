@@ -8,7 +8,7 @@
     <targetConfigs>
         <targetConfig targets="lightning__RecordPage">
             <objects>
-                <object>MA_Assessment_Request__c</object>
+                <object>GTM_Assessment_Request__c</object>
             </objects>
         </targetConfig>
     </targetConfigs>

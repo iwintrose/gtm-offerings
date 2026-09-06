@@ -59,7 +59,7 @@ export default class GtmStageActions extends LightningElement {
     get requesterCompany() { return this._ctx?.requesterCompany || ''; }
     get assessmentUrl()    {
         const id = this._ctx?.assessmentId;
-        return id ? `/lightning/r/MA_Assessment_Request__c/${id}/view` : '#';
+        return id ? `/lightning/r/GTM_Assessment_Request__c/${id}/view` : '#';
     }
     get clientStatusMessage() { return CLIENT_MSGS[this.stage] || ''; }
 

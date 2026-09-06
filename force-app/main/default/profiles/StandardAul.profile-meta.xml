@@ -28,6 +28,10 @@
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
     <tabVisibilities>
+        <tab>GTM_Assessment_Request__c</tab>
+        <visibility>DefaultOn</visibility>
+    </tabVisibilities>
+    <tabVisibilities>
         <tab>GTM_Offerings_Overview</tab>
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
@@ -51,6 +55,15 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>MA_Assessment_Request__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>GTM_Assessment_Request__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <fieldPermissions>
@@ -99,7 +112,17 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Status__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Saved_Configuration__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Saved_Configuration__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
@@ -109,7 +132,17 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Opportunity__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Account__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Account__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
@@ -119,7 +152,17 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Contact__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Lead__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Lead__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
@@ -129,7 +172,17 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Requester_Name__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Requester_Email__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Requester_Email__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
@@ -139,7 +192,17 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Company__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Role__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Role__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
@@ -149,7 +212,17 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Current_Platform__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Environment_Size__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Environment_Size__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
@@ -159,12 +232,27 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Timeline__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Context__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Context__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Assessment_Request__c.Source__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Source__c</field>
         <readable>true</readable>
         <editable>false</editable>
     </fieldPermissions>

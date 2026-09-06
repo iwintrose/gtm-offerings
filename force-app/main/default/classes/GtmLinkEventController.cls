@@ -3,7 +3,7 @@
  * engagement links.
  *
  * Runs `without sharing` so unauthenticated Experience Cloud visitors
- * can insert MA_Link_Event__c records without needing a Salesforce login.
+ * can insert GTM_Link_Event__c records without needing a Salesforce login.
  * No data is read back to the caller — insert only.
  */
 public without sharing class GtmLinkEventController {
@@ -19,7 +19,7 @@ public without sharing class GtmLinkEventController {
         if (String.isBlank(configId) || !isValidConfigId(configId)) return;
         if (String.isBlank(eventType)) return;
 
-        MA_Link_Event__c evt = new MA_Link_Event__c(
+        GTM_Link_Event__c evt = new GTM_Link_Event__c(
             Event_Type__c           = eventType,
             Session_Id__c           = String.isNotBlank(sessionId)  ? sessionId.left(80)  : null,
             Step__c                 = String.isNotBlank(step)        ? step.left(100)      : null,
@@ -66,11 +66,11 @@ public without sharing class GtmLinkEventController {
         if (String.isBlank(configId) || !isValidConfigId(configId)) return;
         if (events == null || events.isEmpty()) return;
 
-        List<MA_Link_Event__c> rows = new List<MA_Link_Event__c>();
+        List<GTM_Link_Event__c> rows = new List<GTM_Link_Event__c>();
         for (EventInput e : events) {
             if (e == null || String.isBlank(e.eventType)) continue;
             if (rows.size() >= MAX_EVENTS_PER_CALL) break;
-            rows.add(new MA_Link_Event__c(
+            rows.add(new GTM_Link_Event__c(
                 Saved_Configuration__c = configId,
                 Event_Type__c   = e.eventType,
                 Session_Id__c   = String.isNotBlank(sessionId) ? sessionId.left(80) : null,
@@ -112,15 +112,15 @@ public without sharing class GtmLinkEventController {
         if (!isValidConfigId(configId) || !isValidContactId(contactId)) return;
 
         try {
-            List<MA_Link_Event__c> mine = [
-                SELECT Id FROM MA_Link_Event__c
+            List<GTM_Link_Event__c> mine = [
+                SELECT Id FROM GTM_Link_Event__c
                 WHERE  Session_Id__c = :sessionId
                 AND    Saved_Configuration__c = :configId
                 AND    Contact__c = null
                 LIMIT  200
             ];
             if (mine.isEmpty()) return;
-            for (MA_Link_Event__c e : mine) e.Contact__c = (Id) contactId;
+            for (GTM_Link_Event__c e : mine) e.Contact__c = (Id) contactId;
             update mine;
         } catch (Exception ex) {
             // The request itself already succeeded; attribution is a bonus.
@@ -149,7 +149,7 @@ public without sharing class GtmLinkEventController {
     private static Boolean isValidArId(String value) {
         try {
             Id candidate = (Id) value;
-            return candidate.getSObjectType() == MA_Assessment_Request__c.SObjectType;
+            return candidate.getSObjectType() == GTM_Assessment_Request__c.SObjectType;
         } catch (Exception e) {
             return false;
         }

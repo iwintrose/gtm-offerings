@@ -1,27 +1,27 @@
 import { LightningElement, api, wire } from 'lwc';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 
-import NAME_FIELD        from '@salesforce/schema/MA_Assessment_Request__c.Name';
-import STATUS_FIELD      from '@salesforce/schema/MA_Assessment_Request__c.Status__c';
-import CFG_ID            from '@salesforce/schema/MA_Assessment_Request__c.Saved_Configuration__c';
-import CFG_NAME          from '@salesforce/schema/MA_Assessment_Request__c.Saved_Configuration__r.Name';
-import CFG_URL           from '@salesforce/schema/MA_Assessment_Request__c.Saved_Configuration__r.Generated_URL__c';
-import ACCOUNT_ID        from '@salesforce/schema/MA_Assessment_Request__c.Account__c';
-import ACCOUNT_NAME      from '@salesforce/schema/MA_Assessment_Request__c.Account__r.Name';
-import OPP_ID            from '@salesforce/schema/MA_Assessment_Request__c.Opportunity__c';
-import OPP_NAME          from '@salesforce/schema/MA_Assessment_Request__c.Opportunity__r.Name';
-import CONTACT_ID        from '@salesforce/schema/MA_Assessment_Request__c.Contact__c';
-import CONTACT_NAME      from '@salesforce/schema/MA_Assessment_Request__c.Contact__r.Name';
-import CONTACT_EMAIL     from '@salesforce/schema/MA_Assessment_Request__c.Contact__r.Email';
-import PLATFORM_FIELD    from '@salesforce/schema/MA_Assessment_Request__c.Current_Platform__c';
-import ENV_SIZE_FIELD    from '@salesforce/schema/MA_Assessment_Request__c.Environment_Size__c';
-import TIMELINE_FIELD    from '@salesforce/schema/MA_Assessment_Request__c.Timeline__c';
-import CONTEXT_FIELD     from '@salesforce/schema/MA_Assessment_Request__c.Context__c';
-import REQ_NAME          from '@salesforce/schema/MA_Assessment_Request__c.Requester_Name__c';
-import REQ_EMAIL         from '@salesforce/schema/MA_Assessment_Request__c.Requester_Email__c';
-import COMPANY_FIELD     from '@salesforce/schema/MA_Assessment_Request__c.Company__c';
-import ROLE_FIELD        from '@salesforce/schema/MA_Assessment_Request__c.Role__c';
-import SOURCE_FIELD      from '@salesforce/schema/MA_Assessment_Request__c.Source__c';
+import NAME_FIELD        from '@salesforce/schema/GTM_Assessment_Request__c.Name';
+import STATUS_FIELD      from '@salesforce/schema/GTM_Assessment_Request__c.Status__c';
+import CFG_ID            from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__c';
+import CFG_NAME          from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__r.Name';
+import CFG_URL           from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__r.Generated_URL__c';
+import ACCOUNT_ID        from '@salesforce/schema/GTM_Assessment_Request__c.Account__c';
+import ACCOUNT_NAME      from '@salesforce/schema/GTM_Assessment_Request__c.Account__r.Name';
+import OPP_ID            from '@salesforce/schema/GTM_Assessment_Request__c.Opportunity__c';
+import OPP_NAME          from '@salesforce/schema/GTM_Assessment_Request__c.Opportunity__r.Name';
+import CONTACT_ID        from '@salesforce/schema/GTM_Assessment_Request__c.Contact__c';
+import CONTACT_NAME      from '@salesforce/schema/GTM_Assessment_Request__c.Contact__r.Name';
+import CONTACT_EMAIL     from '@salesforce/schema/GTM_Assessment_Request__c.Contact__r.Email';
+import PLATFORM_FIELD    from '@salesforce/schema/GTM_Assessment_Request__c.Current_Platform__c';
+import ENV_SIZE_FIELD    from '@salesforce/schema/GTM_Assessment_Request__c.Environment_Size__c';
+import TIMELINE_FIELD    from '@salesforce/schema/GTM_Assessment_Request__c.Timeline__c';
+import CONTEXT_FIELD     from '@salesforce/schema/GTM_Assessment_Request__c.Context__c';
+import REQ_NAME          from '@salesforce/schema/GTM_Assessment_Request__c.Requester_Name__c';
+import REQ_EMAIL         from '@salesforce/schema/GTM_Assessment_Request__c.Requester_Email__c';
+import COMPANY_FIELD     from '@salesforce/schema/GTM_Assessment_Request__c.Company__c';
+import ROLE_FIELD        from '@salesforce/schema/GTM_Assessment_Request__c.Role__c';
+import SOURCE_FIELD      from '@salesforce/schema/GTM_Assessment_Request__c.Source__c';
 
 const FIELDS = [
     NAME_FIELD, STATUS_FIELD,

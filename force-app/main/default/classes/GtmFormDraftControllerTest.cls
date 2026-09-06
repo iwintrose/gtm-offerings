@@ -93,7 +93,7 @@ private class GtmFormDraftControllerTest {
         GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
         Test.stopTest();
 
-        Assert.areEqual(0, [SELECT COUNT() FROM MA_Form_Draft__c],
+        Assert.areEqual(0, [SELECT COUNT() FROM GTM_Form_Draft__c],
             'A link that has been turned off cannot be written to');
     }
 
@@ -105,7 +105,7 @@ private class GtmFormDraftControllerTest {
         GtmFormDraftController.saveDraft(c.Id, KEY, 'x'.repeat(9000), 'name', 'sess-1');
         Test.stopTest();
 
-        Assert.areEqual(0, [SELECT COUNT() FROM MA_Form_Draft__c],
+        Assert.areEqual(0, [SELECT COUNT() FROM GTM_Form_Draft__c],
             'The cap is what stops a write surface becoming a bucket');
     }
 }

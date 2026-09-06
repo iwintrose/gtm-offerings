@@ -25,11 +25,11 @@ public with sharing class GtmHomeSnapshotController {
         ];
 
         snap.newAssessmentCount = [
-            SELECT COUNT() FROM MA_Assessment_Request__c WHERE Status__c = 'New'
+            SELECT COUNT() FROM GTM_Assessment_Request__c WHERE Status__c = 'New'
         ];
 
         snap.recentViews = [
-            SELECT COUNT() FROM MA_Link_Event__c
+            SELECT COUNT() FROM GTM_Link_Event__c
             WHERE Event_Type__c = 'Page View'
             AND CreatedDate = LAST_N_DAYS:7
         ];
@@ -50,7 +50,7 @@ public with sharing class GtmHomeSnapshotController {
     private static Integer countStalled() {
         Set<Id> opened = new Set<Id>();
         for (AggregateResult ar : [
-            SELECT Saved_Configuration__c cfg FROM MA_Link_Event__c
+            SELECT Saved_Configuration__c cfg FROM GTM_Link_Event__c
             WHERE Event_Type__c = 'Form Opened' AND Saved_Configuration__c != null
             GROUP BY Saved_Configuration__c
         ]) {
@@ -59,7 +59,7 @@ public with sharing class GtmHomeSnapshotController {
         if (opened.isEmpty()) return 0;
 
         for (AggregateResult ar : [
-            SELECT Saved_Configuration__c cfg FROM MA_Link_Event__c
+            SELECT Saved_Configuration__c cfg FROM GTM_Link_Event__c
             WHERE Event_Type__c = 'Form Submitted' AND Saved_Configuration__c IN :opened
             GROUP BY Saved_Configuration__c
         ]) {
@@ -81,10 +81,10 @@ public with sharing class GtmHomeSnapshotController {
     @AuraEnabled(cacheable=false)
     public static List<RequestSummary> getRecentNewAssessmentRequests() {
         List<RequestSummary> results = new List<RequestSummary>();
-        for (MA_Assessment_Request__c req : [
+        for (GTM_Assessment_Request__c req : [
             SELECT Id, Name, Requester_Name__c, Company__c,
                    Current_Platform__c, CreatedDate
-            FROM MA_Assessment_Request__c
+            FROM GTM_Assessment_Request__c
             WHERE Status__c = 'New'
             ORDER BY CreatedDate DESC
             LIMIT 5
@@ -178,7 +178,7 @@ public with sharing class GtmHomeSnapshotController {
         for (AggregateResult ar : [
             SELECT Saved_Configuration__c cfg, Event_Type__c evt,
                    COUNT(Id) n, MAX(CreatedDate) lastAt
-            FROM   MA_Link_Event__c
+            FROM   GTM_Link_Event__c
             WHERE  Saved_Configuration__c IN :configIds
             GROUP BY Saved_Configuration__c, Event_Type__c
         ]) {
@@ -199,9 +199,9 @@ public with sharing class GtmHomeSnapshotController {
 
         // Newest request wins: a prospect who filled the form twice is telling
         // you about the second one.
-        for (MA_Assessment_Request__c req : [
+        for (GTM_Assessment_Request__c req : [
             SELECT Id, Name, Status__c, Saved_Configuration__c
-            FROM   MA_Assessment_Request__c
+            FROM   GTM_Assessment_Request__c
             WHERE  Saved_Configuration__c IN :configIds
             ORDER BY CreatedDate ASC
         ]) {
@@ -297,7 +297,7 @@ public with sharing class GtmHomeSnapshotController {
         for (AggregateResult ar : [
             SELECT Step__c step, Event_Type__c evt,
                    COUNT_DISTINCT(Session_Id__c) sessions, COUNT(Id) hits, SUM(Dwell_Seconds__c) dwell
-            FROM   MA_Link_Event__c
+            FROM   GTM_Link_Event__c
             WHERE  Saved_Configuration__c = :configId AND Step__c != null
             GROUP BY Step__c, Event_Type__c
         ]) {

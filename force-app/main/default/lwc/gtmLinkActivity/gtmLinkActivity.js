@@ -2,7 +2,7 @@ import { LightningElement, api, wire } from 'lwc';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import { getRelatedListRecords } from 'lightning/uiRelatedListApi';
 
-import CFG_FIELD from '@salesforce/schema/MA_Assessment_Request__c.Saved_Configuration__c';
+import CFG_FIELD from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__c';
 
 const EVENT_ICON = {
     'Page View':      'utility:preview',
@@ -23,7 +23,7 @@ export default class GtmLinkActivity extends LightningElement {
     /** True when this instance sits on the Engagement Link
      *  (MA_Saved_Configuration__c) record page, where recordId IS the
      *  config id directly -- false (the original placement, on
-     *  MA_Assessment_Request__c) needs one hop through that record's own
+     *  GTM_Assessment_Request__c) needs one hop through that record's own
      *  Saved_Configuration__c lookup to find it. Two different record
      *  types can't share one @wire(getRecord) call -- fetching
      *  CFG_FIELD (an Assessment Request field) off a Saved Configuration
@@ -64,16 +64,21 @@ export default class GtmLinkActivity extends LightningElement {
 
     @wire(getRelatedListRecords, {
         parentRecordId: '$_configId',
-        relatedListId: 'Link_Events__r',
+        // MA_Saved_Configuration__c is still the parent object (Stage 5 not
+        // migrated yet), but the child lookup now comes from
+        // GTM_Link_Event__c.Saved_Configuration__c, whose relationshipName
+        // was renamed to GTM_Link_Events to avoid colliding with the old
+        // object's own Link_Events relationship on this same parent.
+        relatedListId: 'GTM_Link_Events__r',
         fields: [
-            'MA_Link_Event__c.Id',
-            'MA_Link_Event__c.Name',
-            'MA_Link_Event__c.Event_Type__c',
-            'MA_Link_Event__c.Session_Id__c',
-            'MA_Link_Event__c.Step__c',
-            'MA_Link_Event__c.CreatedDate',
+            'GTM_Link_Event__c.Id',
+            'GTM_Link_Event__c.Name',
+            'GTM_Link_Event__c.Event_Type__c',
+            'GTM_Link_Event__c.Session_Id__c',
+            'GTM_Link_Event__c.Step__c',
+            'GTM_Link_Event__c.CreatedDate',
         ],
-        sortBy: ['MA_Link_Event__c.CreatedDate DESC'],
+        sortBy: ['GTM_Link_Event__c.CreatedDate DESC'],
         pageSize: 50,
     })
     wiredEvents({ error, data }) {

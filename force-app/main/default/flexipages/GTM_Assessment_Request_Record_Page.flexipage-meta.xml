@@ -38,15 +38,11 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentInstanceProperties>
-                    <name>richTextValue</name>
-                    <value>&lt;p&gt;This request has been migrated to the GTM Assessment Request object. See the linked Engagement Link or Opportunity for current data.&lt;/p&gt;</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:richText</componentName>
-                <identifier>flexipage_richText</identifier>
+                <componentName>gtmAssessmentDetail</componentName>
+                <identifier>c_gtmAssessmentDetail</identifier>
             </componentInstance>
         </itemInstances>
-        <name>Facet-d6766e7e-8442-41ae-a092-022f5717fc1a</name>
+        <name>Facet-d6766e7e-8442-41ae-a092-022f5717fc1b</name>
         <type>Facet</type>
     </flexiPageRegions>
     <flexiPageRegions>
@@ -92,7 +88,7 @@
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>body</name>
-                    <value>Facet-d6766e7e-8442-41ae-a092-022f5717fc1a</value>
+                    <value>Facet-d6766e7e-8442-41ae-a092-022f5717fc1b</value>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>title</name>
@@ -167,12 +163,8 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentInstanceProperties>
-                    <name>richTextValue</name>
-                    <value>&lt;p&gt;Activity for this request now lives on the corresponding GTM Assessment Request record.&lt;/p&gt;</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:richText</componentName>
-                <identifier>flexipage_richText2</identifier>
+                <componentName>gtmLinkActivity</componentName>
+                <identifier>c_gtmLinkActivity</identifier>
             </componentInstance>
         </itemInstances>
         <mode>Replace</mode>
@@ -227,9 +219,9 @@
         <name>sidebar</name>
         <type>Region</type>
     </flexiPageRegions>
-    <masterLabel>Assessment Request Record Page</masterLabel>
+    <masterLabel>GTM Assessment Request Record Page</masterLabel>
     <parentFlexiPage>flexipage__default_rec_L</parentFlexiPage>
-    <sobjectType>MA_Assessment_Request__c</sobjectType>
+    <sobjectType>GTM_Assessment_Request__c</sobjectType>
     <template>
         <name>flexipage:recordHomeTemplateDesktop</name>
     </template>

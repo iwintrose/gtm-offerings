@@ -24,12 +24,12 @@ private class GtmHomeSnapshotControllerTest {
         );
         insert new List<MA_Saved_Configuration__c>{ activeWithValue, activeNoValue, inactive };
 
-        insert new MA_Assessment_Request__c(
+        insert new GTM_Assessment_Request__c(
             Requester_Name__c = 'Alex Rivera',
             Requester_Email__c = 'alex@example.com',
             Status__c = 'New'
         );
-        insert new MA_Assessment_Request__c(
+        insert new GTM_Assessment_Request__c(
             Requester_Name__c = 'Jordan Lee',
             Requester_Email__c = 'jordan@example.com',
             Status__c = 'Contacted'
@@ -55,13 +55,13 @@ private class GtmHomeSnapshotControllerTest {
 
     @IsTest
     static void returnsRecentNewRequestsOnlyNewestFirst() {
-        insert new MA_Assessment_Request__c(
+        insert new GTM_Assessment_Request__c(
             Requester_Name__c = 'Alex Rivera',
             Requester_Email__c = 'alex@example.com',
             Company__c = 'Acme Bank',
             Status__c = 'New'
         );
-        insert new MA_Assessment_Request__c(
+        insert new GTM_Assessment_Request__c(
             Requester_Name__c = 'Already Handled',
             Requester_Email__c = 'handled@example.com',
             Status__c = 'Contacted'
@@ -122,22 +122,22 @@ private class GtmHomeSnapshotControllerTest {
         );
         insert new List<MA_Saved_Configuration__c>{ converted, stalled, orphan };
 
-        MA_Assessment_Request__c req = new MA_Assessment_Request__c(
+        GTM_Assessment_Request__c req = new GTM_Assessment_Request__c(
             Requester_Name__c = 'Alex Rivera', Requester_Email__c = 'alex@example.com',
             Company__c = 'Acme Bank', Status__c = 'New',
             Saved_Configuration__c = converted.Id
         );
         insert req;
 
-        insert new List<MA_Link_Event__c>{
-            new MA_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Page View'),
-            new MA_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Page View'),
-            new MA_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Form Opened'),
-            new MA_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Form Submitted',
+        insert new List<GTM_Link_Event__c>{
+            new GTM_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Page View'),
+            new GTM_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Page View'),
+            new GTM_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Form Opened'),
+            new GTM_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Form Submitted',
                                  Assessment_Request__c = req.Id),
-            new MA_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Page View'),
-            new MA_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Form Opened'),
-            new MA_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Drop-off')
+            new GTM_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Page View'),
+            new GTM_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Form Opened'),
+            new GTM_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Drop-off')
         };
 
         Test.startTest();
@@ -181,7 +181,7 @@ private class GtmHomeSnapshotControllerTest {
             Generated_URL__c = 'https://example.com/q', Active__c = true
         );
         insert untouched;
-        insert new MA_Link_Event__c(Saved_Configuration__c = untouched.Id, Event_Type__c = 'Page View');
+        insert new GTM_Link_Event__c(Saved_Configuration__c = untouched.Id, Event_Type__c = 'Page View');
 
         Test.startTest();
         GtmHomeSnapshotController.Snapshot snap = GtmHomeSnapshotController.getSnapshot();

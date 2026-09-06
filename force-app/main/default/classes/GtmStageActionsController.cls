@@ -48,9 +48,9 @@ public without sharing class GtmStageActionsController {
         ctx.stage              = cfg.Presentation_Stage__c;
         ctx.sharedUrl          = cfg.Generated_URL__c;
 
-        List<MA_Assessment_Request__c> requests = [
+        List<GTM_Assessment_Request__c> requests = [
             SELECT Requester_Name__c, Requester_Email__c, Company__c
-            FROM MA_Assessment_Request__c
+            FROM GTM_Assessment_Request__c
             WHERE Saved_Configuration__c = :Id.valueOf(configId)
             ORDER BY CreatedDate DESC
             LIMIT 1
@@ -114,9 +114,9 @@ public without sharing class GtmStageActionsController {
     // ── Internal ──────────────────────────────────────────────────────────────
 
     private static void sendProposalEmailIfPresent(Id configId, String sharedUrl) {
-        List<MA_Assessment_Request__c> requests = [
+        List<GTM_Assessment_Request__c> requests = [
             SELECT Requester_Name__c, Requester_Email__c, Company__c
-            FROM MA_Assessment_Request__c
+            FROM GTM_Assessment_Request__c
             WHERE Saved_Configuration__c = :configId
                 AND Requester_Email__c != null
             ORDER BY CreatedDate DESC
@@ -124,7 +124,7 @@ public without sharing class GtmStageActionsController {
         ];
         if (requests.isEmpty()) return;
 
-        MA_Assessment_Request__c req = requests[0];
+        GTM_Assessment_Request__c req = requests[0];
         String firstName = firstWord(req.Requester_Name__c);
 
         Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();

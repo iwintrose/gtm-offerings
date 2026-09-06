@@ -52,9 +52,9 @@ public without sharing class GtmFormDraftController {
         String key = draftKey(configId, visitorKey);
         if (key == null) return null;
 
-        List<MA_Form_Draft__c> found = [
+        List<GTM_Form_Draft__c> found = [
             SELECT Draft_JSON__c, Furthest_Field__c, CreatedDate
-            FROM   MA_Form_Draft__c
+            FROM   GTM_Form_Draft__c
             WHERE  Draft_Key__c = :key
             // Id breaks the tie, and it has to: CreatedDate is second-resolution,
             // two saves 1.5 seconds apart routinely share one, and on a tie the
@@ -97,7 +97,7 @@ public without sharing class GtmFormDraftController {
         if (!isLinkWritable(configId)) return;
 
         try {
-            insert new MA_Form_Draft__c(
+            insert new GTM_Form_Draft__c(
                 Draft_Key__c           = key,
                 Saved_Configuration__c = (Id) configId,
                 Draft_JSON__c          = draftJson,
@@ -126,7 +126,7 @@ public without sharing class GtmFormDraftController {
         String key = draftKey(configId, visitorKey);
         if (key == null || !isLinkWritable(configId)) return;
         try {
-            insert new MA_Form_Draft__c(
+            insert new GTM_Form_Draft__c(
                 Draft_Key__c           = key,
                 Saved_Configuration__c = (Id) configId,
                 Draft_JSON__c          = EMPTY_DRAFT
