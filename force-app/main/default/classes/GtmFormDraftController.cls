@@ -49,7 +49,8 @@ public without sharing class GtmFormDraftController {
      */
     @AuraEnabled(cacheable=false)
     public static DraftView getDraft(String configId, String visitorKey) {
-        String key = draftKey(configId, visitorKey);
+        Id resolvedConfigId = GtmLegacyConfigId.resolve(configId);
+        String key = draftKey(resolvedConfigId, visitorKey);
         if (key == null) return null;
 
         List<GTM_Form_Draft__c> found = [
@@ -91,19 +92,20 @@ public without sharing class GtmFormDraftController {
     @AuraEnabled(cacheable=false)
     public static void saveDraft(String configId, String visitorKey, String draftJson,
                                  String furthestField, String sessionId) {
-        String key = draftKey(configId, visitorKey);
+        Id resolvedConfigId = GtmLegacyConfigId.resolve(configId);
+        String key = draftKey(resolvedConfigId, visitorKey);
         if (key == null || String.isBlank(draftJson)) return;
         if (draftJson.length() > MAX_DRAFT_CHARS) return;
-        if (!isLinkWritable(configId)) return;
+        if (!isLinkWritable(resolvedConfigId)) return;
 
         try {
-            insert new GTM_Form_Draft__c(
-                Draft_Key__c           = key,
-                Saved_Configuration__c = (Id) configId,
-                Draft_JSON__c          = draftJson,
-                Furthest_Field__c      = String.isNotBlank(furthestField) ? furthestField.left(80) : null,
-                Session_Id__c          = String.isNotBlank(sessionId) ? sessionId.left(80) : null
-            );
+            SObject draft = Schema.getGlobalDescribe().get('GTM_Form_Draft__c').newSObject();
+            draft.put('Draft_Key__c', key);
+            draft.put('Saved_Configuration__c', resolvedConfigId);
+            draft.put('Draft_JSON__c', draftJson);
+            draft.put('Furthest_Field__c', String.isNotBlank(furthestField) ? furthestField.left(80) : null);
+            draft.put('Session_Id__c', String.isNotBlank(sessionId) ? sessionId.left(80) : null);
+            insert draft;
         } catch (Exception e) {
             // A draft that will not save must never stop someone finishing the
             // form by typing it out in one go.
@@ -123,14 +125,15 @@ public without sharing class GtmFormDraftController {
      */
     @AuraEnabled(cacheable=false)
     public static void clearDraft(String configId, String visitorKey) {
-        String key = draftKey(configId, visitorKey);
-        if (key == null || !isLinkWritable(configId)) return;
+        Id resolvedConfigId = GtmLegacyConfigId.resolve(configId);
+        String key = draftKey(resolvedConfigId, visitorKey);
+        if (key == null || !isLinkWritable(resolvedConfigId)) return;
         try {
-            insert new GTM_Form_Draft__c(
-                Draft_Key__c           = key,
-                Saved_Configuration__c = (Id) configId,
-                Draft_JSON__c          = EMPTY_DRAFT
-            );
+            SObject draft = Schema.getGlobalDescribe().get('GTM_Form_Draft__c').newSObject();
+            draft.put('Draft_Key__c', key);
+            draft.put('Saved_Configuration__c', resolvedConfigId);
+            draft.put('Draft_JSON__c', EMPTY_DRAFT);
+            insert draft;
         } catch (Exception e) {
             // Nothing to do: the submission has already succeeded.
         }
@@ -141,26 +144,26 @@ public without sharing class GtmFormDraftController {
      *
      * The key is length-checked as well as present: a one-character visitor key
      * would make drafts guessable, and the browser has no reason to send one.
+     * Built off the already-resolved (canonical, current-format) id, not
+     * whatever raw format the browser's URL happened to carry -- otherwise
+     * the same visitor could end up with two differently-keyed drafts on the
+     * same link depending on whether they arrived via a legacy or current
+     * URL.
      */
-    private static String draftKey(String configId, String visitorKey) {
-        if (String.isBlank(configId) || String.isBlank(visitorKey)) return null;
+    private static String draftKey(Id configId, String visitorKey) {
+        if (configId == null || String.isBlank(visitorKey)) return null;
         String vk = visitorKey.trim();
         if (vk.length() < 16 || vk.length() > 64) return null;
         if (!Pattern.matches('^[A-Za-z0-9_-]+$', vk)) return null;
-        try {
-            Id candidate = (Id) configId;
-            if (candidate.getSObjectType() != MA_Saved_Configuration__c.SObjectType) return null;
-        } catch (Exception e) {
-            return null;
-        }
         return configId + '::' + vk;
     }
 
     /** A draft may only be written against a link that is real and still live. */
-    private static Boolean isLinkWritable(String configId) {
+    private static Boolean isLinkWritable(Id configId) {
+        if (configId == null) return false;
         return [
-            SELECT COUNT() FROM MA_Saved_Configuration__c
-            WHERE Id = :(Id) configId AND Active__c = true
+            SELECT COUNT() FROM GTM_Saved_Configuration__c
+            WHERE Id = :configId AND Active__c = true
         ] > 0;
     }
 }

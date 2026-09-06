@@ -277,7 +277,7 @@ private class GtmAssessmentRequestControllerTest {
         );
         insert opp;
 
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Industry__c = 'Financial Services',
             Company__c = 'Northwind Retail',
@@ -320,7 +320,7 @@ private class GtmAssessmentRequestControllerTest {
         Account acc = new Account(Name = 'Northwind Retail');
         insert acc;
 
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Industry__c = 'Financial Services',
             Company__c = 'Northwind Retail',
@@ -351,8 +351,8 @@ private class GtmAssessmentRequestControllerTest {
         Assert.isTrue(opp.Name.contains('Migration Accelerator'));
         Assert.areEqual(250000, opp.Amount, 'Should fall back to the CMDT annual target');
 
-        MA_Saved_Configuration__c updated = [
-            SELECT Opportunity__c FROM MA_Saved_Configuration__c WHERE Id = :savedConfig.Id
+        GTM_Saved_Configuration__c updated = [
+            SELECT Opportunity__c FROM GTM_Saved_Configuration__c WHERE Id = :savedConfig.Id
         ];
         Assert.areEqual(
             result.opportunityId,
@@ -363,7 +363,7 @@ private class GtmAssessmentRequestControllerTest {
 
     @isTest
     static void usesEstimatedValueOverOfferingTargetForNewOpportunity() {
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Northwind Retail',
             Generated_URL__c = 'https://example.com/configurator?company=Northwind',
@@ -394,7 +394,7 @@ private class GtmAssessmentRequestControllerTest {
         );
         insert existingOpp;
 
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Northwind Retail',
             Generated_URL__c = 'https://example.com/configurator?company=Northwind',
@@ -448,7 +448,7 @@ private class GtmAssessmentRequestControllerTest {
         Account existing = new Account(Name = 'Northwind Retail Holdings');
         insert existing;
 
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Northwind Retail Holdings',
             Generated_URL__c = 'https://example.com/configurator?company=Northwind',
@@ -503,7 +503,7 @@ private class GtmAssessmentRequestControllerTest {
         // A config with no Link_Password__c should never require a token.
         Account acc = new Account(Name = 'Northwind Retail');
         insert acc;
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Northwind Retail',
             Generated_URL__c = 'https://example.com/configurator',
@@ -527,7 +527,7 @@ private class GtmAssessmentRequestControllerTest {
 
     @isTest
     static void tokenRequiredForPasswordProtectedLink_missingTokenThrows() {
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Northwind Retail',
             Generated_URL__c = 'https://example.com/configurator',
@@ -555,7 +555,7 @@ private class GtmAssessmentRequestControllerTest {
 
     @isTest
     static void tokenRequiredForPasswordProtectedLink_validTokenSucceeds() {
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Northwind Retail',
             Generated_URL__c = 'https://example.com/configurator',
@@ -584,7 +584,7 @@ private class GtmAssessmentRequestControllerTest {
 
     @isTest
     static void tokenRequiredForPasswordProtectedLink_tamperedHmacThrows() {
-        MA_Saved_Configuration__c savedConfig = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Northwind Retail',
             Generated_URL__c = 'https://example.com/configurator',

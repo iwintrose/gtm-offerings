@@ -34,20 +34,19 @@ public without sharing class GtmConfigurationReader {
 
     @AuraEnabled(cacheable=false)
     public static PublicConfig getPublicConfiguration(String recordId) {
-        if (String.isBlank(recordId)) return null;
-        Id parsedId;
-        try { parsedId = Id.valueOf(recordId); } catch (System.StringException e) { return null; }
+        Id parsedId = GtmLegacyConfigId.resolve(recordId);
+        if (parsedId == null) return null;
 
-        List<MA_Saved_Configuration__c> rows = [
+        List<GTM_Saved_Configuration__c> rows = [
             SELECT Id, Company__c, Industry__c, Industry_Label__c, Offering__c,
                    Config_Payload__c, Active__c
-            FROM   MA_Saved_Configuration__c
+            FROM   GTM_Saved_Configuration__c
             WHERE  Id = :parsedId
             LIMIT  1
         ];
         if (rows.isEmpty()) return null;
 
-        MA_Saved_Configuration__c r = rows[0];
+        GTM_Saved_Configuration__c r = rows[0];
         PublicConfig c = new PublicConfig();
         c.isActive = r.Active__c;
         if (!c.isActive) {

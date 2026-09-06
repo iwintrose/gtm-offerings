@@ -6,7 +6,7 @@ public without sharing class GtmAgentGetConfigState {
 
     public class Input {
         @InvocableVariable(required=false label='Config Id'
-            description='MA_Saved_Configuration__c Id; blank for unsaved sessions')
+            description='GTM_Saved_Configuration__c Id (current- or legacy-format); blank for unsaved sessions')
         public String configId;
     }
 
@@ -45,11 +45,12 @@ public without sharing class GtmAgentGetConfigState {
         out.note                = '';
         out.availableIndustries = new List<String>();
 
-        if (String.isNotBlank(configId)) {
-            List<MA_Saved_Configuration__c> saved = [
+        Id resolvedConfigId = GtmLegacyConfigId.resolve(configId);
+        if (resolvedConfigId != null) {
+            List<GTM_Saved_Configuration__c> saved = [
                 SELECT Config_Payload__c
-                FROM   MA_Saved_Configuration__c
-                WHERE  Id = :configId
+                FROM   GTM_Saved_Configuration__c
+                WHERE  Id = :resolvedConfigId
                 LIMIT  1
             ];
             if (!saved.isEmpty() && String.isNotBlank(saved[0].Config_Payload__c)) {

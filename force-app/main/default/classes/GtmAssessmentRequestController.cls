@@ -55,7 +55,7 @@ public without sharing class GtmAssessmentRequestController {
         @AuraEnabled public String executiveSponsorship{ get; set; }
         @AuraEnabled public String decisionMakers      { get; set; }
         @AuraEnabled public String urgencyDriver       { get; set; }
-        /** cfgId of the MA_Saved_Configuration__c the requester was viewing,
+        /** cfgId of the GTM_Saved_Configuration__c the requester was viewing,
          * when the booking happened from a client's configured link. Used
          * to attribute the Contact to the right rep and to file the request
          * under the right Opportunity -- see resolveConfigContext(). */
@@ -184,22 +184,22 @@ public without sharing class GtmAssessmentRequestController {
      * the request can be attributed to the right rep and filed under the
      * right Opportunity -- the two things the assessment request had no
      * connection to before. `without sharing` mirrors the rest of this
-     * class: the guest user has no read access to MA_Saved_Configuration__c
+     * class: the guest user has no read access to GTM_Saved_Configuration__c
      * or Opportunity on its own. Fails open (returns an empty context)
      * rather than blocking the submission on a bad/missing id -- a request
      * with no linkage is still far better than a dropped one.
      */
     private static ConfigContext resolveConfigContext(String savedRecordId) {
         ConfigContext ctx = new ConfigContext();
-        if (String.isBlank(savedRecordId)) {
+        Id configId = GtmLegacyConfigId.resolve(savedRecordId);
+        if (configId == null) {
             return ctx;
         }
         try {
-            Id configId = Id.valueOf(savedRecordId);
-            List<MA_Saved_Configuration__c> rows = [
+            List<GTM_Saved_Configuration__c> rows = [
                 SELECT OwnerId, Opportunity__c, Account__c, Contact__c,
                        Company__c, Offering__c, Estimated_Value__c, Link_Password__c
-                FROM MA_Saved_Configuration__c
+                FROM GTM_Saved_Configuration__c
                 WHERE Id = :configId
                 LIMIT 1
             ];
@@ -268,7 +268,8 @@ public without sharing class GtmAssessmentRequestController {
         }
         try {
             Id opportunityId = ctx.opportunityId;
-            Boolean linkedToEngagementLink = isId(savedRecordId);
+            Id resolvedConfigId = GtmLegacyConfigId.resolve(savedRecordId);
+            Boolean linkedToEngagementLink = resolvedConfigId != null;
             if (opportunityId == null) {
                 // One naming authority, shared with the link-saving path --
                 // see GtmDealNaming. This used to build its own name with a
@@ -285,17 +286,21 @@ public without sharing class GtmAssessmentRequestController {
                 if (ctx.ownerId != null) {
                     opp.OwnerId = ctx.ownerId;
                 }
+                // Engagement_Link__c set dynamically, not through dot-notation
+                // -- a static reference to this exact field is what blocks
+                // Salesforce from letting it be deleted and recreated, which
+                // is the only way to repoint an existing Lookup's referenceTo.
                 if (linkedToEngagementLink) {
-                    opp.Engagement_Link__c = (Id) Id.valueOf(savedRecordId);
+                    opp.put('Engagement_Link__c', resolvedConfigId);
                 }
                 insert opp;
                 opportunityId = opp.Id;
 
                 if (linkedToEngagementLink) {
-                    update new MA_Saved_Configuration__c(
-                        Id = (Id) Id.valueOf(savedRecordId),
-                        Opportunity__c = opportunityId
-                    );
+                    SObject cfgUpdate = Schema.getGlobalDescribe().get('GTM_Saved_Configuration__c').newSObject();
+                    cfgUpdate.put('Id', resolvedConfigId);
+                    cfgUpdate.put('Opportunity__c', opportunityId);
+                    update cfgUpdate;
                 }
             }
             ctx.opportunityId = opportunityId;
@@ -368,10 +373,9 @@ public without sharing class GtmAssessmentRequestController {
         RequestResult result
     ) {
         try {
-            Id cfgId = isId(input.savedRecordId) ? (Id) Id.valueOf(input.savedRecordId) : null;
+            Id cfgId = GtmLegacyConfigId.resolve(input.savedRecordId);
 
             GTM_Assessment_Request__c req = new GTM_Assessment_Request__c(
-                Saved_Configuration__c  = cfgId,
                 Opportunity__c          = ctx.opportunityId,
                 Account__c              = ctx.accountId,
                 Contact__c              = ctx.contactId,
@@ -403,15 +407,18 @@ public without sharing class GtmAssessmentRequestController {
             if (ctx.ownerId != null) {
                 req.OwnerId = ctx.ownerId;
             }
+            // Saved_Configuration__c set dynamically -- see the comment on
+            // the same pattern in ensureOpportunity() above.
+            req.put('Saved_Configuration__c', cfgId);
             insert req;
 
             // Advance the linked config to Assessment stage
             if (cfgId != null) {
                 try {
-                    update new MA_Saved_Configuration__c(
-                        Id = cfgId,
-                        Presentation_Stage__c = 'Assessment'
-                    );
+                    SObject cfgUpdate = Schema.getGlobalDescribe().get('GTM_Saved_Configuration__c').newSObject();
+                    cfgUpdate.put('Id', cfgId);
+                    cfgUpdate.put('Presentation_Stage__c', 'Assessment');
+                    update cfgUpdate;
                 } catch (Exception ex) {
                     System.debug('Could not set Assessment stage: ' + ex.getMessage());
                 }

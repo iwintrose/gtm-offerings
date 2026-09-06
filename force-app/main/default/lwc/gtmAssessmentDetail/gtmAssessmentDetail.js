@@ -3,9 +3,12 @@ import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 
 import NAME_FIELD        from '@salesforce/schema/GTM_Assessment_Request__c.Name';
 import STATUS_FIELD      from '@salesforce/schema/GTM_Assessment_Request__c.Status__c';
-import CFG_ID            from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__c';
-import CFG_NAME          from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__r.Name';
-import CFG_URL           from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__r.Generated_URL__c';
+// TEMPORARILY REMOVED: CFG_ID, CFG_NAME, CFG_URL (Saved_Configuration__c and
+// its relationship fields). GTM_Assessment_Request__c.Saved_Configuration__c
+// is being deleted and recreated (the only way to repoint an existing
+// Lookup's referenceTo, D6 Stage 5) -- a static schema import is exactly the
+// kind of reference that blocks that. Restored once the field exists again
+// post-recreate.
 import ACCOUNT_ID        from '@salesforce/schema/GTM_Assessment_Request__c.Account__c';
 import ACCOUNT_NAME      from '@salesforce/schema/GTM_Assessment_Request__c.Account__r.Name';
 import OPP_ID            from '@salesforce/schema/GTM_Assessment_Request__c.Opportunity__c';
@@ -25,7 +28,6 @@ import SOURCE_FIELD      from '@salesforce/schema/GTM_Assessment_Request__c.Sour
 
 const FIELDS = [
     NAME_FIELD, STATUS_FIELD,
-    CFG_ID, CFG_NAME, CFG_URL,
     ACCOUNT_ID, ACCOUNT_NAME,
     OPP_ID, OPP_NAME,
     CONTACT_ID, CONTACT_NAME, CONTACT_EMAIL,
@@ -63,13 +65,12 @@ export default class GtmAssessmentDetail extends LightningElement {
     get role()        { return this._fv(ROLE_FIELD) || ''; }
 
     // ---- engagement link (saved config)
-    get hasCfg()        { return !!this._fv(CFG_ID); }
-    get cfgName()       { return this._fv(CFG_NAME) || ''; }
-    get cfgProspectUrl(){ return this._fv(CFG_URL) || ''; }
-    get cfgRecordUrl()  {
-        const id = this._fv(CFG_ID);
-        return id ? `/lightning/r/MA_Saved_Configuration__c/${id}/view` : '#';
-    }
+    // TEMPORARILY DISABLED (see the CFG_ID/CFG_NAME/CFG_URL import note
+    // above): restored once Saved_Configuration__c exists again.
+    get hasCfg()        { return false; }
+    get cfgName()       { return ''; }
+    get cfgProspectUrl(){ return ''; }
+    get cfgRecordUrl()  { return '#'; }
 
     // ---- account
     get hasAccount()  { return !!this._fv(ACCOUNT_ID); }

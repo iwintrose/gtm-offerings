@@ -2,7 +2,11 @@ import { LightningElement, api, wire } from 'lwc';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import { getRelatedListRecords } from 'lightning/uiRelatedListApi';
 
-import CFG_FIELD from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__c';
+// TEMPORARILY REMOVED: import CFG_FIELD from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__c';
+// GTM_Assessment_Request__c.Saved_Configuration__c is being deleted and
+// recreated (the only way to repoint an existing Lookup's referenceTo,
+// D6 Stage 5) -- a static schema import is exactly the kind of reference
+// that blocks that. Restored once the field exists again post-recreate.
 
 const EVENT_ICON = {
     'Page View':      'utility:preview',
@@ -46,20 +50,13 @@ export default class GtmLinkActivity extends LightningElement {
         return this.parentIsSavedConfiguration ? undefined : this.recordId;
     }
 
-    @wire(getRecord, { recordId: '$_arRecordId', fields: [CFG_FIELD] })
+    // TEMPORARILY DISABLED (see the CFG_FIELD import note above): the
+    // Assessment-Request placement's fallback hop through
+    // Saved_Configuration__c is out until the field is recreated.
+    // @wire(getRecord, { recordId: '$_arRecordId', fields: [CFG_FIELD] })
     wiredAr({ error, data }) {
         if (this.parentIsSavedConfiguration) return;
-        if (data) {
-            const id = getFieldValue(data, CFG_FIELD);
-            if (id) {
-                this._configId = id;
-            } else {
-                this.isLoading = false;
-            }
-        } else if (error) {
-            this.isLoading = false;
-            this.hasError = true;
-        }
+        this.isLoading = false;
     }
 
     @wire(getRelatedListRecords, {

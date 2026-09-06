@@ -1,12 +1,17 @@
 /**
- * Apex backing for maStageActions LWC and the MA_Config_Send_To_Client flow.
+ * Apex backing for maStageActions LWC and the GTM_Config_Send_To_Client flow.
  *
- * Manages the Presentation_Stage__c lifecycle on MA_Saved_Configuration__c
+ * Manages the Presentation_Stage__c lifecycle on GTM_Saved_Configuration__c
  * and sends the proposal email to the client when the rep triggers "Send".
  *
  * Runs without sharing — config managers (internal users) need to read/write
  * client config records regardless of ownership. The entry points are narrow
  * and validate every input before touching data.
+ *
+ * GTM_Assessment_Request__c.Saved_Configuration__c is queried dynamically,
+ * not through typed SOQL -- a static reference to this exact field is what
+ * blocks Salesforce from letting it be deleted and recreated, which is the
+ * only way to repoint an existing Lookup's referenceTo.
  */
 public without sharing class GtmStageActionsController {
 
@@ -33,14 +38,15 @@ public without sharing class GtmStageActionsController {
      */
     @AuraEnabled(cacheable=false)
     public static StageContext getStageContext(String configId) {
-        if (!isValidId(configId, 'MA_Saved_Configuration__c')) {
+        Id resolvedId = GtmLegacyConfigId.resolve(configId);
+        if (resolvedId == null) {
             return new StageContext();
         }
 
-        MA_Saved_Configuration__c cfg = [
+        GTM_Saved_Configuration__c cfg = [
             SELECT Presentation_Stage__c, Generated_URL__c
-            FROM MA_Saved_Configuration__c
-            WHERE Id = :Id.valueOf(configId)
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :resolvedId
             LIMIT 1
         ];
 
@@ -48,18 +54,18 @@ public without sharing class GtmStageActionsController {
         ctx.stage              = cfg.Presentation_Stage__c;
         ctx.sharedUrl          = cfg.Generated_URL__c;
 
-        List<GTM_Assessment_Request__c> requests = [
-            SELECT Requester_Name__c, Requester_Email__c, Company__c
-            FROM GTM_Assessment_Request__c
-            WHERE Saved_Configuration__c = :Id.valueOf(configId)
-            ORDER BY CreatedDate DESC
-            LIMIT 1
-        ];
+        List<SObject> requests = Database.query(
+            'SELECT Id, Requester_Name__c, Requester_Email__c, Company__c ' +
+            'FROM GTM_Assessment_Request__c ' +
+            'WHERE Saved_Configuration__c = :resolvedId ' +
+            'ORDER BY CreatedDate DESC ' +
+            'LIMIT 1'
+        );
         if (!requests.isEmpty()) {
-            ctx.assessmentId      = requests[0].Id;
-            ctx.requesterName     = requests[0].Requester_Name__c;
-            ctx.requesterEmail    = requests[0].Requester_Email__c;
-            ctx.requesterCompany  = requests[0].Company__c;
+            ctx.assessmentId      = (Id) requests[0].get('Id');
+            ctx.requesterName     = (String) requests[0].get('Requester_Name__c');
+            ctx.requesterEmail    = (String) requests[0].get('Requester_Email__c');
+            ctx.requesterCompany  = (String) requests[0].get('Company__c');
         }
         return ctx;
     }
@@ -70,17 +76,18 @@ public without sharing class GtmStageActionsController {
      */
     @AuraEnabled
     public static void advanceStage(String configId, String newStage) {
-        if (!isValidId(configId, 'MA_Saved_Configuration__c')) {
+        Id resolvedId = GtmLegacyConfigId.resolve(configId);
+        if (resolvedId == null) {
             throw new AuraHandledException('Invalid configuration ID.');
         }
         if (!VALID_STAGES.contains(newStage)) {
             throw new AuraHandledException('Invalid stage value: ' + newStage);
         }
 
-        MA_Saved_Configuration__c cfg = [
+        GTM_Saved_Configuration__c cfg = [
             SELECT Id, Presentation_Stage__c, Generated_URL__c
-            FROM MA_Saved_Configuration__c
-            WHERE Id = :Id.valueOf(configId)
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :resolvedId
             FOR UPDATE
         ];
 
@@ -88,7 +95,7 @@ public without sharing class GtmStageActionsController {
         update cfg;
 
         if ('Sent'.equals(newStage) && String.isNotBlank(cfg.Generated_URL__c)) {
-            sendProposalEmailIfPresent(Id.valueOf(configId), cfg.Generated_URL__c);
+            sendProposalEmailIfPresent(resolvedId, cfg.Generated_URL__c);
         }
     }
 
@@ -104,9 +111,9 @@ public without sharing class GtmStageActionsController {
     @InvocableMethod(label='Send Proposal Email to Client' category='GTM Offerings')
     public static void sendProposalEmails(List<SendEmailInput> inputs) {
         for (SendEmailInput inp : inputs) {
-            if (isValidId(inp.configId, 'MA_Saved_Configuration__c')
-                    && String.isNotBlank(inp.sharedUrl)) {
-                sendProposalEmailIfPresent(Id.valueOf(inp.configId), inp.sharedUrl);
+            Id resolvedId = GtmLegacyConfigId.resolve(inp.configId);
+            if (resolvedId != null && String.isNotBlank(inp.sharedUrl)) {
+                sendProposalEmailIfPresent(resolvedId, inp.sharedUrl);
             }
         }
     }
@@ -114,24 +121,27 @@ public without sharing class GtmStageActionsController {
     // ── Internal ──────────────────────────────────────────────────────────────
 
     private static void sendProposalEmailIfPresent(Id configId, String sharedUrl) {
-        List<GTM_Assessment_Request__c> requests = [
-            SELECT Requester_Name__c, Requester_Email__c, Company__c
-            FROM GTM_Assessment_Request__c
-            WHERE Saved_Configuration__c = :configId
-                AND Requester_Email__c != null
-            ORDER BY CreatedDate DESC
-            LIMIT 1
-        ];
+        List<SObject> requests = Database.query(
+            'SELECT Requester_Name__c, Requester_Email__c, Company__c ' +
+            'FROM GTM_Assessment_Request__c ' +
+            'WHERE Saved_Configuration__c = :configId ' +
+            '    AND Requester_Email__c != null ' +
+            'ORDER BY CreatedDate DESC ' +
+            'LIMIT 1'
+        );
         if (requests.isEmpty()) return;
 
-        GTM_Assessment_Request__c req = requests[0];
-        String firstName = firstWord(req.Requester_Name__c);
+        SObject req = requests[0];
+        String requesterName  = (String) req.get('Requester_Name__c');
+        String requesterEmail = (String) req.get('Requester_Email__c');
+        String company        = (String) req.get('Company__c');
+        String firstName = firstWord(requesterName);
 
         Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
-        msg.setToAddresses(new List<String>{ req.Requester_Email__c });
+        msg.setToAddresses(new List<String>{ requesterEmail });
         msg.setSubject('Your Migration Accelerator proposal is ready');
-        msg.setHtmlBody(buildEmailHtml(firstName, req.Company__c, sharedUrl));
-        msg.setPlainTextBody(buildEmailText(firstName, req.Company__c, sharedUrl));
+        msg.setHtmlBody(buildEmailHtml(firstName, company, sharedUrl));
+        msg.setPlainTextBody(buildEmailText(firstName, company, sharedUrl));
         msg.setSaveAsActivity(false);
 
         try {
@@ -174,15 +184,5 @@ public without sharing class GtmStageActionsController {
         if (s == null) return '';
         return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
                 .replace('"', '&quot;');
-    }
-
-    private static Boolean isValidId(String s, String objectApiName) {
-        if (String.isBlank(s)) return false;
-        try {
-            Id i = Id.valueOf(s);
-            return String.valueOf(i.getSobjectType()) == objectApiName;
-        } catch (Exception e) {
-            return false;
-        }
     }
 }

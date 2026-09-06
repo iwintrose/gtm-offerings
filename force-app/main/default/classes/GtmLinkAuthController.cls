@@ -30,11 +30,12 @@ public without sharing class GtmLinkAuthController {
      *  itself, only whether one exists. */
     @AuraEnabled(cacheable=false)
     public static Boolean checkPasswordRequired(String recordId) {
-        if (String.isBlank(recordId) || !isValidLinkId(recordId)) return false;
-        List<MA_Saved_Configuration__c> rows = [
+        Id resolvedId = GtmLegacyConfigId.resolve(recordId);
+        if (resolvedId == null) return false;
+        List<GTM_Saved_Configuration__c> rows = [
             SELECT Link_Password__c
-            FROM MA_Saved_Configuration__c
-            WHERE Id = :recordId
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :resolvedId
             LIMIT 1
         ];
         return !rows.isEmpty() && String.isNotBlank(rows[0].Link_Password__c);
@@ -51,22 +52,29 @@ public without sharing class GtmLinkAuthController {
         res.matched = false;
         res.submissionToken = null;
 
-        if (String.isBlank(recordId) || String.isBlank(password) || !isValidLinkId(recordId)) {
-            return res;
-        }
-        List<MA_Saved_Configuration__c> rows = [
+        if (String.isBlank(password)) return res;
+        Id resolvedId = GtmLegacyConfigId.resolve(recordId);
+        if (resolvedId == null) return res;
+
+        List<GTM_Saved_Configuration__c> rows = [
             SELECT Link_Password__c
-            FROM MA_Saved_Configuration__c
-            WHERE Id = :recordId
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :resolvedId
             LIMIT 1
         ];
         if (rows.isEmpty() || String.isBlank(rows[0].Link_Password__c)) return res;
 
         Boolean success = rows[0].Link_Password__c.equals(password.trim());
-        logAccess(recordId, success);
+        logAccess(resolvedId, success);
         if (!success) return res;
 
         res.matched = true;
+        // The token embeds the caller's own recordId string, unresolved --
+        // GtmAssessmentRequestController.validateTokenIfRequired compares it
+        // against the same savedRecordId the client resubmits verbatim later
+        // in the flow, so both sides have to keep using whatever the client
+        // is actually holding (legacy or current format), not the resolved
+        // Id, or a legitimate legacy-link submission would fail that check.
         res.submissionToken = issueToken(recordId, rows[0].Link_Password__c);
         return res;
     }
@@ -77,18 +85,19 @@ public without sharing class GtmLinkAuthController {
      */
     @AuraEnabled(cacheable=false)
     public static Boolean verifyPassword(String recordId, String password) {
-        if (String.isBlank(recordId) || String.isBlank(password) || !isValidLinkId(recordId)) {
-            return false;
-        }
-        List<MA_Saved_Configuration__c> rows = [
+        if (String.isBlank(password)) return false;
+        Id resolvedId = GtmLegacyConfigId.resolve(recordId);
+        if (resolvedId == null) return false;
+
+        List<GTM_Saved_Configuration__c> rows = [
             SELECT Link_Password__c
-            FROM MA_Saved_Configuration__c
-            WHERE Id = :recordId
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :resolvedId
             LIMIT 1
         ];
         if (rows.isEmpty() || String.isBlank(rows[0].Link_Password__c)) return false;
         Boolean success = rows[0].Link_Password__c.equals(password.trim());
-        logAccess(recordId, success);
+        logAccess(resolvedId, success);
         return success;
     }
 
@@ -107,7 +116,7 @@ public without sharing class GtmLinkAuthController {
     }
 
 
-    private static void logAccess(String recordId, Boolean success) {
+    private static void logAccess(Id recordId, Boolean success) {
         try {
             insert new Task(
                 Subject = success
@@ -120,15 +129,6 @@ public without sharing class GtmLinkAuthController {
             );
         } catch (Exception e) {
             // Task logging is best-effort; the access result is not affected.
-        }
-    }
-
-    private static Boolean isValidLinkId(String value) {
-        try {
-            Id candidate = (Id) value;
-            return candidate.getSObjectType() == MA_Saved_Configuration__c.SObjectType;
-        } catch (Exception e) {
-            return false;
         }
     }
 }

@@ -101,7 +101,7 @@ public with sharing class GtmSavedConfigurationController {
         Map<Id, Integer> linkCount = new Map<Id, Integer>();
         for (AggregateResult ar : [
             SELECT Opportunity__c oppId, COUNT(Id) c
-            FROM   MA_Saved_Configuration__c
+            FROM   GTM_Saved_Configuration__c
             WHERE  Account__c = :acct AND Opportunity__c != null
             GROUP BY Opportunity__c
         ]) {
@@ -256,7 +256,7 @@ public with sharing class GtmSavedConfigurationController {
         // sits without the Contact it's known to belong to.
         ensureOpportunityContactRole(opportunityId, contactId);
 
-        MA_Saved_Configuration__c record = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c record = new GTM_Saved_Configuration__c(
             Offering__c = trimTo(input.offering, MAX_OFFERING),
             Industry__c = trimTo(input.industry, MAX_INDUSTRY),
             Company__c = trimTo(input.company, MAX_COMPANY),
@@ -310,10 +310,13 @@ public with sharing class GtmSavedConfigurationController {
         // link itself already saved successfully above.
         if (opportunityId != null) {
             try {
-                Opportunity oppUpdate = new Opportunity(
-                    Id = opportunityId,
-                    Engagement_Link__c = record.Id
-                );
+                // Engagement_Link__c set dynamically, not through
+                // dot-notation -- a static reference to this exact field is
+                // what blocks Salesforce from letting it be deleted and
+                // recreated, which is the only way to repoint an existing
+                // Lookup's referenceTo.
+                Opportunity oppUpdate = new Opportunity(Id = opportunityId);
+                oppUpdate.put('Engagement_Link__c', record.Id);
                 if (estimatedValue != null) {
                     oppUpdate.Amount = estimatedValue;
                 }
@@ -337,7 +340,7 @@ public with sharing class GtmSavedConfigurationController {
      * inactive), because that caching happens below the LWC wire layer.
      */
     @AuraEnabled
-    public static List<MA_Saved_Configuration__c> getMyConfigurations() {
+    public static List<GTM_Saved_Configuration__c> getMyConfigurations() {
         // The account and the opportunity both come back, because they answer
         // different questions. One client having several links is normal --
         // different deals, different parts of the business, a deal that closed
@@ -350,7 +353,7 @@ public with sharing class GtmSavedConfigurationController {
                    Account__c, Account__r.Name, Contact__c, Contact__r.Name,
                    Opportunity__c, Opportunity__r.Name, Opportunity__r.StageName,
                    Generated_URL__c, Active__c, CreatedDate, OwnerId, Owner.Name
-            FROM MA_Saved_Configuration__c
+            FROM GTM_Saved_Configuration__c
             ORDER BY CreatedDate DESC
             LIMIT 200
         ];
@@ -368,7 +371,7 @@ public with sharing class GtmSavedConfigurationController {
             throw new AuraHandledException('No record specified.');
         }
         try {
-            update new MA_Saved_Configuration__c(Id = recordId, Active__c = active);
+            update new GTM_Saved_Configuration__c(Id = recordId, Active__c = active);
         } catch (DmlException e) {
             throw new AuraHandledException(
                 'We could not update this link\'s status. Please try again.'
@@ -391,7 +394,7 @@ public with sharing class GtmSavedConfigurationController {
         }
         String newPassword = randomPassword();
         try {
-            update new MA_Saved_Configuration__c(Id = recordId, Link_Password__c = newPassword);
+            update new GTM_Saved_Configuration__c(Id = recordId, Link_Password__c = newPassword);
         } catch (DmlException e) {
             throw new AuraHandledException(
                 'We could not set a new password for this link. Please try again.'
@@ -518,20 +521,19 @@ public with sharing class GtmSavedConfigurationController {
      */
     @AuraEnabled(cacheable=false)
     public static SavedConfigView getConfiguration(String recordId) {
-        if (String.isBlank(recordId)) return null;
-        Id parsedId;
-        try { parsedId = Id.valueOf(recordId); } catch (System.StringException e) { return null; }
+        Id parsedId = GtmLegacyConfigId.resolve(recordId);
+        if (parsedId == null) return null;
 
-        List<MA_Saved_Configuration__c> rows = [
+        List<GTM_Saved_Configuration__c> rows = [
             SELECT Id, Company__c, Industry__c, Industry_Label__c, Offering__c,
                    Config_Payload__c, Generated_URL__c, Active__c
-            FROM   MA_Saved_Configuration__c
+            FROM   GTM_Saved_Configuration__c
             WHERE  Id = :parsedId
             LIMIT  1
         ];
         if (rows.isEmpty()) return null;
 
-        MA_Saved_Configuration__c r = rows[0];
+        GTM_Saved_Configuration__c r = rows[0];
         SavedConfigView v = new SavedConfigView();
         v.recordId      = String.valueOf(r.Id);
         v.company       = r.Company__c;
@@ -560,11 +562,12 @@ public with sharing class GtmSavedConfigurationController {
      *  protection is active without exposing the password value itself. */
     @AuraEnabled(cacheable=false)
     public static Boolean hasLinkPassword(String recordId) {
-        if (String.isBlank(recordId)) return false;
-        List<MA_Saved_Configuration__c> rows = [
+        Id resolvedId = GtmLegacyConfigId.resolve(recordId);
+        if (resolvedId == null) return false;
+        List<GTM_Saved_Configuration__c> rows = [
             SELECT Link_Password__c
-            FROM MA_Saved_Configuration__c
-            WHERE Id = :recordId
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :resolvedId
             LIMIT 1
         ];
         return !rows.isEmpty() && String.isNotBlank(rows[0].Link_Password__c);
@@ -575,18 +578,19 @@ public with sharing class GtmSavedConfigurationController {
      * without relying on localStorage (Sales Cloud is the source of truth). */
     @AuraEnabled
     public static CrmData getConfigurationCrmData(String recordId) {
-        if (String.isBlank(recordId)) return null;
-        List<MA_Saved_Configuration__c> rows = [
+        Id resolvedId = GtmLegacyConfigId.resolve(recordId);
+        if (resolvedId == null) return null;
+        List<GTM_Saved_Configuration__c> rows = [
             SELECT Contact__c, Contact__r.Name, Contact__r.Email,
                    Account__c, Account__r.Name,
                    Estimated_Value__c,
                    Opportunity__c, Opportunity__r.Name
-            FROM MA_Saved_Configuration__c
-            WHERE Id = :recordId
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :resolvedId
             LIMIT 1
         ];
         if (rows.isEmpty()) return null;
-        MA_Saved_Configuration__c r = rows[0];
+        GTM_Saved_Configuration__c r = rows[0];
         CrmData d = new CrmData();
         d.contactId    = r.Contact__c;
         d.contactName  = r.Contact__c  != null ? r.Contact__r.Name  : null;
@@ -610,7 +614,7 @@ public with sharing class GtmSavedConfigurationController {
             throw new AuraHandledException('No record specified.');
         }
         try {
-            delete new MA_Saved_Configuration__c(Id = recordId);
+            delete new GTM_Saved_Configuration__c(Id = recordId);
         } catch (DmlException e) {
             throw new AuraHandledException(
                 'We could not delete this link. It may already be gone, or you may not have access to it.'
@@ -708,10 +712,10 @@ public with sharing class GtmSavedConfigurationController {
             if (!chosen.isEmpty()) return chosen[0].Id;
         }
 
-        if (isValidId(recordId, MA_Saved_Configuration__c.SObjectType)) {
-            List<MA_Saved_Configuration__c> existingLink = [
+        if (isValidId(recordId, GTM_Saved_Configuration__c.SObjectType)) {
+            List<GTM_Saved_Configuration__c> existingLink = [
                 SELECT Opportunity__c
-                FROM MA_Saved_Configuration__c
+                FROM GTM_Saved_Configuration__c
                 WHERE Id = :recordId
                 LIMIT 1
             ];

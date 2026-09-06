@@ -5,6 +5,16 @@
  * Runs `without sharing` so unauthenticated Experience Cloud visitors
  * can insert GTM_Link_Event__c records without needing a Salesforce login.
  * No data is read back to the caller — insert only.
+ *
+ * Saved_Configuration__c is accessed dynamically (SObject.put/get, dynamic
+ * SOQL) rather than through typed dot-notation. That isn't the freshly-
+ * deployed-field workaround used elsewhere in this migration -- it's
+ * permanent here, because a static reference to this exact field is what
+ * blocks Salesforce from letting the field be deleted and recreated, which
+ * is the only way to repoint an existing Lookup's referenceTo (there is no
+ * in-place "change referenceTo" deploy). Every configId is resolved through
+ * GtmLegacyConfigId.resolve() first, so both current- and legacy-format ids
+ * from the URL keep working.
  */
 public without sharing class GtmLinkEventController {
 
@@ -16,18 +26,18 @@ public without sharing class GtmLinkEventController {
         String step,
         String assessmentRequestId
     ) {
-        if (String.isBlank(configId) || !isValidConfigId(configId)) return;
+        Id resolvedConfigId = GtmLegacyConfigId.resolve(configId);
+        if (resolvedConfigId == null) return;
         if (String.isBlank(eventType)) return;
 
-        GTM_Link_Event__c evt = new GTM_Link_Event__c(
-            Event_Type__c           = eventType,
-            Session_Id__c           = String.isNotBlank(sessionId)  ? sessionId.left(80)  : null,
-            Step__c                 = String.isNotBlank(step)        ? step.left(100)      : null,
-            Saved_Configuration__c  = configId
-        );
+        SObject evt = Schema.getGlobalDescribe().get('GTM_Link_Event__c').newSObject();
+        evt.put('Event_Type__c', eventType);
+        evt.put('Session_Id__c', String.isNotBlank(sessionId) ? sessionId.left(80) : null);
+        evt.put('Step__c', String.isNotBlank(step) ? step.left(100) : null);
+        evt.put('Saved_Configuration__c', resolvedConfigId);
 
         if (String.isNotBlank(assessmentRequestId) && isValidArId(assessmentRequestId)) {
-            evt.Assessment_Request__c = assessmentRequestId;
+            evt.put('Assessment_Request__c', assessmentRequestId);
         }
 
         try {
@@ -63,25 +73,26 @@ public without sharing class GtmLinkEventController {
      */
     @AuraEnabled(cacheable=false)
     public static void logEvents(String configId, String sessionId, List<EventInput> events) {
-        if (String.isBlank(configId) || !isValidConfigId(configId)) return;
+        Id resolvedConfigId = GtmLegacyConfigId.resolve(configId);
+        if (resolvedConfigId == null) return;
         if (events == null || events.isEmpty()) return;
 
-        List<GTM_Link_Event__c> rows = new List<GTM_Link_Event__c>();
+        List<SObject> rows = new List<SObject>();
         for (EventInput e : events) {
             if (e == null || String.isBlank(e.eventType)) continue;
             if (rows.size() >= MAX_EVENTS_PER_CALL) break;
-            rows.add(new GTM_Link_Event__c(
-                Saved_Configuration__c = configId,
-                Event_Type__c   = e.eventType,
-                Session_Id__c   = String.isNotBlank(sessionId) ? sessionId.left(80) : null,
-                Step__c         = String.isNotBlank(e.step)   ? e.step.left(100)   : null,
-                Target__c       = String.isNotBlank(e.target) ? e.target.left(120) : null,
-                // Rounded on the way in: tenths of a second is the most a dwell
-                // measurement means, and storing more invites reading it as
-                // precision it does not have.
-                Dwell_Seconds__c = e.dwellSeconds == null ? null : e.dwellSeconds.setScale(1),
-                Sequence__c      = e.sequence
-            ));
+            SObject row = Schema.getGlobalDescribe().get('GTM_Link_Event__c').newSObject();
+            row.put('Saved_Configuration__c', resolvedConfigId);
+            row.put('Event_Type__c', e.eventType);
+            row.put('Session_Id__c', String.isNotBlank(sessionId) ? sessionId.left(80) : null);
+            row.put('Step__c', String.isNotBlank(e.step) ? e.step.left(100) : null);
+            row.put('Target__c', String.isNotBlank(e.target) ? e.target.left(120) : null);
+            // Rounded on the way in: tenths of a second is the most a dwell
+            // measurement means, and storing more invites reading it as
+            // precision it does not have.
+            row.put('Dwell_Seconds__c', e.dwellSeconds == null ? null : e.dwellSeconds.setScale(1));
+            row.put('Sequence__c', e.sequence);
+            rows.add(row);
         }
         if (rows.isEmpty()) return;
 
@@ -108,19 +119,20 @@ public without sharing class GtmLinkEventController {
      */
     @AuraEnabled(cacheable=false)
     public static void identifySession(String configId, String sessionId, String contactId) {
-        if (String.isBlank(sessionId) || String.isBlank(configId)) return;
-        if (!isValidConfigId(configId) || !isValidContactId(contactId)) return;
+        if (String.isBlank(sessionId)) return;
+        Id resolvedConfigId = GtmLegacyConfigId.resolve(configId);
+        if (resolvedConfigId == null || !isValidContactId(contactId)) return;
 
         try {
-            List<GTM_Link_Event__c> mine = [
-                SELECT Id FROM GTM_Link_Event__c
-                WHERE  Session_Id__c = :sessionId
-                AND    Saved_Configuration__c = :configId
-                AND    Contact__c = null
-                LIMIT  200
-            ];
+            List<SObject> mine = Database.query(
+                'SELECT Id FROM GTM_Link_Event__c ' +
+                'WHERE Session_Id__c = :sessionId ' +
+                'AND Saved_Configuration__c = :resolvedConfigId ' +
+                'AND Contact__c = null ' +
+                'LIMIT 200'
+            );
             if (mine.isEmpty()) return;
-            for (GTM_Link_Event__c e : mine) e.Contact__c = (Id) contactId;
+            for (SObject e : mine) e.put('Contact__c', (Id) contactId);
             update mine;
         } catch (Exception ex) {
             // The request itself already succeeded; attribution is a bonus.
@@ -132,15 +144,6 @@ public without sharing class GtmLinkEventController {
         try {
             Id candidate = (Id) value;
             return candidate.getSObjectType() == Contact.SObjectType;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private static Boolean isValidConfigId(String value) {
-        try {
-            Id candidate = (Id) value;
-            return candidate.getSObjectType() == MA_Saved_Configuration__c.SObjectType;
         } catch (Exception e) {
             return false;
         }

@@ -21,7 +21,7 @@ public with sharing class GtmHomeSnapshotController {
         Snapshot snap = new Snapshot();
 
         snap.activeEngagementCount = [
-            SELECT COUNT() FROM MA_Saved_Configuration__c WHERE Active__c = true
+            SELECT COUNT() FROM GTM_Saved_Configuration__c WHERE Active__c = true
         ];
 
         snap.newAssessmentCount = [
@@ -48,21 +48,25 @@ public with sharing class GtmHomeSnapshotController {
      * the tenth deal.
      */
     private static Integer countStalled() {
+        // Saved_Configuration__c is queried dynamically, not through typed
+        // SOQL -- a static reference to this exact field is what blocks
+        // Salesforce from letting it be deleted and recreated, which is the
+        // only way to repoint an existing Lookup's referenceTo.
         Set<Id> opened = new Set<Id>();
-        for (AggregateResult ar : [
-            SELECT Saved_Configuration__c cfg FROM GTM_Link_Event__c
-            WHERE Event_Type__c = 'Form Opened' AND Saved_Configuration__c != null
-            GROUP BY Saved_Configuration__c
-        ]) {
+        for (AggregateResult ar : Database.query(
+            'SELECT Saved_Configuration__c cfg FROM GTM_Link_Event__c ' +
+            'WHERE Event_Type__c = \'Form Opened\' AND Saved_Configuration__c != null ' +
+            'GROUP BY Saved_Configuration__c'
+        )) {
             opened.add((Id) ar.get('cfg'));
         }
         if (opened.isEmpty()) return 0;
 
-        for (AggregateResult ar : [
-            SELECT Saved_Configuration__c cfg FROM GTM_Link_Event__c
-            WHERE Event_Type__c = 'Form Submitted' AND Saved_Configuration__c IN :opened
-            GROUP BY Saved_Configuration__c
-        ]) {
+        for (AggregateResult ar : Database.query(
+            'SELECT Saved_Configuration__c cfg FROM GTM_Link_Event__c ' +
+            'WHERE Event_Type__c = \'Form Submitted\' AND Saved_Configuration__c IN :opened ' +
+            'GROUP BY Saved_Configuration__c'
+        )) {
             opened.remove((Id) ar.get('cfg'));
         }
         return opened.size();
@@ -144,12 +148,12 @@ public with sharing class GtmHomeSnapshotController {
     public static List<DealSummary> getDeals() {
         Map<Id, DealSummary> byConfig = new Map<Id, DealSummary>();
 
-        for (MA_Saved_Configuration__c cfg : [
+        for (GTM_Saved_Configuration__c cfg : [
             SELECT Id, Name, Active__c, Company__c, Industry_Label__c,
                    Opportunity__c, Opportunity__r.Name, Opportunity__r.StageName,
                    Opportunity__r.Amount, Opportunity__r.CloseDate,
                    Account__r.Name, CreatedDate
-            FROM   MA_Saved_Configuration__c
+            FROM   GTM_Saved_Configuration__c
             WHERE  Opportunity__c != null
             ORDER BY CreatedDate DESC
             LIMIT 200
@@ -175,13 +179,15 @@ public with sharing class GtmHomeSnapshotController {
         if (byConfig.isEmpty()) return new List<DealSummary>();
 
         Set<Id> configIds = byConfig.keySet();
-        for (AggregateResult ar : [
-            SELECT Saved_Configuration__c cfg, Event_Type__c evt,
-                   COUNT(Id) n, MAX(CreatedDate) lastAt
-            FROM   GTM_Link_Event__c
-            WHERE  Saved_Configuration__c IN :configIds
-            GROUP BY Saved_Configuration__c, Event_Type__c
-        ]) {
+        // Saved_Configuration__c queried dynamically -- see the comment in
+        // countStalled() above.
+        for (AggregateResult ar : Database.query(
+            'SELECT Saved_Configuration__c cfg, Event_Type__c evt, ' +
+            '       COUNT(Id) n, MAX(CreatedDate) lastAt ' +
+            'FROM   GTM_Link_Event__c ' +
+            'WHERE  Saved_Configuration__c IN :configIds ' +
+            'GROUP BY Saved_Configuration__c, Event_Type__c'
+        )) {
             DealSummary d = byConfig.get((Id) ar.get('cfg'));
             if (d == null) continue;
             String evt = (String) ar.get('evt');
@@ -198,18 +204,19 @@ public with sharing class GtmHomeSnapshotController {
         }
 
         // Newest request wins: a prospect who filled the form twice is telling
-        // you about the second one.
-        for (GTM_Assessment_Request__c req : [
-            SELECT Id, Name, Status__c, Saved_Configuration__c
-            FROM   GTM_Assessment_Request__c
-            WHERE  Saved_Configuration__c IN :configIds
-            ORDER BY CreatedDate ASC
-        ]) {
-            DealSummary d = byConfig.get(req.Saved_Configuration__c);
+        // you about the second one. Saved_Configuration__c queried
+        // dynamically -- see the comment in countStalled() above.
+        for (SObject req : Database.query(
+            'SELECT Id, Name, Status__c, Saved_Configuration__c ' +
+            'FROM   GTM_Assessment_Request__c ' +
+            'WHERE  Saved_Configuration__c IN :configIds ' +
+            'ORDER BY CreatedDate ASC'
+        )) {
+            DealSummary d = byConfig.get((Id) req.get('Saved_Configuration__c'));
             if (d == null) continue;
-            d.requestId     = req.Id;
-            d.requestName   = req.Name;
-            d.requestStatus = req.Status__c;
+            d.requestId     = (Id) req.get('Id');
+            d.requestName   = (String) req.get('Name');
+            d.requestStatus = (String) req.get('Status__c');
         }
 
         return byConfig.values();
@@ -246,9 +253,9 @@ public with sharing class GtmHomeSnapshotController {
         List<SitemapNode> out = new List<SitemapNode>();
         if (String.isBlank(configId)) return out;
 
-        List<MA_Saved_Configuration__c> cfg = [
+        List<GTM_Saved_Configuration__c> cfg = [
             SELECT Offering__c, Industry__c
-            FROM MA_Saved_Configuration__c WHERE Id = :configId LIMIT 1
+            FROM GTM_Saved_Configuration__c WHERE Id = :configId LIMIT 1
         ];
         if (cfg.isEmpty()) return out;
         // The one industry section this link's reader is shown. The others are
@@ -294,13 +301,15 @@ public with sharing class GtmHomeSnapshotController {
         }
         if (out.isEmpty()) return out;
 
-        for (AggregateResult ar : [
-            SELECT Step__c step, Event_Type__c evt,
-                   COUNT_DISTINCT(Session_Id__c) sessions, COUNT(Id) hits, SUM(Dwell_Seconds__c) dwell
-            FROM   GTM_Link_Event__c
-            WHERE  Saved_Configuration__c = :configId AND Step__c != null
-            GROUP BY Step__c, Event_Type__c
-        ]) {
+        // Saved_Configuration__c queried dynamically -- see the comment in
+        // countStalled() above.
+        for (AggregateResult ar : Database.query(
+            'SELECT Step__c step, Event_Type__c evt, ' +
+            '       COUNT_DISTINCT(Session_Id__c) sessions, COUNT(Id) hits, SUM(Dwell_Seconds__c) dwell ' +
+            'FROM   GTM_Link_Event__c ' +
+            'WHERE  Saved_Configuration__c = :configId AND Step__c != null ' +
+            'GROUP BY Step__c, Event_Type__c'
+        )) {
             SitemapNode n = byKey.get((String) ar.get('step'));
             if (n == null) continue;
             String evt = (String) ar.get('evt');

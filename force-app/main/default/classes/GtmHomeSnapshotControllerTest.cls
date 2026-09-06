@@ -2,27 +2,27 @@
 private class GtmHomeSnapshotControllerTest {
     @IsTest
     static void summarizesActiveLinksAndOpenAssessments() {
-        MA_Saved_Configuration__c activeWithValue = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c activeWithValue = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Acme Bank',
             Generated_URL__c = 'https://example.com/a',
             Active__c = true,
             Estimated_Value__c = 50000
         );
-        MA_Saved_Configuration__c activeNoValue = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c activeNoValue = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Beta Co',
             Generated_URL__c = 'https://example.com/b',
             Active__c = true
         );
-        MA_Saved_Configuration__c inactive = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c inactive = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Gamma Inc',
             Generated_URL__c = 'https://example.com/c',
             Active__c = false,
             Estimated_Value__c = 999999
         );
-        insert new List<MA_Saved_Configuration__c>{ activeWithValue, activeNoValue, inactive };
+        insert new List<GTM_Saved_Configuration__c>{ activeWithValue, activeNoValue, inactive };
 
         insert new GTM_Assessment_Request__c(
             Requester_Name__c = 'Alex Rivera',
@@ -105,22 +105,22 @@ private class GtmHomeSnapshotControllerTest {
         );
         insert new List<Opportunity>{ opp, stalledOpp };
 
-        MA_Saved_Configuration__c converted = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c converted = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator', Company__c = 'Acme Bank',
             Generated_URL__c = 'https://example.com/a', Active__c = true,
             Account__c = acct.Id, Opportunity__c = opp.Id
         );
-        MA_Saved_Configuration__c stalled = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c stalled = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator', Company__c = 'Beta Co',
             Generated_URL__c = 'https://example.com/b', Active__c = true,
             Account__c = acct.Id, Opportunity__c = stalledOpp.Id
         );
         // No opportunity, so it is not a deal and must not appear.
-        MA_Saved_Configuration__c orphan = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c orphan = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator', Company__c = 'Nobody Ltd',
             Generated_URL__c = 'https://example.com/c', Active__c = true
         );
-        insert new List<MA_Saved_Configuration__c>{ converted, stalled, orphan };
+        insert new List<GTM_Saved_Configuration__c>{ converted, stalled, orphan };
 
         GTM_Assessment_Request__c req = new GTM_Assessment_Request__c(
             Requester_Name__c = 'Alex Rivera', Requester_Email__c = 'alex@example.com',
@@ -176,7 +176,7 @@ private class GtmHomeSnapshotControllerTest {
 
     @IsTest
     static void aLinkNobodyOpenedIsNotStalled() {
-        MA_Saved_Configuration__c untouched = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c untouched = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator', Company__c = 'Quiet Co',
             Generated_URL__c = 'https://example.com/q', Active__c = true
         );

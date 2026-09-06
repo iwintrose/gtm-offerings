@@ -61,11 +61,11 @@ public with sharing class GtmRepLinkFinderController {
         }
 
         Map<Id, ContactLinks> byContact = new Map<Id, ContactLinks>();
-        for (MA_Saved_Configuration__c rec : [
+        for (GTM_Saved_Configuration__c rec : [
             SELECT Id, Company__c, Offering__c, Industry_Label__c, Active__c, CreatedDate,
                    Contact__c, Contact__r.Name, Generated_URL__c, Link_Password__c,
                    Opportunity__c, Opportunity__r.Name, Opportunity__r.StageName
-            FROM   MA_Saved_Configuration__c
+            FROM   GTM_Saved_Configuration__c
             WHERE  Account__c = :accountId AND Contact__c != null
             ORDER BY Contact__r.Name ASC, CreatedDate DESC
         ]) {
