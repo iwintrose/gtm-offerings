@@ -1,12 +1,7 @@
 import { LightningElement, api, wire } from 'lwc';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import { getRelatedListRecords } from 'lightning/uiRelatedListApi';
-
-// TEMPORARILY REMOVED: import CFG_FIELD from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__c';
-// GTM_Assessment_Request__c.Saved_Configuration__c is being deleted and
-// recreated (the only way to repoint an existing Lookup's referenceTo,
-// D6 Stage 5) -- a static schema import is exactly the kind of reference
-// that blocks that. Restored once the field exists again post-recreate.
+import CFG_FIELD from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__c';
 
 const EVENT_ICON = {
     'Page View':      'utility:preview',
@@ -50,22 +45,22 @@ export default class GtmLinkActivity extends LightningElement {
         return this.parentIsSavedConfiguration ? undefined : this.recordId;
     }
 
-    // TEMPORARILY DISABLED (see the CFG_FIELD import note above): the
-    // Assessment-Request placement's fallback hop through
-    // Saved_Configuration__c is out until the field is recreated.
-    // @wire(getRecord, { recordId: '$_arRecordId', fields: [CFG_FIELD] })
+    @wire(getRecord, { recordId: '$_arRecordId', fields: [CFG_FIELD] })
     wiredAr({ error, data }) {
         if (this.parentIsSavedConfiguration) return;
+        if (data) {
+            this._configId = getFieldValue(data, CFG_FIELD);
+        } else if (error) {
+            this.hasError = true;
+        }
         this.isLoading = false;
     }
 
     @wire(getRelatedListRecords, {
         parentRecordId: '$_configId',
-        // MA_Saved_Configuration__c is still the parent object (Stage 5 not
-        // migrated yet), but the child lookup now comes from
-        // GTM_Link_Event__c.Saved_Configuration__c, whose relationshipName
-        // was renamed to GTM_Link_Events to avoid colliding with the old
-        // object's own Link_Events relationship on this same parent.
+        // relationshipName was renamed to GTM_Link_Events to avoid colliding
+        // with MA_Saved_Configuration__c's own Link_Events relationship
+        // while both objects coexist during the D6 transition.
         relatedListId: 'GTM_Link_Events__r',
         fields: [
             'GTM_Link_Event__c.Id',
