@@ -79,9 +79,17 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
         return getHomeSummary()
             .then((data) => {
                 this.offerings = ((data && data.offerings) || []).map((o) => {
-                    const built = (o.pages || []).filter((p) => (p.sectionCount || 0) > 0);
-                    const fields = (o.pages || []).reduce((n, p) => n + (p.fieldCount || 0), 0);
+                    const pages = o.pages || [];
+                    const built = pages.filter((p) => (p.sectionCount || 0) > 0);
                     const story = built.find((p) => p.templateType === 'story');
+                    // Business-facing readiness by named page, not a page/field
+                    // count only an admin would parse.
+                    const readiness = Object.keys(TEMPLATE_LABELS)
+                        .filter((type) => pages.some((p) => p.templateType === type))
+                        .map((type) => {
+                            const ready = pages.some((p) => p.templateType === type && (p.sectionCount || 0) > 0);
+                            return `${TEMPLATE_LABELS[type]} ${ready ? 'ready' : 'not started'}`;
+                        });
                     return {
                         offeringKey: o.offeringKey,
                         label: o.label,
@@ -90,9 +98,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                         // worse than no link.
                         hasStory: !!story && !!o.storyUrl,
                         storyUrl: o.storyUrl || '',
-                        summary: built.length
-                            ? `${built.length} page${built.length === 1 ? '' : 's'} built · ${fields} fields`
-                            : 'No pages modelled yet'
+                        summary: readiness.length ? readiness.join(' · ') : 'No pages started yet'
                     };
                 });
             })
@@ -159,6 +165,10 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                 this.loadError = this.messageFrom(err) || 'The wizard could not be opened.';
             })
             .finally(() => { this.navBusy = false; });
+    }
+
+    handleDismissError() {
+        this.loadError = '';
     }
 
     handleEditOffering(event) {

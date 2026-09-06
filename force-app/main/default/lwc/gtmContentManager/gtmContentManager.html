@@ -56,7 +56,7 @@
               <div class="chgpop">
                 <div class="chgpop-h">
                   <span>Not yet published</span>
-                  <button class="chgpop-x" onclick={handleCloseChanges} title="Close">&times;</button>
+                  <button class="chgpop-x" onclick={handleCloseChanges} title="Close" aria-label="Close">&times;</button>
                 </div>
                 <ul class="chgpop-list">
                   <template for:each={pendingChanges} for:item="c">
@@ -88,7 +88,7 @@
       <div class="gcm-error" role="alert">
         <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
         <span>{loadError}</span>
-        <button class="gcm-error-x" onclick={handleDismissError} title="Dismiss">&times;</button>
+        <button class="gcm-error-x" onclick={handleDismissError} title="Dismiss" aria-label="Dismiss">&times;</button>
       </div>
     </template>
 
@@ -102,8 +102,8 @@
         <div class="gcm-empty">
           <p><b>Choose an offering to begin.</b></p>
           <p class="gcm-empty-sub">
-            Each offering has its own pages, sections and content. Offerings come
-            from MA_Offering__mdt, so adding one is a metadata record.
+            Each offering has its own pages, sections and content.
+            No offerings set up yet — ask an admin to add one.
           </p>
         </div>
       </template>
@@ -120,7 +120,7 @@
               <span class="pg-name">{t.label}</span>
               <span class="pg-sum">{t.summary}</span>
               <template if:false={t.isBuilt}>
-                <span class="pg-flag">Not editable yet</span>
+                <span class="pg-flag">Empty</span>
               </template>
             </button>
           </template>
@@ -170,18 +170,18 @@
                   <template if:true={reorderMode}>
                     <span class="sec-move">
                       <button class="mv" data-key={s.sectionKey} onclick={handleMoveUp}
-                              disabled={s.isFirst} title="Move up">&uarr;</button>
+                              disabled={s.isFirst} title="Move up" aria-label="Move section up">&uarr;</button>
                       <button class="mv" data-key={s.sectionKey} onclick={handleMoveDown}
-                              disabled={s.isLast} title="Move down">&darr;</button>
+                              disabled={s.isLast} title="Move down" aria-label="Move section down">&darr;</button>
                       <button class="mv" data-key={s.sectionKey} onclick={handleToggleActive}
-                              title={s.toggleLabel}>&#9679;</button>
+                              title={s.toggleLabel} aria-label={s.toggleLabel}>&#9679;</button>
                       <template if:true={s.canDelete}>
                         <button class="mv mv--danger" data-key={s.sectionKey} onclick={handleAskDelete}
-                                title="Delete this section">&times;</button>
+                                title="Delete this section" aria-label="Delete this section">&times;</button>
                       </template>
                       <template if:true={s.canRestore}>
                         <button class="mv mv--undo" data-key={s.sectionKey} onclick={handleRestore}
-                                title="Undo the pending delete">&#8630;</button>
+                                title="Undo the pending delete" aria-label="Undo the pending delete">&#8630;</button>
                       </template>
                     </span>
                   </template>

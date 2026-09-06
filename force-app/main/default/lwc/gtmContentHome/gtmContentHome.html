@@ -16,7 +16,7 @@
       <div class="home-error" role="alert">
         <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
         <span>{loadError}</span>
-        <button class="home-error-x" onclick={handleDismissError} title="Dismiss">&times;</button>
+        <button class="home-error-x" onclick={handleDismissError} title="Dismiss" aria-label="Dismiss">&times;</button>
       </div>
     </template>
 
@@ -75,7 +75,7 @@
           <button class="side-new" onclick={handleOpenNewPage}>
             <span class="side-new-plus">+</span>
             <span class="side-new-main">
-              <span class="side-new-label">New Accelerator Page</span>
+              <span class="side-new-label">New Prospect Page</span>
               <span class="side-new-sub">Build a page for an offering</span>
             </span>
           </button>
@@ -111,7 +111,7 @@
       <section role="dialog" aria-modal="true" aria-labelledby="npTitle" class="scrim">
         <div class="modal">
           <header class="modal-h">
-            <h2 id="npTitle">New Accelerator page</h2>
+            <h2 id="npTitle">New Prospect Page</h2>
             <p>Pick the offering and which of its pages to build.</p>
           </header>
           <div class="modal-b">

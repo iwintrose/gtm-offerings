@@ -6,7 +6,7 @@
     flex: none;
     display: flex; align-items: center; gap: 0.45rem;
     padding: 0.42rem 0.6rem;
-    border-bottom: 1px solid #e5e5e5; background: #fff;
+    border-bottom: 1px solid var(--gtm-border); background: var(--gtm-bg-surface);
 }
 .pv-live {
     display: inline-flex; align-items: center; gap: 0.3rem;
@@ -20,26 +20,26 @@
 .pv-url {
     flex: 1; min-width: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
-    color: #747474; background: #f3f3f3;
-    border: 1px solid #e5e5e5; border-radius: 4px;
+    color: var(--gtm-text-muted); background: #f3f3f3;
+    border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius);
     padding: 0.22rem 0.45rem;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 .vp {
     display: flex; gap: 1px; flex: none;
-    background: #e5e5e5; border: 1px solid #c9c9c9; border-radius: 4px; overflow: hidden;
+    background: var(--gtm-border); border: 1px solid #c9c9c9; border-radius: var(--gtm-radius); overflow: hidden;
 }
 .vp button {
-    background: #fff; color: #747474; border: 0;
+    background: var(--gtm-bg-surface); color: var(--gtm-text-muted); border: 0;
     padding: 0.24rem 0.5rem; cursor: pointer; font-size: 11px; font-weight: 600;
 }
-.vp button:hover { background: #f3f3f3; color: #181818; }
+.vp button:hover { background: #f3f3f3; color: var(--gtm-text); }
 .vp button.on { background: #0176d3; color: #fff; }
 
 .vpsize {
     display: flex; align-items: center; gap: 0.15rem; flex: none;
-    border: 1px solid #c9c9c9; border-radius: 4px; background: #fff;
+    border: 1px solid #c9c9c9; border-radius: var(--gtm-radius); background: var(--gtm-bg-surface);
     padding: 0.1rem 0.3rem 0.1rem 0.35rem;
 }
 .vpw {
@@ -54,14 +54,14 @@
 
 .zoomsel {
     flex: none;
-    border: 1px solid #c9c9c9; border-radius: 4px; background: #fff;
+    border: 1px solid #c9c9c9; border-radius: var(--gtm-radius); background: var(--gtm-bg-surface);
     font-size: 11.5px; padding: 0.2rem 0.25rem; cursor: pointer;
 }
 .zoomsel:disabled { color: #969696; cursor: default; background: #f3f3f3; }
 .zoomread {
     flex: none;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 10.5px; color: #969696; min-width: 34px; text-align: right;
+    font-size: var(--gtm-font-size-label); color: #969696; min-width: 34px; text-align: right;
 }
 
 /* ── canvas ──────────────────────────────────────────────────────────────── */
@@ -78,7 +78,7 @@
 .device {
     position: absolute; top: 0; left: 0;
     transform-origin: top left;
-    background: #fff;
+    background: var(--gtm-bg-surface);
     /* A device preset is a fixed window with the page scrolling inside it,
        the way the real device behaves. In fluid mode the device is auto-height
        so this never engages and the canvas does the scrolling. */
