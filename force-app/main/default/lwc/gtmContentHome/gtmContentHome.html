@@ -34,10 +34,20 @@
     </template>
 
     <template if:true={hasOfferings}>
+      <div class="home-search">
+        <lightning-input type="search" label="Search offerings and pages" variant="label-hidden"
+                          placeholder="Search offerings and pages…" value={searchTerm}
+                          onchange={handleSearch}></lightning-input>
+      </div>
+
+      <template if:true={showNoSearchResults}>
+        <p class="home-empty-sub home-no-results">Nothing matches "{searchTerm}".</p>
+      </template>
+
       <div class="home-cols">
 
         <section class="off-col">
-          <template for:each={cards} for:item="o">
+          <template for:each={filteredCards} for:item="o">
             <article key={o.key} class="off">
               <div class="off-head">
                 <div class="off-id">
@@ -59,7 +69,7 @@
                         <span class="pg-detail">{p.detail}</span>
                       </span>
                       <template if:false={p.isBuilt}>
-                        <span class="pg-flag">{p.badge}</span>
+                        <lightning-badge label={p.badge} class="pg-flag"></lightning-badge>
                       </template>
                       <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
                     </button>

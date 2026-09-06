@@ -27,6 +27,9 @@
 .home-empty { padding: 2.5rem 1rem; text-align: center; color: #444; }
 .home-empty-sub { color: var(--gtm-text-muted, #747474); font-size: 12px; max-width: 26rem; margin: .3rem auto 0; line-height: 1.5; }
 
+.home-search { max-width: 22rem; margin-bottom: .85rem; }
+.home-no-results { margin: 0 0 .85rem; }
+
 .home-cols { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: 1rem; align-items: start; }
 @media (max-width: 1024px) { .home-cols { grid-template-columns: minmax(0, 1fr); } }
 
@@ -60,11 +63,7 @@
 .pg-name { font-size: var(--gtm-font-size-base, 13px); font-weight: 600; }
 .pg-detail { font-size: 11px; color: var(--gtm-text-muted, #747474); margin-top: 1px; }
 .pg-go { margin-left: auto; color: #0176d3; }
-.pg-flag {
-    margin-left: auto; font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
-    color: #8c6a1a; background: #fef5ec; border: 1px solid #fe9339;
-    border-radius: 3px; padding: .05rem .3rem; white-space: nowrap;
-}
+.pg-flag { margin-left: auto; }
 
 /* ── recent edits ────────────────────────────────────────────────────────── */
 .side {
