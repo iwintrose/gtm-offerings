@@ -381,6 +381,45 @@ public with sharing class GtmSavedConfigurationController {
     }
 
     /**
+     * A new password for a link a client says they've lost, generated
+     * server-side and handed back once so the rep can relay it -- not a
+     * guest-facing "email me my password" flow (that one enumerates and
+     * needs its own security pass, see D5 in docs/backlog.md). The rep is
+     * already authenticated and already looking at this specific link;
+     * this only ever changes Link_Password__c, nothing else on the record.
+     */
+    @AuraEnabled
+    public static String regeneratePassword(String recordId) {
+        if (String.isBlank(recordId)) {
+            throw new AuraHandledException('No record specified.');
+        }
+        String newPassword = randomPassword();
+        try {
+            update new MA_Saved_Configuration__c(Id = recordId, Link_Password__c = newPassword);
+        } catch (DmlException e) {
+            throw new AuraHandledException(
+                'We could not set a new password for this link. Please try again.'
+            );
+        }
+        return newPassword;
+    }
+
+    /** Six characters, no ambiguous 0/O/1/I/l -- read over the phone or
+     *  typed off a sticky note without a guessing game either way. */
+    private static String randomPassword() {
+        String alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        String out = '';
+        for (Integer i = 0; i < 6; i++) {
+            // Widen to Long before abs() -- Integer.MIN_VALUE has no positive
+            // Integer counterpart, so abs() on the raw Integer can overflow.
+            Long raw = Math.abs((Long) Crypto.getRandomInteger());
+            Integer idx = Math.mod(raw, alphabet.length()).intValue();
+            out += alphabet.substring(idx, idx + 1);
+        }
+        return out;
+    }
+
+    /**
      * Lets the Saved Links bar (running inside an Experience Cloud site,
      * a different domain from Salesforce's own Lightning UI) build a
      * "View in Salesforce" link. There's no reliable client-side way to

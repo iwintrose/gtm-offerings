@@ -35,6 +35,13 @@ public with sharing class GtmRepLinkFinderController {
         @AuraEnabled public String dealStage;
         @AuraEnabled public Boolean active;
         @AuraEnabled public Datetime createdDate;
+        /** So a rep can copy the exact link to send by email or text
+         *  without opening the record. */
+        @AuraEnabled public String generatedUrl;
+        /** Whether a password is set, never the password itself -- same
+         *  boundary GtmSavedConfigurationController.hasPassword() already
+         *  draws for the Customize panel. */
+        @AuraEnabled public Boolean hasPassword;
     }
 
     /**
@@ -56,7 +63,7 @@ public with sharing class GtmRepLinkFinderController {
         Map<Id, ContactLinks> byContact = new Map<Id, ContactLinks>();
         for (MA_Saved_Configuration__c rec : [
             SELECT Id, Company__c, Offering__c, Industry_Label__c, Active__c, CreatedDate,
-                   Contact__c, Contact__r.Name,
+                   Contact__c, Contact__r.Name, Generated_URL__c, Link_Password__c,
                    Opportunity__c, Opportunity__r.Name, Opportunity__r.StageName
             FROM   MA_Saved_Configuration__c
             WHERE  Account__c = :accountId AND Contact__c != null
@@ -81,6 +88,8 @@ public with sharing class GtmRepLinkFinderController {
             link.dealStage = rec.Opportunity__c != null ? rec.Opportunity__r.StageName : null;
             link.active = rec.Active__c;
             link.createdDate = rec.CreatedDate;
+            link.generatedUrl = rec.Generated_URL__c;
+            link.hasPassword = String.isNotBlank(rec.Link_Password__c);
             grp.links.add(link);
         }
         return out;
