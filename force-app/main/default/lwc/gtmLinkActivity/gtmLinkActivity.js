@@ -20,13 +20,35 @@ const EVENT_VARIANT = {
 export default class GtmLinkActivity extends LightningElement {
     @api recordId;
 
+    /** True when this instance sits on the Engagement Link
+     *  (MA_Saved_Configuration__c) record page, where recordId IS the
+     *  config id directly -- false (the original placement, on
+     *  MA_Assessment_Request__c) needs one hop through that record's own
+     *  Saved_Configuration__c lookup to find it. Two different record
+     *  types can't share one @wire(getRecord) call -- fetching
+     *  CFG_FIELD (an Assessment Request field) off a Saved Configuration
+     *  id would error, not just return nothing -- so the wire below is
+     *  only ever given a recordId when this flag says it's safe to. */
+    @api parentIsSavedConfiguration = false;
+
     _configId;
     events = [];
     isLoading = true;
     hasError = false;
 
-    @wire(getRecord, { recordId: '$recordId', fields: [CFG_FIELD] })
+    connectedCallback() {
+        if (this.parentIsSavedConfiguration) {
+            this._configId = this.recordId;
+        }
+    }
+
+    get _arRecordId() {
+        return this.parentIsSavedConfiguration ? undefined : this.recordId;
+    }
+
+    @wire(getRecord, { recordId: '$_arRecordId', fields: [CFG_FIELD] })
     wiredAr({ error, data }) {
+        if (this.parentIsSavedConfiguration) return;
         if (data) {
             const id = getFieldValue(data, CFG_FIELD);
             if (id) {
@@ -83,6 +105,12 @@ export default class GtmLinkActivity extends LightningElement {
 
     get hasConfig() {
         return !!this._configId;
+    }
+
+    get noConfigMessage() {
+        return this.parentIsSavedConfiguration
+            ? 'This link has no activity to show yet.'
+            : 'No engagement link connected to this assessment request.';
     }
 
     _formatDate(iso) {
