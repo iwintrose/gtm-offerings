@@ -210,6 +210,45 @@ unscrubbed real prospect data: MUCH Music/TD Bank/Medtronic/LA Metro
 contact names and emails). `MA_Config_Update__e` (platform event) has no
 persisted rows — nothing to back up, not a gap.
 
+**Stage 2 — in progress, blocked on one piece.** The three safest objects
+first: `GTM_Offering__mdt`, `GTM_Assessment_Config__mdt`, `GTM_Agent_Settings__c`
+(mirroring their `MA_` originals field-for-field). Object/field metadata
+for all three deployed clean. Data:
+
+- `GTM_Offering.Migration_Accelerator` — deployed and verified live.
+- `GTM_Agent_Settings__c` org defaults — migrated via a one-time Apex
+  script (`GTM_Agent_Settings__c.getOrgDefaults()` upserted from the `MA_`
+  one) rather than a metadata deploy, specifically so the Claude API key
+  value never had to pass through anything I could read or print — verified
+  live by field presence, not by value.
+- `GTM_Assessment_Config.Default` — **blocked.** Every attempt to deploy
+  this one customMetadata record fails with an opaque org-side
+  `UNKNOWN_EXCEPTION` (error code `-315522575`), reproduced 5+ times: full
+  record, single-field record, different record name, different label —
+  all fail identically. Isolated definitively with a throwaway diagnostic
+  object (`ZZ_Diag_Test__mdt`, created fresh, never touched before): a
+  record deploy against it **also** fails with the identical error,
+  proving this is a **current, org-wide Metadata-API fault specifically on
+  CustomMetadata *record* deploys** in this org right now — not anything
+  wrong with our field/object metadata, not a naming collision, not a
+  propagation-timing issue. CustomMetadata *type* (object) deploys are
+  unaffected; only record deploys are broken. Diagnostic object cleaned up
+  (deployed, then destructively removed) once confirmed. Worth checking
+  Salesforce Trust status for this instance, or retrying later — this
+  isn't something fixable from the metadata side.
+- Permission set grants (`GTM_Story_Guest`/`GTM_Assessment_Guest` →
+  `customMetadataTypeAccesses` on the new types, old `MA_` grants left in
+  place alongside) deployed clean — additive, unaffected by the record
+  issue since they reference the type, not a record.
+
+**Not started yet, waiting on the platform issue above to clear:** the
+Apex/LWC rewiring for these 3 objects (`GtmPageContentController`,
+`GtmDealNaming`, `GtmPageContentReader`, `GtmAssessmentRequestController`,
+`GtmAssessmentRequestControllerTest`, `GtmAgentProxyController`) — holding
+off cutting code over until `GTM_Assessment_Config__mdt` actually has its
+record, since `GtmAssessmentRequestController` reads both it and
+`GTM_Offering__mdt` together.
+
 
 **D7 — `gtmPageBrowser` ("Pages" tab) has the wrong shape.** A rep should
 not be able to freely browse every offering × every template — that's the

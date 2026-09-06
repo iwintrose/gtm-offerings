@@ -40,4 +40,8 @@
         <enabled>true</enabled>
         <name>MA_Offering__mdt</name>
     </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Offering__mdt</name>
+    </customMetadataTypeAccesses>
 </PermissionSet>

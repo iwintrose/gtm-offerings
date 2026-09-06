@@ -22,6 +22,10 @@
         <enabled>true</enabled>
         <name>MA_Assessment_Config__mdt</name>
     </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Config__mdt</name>
+    </customMetadataTypeAccesses>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>

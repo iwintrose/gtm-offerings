@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Migration Accelerator</label>
+    <protected>false</protected>
+    <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
+        <field>Label__c</field>
+        <value xsi:type="xsd:string">Migration Accelerator</value>
+    </values>
+    <values>
+        <field>Monthly_Target__c</field>
+        <value xsi:type="xsd:double">20000</value>
+    </values>
+    <values>
+        <field>Annual_Target__c</field>
+        <value xsi:type="xsd:double">250000</value>
+    </values>
+    <values>
+        <field>CMS_Channel_Id__c</field>
+        <value xsi:type="xsd:string">0apgK000006qO9FQAU</value>
+    </values>
+    <values>
+        <field>Site_Path__c</field>
+        <value xsi:type="xsd:string">gtmaccelerator/story</value>
+    </values>
+</CustomMetadata>
