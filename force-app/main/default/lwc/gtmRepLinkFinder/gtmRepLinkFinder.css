@@ -73,6 +73,14 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: .2rem; flex: none; padding: 0 .4rem;
 }
+/* Copy the link, or set a new password -- the two things a rep needs
+   mid-call with a client, without leaving this card to find them. */
+.rlf-row-actions {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .2rem; flex: none; padding: 0 .4rem; border-left: 1px solid #f0f0f0;
+}
+.rlf-row-actions lightning-button-icon { display: block; }
+.rlf-row-pw { font-size: 10px; color: #9a9a9a; white-space: nowrap; }
 .rlf-row:hover { background: #f7f9fc; border-color: #c9d7ee; }
 .rlf-row-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 .rlf-row-main { font-weight: 600; font-size: 12.5px; }

@@ -3,6 +3,7 @@ import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import ACCOUNT_NAME_FIELD from '@salesforce/schema/Account.Name';
 import getContactsWithLinks from '@salesforce/apex/GtmRepLinkFinderController.getContactsWithLinks';
 import setActive from '@salesforce/apex/GtmSavedConfigurationController.setActive';
+import regeneratePassword from '@salesforce/apex/GtmSavedConfigurationController.regeneratePassword';
 
 /**
  * A rep's own "find a link I already sent" flow (D7).
@@ -33,6 +34,7 @@ export default class GtmRepLinkFinder extends LightningElement {
     @track selectedContactId = '';
     @track selectedLink = null;
     @track togglingIds = [];
+    @track regeneratingIds = [];
 
     @wire(getRecord, { recordId: '$accountId', fields: [ACCOUNT_NAME_FIELD] })
     wiredAccount({ data }) {
@@ -158,6 +160,9 @@ export default class GtmRepLinkFinder extends LightningElement {
             isToggling: this.togglingIds.indexOf(l.recordId) !== -1,
             statusLabel: l.active === false ? 'Inactive' : 'Active',
             statusClass: l.active === false ? 'rlf-status rlf-status--off' : 'rlf-status',
+            generatedUrl: l.generatedUrl,
+            passwordLabel: l.hasPassword ? 'Password set' : 'No password',
+            isRegenerating: this.regeneratingIds.indexOf(l.recordId) !== -1,
             _raw: l
         }));
     }
@@ -203,6 +208,60 @@ export default class GtmRepLinkFinder extends LightningElement {
             .finally(() => {
                 this.togglingIds = this.togglingIds.filter((existingId) => existingId !== id);
             });
+    }
+
+    /** Straight to the client's inbox or a text, without opening the
+     *  record just to find its own URL field. */
+    handleCopyLink(event) {
+        event.stopPropagation();
+        const url = event.currentTarget.dataset.url;
+        if (!url) return;
+        this.copyToClipboard(url);
+    }
+
+    /** A client who lost their password calls the rep, not Salesforce --
+     *  this is the tool for that call. Confirms first since it invalidates
+     *  whatever password the client already has, then hands the new one
+     *  back once (copied to the clipboard, and shown so it can be read
+     *  aloud) -- there is no screen anywhere that shows a password back a
+     *  second time, so this is the one chance to capture it. */
+    handleRegeneratePassword(event) {
+        event.stopPropagation();
+        const id = event.currentTarget.dataset.id;
+        if (this.regeneratingIds.indexOf(id) !== -1) return;
+        const row = this.linkRows.find((l) => l.recordId === id);
+        const company = row ? row.company : 'this link';
+        // eslint-disable-next-line no-alert
+        if (!confirm(`Set a new password for ${company}'s link? Their current password will stop working.`)) return;
+
+        this.regeneratingIds = [...this.regeneratingIds, id];
+        regeneratePassword({ recordId: id })
+            .then((newPassword) => {
+                this.contactGroups = this.contactGroups.map((g) => {
+                    if (g.contactId !== this.selectedContactId) return g;
+                    return {
+                        ...g,
+                        links: g.links.map((l) => (l.recordId === id ? { ...l, hasPassword: true } : l))
+                    };
+                });
+                this.copyToClipboard(newPassword);
+                // eslint-disable-next-line no-alert
+                alert(`New password for ${company}: ${newPassword}\n\nCopied to your clipboard.`);
+            })
+            .catch((e) => {
+                this.loadError = (e && e.body && e.body.message) || 'A new password could not be set.';
+            })
+            .finally(() => {
+                this.regeneratingIds = this.regeneratingIds.filter((existingId) => existingId !== id);
+            });
+    }
+
+    copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(() => {
+                // best-effort -- the alert/visible text is still there to copy by hand
+            });
+        }
     }
 
     get selectedLinkOfferingKey() {
