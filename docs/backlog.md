@@ -112,6 +112,17 @@ deploy clean. A submissions *list* would just be a filtered view of
 already has — the actual gap was this one already-built component sitting
 unused, not a missing screen. Closes #16.
 
+> **Refinement, same day:** the walkthrough placed the raw event trail on
+> the *request* — wrong home. The full "who did what, reading, submitting"
+> story belongs to the *link* (it's what was sent to a person; a request
+> is one possible outcome of it), matching the existing `gtmLinkSitemap`
+> "how far they read" map that already lives on the Engagement Link page.
+> Made `gtmLinkActivity` work on both record types and moved its primary
+> placement there, next to that map, on an "Activity" tab. Also relabeled
+> `MA_Link_Event__c` → **Activity Log** (`AL-{0000}` going forward; API
+> name and existing `EVT-` numbers untouched — a label/autonumber-format
+> change carries none of the D6 object-rename risk below).
+
 **D5 — Self-service link recovery on the bare `/gtm/s/configurator`.** Not a
 decision yet. Today a guest with no `?cfgId=` gets a static "this page needs a
 link, reach out to your rep" screen (built and live). You floated something
@@ -288,6 +299,25 @@ B5, feedback card padding · B1, the CMS-editable FAQ widget on both apps ·
 B4, the retired CMS content (records deleted by Don, the 5 dead
 managedContentType definitions removed).
 
+**D9 — The Industry Chooser isn't reachable anywhere live.** Found while
+trying to screenshot it: `chooseIndustry` (LWC, `gtm::industry-chooser`
+content) only exists as a page/route inside `GTM_Accelerator1` — the
+legacy site, now `DownForMaintenance` — confirmed by searching every
+`force-app/main/default/experiences/*` bundle. `GTM1` (the live `/gtm`
+site) has no `industry.json` view or route at all. The `gtm::industry-chooser`
+content itself is fully authored and valid (`check-all.sh`: 9 sections, 79
+fields, live contract holds — same as `offerings-page`), and the LWC is a
+real, targetable Experience Builder component (D6 already fixed its label
+from "MA Choose Industry" → "GTM Choose Industry"), so this isn't a
+content gap or a leftover-naming gap — it's a page that was never rebuilt
+onto the new site when everything else moved off `GTM Accelerator`. Likely
+what "industry listings in the editor does have icons" was pointing at:
+content and icons exist and are editable, there's just nowhere live to see
+them render. Not started — needs the page/route built onto `GTM1`'s
+Experience Builder bundle (copy `GTM_Accelerator1`'s `industry` view/route,
+retarget component properties at the live site's own offerings/configurator
+URLs, deploy, publish).
+
 ---
 
 ## Known and accepted
@@ -296,5 +326,21 @@ managedContentType definitions removed).
   names can only be changed in Setup.
 - Guest User licences allow insert and read on a custom object — never update or
   delete. The form-draft design is shaped around this.
-- Chromium in the dev container cannot reach the org through the proxy, so
-  visual verification is by mockup and by querying the org, not by screenshot.
+- Custom object and custom field **API names** lock permanently after first
+  save — no metadata deploy or Setup UI path renames one in place. The only
+  route is delete-and-recreate: new object, migrate every record (new record
+  Ids), rewire every reference, delete the old one. This is why D6's rename
+  stopped at Apex/LWC/permission-set/flow names and explicitly left custom
+  object/field API names (`MA_Saved_Configuration__c`, `MA_Assessment_Request__c`,
+  `MA_Link_Event__c`, etc.) alone — a hard cutover invalidates every
+  already-distributed prospect URL that embeds one of these records' old Id.
+  Labels, plural labels, and autonumber display formats carry none of this
+  risk and are freely renamable (see D4's Activity Log relabel).
+- Screenshotting the live app is real now (Cloudflare Browser Rendering,
+  connected this session) — confirmed working for the guest-facing
+  Configurator with no auth needed. Internal, authenticated Lightning pages
+  need a Salesforce frontdoor.jsp one-time login token, which is single-use
+  and short-lived: it has to be generated and handed to the renderer back to
+  back, with nothing else running in between, or it's already spent by the
+  time the screenshot call fires. Getting this reliable is a sequencing
+  problem, not a capability gap.
