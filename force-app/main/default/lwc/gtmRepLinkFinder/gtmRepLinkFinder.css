@@ -5,17 +5,27 @@
 .rlf { padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem; font-size: 13px;
        color: #181818; background: #f3f3f3; min-height: 100%; }
 
+/* One card, always on screen regardless of step: title, the account
+   search that starts (or restarts) the flow, and -- once there's
+   somewhere to have come from -- the crumb trail. Sticky so scrolling a
+   long contact or link list never scrolls the way back to search out of
+   reach. */
 .rlf-head {
     background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
     padding: .75rem 1rem; margin-bottom: 1rem;
     box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    position: sticky; top: 0; z-index: 1;
 }
-.rlf-head .slds-page-header__row { display: flex; align-items: center; gap: 1rem; }
-.rlf-head .slds-page-header__col-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.rlf-head-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1.25rem; flex-wrap: wrap;
+}
+.rlf-head-title { display: flex; align-items: center; gap: .75rem; min-width: 0; flex: 1 1 14rem; }
+.rlf-head-text { min-width: 0; }
+.rlf-head-search { flex: 1 1 16rem; max-width: 22rem; }
 .rlf-ico { flex: none; }
 .rlf-eyebrow { font-size: 12px; color: #444; margin: 0; }
 .rlf-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
-.rlf-meta { margin: .1rem 0 0; font-size: 12px; color: #747474; }
 
 .rlf-crumbs {
     display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
@@ -32,6 +42,17 @@
 .rlf-msg { font-size: 12.5px; margin: 0 0 .75rem; }
 .rlf-msg--err { color: #a1500a; }
 .rlf-empty { color: #747474; font-size: 12.5px; line-height: 1.5; margin: 0 0 .75rem; }
+
+/* Nothing picked yet -- a blank page here reads as broken, not as "start
+   by searching." This points at the header's own search instead of
+   repeating it. */
+.rlf-empty-state {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: .5rem; padding: 3rem 1.5rem; color: #747474;
+}
+.rlf-empty-ico { opacity: .5; }
+.rlf-empty-title { margin: .25rem 0 0; font-size: 15px; font-weight: 700; color: #444; }
+.rlf-empty-sub { margin: 0; font-size: 12.5px; line-height: 1.5; max-width: 26rem; }
 
 .rlf-card {
     background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;

@@ -1,16 +1,23 @@
 <template>
   <div class="rlf">
-    <div class="slds-page-header rlf-head">
-      <div class="slds-page-header__row">
-        <div class="slds-page-header__col-title">
+    <div class="rlf-head">
+      <div class="rlf-head-row">
+        <div class="rlf-head-title">
           <lightning-icon icon-name="standard:contact_list" size="medium" class="rlf-ico"></lightning-icon>
-          <div class="slds-media__body">
-            <p class="slds-page-header__name-title rlf-eyebrow">Configurator links</p>
+          <div class="rlf-head-text">
+            <p class="rlf-eyebrow">Configurator links</p>
             <h1 class="rlf-title">Find a link you sent</h1>
-            <p class="slds-page-header__name-meta rlf-meta">
-              Account, then Contact, then the link itself -- the same relationship it's already saved against.
-            </p>
           </div>
+        </div>
+        <div class="rlf-head-search">
+          <lightning-record-picker
+            label="Account"
+            variant="label-hidden"
+            placeholder="Search accounts by name…"
+            object-api-name="Account"
+            value={accountId}
+            onchange={handleAccountChange}
+          ></lightning-record-picker>
         </div>
       </div>
       <template if:true={hasCrumbTrail}>
@@ -27,15 +34,17 @@
       <p class="rlf-msg rlf-msg--err">{loadError}</p>
     </template>
 
-    <!-- STEP 1: account -->
+    <!-- STEP 1: nothing picked yet -- the search that gets you started lives
+         in the header above, always visible, so this is guidance toward it
+         rather than a second copy of the same control. -->
     <template if:true={isAccountStep}>
-      <div class="rlf-card">
-        <lightning-record-picker
-          label="Account"
-          placeholder="Search accounts by name…"
-          object-api-name="Account"
-          onchange={handleAccountChange}
-        ></lightning-record-picker>
+      <div class="rlf-empty-state">
+        <lightning-icon icon-name="utility:search" size="large" class="rlf-empty-ico"></lightning-icon>
+        <p class="rlf-empty-title">Search for an account above</p>
+        <p class="rlf-empty-sub">
+          Find the account this link was sent to, then pick the Contact and the link itself --
+          Account, then Contact, then the link, the same relationship it's already saved against.
+        </p>
       </div>
     </template>
 
