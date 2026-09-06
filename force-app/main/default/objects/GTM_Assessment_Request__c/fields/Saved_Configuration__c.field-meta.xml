@@ -4,7 +4,7 @@
     <label>Client Link</label>
     <description>The client-specific configured link the requester was viewing when they booked an assessment.</description>
     <type>Lookup</type>
-    <referenceTo>MA_Saved_Configuration__c</referenceTo>
+    <referenceTo>GTM_Saved_Configuration__c</referenceTo>
     <relationshipLabel>Assessment Requests</relationshipLabel>
     <relationshipName>GTM_Assessment_Requests</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>

@@ -244,24 +244,27 @@ private class GtmAssessmentRequestControllerTest {
             result.assessmentRequestId,
             'A structured assessment request record should always be filed'
         );
-        GTM_Assessment_Request__c req = [
-            SELECT Requester_Name__c, Requester_Email__c, Company__c, Status__c,
-                   Contact__c, Opportunity__c, Saved_Configuration__c
-            FROM GTM_Assessment_Request__c
-            WHERE Id = :result.assessmentRequestId
-        ];
-        Assert.areEqual('Alex Rivera', req.Requester_Name__c);
-        Assert.areEqual('alex.rivera@example.com', req.Requester_Email__c);
-        Assert.areEqual('New', req.Status__c);
-        Assert.areEqual(result.contactId, req.Contact__c);
+        // Dynamic query avoids a static compile-time reference to
+        // Saved_Configuration__c, which would otherwise block that field
+        // from being deleted and recreated when its referenceTo changes.
+        Id filedRequestId = result.assessmentRequestId;
+        SObject req = Database.query(
+            'SELECT Requester_Name__c, Requester_Email__c, Company__c, Status__c, ' +
+            'Contact__c, Opportunity__c, Saved_Configuration__c ' +
+            'FROM GTM_Assessment_Request__c WHERE Id = :filedRequestId'
+        )[0];
+        Assert.areEqual('Alex Rivera', req.get('Requester_Name__c'));
+        Assert.areEqual('alex.rivera@example.com', req.get('Requester_Email__c'));
+        Assert.areEqual('New', req.get('Status__c'));
+        Assert.areEqual(result.contactId, req.get('Contact__c'));
         // A submission from a named company is a lead, so an Opportunity is
         // raised for it whether or not it came from a client link -- see
         // GtmAssessmentRequestController.ensureOpportunity, which branches on
         // the link only to decide whether to stamp Engagement_Link__c. This
         // test used to assert the opposite and had been failing on it; what it
         // is actually guarding is that no link means no link, below.
-        Assert.isNotNull(req.Opportunity__c, 'A named company still raises a deal');
-        Assert.isNull(req.Saved_Configuration__c, 'No client link was supplied');
+        Assert.isNotNull(req.get('Opportunity__c'), 'A named company still raises a deal');
+        Assert.isNull(req.get('Saved_Configuration__c'), 'No client link was supplied');
     }
 
     @isTest
@@ -299,13 +302,13 @@ private class GtmAssessmentRequestControllerTest {
 
         Assert.areEqual(opp.Id, result.opportunityId, 'Opportunity should carry through to the result');
 
-        GTM_Assessment_Request__c req = [
-            SELECT Opportunity__c, Saved_Configuration__c, Contact__c
-            FROM GTM_Assessment_Request__c
-            WHERE Id = :result.assessmentRequestId
-        ];
-        Assert.areEqual(opp.Id, req.Opportunity__c);
-        Assert.areEqual(savedConfig.Id, req.Saved_Configuration__c);
+        Id filedRequestId = result.assessmentRequestId;
+        SObject req = Database.query(
+            'SELECT Opportunity__c, Saved_Configuration__c, Contact__c ' +
+            'FROM GTM_Assessment_Request__c WHERE Id = :filedRequestId'
+        )[0];
+        Assert.areEqual(opp.Id, req.get('Opportunity__c'));
+        Assert.areEqual(savedConfig.Id, req.get('Saved_Configuration__c'));
 
         Contact created = [SELECT OwnerId FROM Contact WHERE Id = :result.contactId];
         Assert.areEqual(
@@ -489,11 +492,11 @@ private class GtmAssessmentRequestControllerTest {
         // The malformed id is ignored, not fatal: the submission still resolves
         // its account and raises a deal. What must not happen is the bad id
         // being stored as though it were a real link.
-        GTM_Assessment_Request__c filed = [
-            SELECT Saved_Configuration__c FROM GTM_Assessment_Request__c
-            WHERE Id = :result.assessmentRequestId
-        ];
-        Assert.isNull(filed.Saved_Configuration__c, 'A malformed id must not be stored as a link');
+        Id filedRequestId = result.assessmentRequestId;
+        SObject filed = Database.query(
+            'SELECT Saved_Configuration__c FROM GTM_Assessment_Request__c WHERE Id = :filedRequestId'
+        )[0];
+        Assert.isNull(filed.get('Saved_Configuration__c'), 'A malformed id must not be stored as a link');
     }
 
     // ------------------------------------------------------------ token gate

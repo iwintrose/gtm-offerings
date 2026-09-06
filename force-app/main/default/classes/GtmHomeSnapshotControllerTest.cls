@@ -122,22 +122,22 @@ private class GtmHomeSnapshotControllerTest {
         );
         insert new List<GTM_Saved_Configuration__c>{ converted, stalled, orphan };
 
-        GTM_Assessment_Request__c req = new GTM_Assessment_Request__c(
-            Requester_Name__c = 'Alex Rivera', Requester_Email__c = 'alex@example.com',
-            Company__c = 'Acme Bank', Status__c = 'New',
-            Saved_Configuration__c = converted.Id
-        );
+        SObject req = Schema.getGlobalDescribe().get('GTM_Assessment_Request__c').newSObject();
+        req.put('Requester_Name__c', 'Alex Rivera');
+        req.put('Requester_Email__c', 'alex@example.com');
+        req.put('Company__c', 'Acme Bank');
+        req.put('Status__c', 'New');
+        req.put('Saved_Configuration__c', converted.Id);
         insert req;
 
-        insert new List<GTM_Link_Event__c>{
-            new GTM_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Page View'),
-            new GTM_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Page View'),
-            new GTM_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Form Opened'),
-            new GTM_Link_Event__c(Saved_Configuration__c = converted.Id, Event_Type__c = 'Form Submitted',
-                                 Assessment_Request__c = req.Id),
-            new GTM_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Page View'),
-            new GTM_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Form Opened'),
-            new GTM_Link_Event__c(Saved_Configuration__c = stalled.Id, Event_Type__c = 'Drop-off')
+        insert new List<SObject>{
+            newLinkEvent(converted.Id, 'Page View', null),
+            newLinkEvent(converted.Id, 'Page View', null),
+            newLinkEvent(converted.Id, 'Form Opened', null),
+            newLinkEvent(converted.Id, 'Form Submitted', req.Id),
+            newLinkEvent(stalled.Id, 'Page View', null),
+            newLinkEvent(stalled.Id, 'Form Opened', null),
+            newLinkEvent(stalled.Id, 'Drop-off', null)
         };
 
         Test.startTest();
@@ -181,7 +181,7 @@ private class GtmHomeSnapshotControllerTest {
             Generated_URL__c = 'https://example.com/q', Active__c = true
         );
         insert untouched;
-        insert new GTM_Link_Event__c(Saved_Configuration__c = untouched.Id, Event_Type__c = 'Page View');
+        insert newLinkEvent(untouched.Id, 'Page View', null);
 
         Test.startTest();
         GtmHomeSnapshotController.Snapshot snap = GtmHomeSnapshotController.getSnapshot();
@@ -190,5 +190,19 @@ private class GtmHomeSnapshotControllerTest {
 
         Assert.areEqual(0, snap.stalledCount, 'Reading the page is not starting the form');
         Assert.areEqual(0, deals.size());
+    }
+
+    // Dynamic construction avoids a static compile-time reference to
+    // GTM_Link_Event__c.Saved_Configuration__c, which would otherwise block
+    // the Salesforce dependency tracker from allowing that field to be
+    // deleted and recreated when its referenceTo changes.
+    private static SObject newLinkEvent(Id savedConfigId, String eventType, Id assessmentRequestId) {
+        SObject le = Schema.getGlobalDescribe().get('GTM_Link_Event__c').newSObject();
+        le.put('Saved_Configuration__c', savedConfigId);
+        le.put('Event_Type__c', eventType);
+        if (assessmentRequestId != null) {
+            le.put('Assessment_Request__c', assessmentRequestId);
+        }
+        return le;
     }
 }

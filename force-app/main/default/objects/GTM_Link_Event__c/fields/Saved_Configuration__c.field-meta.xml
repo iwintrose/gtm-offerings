@@ -3,7 +3,7 @@
     <fullName>Saved_Configuration__c</fullName>
     <label>Saved Configuration</label>
     <type>Lookup</type>
-    <referenceTo>MA_Saved_Configuration__c</referenceTo>
+    <referenceTo>GTM_Saved_Configuration__c</referenceTo>
     <relationshipLabel>Link Events</relationshipLabel>
     <relationshipName>GTM_Link_Events</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
