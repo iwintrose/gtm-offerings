@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Session_Id__c</fullName>
+    <label>Session ID</label>
+    <type>Text</type>
+    <length>80</length>
+    <externalId>false</externalId>
+    <unique>false</unique>
+    <description>Browser-generated UUID grouping all events from a single visit.</description>
+</CustomField>

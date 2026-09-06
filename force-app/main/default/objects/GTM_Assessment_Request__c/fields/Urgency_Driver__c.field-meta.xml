@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Urgency_Driver__c</fullName>
+    <label>What's Driving the Timeline?</label>
+    <description>Contract renewal, platform end-of-life, board mandate, acquisition, or other specific event creating urgency.</description>
+    <required>false</required>
+    <length>255</length>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
