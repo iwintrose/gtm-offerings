@@ -10,10 +10,11 @@
             <objects>
                 <object>GTM_Assessment_Request__c</object>
                 <object>MA_Saved_Configuration__c</object>
+                <object>GTM_Saved_Configuration__c</object>
             </objects>
             <property name="parentIsSavedConfiguration" type="Boolean" default="false"
                       label="Placed on the Engagement Link page"
-                      description="Turn on when this component sits on the Engagement Link (MA_Saved_Configuration__c) record page -- recordId is the link itself there, not an Assessment Request." />
+                      description="Turn on when this component sits on the Engagement Link (GTM_Saved_Configuration__c) record page -- recordId is the link itself there, not an Assessment Request." />
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
