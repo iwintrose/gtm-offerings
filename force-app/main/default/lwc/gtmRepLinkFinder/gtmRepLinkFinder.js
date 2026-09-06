@@ -2,6 +2,7 @@ import { LightningElement, track, wire } from 'lwc';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import ACCOUNT_NAME_FIELD from '@salesforce/schema/Account.Name';
 import getContactsWithLinks from '@salesforce/apex/GtmRepLinkFinderController.getContactsWithLinks';
+import setActive from '@salesforce/apex/GtmSavedConfigurationController.setActive';
 
 /**
  * A rep's own "find a link I already sent" flow (D7).
@@ -31,6 +32,7 @@ export default class GtmRepLinkFinder extends LightningElement {
     @track contactGroups = [];
     @track selectedContactId = '';
     @track selectedLink = null;
+    @track togglingIds = [];
 
     @wire(getRecord, { recordId: '$accountId', fields: [ACCOUNT_NAME_FIELD] })
     wiredAccount({ data }) {
@@ -152,6 +154,8 @@ export default class GtmRepLinkFinder extends LightningElement {
             hasDeal: !!l.dealName,
             dealStage: l.dealStage,
             createdLabel: l.createdDate ? new Date(l.createdDate).toLocaleDateString() : '',
+            isActive: l.active !== false,
+            isToggling: this.togglingIds.indexOf(l.recordId) !== -1,
             statusLabel: l.active === false ? 'Inactive' : 'Active',
             statusClass: l.active === false ? 'rlf-status rlf-status--off' : 'rlf-status',
             _raw: l
@@ -170,6 +174,35 @@ export default class GtmRepLinkFinder extends LightningElement {
         if (!row) return;
         this.setCfgIdParam(row.recordId);
         this.selectedLink = row._raw;
+    }
+
+    /** Whether a link still works for the client it was sent to, right from
+     *  the row a rep is already looking at -- no need to open the link
+     *  first just to find the switch that gates it (GtmSavedConfigurationController
+     *  .setActive already exists and is what the Saved Links bar itself
+     *  uses; this is the same one write path, not a new one). */
+    handleToggleActive(event) {
+        const id = event.currentTarget.dataset.id;
+        const nextActive = event.detail.checked;
+        if (this.togglingIds.indexOf(id) !== -1) return;
+        this.togglingIds = [...this.togglingIds, id];
+
+        setActive({ recordId: id, active: nextActive })
+            .then(() => {
+                this.contactGroups = this.contactGroups.map((g) => {
+                    if (g.contactId !== this.selectedContactId) return g;
+                    return {
+                        ...g,
+                        links: g.links.map((l) => (l.recordId === id ? { ...l, active: nextActive } : l))
+                    };
+                });
+            })
+            .catch((e) => {
+                this.loadError = (e && e.body && e.body.message) || 'This link’s status could not be updated.';
+            })
+            .finally(() => {
+                this.togglingIds = this.togglingIds.filter((existingId) => existingId !== id);
+            });
     }
 
     get selectedLinkOfferingKey() {

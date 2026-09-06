@@ -80,11 +80,10 @@
           <p class="rlf-step-label">Which link?</p>
           <ul class="rlf-list">
             <template for:each={linkRows} for:item="l">
-              <li key={l.recordId}>
+              <li key={l.recordId} class="rlf-row-li">
                 <button type="button" class="rlf-row rlf-row--link" data-id={l.recordId} onclick={handleSelectLink}>
                   <span class="rlf-row-top">
                     <span class="rlf-row-main">{l.company}</span>
-                    <span class={l.statusClass}>{l.statusLabel}</span>
                   </span>
                   <span class="rlf-row-sub">
                     {l.offeringLabel} · {l.industryLabel}
@@ -92,6 +91,21 @@
                   </span>
                   <span class="rlf-row-date">Saved {l.createdLabel}</span>
                 </button>
+                <div class="rlf-row-toggle">
+                  <lightning-input
+                    type="toggle"
+                    label={l.statusLabel}
+                    variant="label-hidden"
+                    message-toggle-active="Active"
+                    message-toggle-inactive="Inactive"
+                    checked={l.isActive}
+                    disabled={l.isToggling}
+                    data-id={l.recordId}
+                    data-active={l.isActive}
+                    onchange={handleToggleActive}
+                  ></lightning-input>
+                  <span class={l.statusClass}>{l.statusLabel}</span>
+                </div>
               </li>
             </template>
           </ul>

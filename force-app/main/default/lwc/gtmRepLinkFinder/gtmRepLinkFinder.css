@@ -54,11 +54,24 @@
 .rlf-step-label { margin: 0 0 .6rem; font-size: 13px; font-weight: 700; }
 
 .rlf-list { list-style: none; margin: 0 0 .75rem; padding: 0; }
+.rlf-row-li {
+    display: flex; align-items: stretch; gap: .5rem; margin-bottom: .4rem;
+}
 .rlf-row {
     display: flex; flex-direction: column; align-items: flex-start; gap: .1rem;
-    width: 100%; text-align: left; background: none; border: 1px solid #e5e5e5;
-    border-radius: .2rem; padding: .55rem .7rem; margin-bottom: .4rem;
+    flex: 1 1 auto; min-width: 0; text-align: left; background: none; border: 1px solid #e5e5e5;
+    border-radius: .2rem; padding: .55rem .7rem;
     cursor: pointer; transition: background .12s ease, border-color .12s ease;
+}
+/* The active/inactive switch for the client-facing link -- right on the
+   row a rep is already looking at, not a control they'd have to open the
+   link first to find (the write path is GtmSavedConfigurationController
+   .setActive, the same one the Saved Links bar already uses). A sibling
+   of the row button, not nested inside it: a toggle inside a <button>
+   would double-fire on every click. */
+.rlf-row-toggle {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .2rem; flex: none; padding: 0 .4rem;
 }
 .rlf-row:hover { background: #f7f9fc; border-color: #c9d7ee; }
 .rlf-row-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
