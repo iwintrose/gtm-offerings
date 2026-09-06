@@ -50,16 +50,14 @@ public with sharing class GtmSavedConfigurationController {
          * Company text happens to resolve/create. */
         @AuraEnabled
         public String accountId { get; set; }
-        /** When non-blank, sets Link_Password__c to this value (guests must
-         * enter it before viewing the shared link). Omit or leave blank to
-         * leave the existing password untouched -- set clearLinkPassword to
-         * true instead to explicitly remove it. */
+        /** Sets Link_Password__c to this value (guests must enter it before
+         * viewing the shared link). Every link requires a password -- the
+         * wizard always sends one, generated or custom, with no way to
+         * turn protection off. Omit or leave blank only from a caller that
+         * predates this and hasn't resaved yet; the existing password is
+         * left untouched in that case, never cleared. */
         @AuraEnabled
         public String linkPassword { get; set; }
-        /** When true and linkPassword is blank, clears Link_Password__c on
-         * the record. Ignored when linkPassword is non-blank. */
-        @AuraEnabled
-        public Boolean clearLinkPassword { get; set; }
         /** Brand / marketing website for the prospect's company -- used to
          * set Account.Website when the Account is newly created. */
         @AuraEnabled
@@ -286,8 +284,6 @@ public with sharing class GtmSavedConfigurationController {
         }
         if (String.isNotBlank(input.linkPassword)) {
             record.Link_Password__c = input.linkPassword.trim();
-        } else if (input.clearLinkPassword == true) {
-            record.Link_Password__c = null;
         }
 
         try {

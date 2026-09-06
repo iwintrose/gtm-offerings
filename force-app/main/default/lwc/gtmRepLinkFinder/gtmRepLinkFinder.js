@@ -161,7 +161,6 @@ export default class GtmRepLinkFinder extends LightningElement {
             statusLabel: l.active === false ? 'Inactive' : 'Active',
             statusClass: l.active === false ? 'rlf-status rlf-status--off' : 'rlf-status',
             generatedUrl: l.generatedUrl,
-            passwordLabel: l.hasPassword ? 'Password set' : 'No password',
             isRegenerating: this.regeneratingIds.indexOf(l.recordId) !== -1,
             _raw: l
         }));

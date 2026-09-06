@@ -175,7 +175,11 @@ export default class GtmConfigWizard extends LightningElement {
     @track _brandLookupError = '';
     @track _brandLookupDone = false;
 
-    @track _passwordMode = 'auto'; // 'auto' | 'custom' | 'off'
+    /** 'auto' | 'custom' -- every link requires a password, no exceptions;
+     *  there is deliberately no third "off" mode. Three real production
+     *  links (TD Bank, Medtronic, LA Metro) were found running with none
+     *  at all because that option existed and a rep once clicked it. */
+    @track _passwordMode = 'auto';
     @track _generatedPassword = '';
     @track _customPassword = '';
     _passwordStepEntered = false;
@@ -675,7 +679,6 @@ export default class GtmConfigWizard extends LightningElement {
 
     get passwordKeepClass()   { return this._passwordMode === 'auto'   ? 'mw-chip sel' : 'mw-chip'; }
     get passwordCustomClass() { return this._passwordMode === 'custom' ? 'mw-chip sel' : 'mw-chip'; }
-    get passwordOffClass()    { return this._passwordMode === 'off'    ? 'mw-chip sel' : 'mw-chip'; }
     get showCustomPasswordInput() { return this._passwordMode === 'custom'; }
 
     _ensureGeneratedPassword() {
@@ -686,7 +689,6 @@ export default class GtmConfigWizard extends LightningElement {
     }
 
     handlePasswordKeep()   { this._passwordMode = 'auto'; }
-    handlePasswordOff()    { this._passwordMode = 'off'; }
     handlePasswordCustom() {
         this._passwordMode = 'custom';
         if (!this._customPassword) this._customPassword = this._generatedPassword;
@@ -895,9 +897,16 @@ export default class GtmConfigWizard extends LightningElement {
         this._saving = true;
         this._saveError = '';
         try {
-            const linkPassword = this._passwordMode === 'off'
-                ? null
-                : (this._passwordMode === 'custom' ? this._customPassword : this._generatedPassword);
+            // Every save needs a real password value ready, not just the
+            // final one on step 7 -- autosave fires from step 1 onward
+            // (see _scheduleAutoSave), and a rep who never reaches step 7
+            // still creates a real record. This is what actually closed
+            // the gap that left three production links (TD Bank,
+            // Medtronic, LA Metro) with none at all -- removing the "off"
+            // chip alone would not have, since autosave could still send
+            // a blank password before the rep ever got there.
+            this._ensureGeneratedPassword();
+            const linkPassword = this._passwordMode === 'custom' ? this._customPassword : this._generatedPassword;
 
             const url = this._buildUrl();
             const recordId = await saveConfiguration({
@@ -919,7 +928,6 @@ export default class GtmConfigWizard extends LightningElement {
                     opportunityId: this._dealId || null,
                     accountId: this._selectedContact ? this._selectedContact.accountId : null,
                     linkPassword,
-                    clearLinkPassword: this._passwordMode === 'off',
                     website: this._brandDomain || null,
                     accountIndustry: this._industry || null
                 }

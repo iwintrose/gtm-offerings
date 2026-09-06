@@ -107,26 +107,21 @@
                   <span class={l.statusClass}>{l.statusLabel}</span>
                 </div>
                 <div class="rlf-row-actions">
-                  <lightning-button-icon
+                  <lightning-button
                     icon-name="utility:copy"
-                    variant="border-filled"
-                    size="small"
-                    alternative-text="Copy link"
-                    title="Copy link"
+                    label="Copy link"
+                    variant="neutral"
                     data-url={l.generatedUrl}
                     onclick={handleCopyLink}
-                  ></lightning-button-icon>
-                  <lightning-button-icon
+                  ></lightning-button>
+                  <lightning-button
                     icon-name="utility:key"
-                    variant="border-filled"
-                    size="small"
-                    alternative-text="New password"
-                    title="New password"
+                    label="New password"
+                    variant="neutral"
                     data-id={l.recordId}
                     disabled={l.isRegenerating}
                     onclick={handleRegeneratePassword}
-                  ></lightning-button-icon>
-                  <span class="rlf-row-pw">{l.passwordLabel}</span>
+                  ></lightning-button>
                 </div>
               </li>
             </template>
