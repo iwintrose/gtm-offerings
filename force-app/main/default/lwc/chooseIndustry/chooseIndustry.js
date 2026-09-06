@@ -65,7 +65,7 @@ export default class ChooseIndustry extends LightningElement {
     /** Which modelled page this reads. One template, many offerings. */
     @api templateType = 'industry-chooser';
 
-    // MA_Page_Content__c flat map: 'section::field' -> resolved string.
+    // GTM_Page_Content__c flat map: 'section::field' -> resolved string.
     @track _cms = {};
     @api offeringKey = DEFAULT_OFFERING_KEY;
 

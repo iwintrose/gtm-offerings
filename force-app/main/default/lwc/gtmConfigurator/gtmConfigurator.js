@@ -38,7 +38,7 @@ export default class GtmConfigurator extends LightningElement {
     /** Which modelled page this reads. One template, many offerings. */
     @api templateType = 'configurator';
 
-    // MA_Page_Content__c flat map: 'section::field' -> resolved string.
+    // GTM_Page_Content__c flat map: 'section::field' -> resolved string.
     // Only the parts of this page that are the same for every client come
     // from here. The hero is assembled from the company, industry and source
     // platform at render time, so it is not flat content and is not modelled:
@@ -251,7 +251,7 @@ export default class GtmConfigurator extends LightningElement {
     @track _industries = [];
 
     _cmsDefaults = {};
-    // MA_Page_Content__c flat map: key = 'section::field', value = resolved string
+    // GTM_Page_Content__c flat map: key = 'section::field', value = resolved string
     @track _cms = {};
 
     // -------------------------------------------------------------- lifecycle
@@ -449,7 +449,7 @@ export default class GtmConfigurator extends LightningElement {
 
     get builderUrl() { return buildBuilderUrl(this._orgUrl); }
     get contentManagerUrl() {
-        return this._orgUrl ? `${this._orgUrl}/lightning/o/MA_Page_Content__c/list` : '#';
+        return this._orgUrl ? `${this._orgUrl}/lightning/o/GTM_Page_Content__c/list` : '#';
     }
 
     disconnectedCallback() {

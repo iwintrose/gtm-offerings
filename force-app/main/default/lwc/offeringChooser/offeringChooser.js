@@ -115,7 +115,7 @@ export default class OfferingChooser extends LightningElement {
 
     @track _loadError = '';
     @track theme = null;
-    // MA_Page_Content__c flat map: 'section::field' -> resolved string.
+    // GTM_Page_Content__c flat map: 'section::field' -> resolved string.
     @track _cms = {};
     @track _tiles = [];
     _orgUrl = '';

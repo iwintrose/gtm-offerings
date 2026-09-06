@@ -22,10 +22,10 @@ public with sharing class GtmPageSectionController {
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
             return out;
         }
-        for (MA_Page_Section__c sec : [
+        for (GTM_Page_Section__c sec : [
             SELECT Id, Section_Key__c, Label__c, Help_Text__c, Layout_Type__c,
                    Width__c, Sort_Order__c, Active__c, Status__c, Draft_State__c
-            FROM   MA_Page_Section__c
+            FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             LIMIT 200
@@ -64,18 +64,18 @@ public with sharing class GtmPageSectionController {
         }
         Set<Id> ids = new Set<Id>();
         for (String raw : sectionIds) { if (String.isNotBlank(raw)) ids.add((Id) raw); }
-        Map<Id, MA_Page_Section__c> byId = new Map<Id, MA_Page_Section__c>([
-            SELECT Id, Sort_Order__c, Draft_State__c FROM MA_Page_Section__c WHERE Id IN :ids
+        Map<Id, GTM_Page_Section__c> byId = new Map<Id, GTM_Page_Section__c>([
+            SELECT Id, Sort_Order__c, Draft_State__c FROM GTM_Page_Section__c WHERE Id IN :ids
         ]);
 
         // The new order is a pending change, not a write to the live page.
         // Reordering used to take effect the moment you dropped a section,
         // which made structure behave differently from every other edit.
-        List<MA_Page_Section__c> updates = new List<MA_Page_Section__c>();
+        List<GTM_Page_Section__c> updates = new List<GTM_Page_Section__c>();
         Integer position = 0;
         for (String raw : sectionIds) {
             position += 10;
-            MA_Page_Section__c sec = byId.get((Id) raw);
+            GTM_Page_Section__c sec = byId.get((Id) raw);
             if (sec == null) continue;
             putDraft(sec, 'sortOrder', position, sec.Sort_Order__c);
             updates.add(sec);
@@ -92,9 +92,9 @@ public with sharing class GtmPageSectionController {
     }
 
     /** The ids among these that carry an unpublished change. */
-    private static List<String> draftedIds(List<MA_Page_Section__c> secs) {
+    private static List<String> draftedIds(List<GTM_Page_Section__c> secs) {
         List<String> out = new List<String>();
-        for (MA_Page_Section__c s : secs) {
+        for (GTM_Page_Section__c s : secs) {
             if (String.isNotBlank(s.Draft_State__c)) out.add(String.valueOf(s.Id));
         }
         return out;
@@ -108,13 +108,13 @@ public with sharing class GtmPageSectionController {
         if (String.isBlank(sectionId) || active == null) {
             throw new AuraHandledException('A section id and active flag are both required.');
         }
-        List<MA_Page_Section__c> found = [
-            SELECT Id, Active__c, Draft_State__c FROM MA_Page_Section__c WHERE Id = :sectionId LIMIT 1
+        List<GTM_Page_Section__c> found = [
+            SELECT Id, Active__c, Draft_State__c FROM GTM_Page_Section__c WHERE Id = :sectionId LIMIT 1
         ];
         if (found.isEmpty()) {
             throw new AuraHandledException('That section no longer exists.');
         }
-        MA_Page_Section__c sec = found[0];
+        GTM_Page_Section__c sec = found[0];
         putDraft(sec, 'active', active, sec.Active__c);
         try {
             update sec;
@@ -161,7 +161,7 @@ public with sharing class GtmPageSectionController {
         // The key is the address of every field under it, so a collision would
         // silently merge two sections' content.
         if (![
-            SELECT Id FROM MA_Page_Section__c
+            SELECT Id FROM GTM_Page_Section__c
             WHERE Offering_Key__c = :offeringKey
             AND   Template_Type__c = :templateType
             AND   Section_Key__c = :key
@@ -172,7 +172,7 @@ public with sharing class GtmPageSectionController {
             );
         }
 
-        MA_Page_Section__c sec = new MA_Page_Section__c();
+        GTM_Page_Section__c sec = new GTM_Page_Section__c();
         sec.Section_Address__c = GtmContentAddress.forSection(offeringKey, templateType, key);
         sec.Offering_Key__c    = offeringKey;
         sec.Template_Type__c   = templateType;
@@ -186,12 +186,12 @@ public with sharing class GtmPageSectionController {
         sec.Status__c          = 'Draft';
         sec.Sort_Order__c      = nextSortOrder(offeringKey, templateType);
 
-        List<MA_Page_Content__c> rows = new List<MA_Page_Content__c>();
+        List<GTM_Page_Content__c> rows = new List<GTM_Page_Content__c>();
         Integer position = 0;
         for (FieldSeed f : (fields == null ? new List<FieldSeed>() : fields)) {
             if (f == null || String.isBlank(f.fieldKey)) continue;
             position += 10;
-            MA_Page_Content__c row = new MA_Page_Content__c();
+            GTM_Page_Content__c row = new GTM_Page_Content__c();
             row.Content_Address__c = GtmContentAddress.forField(offeringKey, templateType, key, f.fieldKey);
             row.Offering_Key__c    = offeringKey;
             row.Template_Type__c   = templateType;
@@ -234,19 +234,19 @@ public with sharing class GtmPageSectionController {
         if (String.isBlank(sectionId)) {
             throw new AuraHandledException('A section id is required.');
         }
-        List<MA_Page_Section__c> found = [
+        List<GTM_Page_Section__c> found = [
             SELECT Id, Offering_Key__c, Template_Type__c, Section_Key__c,
                    Status__c, Draft_State__c
-            FROM   MA_Page_Section__c
+            FROM   GTM_Page_Section__c
             WHERE  Id = :sectionId
             LIMIT  1
         ];
         if (found.isEmpty()) {
             throw new AuraHandledException('That section no longer exists.');
         }
-        MA_Page_Section__c sec = found[0];
-        List<MA_Page_Content__c> rows = [
-            SELECT Id FROM MA_Page_Content__c
+        GTM_Page_Section__c sec = found[0];
+        List<GTM_Page_Content__c> rows = [
+            SELECT Id FROM GTM_Page_Content__c
             WHERE  Offering_Key__c  = :sec.Offering_Key__c
             AND    Template_Type__c = :sec.Template_Type__c
             AND    Section_Key__c   = :sec.Section_Key__c
@@ -287,13 +287,13 @@ public with sharing class GtmPageSectionController {
         if (String.isBlank(sectionId)) {
             throw new AuraHandledException('A section id is required.');
         }
-        List<MA_Page_Section__c> found = [
-            SELECT Id, Draft_State__c FROM MA_Page_Section__c WHERE Id = :sectionId LIMIT 1
+        List<GTM_Page_Section__c> found = [
+            SELECT Id, Draft_State__c FROM GTM_Page_Section__c WHERE Id = :sectionId LIMIT 1
         ];
         if (found.isEmpty()) {
             throw new AuraHandledException('That section no longer exists.');
         }
-        MA_Page_Section__c sec = found[0];
+        GTM_Page_Section__c sec = found[0];
         putDraft(sec, 'deleted', null, null);
         try {
             update sec;
@@ -331,10 +331,10 @@ public with sharing class GtmPageSectionController {
             );
         }
         String address = GtmContentAddress.forField(offeringKey, templateType, sectionKey, fieldKey);
-        if (![SELECT Id FROM MA_Page_Content__c WHERE Content_Address__c = :address LIMIT 1].isEmpty()) {
+        if (![SELECT Id FROM GTM_Page_Content__c WHERE Content_Address__c = :address LIMIT 1].isEmpty()) {
             throw new AuraHandledException('That field already exists on this section.');
         }
-        MA_Page_Content__c row = new MA_Page_Content__c();
+        GTM_Page_Content__c row = new GTM_Page_Content__c();
         row.Content_Address__c = address;
         row.Offering_Key__c    = offeringKey;
         row.Template_Type__c   = templateType;
@@ -365,7 +365,7 @@ public with sharing class GtmPageSectionController {
     private static Decimal nextSortOrder(String offeringKey, String templateType) {
         AggregateResult[] top = [
             SELECT MAX(Sort_Order__c) top
-            FROM   MA_Page_Section__c
+            FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
         ];
@@ -422,7 +422,7 @@ public with sharing class GtmPageSectionController {
     // counterpart to Draft_Value__c — so one column covers order, visibility and
     // deletion without a column per verb.
 
-    public static Map<String, Object> draftOf(MA_Page_Section__c sec) {
+    public static Map<String, Object> draftOf(GTM_Page_Section__c sec) {
         if (sec == null || String.isBlank(sec.Draft_State__c)) return new Map<String, Object>();
         try {
             Object parsed = JSON.deserializeUntyped(sec.Draft_State__c);
@@ -441,7 +441,7 @@ public with sharing class GtmPageSectionController {
      * matches what is already published are removed rather than stored, so
      * moving a section and moving it back leaves nothing to publish.
      */
-    private static void putDraft(MA_Page_Section__c sec, String key, Object value, Object publishedValue) {
+    private static void putDraft(GTM_Page_Section__c sec, String key, Object value, Object publishedValue) {
         Map<String, Object> d = draftOf(sec);
         if (value == null || value == publishedValue) {
             d.remove(key);
@@ -451,13 +451,13 @@ public with sharing class GtmPageSectionController {
         sec.Draft_State__c = d.isEmpty() ? null : JSON.serialize(d);
     }
 
-    private static Decimal effectiveSort(MA_Page_Section__c sec) {
+    private static Decimal effectiveSort(GTM_Page_Section__c sec) {
         Object v = draftOf(sec).get('sortOrder');
         if (v == null) return sec.Sort_Order__c;
         return Decimal.valueOf(String.valueOf(v));
     }
 
-    private static Boolean effectiveActive(MA_Page_Section__c sec) {
+    private static Boolean effectiveActive(GTM_Page_Section__c sec) {
         Object v = draftOf(sec).get('active');
         if (v == null) return sec.Active__c;
         return Boolean.valueOf(v);
@@ -470,7 +470,7 @@ public with sharing class GtmPageSectionController {
 
     private static Decimal nextFieldSortOrder(String offeringKey, String templateType, String sectionKey) {
         AggregateResult[] top = [
-            SELECT MAX(Sort_Order__c) top FROM MA_Page_Content__c
+            SELECT MAX(Sort_Order__c) top FROM GTM_Page_Content__c
             WHERE Offering_Key__c = :offeringKey
             AND   Template_Type__c = :templateType
             AND   Section_Key__c = :sectionKey
@@ -490,14 +490,14 @@ public with sharing class GtmPageSectionController {
         if (String.isBlank(recordId)) {
             throw new AuraHandledException('A field id is required.');
         }
-        List<MA_Page_Content__c> found = [
+        List<GTM_Page_Content__c> found = [
             SELECT Id, Status__c, Text_Value__c, Rich_Value__c, JSON_Value__c
-            FROM   MA_Page_Content__c WHERE Id = :recordId LIMIT 1
+            FROM   GTM_Page_Content__c WHERE Id = :recordId LIMIT 1
         ];
         if (found.isEmpty()) {
             throw new AuraHandledException('That field no longer exists.');
         }
-        MA_Page_Content__c rec = found[0];
+        GTM_Page_Content__c rec = found[0];
         // Never published and never given a value: it exists only in the
         // editor, so removing it changes nothing anyone has seen.
         Boolean neverLive = rec.Status__c != 'Published'
@@ -521,7 +521,7 @@ public with sharing class GtmPageSectionController {
             throw new AuraHandledException('A field id is required.');
         }
         try {
-            update new MA_Page_Content__c(Id = recordId, Pending_Delete__c = false);
+            update new GTM_Page_Content__c(Id = recordId, Pending_Delete__c = false);
         } catch (DmlException e) {
             throw new AuraHandledException('The field could not be restored: ' + e.getMessage());
         }
@@ -535,12 +535,12 @@ public with sharing class GtmPageSectionController {
     @AuraEnabled
     public static void saveFieldOrder(List<String> recordIds) {
         if (recordIds == null || recordIds.isEmpty()) return;
-        List<MA_Page_Content__c> updates = new List<MA_Page_Content__c>();
+        List<GTM_Page_Content__c> updates = new List<GTM_Page_Content__c>();
         Integer position = 0;
         for (String id : recordIds) {
             if (String.isBlank(id)) continue;
             position += 10;
-            updates.add(new MA_Page_Content__c(Id = id, Sort_Order__c = position));
+            updates.add(new GTM_Page_Content__c(Id = id, Sort_Order__c = position));
         }
         try {
             update updates;
@@ -583,7 +583,7 @@ public with sharing class GtmPageSectionController {
             throw new AuraHandledException('This page has no starting shape defined.');
         }
         if (![
-            SELECT Id FROM MA_Page_Section__c
+            SELECT Id FROM GTM_Page_Section__c
             WHERE Offering_Key__c = :offeringKey AND Template_Type__c = :templateType
             LIMIT 1
         ].isEmpty()) {
@@ -592,15 +592,15 @@ public with sharing class GtmPageSectionController {
             );
         }
 
-        List<MA_Page_Section__c> newSections = new List<MA_Page_Section__c>();
-        List<MA_Page_Content__c> newRows = new List<MA_Page_Content__c>();
+        List<GTM_Page_Section__c> newSections = new List<GTM_Page_Section__c>();
+        List<GTM_Page_Content__c> newRows = new List<GTM_Page_Content__c>();
         Decimal order = 0;
         for (SectionSeed seed : sections) {
             String key = GtmContentAddress.normaliseKey(seed.sectionKey);
             if (String.isBlank(key)) continue;
             order += 10;
 
-            MA_Page_Section__c sec = new MA_Page_Section__c();
+            GTM_Page_Section__c sec = new GTM_Page_Section__c();
             sec.Section_Address__c = GtmContentAddress.forSection(offeringKey, templateType, key);
             sec.Offering_Key__c    = offeringKey;
             sec.Template_Type__c   = templateType;
@@ -620,7 +620,7 @@ public with sharing class GtmPageSectionController {
             for (FieldSeed f : (seed.fields == null ? new List<FieldSeed>() : seed.fields)) {
                 if (f == null || String.isBlank(f.fieldKey)) continue;
                 position += 10;
-                MA_Page_Content__c row = new MA_Page_Content__c();
+                GTM_Page_Content__c row = new GTM_Page_Content__c();
                 row.Content_Address__c = GtmContentAddress.forField(offeringKey, templateType, key, f.fieldKey);
                 row.Offering_Key__c    = offeringKey;
                 row.Template_Type__c   = templateType;

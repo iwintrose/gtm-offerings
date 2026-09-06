@@ -70,9 +70,9 @@ public without sharing class GtmAgentGetConfigState {
         }
 
         // Collect unique industry keys from active content records
-        List<MA_Page_Content__c> iRecs = [
+        List<GTM_Page_Content__c> iRecs = [
             SELECT Industry_Key__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Offering_Key__c  = 'migration-accelerator'
             AND    Template_Type__c = 'story'
             AND    Industry_Key__c != null
@@ -80,7 +80,7 @@ public without sharing class GtmAgentGetConfigState {
             LIMIT  200
         ];
         Set<String> seen = new Set<String>();
-        for (MA_Page_Content__c rec : iRecs) {
+        for (GTM_Page_Content__c rec : iRecs) {
             seen.add(rec.Industry_Key__c);
         }
         out.availableIndustries = new List<String>(seen);

@@ -1,5 +1,5 @@
 /**
- * Public, read-only reader for MA_Page_Content__c.
+ * Public, read-only reader for GTM_Page_Content__c.
  *
  * Why this class exists instead of reusing GtmPageContentController:
  * Apex class access is granted per CLASS, not per method. Granting an
@@ -31,10 +31,10 @@ public without sharing class GtmPageContentReader {
             return result;
         }
 
-        List<MA_Page_Content__c> records = [
+        List<GTM_Page_Content__c> records = [
             SELECT Section_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c, Industry_Key__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             AND    Active__c        = true
@@ -43,7 +43,7 @@ public without sharing class GtmPageContentReader {
             LIMIT 1000
         ];
 
-        for (MA_Page_Content__c rec : records) {
+        for (GTM_Page_Content__c rec : records) {
             String mapKey = rec.Section_Key__c + '::' + rec.Field_Key__c;
             if (!result.containsKey(mapKey)) {
                 result.put(mapKey, resolveValue(rec));
@@ -66,9 +66,9 @@ public without sharing class GtmPageContentReader {
             return layout;
         }
 
-        for (MA_Page_Section__c sec : [
+        for (GTM_Page_Section__c sec : [
             SELECT Section_Key__c, Label__c, Help_Text__c, Layout_Type__c, Width__c, Sort_Order__c
-            FROM   MA_Page_Section__c
+            FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             AND    Active__c        = true
@@ -122,7 +122,7 @@ public without sharing class GtmPageContentReader {
         @AuraEnabled public Decimal sortOrder;
     }
 
-    private static String resolveValue(MA_Page_Content__c rec) {
+    private static String resolveValue(GTM_Page_Content__c rec) {
         // icontext keeps a label and an icon together, so it stores where the
         // other structured type does. Anything unrecognised reads as text,
         // which is the one column every field has.
@@ -142,10 +142,10 @@ public without sharing class GtmPageContentReader {
         List<FieldMeta> out = new List<FieldMeta>();
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) return out;
         Set<String> seen = new Set<String>();
-        for (MA_Page_Content__c rec : [
+        for (GTM_Page_Content__c rec : [
             SELECT Section_Key__c, Field_Key__c, Field_Type__c, Label__c,
                    Css_Class__c, Html_Id__c, Inline_Style__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             AND    Active__c        = true
@@ -195,8 +195,8 @@ public without sharing class GtmPageContentReader {
     public static List<OfferingTile> getOfferingTiles() {
         List<OfferingTile> out = new List<OfferingTile>();
         Map<String, OfferingTile> byKey = new Map<String, OfferingTile>();
-        for (MA_Offering__mdt off : [
-            SELECT Offering_Key__c, Label__c FROM MA_Offering__mdt ORDER BY Label__c
+        for (GTM_Offering__mdt off : [
+            SELECT Offering_Key__c, Label__c FROM GTM_Offering__mdt ORDER BY Label__c
         ]) {
             if (String.isBlank(off.Offering_Key__c)) continue;
             OfferingTile t = new OfferingTile();
@@ -208,10 +208,10 @@ public without sharing class GtmPageContentReader {
         }
         if (byKey.isEmpty()) return out;
 
-        for (MA_Page_Content__c rec : [
+        for (GTM_Page_Content__c rec : [
             SELECT Offering_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Template_Type__c = 'offerings-listing'
             AND    Section_Key__c   = 'tile'
             AND    Active__c        = true
@@ -272,10 +272,10 @@ public without sharing class GtmPageContentReader {
         // editor listed six rows for a single element of the page, and the
         // same industry's copy existed twice.
         Map<String, IndustryProfile> bySection = new Map<String, IndustryProfile>();
-        for (MA_Page_Content__c rec : [
+        for (GTM_Page_Content__c rec : [
             SELECT Section_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Offering_Key__c  = :INDUSTRY_OWNER
             AND    Template_Type__c = :INDUSTRY_TEMPLATE
             AND    Active__c        = true

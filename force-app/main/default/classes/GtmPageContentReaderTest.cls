@@ -4,11 +4,11 @@ private class GtmPageContentReaderTest {
     private static final String OFFERING = 'ma-migrator';
     private static final String TMPL = 'story';
 
-    private static MA_Page_Content__c row(
+    private static GTM_Page_Content__c row(
         String section, String field, String type,
         String text, String rich, String json, String industry, Integer sortOrder
     ) {
-        return new MA_Page_Content__c(
+        return new GTM_Page_Content__c(
             Offering_Key__c  = OFFERING,
             Template_Type__c = TMPL,
             Section_Key__c   = section,
@@ -25,7 +25,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void resolvesEachFieldTypeFromItsOwnColumn() {
-        insert new List<MA_Page_Content__c>{
+        insert new List<GTM_Page_Content__c>{
             row('hero', 'eyebrow',  'text', 'Eyebrow copy', null, null, null, 1),
             row('hero', 'headline', 'rich', null, '<strong>Rich</strong>', null, null, 2),
             row('problem', 'chips', 'json', null, null, '["a","b"]', null, 3)
@@ -42,7 +42,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void industryRowWinsOverOfferingDefault() {
-        insert new List<MA_Page_Content__c>{
+        insert new List<GTM_Page_Content__c>{
             row('hero', 'headline', 'text', 'Generic', null, null, null, 1),
             row('hero', 'headline', 'text', 'Retail', null, null, 'retail', 2)
         };
@@ -56,7 +56,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void otherIndustryRowsAreExcluded() {
-        insert new List<MA_Page_Content__c>{
+        insert new List<GTM_Page_Content__c>{
             row('hero', 'headline', 'text', 'Generic', null, null, null, 1),
             row('hero', 'subhead',  'text', 'Finance only', null, null, 'finance', 2)
         };
@@ -71,7 +71,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void inactiveRowsExcluded() {
-        MA_Page_Content__c rec = row('hero', 'headline', 'text', 'Hidden', null, null, null, 1);
+        GTM_Page_Content__c rec = row('hero', 'headline', 'text', 'Hidden', null, null, null, 1);
         rec.Active__c = false;
         insert rec;
 
@@ -84,7 +84,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void wrongTemplateExcluded() {
-        MA_Page_Content__c other = row('hero', 'headline', 'text', 'Configurator copy', null, null, null, 1);
+        GTM_Page_Content__c other = row('hero', 'headline', 'text', 'Configurator copy', null, null, null, 1);
         other.Template_Type__c = 'configurator';
         insert other;
 
@@ -108,8 +108,8 @@ private class GtmPageContentReaderTest {
 
     // ─── getPageLayout ────────────────────────────────────────────────────────
 
-    private static MA_Page_Section__c section(String key, String layout, Integer sortOrder) {
-        return new MA_Page_Section__c(
+    private static GTM_Page_Section__c section(String key, String layout, Integer sortOrder) {
+        return new GTM_Page_Section__c(
             Section_Address__c = OFFERING + '::' + TMPL + '::' + key,
             Offering_Key__c    = OFFERING,
             Template_Type__c   = TMPL,
@@ -124,7 +124,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void layoutReturnsSectionsInSortOrder() {
-        insert new List<MA_Page_Section__c>{
+        insert new List<GTM_Page_Section__c>{
             section('closing', 'closing', 30),
             section('hero', 'hero', 10),
             section('faq', 'faq', 20)
@@ -145,7 +145,7 @@ private class GtmPageContentReaderTest {
     static void reorderingSortOrderReordersThePage() {
         // The behaviour the Rearrange control depends on: rewriting Sort_Order__c
         // must change the order the renderer receives, with no code change.
-        List<MA_Page_Section__c> secs = new List<MA_Page_Section__c>{
+        List<GTM_Page_Section__c> secs = new List<GTM_Page_Section__c>{
             section('hero', 'hero', 10),
             section('faq', 'faq', 20)
         };
@@ -166,9 +166,9 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void inactiveSectionIsRemovedFromThePage() {
-        MA_Page_Section__c hidden = section('faq', 'faq', 20);
+        GTM_Page_Section__c hidden = section('faq', 'faq', 20);
         hidden.Active__c = false;
-        insert new List<MA_Page_Section__c>{ section('hero', 'hero', 10), hidden };
+        insert new List<GTM_Page_Section__c>{ section('hero', 'hero', 10), hidden };
 
         Test.startTest();
         GtmPageContentReader.PageLayout layout =
@@ -196,7 +196,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void layoutForAnotherOfferingIsExcluded() {
-        MA_Page_Section__c other = section('hero', 'hero', 10);
+        GTM_Page_Section__c other = section('hero', 'hero', 10);
         other.Offering_Key__c = 'some-other-offering';
         other.Section_Address__c = 'some-other-offering::' + TMPL + '::hero';
         insert other;

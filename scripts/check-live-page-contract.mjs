@@ -51,8 +51,8 @@ const query = (soql) => {
 };
 
 const where = `Offering_Key__c='${offering}' AND Template_Type__c='${template}' AND Active__c=true`;
-const sections = query(`SELECT Section_Key__c, Layout_Type__c FROM MA_Page_Section__c WHERE ${where}`);
-const content = query(`SELECT Section_Key__c, Field_Key__c, Field_Type__c, Industry_Key__c FROM MA_Page_Content__c WHERE ${where}`);
+const sections = query(`SELECT Section_Key__c, Layout_Type__c FROM GTM_Page_Section__c WHERE ${where}`);
+const content = query(`SELECT Section_Key__c, Field_Key__c, Field_Type__c, Industry_Key__c FROM GTM_Page_Content__c WHERE ${where}`);
 
 const bad = [];
 const expected = new Map();

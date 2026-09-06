@@ -16,9 +16,9 @@ private class GtmOfferingCreationTest {
         System.assertEquals('data-cloud-accelerator', key, 'the key comes from the name');
 
         Map<String, String> byField = new Map<String, String>();
-        for (MA_Page_Content__c c : [
+        for (GTM_Page_Content__c c : [
             SELECT Field_Key__c, Text_Value__c, Rich_Value__c
-            FROM MA_Page_Content__c WHERE Offering_Key__c = :key
+            FROM GTM_Page_Content__c WHERE Offering_Key__c = :key
         ]) {
             byField.put(c.Field_Key__c,
                 c.Text_Value__c != null ? c.Text_Value__c : c.Rich_Value__c);

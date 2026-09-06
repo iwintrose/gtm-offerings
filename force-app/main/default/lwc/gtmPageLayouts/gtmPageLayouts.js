@@ -166,7 +166,7 @@ function fieldsFor(layoutType) {
 
 /**
  * A readable starting label for a field the editor has just created. Labels are
- * data (MA_Page_Content__c.Label__c) and editable afterwards; this only decides
+ * data (GTM_Page_Content__c.Label__c) and editable afterwards; this only decides
  * what they say before anyone has renamed them, so that a new section reads as
  * "Cta Label" rather than "ctaLabel".
  */

@@ -261,9 +261,9 @@ public with sharing class GtmHomeSnapshotController {
         // them: the map has to include chapters nobody reached, because those
         // are the finding.
         Map<String, SitemapNode> byKey = new Map<String, SitemapNode>();
-        for (MA_Page_Section__c sec : [
+        for (GTM_Page_Section__c sec : [
             SELECT Section_Key__c, Label__c, Sort_Order__c, Layout_Type__c
-            FROM   MA_Page_Section__c
+            FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :cfg[0].Offering__c
             AND    Template_Type__c = 'configurator'
             AND    Active__c = true AND Status__c = 'Published'

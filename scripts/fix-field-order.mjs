@@ -62,12 +62,12 @@ for (const page of PAGES) {
     if (!Object.keys(order).length) continue;
     const layoutOf = {};
     for (const s of query(
-        `SELECT Section_Key__c, Layout_Type__c FROM MA_Page_Section__c ` +
+        `SELECT Section_Key__c, Layout_Type__c FROM GTM_Page_Section__c ` +
         `WHERE Offering_Key__c='${page.offering}' AND Template_Type__c='${page.template}' AND Active__c=true`)) {
         layoutOf[s.Section_Key__c] = s.Layout_Type__c;
     }
     for (const r of query(
-        `SELECT Content_Address__c, Section_Key__c, Field_Key__c, Sort_Order__c FROM MA_Page_Content__c ` +
+        `SELECT Content_Address__c, Section_Key__c, Field_Key__c, Sort_Order__c FROM GTM_Page_Content__c ` +
         `WHERE Offering_Key__c='${page.offering}' AND Template_Type__c='${page.template}' AND Active__c=true`)) {
         const drawn = order[layoutOf[r.Section_Key__c]];
         if (!drawn) continue;

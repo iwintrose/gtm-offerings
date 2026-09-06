@@ -110,7 +110,7 @@ function drawnSequence(htmlPath) {
 let failures = 0;
 for (const page of PAGES) {
     const secs = query(
-        `SELECT Section_Key__c, Layout_Type__c, Sort_Order__c FROM MA_Page_Section__c ` +
+        `SELECT Section_Key__c, Layout_Type__c, Sort_Order__c FROM GTM_Page_Section__c ` +
         `WHERE Offering_Key__c='${page.offering}' AND Template_Type__c='${page.template}' ` +
         `AND Active__c=true AND Status__c='Published' ORDER BY Sort_Order__c ASC NULLS LAST`);
     const stored = secs.map((s) => s.Section_Key__c);
@@ -195,12 +195,12 @@ for (const page of PAGES) {
     const order = fieldOrderByLayout(page.html);
     if (!Object.keys(order).length) continue;
     const rows = query(
-        `SELECT Section_Key__c, Field_Key__c, Sort_Order__c FROM MA_Page_Content__c ` +
+        `SELECT Section_Key__c, Field_Key__c, Sort_Order__c FROM GTM_Page_Content__c ` +
         `WHERE Offering_Key__c='${page.offering}' AND Template_Type__c='${page.template}' ` +
         `AND Active__c=true AND Industry_Key__c=null ORDER BY Section_Key__c, Sort_Order__c ASC NULLS LAST`);
     const layoutOf = {};
     for (const s2 of query(
-        `SELECT Section_Key__c, Layout_Type__c FROM MA_Page_Section__c ` +
+        `SELECT Section_Key__c, Layout_Type__c FROM GTM_Page_Section__c ` +
         `WHERE Offering_Key__c='${page.offering}' AND Template_Type__c='${page.template}' AND Active__c=true`)) {
         layoutOf[s2.Section_Key__c] = s2.Layout_Type__c;
     }

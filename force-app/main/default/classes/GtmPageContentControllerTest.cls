@@ -6,11 +6,11 @@ private class GtmPageContentControllerTest {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    private static MA_Page_Content__c makeRecord(
+    private static GTM_Page_Content__c makeRecord(
             String offering, String tmpl, String section, String field,
             String fieldType, String textVal, String richVal, String jsonVal,
             String industry, Integer sortOrder) {
-        MA_Page_Content__c r = new MA_Page_Content__c(
+        GTM_Page_Content__c r = new GTM_Page_Content__c(
             Offering_Key__c  = offering,
             Template_Type__c = tmpl,
             Section_Key__c   = section,
@@ -36,7 +36,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getPageContent_returnsTextRecord() {
-        MA_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'Hello World', null, null, null, 0);
+        GTM_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'Hello World', null, null, null, 0);
         insert rec;
 
         Test.startTest();
@@ -49,7 +49,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getPageContent_returnsRichRecord() {
-        MA_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'subhead', 'rich', null, '<b>Bold</b>', null, null, 0);
+        GTM_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'subhead', 'rich', null, '<b>Bold</b>', null, null, 0);
         insert rec;
 
         Test.startTest();
@@ -61,7 +61,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getPageContent_returnsJsonRecord() {
-        MA_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'problem', 'chips', 'json', null, null, '["a","b"]', null, 0);
+        GTM_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'problem', 'chips', 'json', null, null, '["a","b"]', null, 0);
         insert rec;
 
         Test.startTest();
@@ -73,7 +73,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getPageContent_industryScopedWinsOverDefault() {
-        List<MA_Page_Content__c> recs = new List<MA_Page_Content__c>{
+        List<GTM_Page_Content__c> recs = new List<GTM_Page_Content__c>{
             makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'Default headline', null, null, null, 0),
             makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'FS headline', null, null, 'financial-services', 0)
         };
@@ -88,7 +88,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getPageContent_industryNullFallsBackToDefault() {
-        MA_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'Default headline', null, null, null, 0);
+        GTM_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'Default headline', null, null, null, 0);
         insert rec;
 
         Test.startTest();
@@ -100,7 +100,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getPageContent_inactiveRecordExcluded() {
-        MA_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'Should not appear', null, null, null, 0);
+        GTM_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'Should not appear', null, null, null, 0);
         rec.Active__c = false;
         insert rec;
 
@@ -113,7 +113,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getPageContent_wrongTemplateExcluded() {
-        MA_Page_Content__c rec = makeRecord(OFFERING, 'configurator', 'hero', 'headline', 'text', 'Wrong template', null, null, null, 0);
+        GTM_Page_Content__c rec = makeRecord(OFFERING, 'configurator', 'hero', 'headline', 'text', 'Wrong template', null, null, null, 0);
         insert rec;
 
         Test.startTest();
@@ -127,7 +127,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getAllContent_returnsAllActive() {
-        List<MA_Page_Content__c> recs = new List<MA_Page_Content__c>{
+        List<GTM_Page_Content__c> recs = new List<GTM_Page_Content__c>{
             makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'H', null, null, null, 0),
             makeRecord(OFFERING, TMPL, 'hero', 'subhead',  'rich', null, '<p>S</p>', null, null, 1)
         };
@@ -142,7 +142,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void getAllContent_includesIndustryScoped() {
-        List<MA_Page_Content__c> recs = new List<MA_Page_Content__c>{
+        List<GTM_Page_Content__c> recs = new List<GTM_Page_Content__c>{
             makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'Default', null, null, null, 0),
             makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'FS', null, null, 'financial-services', 0)
         };
@@ -174,7 +174,7 @@ private class GtmPageContentControllerTest {
         Test.stopTest();
 
         System.assertNotEquals(null, newId, 'Save should return an ID');
-        MA_Page_Content__c saved = [SELECT Text_Value__c FROM MA_Page_Content__c WHERE Id = :newId LIMIT 1];
+        GTM_Page_Content__c saved = [SELECT Text_Value__c FROM GTM_Page_Content__c WHERE Id = :newId LIMIT 1];
         System.assertEquals('Saved headline', saved.Text_Value__c);
     }
 
@@ -197,7 +197,7 @@ private class GtmPageContentControllerTest {
         Test.stopTest();
 
         System.assertEquals(id1, id2, 'Second save should upsert the same record');
-        MA_Page_Content__c saved = [SELECT Text_Value__c FROM MA_Page_Content__c WHERE Id = :id1 LIMIT 1];
+        GTM_Page_Content__c saved = [SELECT Text_Value__c FROM GTM_Page_Content__c WHERE Id = :id1 LIMIT 1];
         System.assertEquals('Second', saved.Text_Value__c);
     }
 
@@ -237,21 +237,21 @@ private class GtmPageContentControllerTest {
         Test.stopTest();
 
         System.assertEquals(5, ids.size(), 'Should return 5 IDs');
-        System.assertEquals(5, [SELECT COUNT() FROM MA_Page_Content__c WHERE Offering_Key__c = :OFFERING]);
+        System.assertEquals(5, [SELECT COUNT() FROM GTM_Page_Content__c WHERE Offering_Key__c = :OFFERING]);
     }
 
     // ─── deleteContentRecord ──────────────────────────────────────────────────
 
     @IsTest
     static void deleteContentRecord_deletesRecord() {
-        MA_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'To delete', null, null, null, 0);
+        GTM_Page_Content__c rec = makeRecord(OFFERING, TMPL, 'hero', 'headline', 'text', 'To delete', null, null, null, 0);
         insert rec;
 
         Test.startTest();
         GtmPageContentController.deleteContentRecord(rec.Id);
         Test.stopTest();
 
-        System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Content__c WHERE Id = :rec.Id]);
+        System.assertEquals(0, [SELECT COUNT() FROM GTM_Page_Content__c WHERE Id = :rec.Id]);
     }
 
     @IsTest
@@ -268,8 +268,8 @@ private class GtmPageContentControllerTest {
     }
     // ─── draft / publish ──────────────────────────────────────────────────────
 
-    private static MA_Page_Content__c published(String section, String field, String type, String value) {
-        MA_Page_Content__c rec = makeRecord(
+    private static GTM_Page_Content__c published(String section, String field, String type, String value) {
+        GTM_Page_Content__c rec = makeRecord(
             OFFERING, TMPL, section, field, type,
             type == 'text' ? value : null,
             type == 'rich' ? value : null,
@@ -281,7 +281,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void draftDoesNotChangeWhatThePageReads() {
-        MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
+        GTM_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
         insert rec;
 
         GtmPageContentController.DraftEdit edit = new GtmPageContentController.DraftEdit();
@@ -295,14 +295,14 @@ private class GtmPageContentControllerTest {
 
         System.assertEquals('Live copy', live.get('hero::eyebrow'),
             'The public page still shows the published value while a draft exists');
-        MA_Page_Content__c after = [SELECT Status__c, Draft_Value__c FROM MA_Page_Content__c WHERE Id = :rec.Id];
+        GTM_Page_Content__c after = [SELECT Status__c, Draft_Value__c FROM GTM_Page_Content__c WHERE Id = :rec.Id];
         System.assertEquals('Draft', after.Status__c, 'The row is marked Draft');
         System.assertEquals('Edited but unpublished', after.Draft_Value__c, 'The draft is held separately');
     }
 
     @IsTest
     static void publishMovesDraftIntoTheColumnThePageReads() {
-        MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
+        GTM_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
         insert rec;
         GtmPageContentController.DraftEdit edit = new GtmPageContentController.DraftEdit();
         edit.id = rec.Id;
@@ -314,9 +314,9 @@ private class GtmPageContentControllerTest {
         Test.stopTest();
 
         System.assertEquals(1, count, 'One field published');
-        MA_Page_Content__c after = [
+        GTM_Page_Content__c after = [
             SELECT Text_Value__c, Draft_Value__c, Status__c, Version_Number__c, Last_Published_Date__c
-            FROM MA_Page_Content__c WHERE Id = :rec.Id];
+            FROM GTM_Page_Content__c WHERE Id = :rec.Id];
         System.assertEquals('New copy', after.Text_Value__c, 'The page now reads the new value');
         System.assertEquals(null, after.Draft_Value__c, 'The draft is cleared');
         System.assertEquals('Published', after.Status__c, 'The row is Published');
@@ -327,7 +327,7 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void publishSnapshotsTheOutgoingValue() {
-        MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Original');
+        GTM_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Original');
         insert rec;
         GtmPageContentController.DraftEdit edit = new GtmPageContentController.DraftEdit();
         edit.id = rec.Id;
@@ -338,8 +338,8 @@ private class GtmPageContentControllerTest {
         GtmPageContentController.publishPage(OFFERING, TMPL);
         Test.stopTest();
 
-        MA_Page_Content_Version__c v = [
-            SELECT Snapshot__c, Version_Number__c FROM MA_Page_Content_Version__c
+        GTM_Page_Content_Version__c v = [
+            SELECT Snapshot__c, Version_Number__c FROM GTM_Page_Content_Version__c
             WHERE Content__c = :rec.Id];
         System.assertEquals('Original', v.Snapshot__c,
             'The snapshot holds what was replaced, so it is what you roll back to');
@@ -349,9 +349,9 @@ private class GtmPageContentControllerTest {
 
     @IsTest
     static void publishRoutesEachTypeToItsOwnColumn() {
-        MA_Page_Content__c richRec = published('hero', 'headline', 'rich', '<b>old</b>');
-        MA_Page_Content__c jsonRec = published('problem', 'chips', 'json', '["old"]');
-        insert new List<MA_Page_Content__c>{ richRec, jsonRec };
+        GTM_Page_Content__c richRec = published('hero', 'headline', 'rich', '<b>old</b>');
+        GTM_Page_Content__c jsonRec = published('problem', 'chips', 'json', '["old"]');
+        insert new List<GTM_Page_Content__c>{ richRec, jsonRec };
 
         GtmPageContentController.DraftEdit a = new GtmPageContentController.DraftEdit();
         a.id = richRec.Id; a.value = '<b>new</b>';
@@ -364,16 +364,16 @@ private class GtmPageContentControllerTest {
         Test.stopTest();
 
         System.assertEquals('<b>new</b>',
-            [SELECT Rich_Value__c FROM MA_Page_Content__c WHERE Id = :richRec.Id].Rich_Value__c,
+            [SELECT Rich_Value__c FROM GTM_Page_Content__c WHERE Id = :richRec.Id].Rich_Value__c,
             'rich publishes into Rich_Value__c');
         System.assertEquals('["new"]',
-            [SELECT JSON_Value__c FROM MA_Page_Content__c WHERE Id = :jsonRec.Id].JSON_Value__c,
+            [SELECT JSON_Value__c FROM GTM_Page_Content__c WHERE Id = :jsonRec.Id].JSON_Value__c,
             'json publishes into JSON_Value__c');
     }
 
     @IsTest
     static void discardLeavesThePublishedValueAlone() {
-        MA_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
+        GTM_Page_Content__c rec = published('hero', 'eyebrow', 'text', 'Live copy');
         insert rec;
         GtmPageContentController.DraftEdit edit = new GtmPageContentController.DraftEdit();
         edit.id = rec.Id;
@@ -385,12 +385,12 @@ private class GtmPageContentControllerTest {
         Test.stopTest();
 
         System.assertEquals(1, count, 'One draft discarded');
-        MA_Page_Content__c after = [
-            SELECT Text_Value__c, Draft_Value__c, Status__c FROM MA_Page_Content__c WHERE Id = :rec.Id];
+        GTM_Page_Content__c after = [
+            SELECT Text_Value__c, Draft_Value__c, Status__c FROM GTM_Page_Content__c WHERE Id = :rec.Id];
         System.assertEquals('Live copy', after.Text_Value__c, 'The published value survives a discard');
         System.assertEquals(null, after.Draft_Value__c, 'The draft is gone');
         System.assertEquals('Published', after.Status__c, 'Back to Published');
-        System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Content_Version__c],
+        System.assertEquals(0, [SELECT COUNT() FROM GTM_Page_Content_Version__c],
             'Discarding does not create a version');
     }
 
@@ -401,17 +401,17 @@ private class GtmPageContentControllerTest {
         Integer count = GtmPageContentController.publishPage(OFFERING, TMPL);
         Test.stopTest();
         System.assertEquals(0, count, 'Nothing to publish');
-        System.assertEquals(0, [SELECT COUNT() FROM MA_Page_Content_Version__c],
+        System.assertEquals(0, [SELECT COUNT() FROM GTM_Page_Content_Version__c],
             'No version written when nothing changed');
     }
 
     @IsTest
     static void publishIgnoresOtherPages() {
-        MA_Page_Content__c mine = published('hero', 'eyebrow', 'text', 'Mine');
-        MA_Page_Content__c other = published('hero', 'eyebrow', 'text', 'Theirs');
+        GTM_Page_Content__c mine = published('hero', 'eyebrow', 'text', 'Mine');
+        GTM_Page_Content__c other = published('hero', 'eyebrow', 'text', 'Theirs');
         other.Template_Type__c = 'configurator';
         other.Content_Address__c = OFFERING + '::configurator::hero::eyebrow';
-        insert new List<MA_Page_Content__c>{ mine, other };
+        insert new List<GTM_Page_Content__c>{ mine, other };
 
         GtmPageContentController.DraftEdit a = new GtmPageContentController.DraftEdit();
         a.id = mine.Id; a.value = 'Mine edited';
@@ -425,7 +425,7 @@ private class GtmPageContentControllerTest {
 
         System.assertEquals(1, count, 'Only this page publishes');
         System.assertEquals('Theirs',
-            [SELECT Text_Value__c FROM MA_Page_Content__c WHERE Id = :other.Id].Text_Value__c,
+            [SELECT Text_Value__c FROM GTM_Page_Content__c WHERE Id = :other.Id].Text_Value__c,
             'Another page keeps its unpublished draft');
     }
 }

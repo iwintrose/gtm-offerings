@@ -49,10 +49,10 @@ public without sharing class GtmPageContentController {
             return new Map<String, String>();
         }
 
-        List<MA_Page_Content__c> records = [
+        List<GTM_Page_Content__c> records = [
             SELECT Section_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c, Industry_Key__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             AND    Active__c        = true
@@ -66,7 +66,7 @@ public without sharing class GtmPageContentController {
         // have a non-null Industry_Key__c so they sort before nulls), then by Sort_Order__c.
         // We iterate forward and only set a key if it hasn't been set by a higher-priority row.
         Map<String, String> result = new Map<String, String>();
-        for (MA_Page_Content__c rec : records) {
+        for (GTM_Page_Content__c rec : records) {
             String mapKey = rec.Section_Key__c + '::' + rec.Field_Key__c;
             if (!result.containsKey(mapKey)) {
                 result.put(mapKey, resolveValue(rec));
@@ -86,14 +86,14 @@ public without sharing class GtmPageContentController {
             return new List<ContentRecord>();
         }
 
-        List<MA_Page_Content__c> records = [
+        List<GTM_Page_Content__c> records = [
             SELECT Id, Name, Section_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c,
                    Industry_Key__c, Sort_Order__c, Active__c,
                    Content_Address__c, Offering_Key__c, Template_Type__c,
                    Label__c, Help_Text__c, Draft_Value__c, Status__c, Pending_Delete__c,
                    Css_Class__c, Html_Id__c, Inline_Style__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             ORDER BY Section_Key__c ASC, Sort_Order__c ASC
@@ -101,7 +101,7 @@ public without sharing class GtmPageContentController {
         ];
 
         List<ContentRecord> result = new List<ContentRecord>();
-        for (MA_Page_Content__c rec : records) {
+        for (GTM_Page_Content__c rec : records) {
             result.add(new ContentRecord(rec));
         }
         return result;
@@ -116,7 +116,7 @@ public without sharing class GtmPageContentController {
         if (payload == null) {
             throw new AuraHandledException('Payload is required.');
         }
-        MA_Page_Content__c rec = payload.toSObject();
+        GTM_Page_Content__c rec = payload.toSObject();
         // Upsert by external ID so re-saves don't create duplicates.
         upsert rec Content_Address__c;
         return rec.Id;
@@ -131,13 +131,13 @@ public without sharing class GtmPageContentController {
         if (payloads == null || payloads.isEmpty()) {
             return new List<String>();
         }
-        List<MA_Page_Content__c> toUpsert = new List<MA_Page_Content__c>();
+        List<GTM_Page_Content__c> toUpsert = new List<GTM_Page_Content__c>();
         for (ContentRecord cr : payloads) {
             toUpsert.add(cr.toSObject());
         }
         upsert toUpsert Content_Address__c;
         List<String> ids = new List<String>();
-        for (MA_Page_Content__c rec : toUpsert) {
+        for (GTM_Page_Content__c rec : toUpsert) {
             ids.add(rec.Id);
         }
         return ids;
@@ -151,7 +151,7 @@ public without sharing class GtmPageContentController {
         if (String.isBlank(recordId)) {
             throw new AuraHandledException('Record ID is required.');
         }
-        delete [SELECT Id FROM MA_Page_Content__c WHERE Id = :recordId LIMIT 1];
+        delete [SELECT Id FROM GTM_Page_Content__c WHERE Id = :recordId LIMIT 1];
     }
 
     // ─── Private helpers ─────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ public without sharing class GtmPageContentController {
     }
 
     /**
-     * The offerings this org knows about, from MA_Offering__mdt. The editor
+     * The offerings this org knows about, from GTM_Offering__mdt. The editor
      * asks for these rather than assuming one, so adding an offering is a
      * metadata record and never a code change.
      */
@@ -221,8 +221,8 @@ public without sharing class GtmPageContentController {
         fw.label       = FRAMEWORK_LABEL;
         out.add(fw);
 
-        for (MA_Offering__mdt off : [
-            SELECT Offering_Key__c, Label__c, Site_Path__c FROM MA_Offering__mdt
+        for (GTM_Offering__mdt off : [
+            SELECT Offering_Key__c, Label__c, Site_Path__c FROM GTM_Offering__mdt
             ORDER BY Label__c ASC
         ]) {
             OfferingOption o = new OfferingOption();
@@ -300,7 +300,7 @@ public without sharing class GtmPageContentController {
         }
         for (AggregateResult ar : [
             SELECT Template_Type__c t, COUNT(Id) c
-            FROM   MA_Page_Section__c
+            FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c = :offeringKey AND Active__c = true
             GROUP BY Template_Type__c
         ]) {
@@ -311,7 +311,7 @@ public without sharing class GtmPageContentController {
         }
         for (AggregateResult ar : [
             SELECT Template_Type__c t, COUNT(Id) c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Offering_Key__c = :offeringKey AND Active__c = true
             GROUP BY Template_Type__c
         ]) {
@@ -361,8 +361,8 @@ public without sharing class GtmPageContentController {
         byKey.put(FRAMEWORK_KEY, fwSummary);
         home.offerings.add(fwSummary);
 
-        for (MA_Offering__mdt off : [
-            SELECT Offering_Key__c, Label__c FROM MA_Offering__mdt ORDER BY Label__c
+        for (GTM_Offering__mdt off : [
+            SELECT Offering_Key__c, Label__c FROM GTM_Offering__mdt ORDER BY Label__c
         ]) {
             OfferingSummary o = new OfferingSummary();
             o.offeringKey = off.Offering_Key__c;
@@ -375,7 +375,7 @@ public without sharing class GtmPageContentController {
         Map<String, PageSummary> pages = new Map<String, PageSummary>();
         for (AggregateResult ar : [
             SELECT Offering_Key__c o, Template_Type__c t, COUNT(Id) c
-            FROM   MA_Page_Section__c WHERE Active__c = true
+            FROM   GTM_Page_Section__c WHERE Active__c = true
             GROUP BY Offering_Key__c, Template_Type__c
         ]) {
             // An offering that has pages but no metadata row yet is a real
@@ -400,7 +400,7 @@ public without sharing class GtmPageContentController {
         // Content rows per offering + template, including templates with no sections.
         for (AggregateResult ar : [
             SELECT Offering_Key__c o, Template_Type__c t, COUNT(Id) c
-            FROM   MA_Page_Content__c WHERE Active__c = true
+            FROM   GTM_Page_Content__c WHERE Active__c = true
             GROUP BY Offering_Key__c, Template_Type__c
         ]) {
             String k = (String) ar.get('o') + '::' + (String) ar.get('t');
@@ -423,9 +423,9 @@ public without sharing class GtmPageContentController {
         // about itself, so renaming it in the editor renames it everywhere it
         // appears. The metadata label is only the fallback for an offering
         // that has not written its tile yet.
-        for (MA_Page_Content__c rec : [
+        for (GTM_Page_Content__c rec : [
             SELECT Offering_Key__c, Text_Value__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Template_Type__c = 'offerings-listing'
             AND    Field_Key__c     = 'name'
             AND    Active__c        = true
@@ -470,7 +470,7 @@ public without sharing class GtmPageContentController {
             throw new AuraHandledException('That name is reserved for the framework.');
         }
         Integer existing = [
-            SELECT COUNT() FROM MA_Page_Section__c WHERE Offering_Key__c = :key
+            SELECT COUNT() FROM GTM_Page_Section__c WHERE Offering_Key__c = :key
         ];
         if (existing > 0) {
             throw new AuraHandledException('An offering called "' + clean + '" already exists.');
@@ -478,7 +478,7 @@ public without sharing class GtmPageContentController {
 
         // Its entry on the offerings page: the one thing a new offering needs
         // in order to be visible anywhere.
-        MA_Page_Section__c tile = new MA_Page_Section__c(
+        GTM_Page_Section__c tile = new GTM_Page_Section__c(
             Section_Address__c = key + '::offerings-listing::tile',
             Offering_Key__c    = key,
             Template_Type__c   = 'offerings-listing',
@@ -492,20 +492,20 @@ public without sharing class GtmPageContentController {
         );
         insert tile;
 
-        List<MA_Page_Content__c> rows = new List<MA_Page_Content__c>{
-            new MA_Page_Content__c(
+        List<GTM_Page_Content__c> rows = new List<GTM_Page_Content__c>{
+            new GTM_Page_Content__c(
                 Content_Address__c = key + '::offerings-listing::tile::name',
                 Offering_Key__c = key, Template_Type__c = 'offerings-listing',
                 Section_Key__c = 'tile', Field_Key__c = 'name', Field_Type__c = 'text',
                 Label__c = 'Name', Active__c = true, Status__c = 'Published',
                 Text_Value__c = clean),
-            new MA_Page_Content__c(
+            new GTM_Page_Content__c(
                 Content_Address__c = key + '::offerings-listing::tile::mark',
                 Offering_Key__c = key, Template_Type__c = 'offerings-listing',
                 Section_Key__c = 'tile', Field_Key__c = 'mark', Field_Type__c = 'text',
                 Label__c = 'Mark', Active__c = true, Status__c = 'Published',
                 Text_Value__c = markFor(clean)),
-            new MA_Page_Content__c(
+            new GTM_Page_Content__c(
                 Content_Address__c = key + '::offerings-listing::tile::description',
                 Offering_Key__c = key, Template_Type__c = 'offerings-listing',
                 Section_Key__c = 'tile', Field_Key__c = 'description', Field_Type__c = 'rich',
@@ -551,13 +551,13 @@ public without sharing class GtmPageContentController {
         if (clean.length() > 255) clean = clean.substring(0, 255);
 
         String sectionAddress = offeringKey + '::offerings-listing::tile';
-        List<MA_Page_Section__c> secs = [
-            SELECT Id FROM MA_Page_Section__c WHERE Section_Address__c = :sectionAddress LIMIT 1
+        List<GTM_Page_Section__c> secs = [
+            SELECT Id FROM GTM_Page_Section__c WHERE Section_Address__c = :sectionAddress LIMIT 1
         ];
         if (secs.isEmpty()) {
             // An offering with no tile yet gets one, so naming it is never
             // blocked on having built its listing page first.
-            MA_Page_Section__c sec = new MA_Page_Section__c(
+            GTM_Page_Section__c sec = new GTM_Page_Section__c(
                 Section_Address__c = sectionAddress,
                 Offering_Key__c    = offeringKey,
                 Template_Type__c   = 'offerings-listing',
@@ -572,7 +572,7 @@ public without sharing class GtmPageContentController {
             insert sec;
         }
 
-        MA_Page_Content__c row = new MA_Page_Content__c(
+        GTM_Page_Content__c row = new GTM_Page_Content__c(
             Content_Address__c = sectionAddress + '::name',
             Offering_Key__c    = offeringKey,
             Template_Type__c   = 'offerings-listing',
@@ -639,10 +639,10 @@ public without sharing class GtmPageContentController {
         if (edits == null || edits.isEmpty()) {
             return;
         }
-        Map<Id, MA_Page_Content__c> updates = new Map<Id, MA_Page_Content__c>();
+        Map<Id, GTM_Page_Content__c> updates = new Map<Id, GTM_Page_Content__c>();
         for (DraftEdit e : edits) {
             if (String.isBlank(e.id)) { continue; }
-            updates.put(e.id, new MA_Page_Content__c(
+            updates.put(e.id, new GTM_Page_Content__c(
                 Id             = e.id,
                 Draft_Value__c = e.value,
                 Status__c      = 'Draft'
@@ -658,7 +658,7 @@ public without sharing class GtmPageContentController {
 
     /**
      * Publishes every draft on a page: snapshots the value being replaced into
-     * MA_Page_Content_Version__c, moves the draft into the column the page
+     * GTM_Page_Content_Version__c, moves the draft into the column the page
      * reads, clears the draft and marks the row Published.
      *
      * The snapshot holds the OUTGOING value, so a version is what you roll back
@@ -675,11 +675,11 @@ public without sharing class GtmPageContentController {
 
         // Draft_Value__c is a long text area, which SOQL cannot filter on, so
         // the "has a draft" test happens in Apex.
-        List<MA_Page_Content__c> drafts = new List<MA_Page_Content__c>();
-        for (MA_Page_Content__c rec : [
+        List<GTM_Page_Content__c> drafts = new List<GTM_Page_Content__c>();
+        for (GTM_Page_Content__c rec : [
             SELECT Id, Field_Type__c, Text_Value__c, Rich_Value__c, JSON_Value__c,
                    Draft_Value__c, Version_Number__c, Section_Key__c, Field_Key__c
-            FROM   MA_Page_Content__c
+            FROM   GTM_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             AND    Status__c        = 'Draft'
@@ -689,10 +689,10 @@ public without sharing class GtmPageContentController {
         }
         if (drafts.isEmpty()) { return structural; }
 
-        List<MA_Page_Content_Version__c> versions = new List<MA_Page_Content_Version__c>();
-        for (MA_Page_Content__c rec : drafts) {
+        List<GTM_Page_Content_Version__c> versions = new List<GTM_Page_Content_Version__c>();
+        for (GTM_Page_Content__c rec : drafts) {
             Decimal next = (rec.Version_Number__c == null ? 0 : rec.Version_Number__c) + 1;
-            versions.add(new MA_Page_Content_Version__c(
+            versions.add(new GTM_Page_Content_Version__c(
                 Content__c        = rec.Id,
                 Version_Number__c = next,
                 Snapshot__c       = resolveValue(rec),
@@ -731,18 +731,18 @@ public without sharing class GtmPageContentController {
      * snapshot for a section — which is why the editor asks before marking one.
      */
     private static Integer publishSections(String offeringKey, String templateType) {
-        List<MA_Page_Section__c> secs = [
+        List<GTM_Page_Section__c> secs = [
             SELECT Id, Section_Key__c, Sort_Order__c, Active__c, Status__c, Draft_State__c
-            FROM   MA_Page_Section__c
+            FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             LIMIT  200
         ];
-        List<MA_Page_Section__c> updates = new List<MA_Page_Section__c>();
-        List<MA_Page_Section__c> removals = new List<MA_Page_Section__c>();
+        List<GTM_Page_Section__c> updates = new List<GTM_Page_Section__c>();
+        List<GTM_Page_Section__c> removals = new List<GTM_Page_Section__c>();
         Set<String> removedKeys = new Set<String>();
 
-        for (MA_Page_Section__c sec : secs) {
+        for (GTM_Page_Section__c sec : secs) {
             Map<String, Object> d = GtmPageSectionController.draftOf(sec);
             Boolean wasNew = sec.Status__c == 'Draft';
             if (d.isEmpty() && !wasNew) continue;
@@ -764,9 +764,9 @@ public without sharing class GtmPageContentController {
         }
         if (updates.isEmpty() && removals.isEmpty()) return 0;
 
-        List<MA_Page_Content__c> orphaned = removedKeys.isEmpty()
-            ? new List<MA_Page_Content__c>()
-            : [SELECT Id FROM MA_Page_Content__c
+        List<GTM_Page_Content__c> orphaned = removedKeys.isEmpty()
+            ? new List<GTM_Page_Content__c>()
+            : [SELECT Id FROM GTM_Page_Content__c
                WHERE Offering_Key__c = :offeringKey
                AND   Template_Type__c = :templateType
                AND   Section_Key__c IN :removedKeys
@@ -795,15 +795,15 @@ public without sharing class GtmPageContentController {
         // remaining drafts are read.
         Integer structural = discardSections(offeringKey, templateType)
             + discardFieldDeletes(offeringKey, templateType);
-        List<MA_Page_Content__c> drafts = [
-            SELECT Id FROM MA_Page_Content__c
+        List<GTM_Page_Content__c> drafts = [
+            SELECT Id FROM GTM_Page_Content__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             AND    Status__c        = 'Draft'
             LIMIT 2000
         ];
         if (drafts.isEmpty()) { return structural; }
-        for (MA_Page_Content__c rec : drafts) {
+        for (GTM_Page_Content__c rec : drafts) {
             rec.Draft_Value__c = null;
             rec.Status__c      = 'Published';
         }
@@ -821,18 +821,18 @@ public without sharing class GtmPageContentController {
      * the published page, so there is nothing to revert it to.
      */
     private static Integer discardSections(String offeringKey, String templateType) {
-        List<MA_Page_Section__c> secs = [
+        List<GTM_Page_Section__c> secs = [
             SELECT Id, Section_Key__c, Status__c, Draft_State__c
-            FROM   MA_Page_Section__c
+            FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
             LIMIT  200
         ];
-        List<MA_Page_Section__c> cleared = new List<MA_Page_Section__c>();
-        List<MA_Page_Section__c> removals = new List<MA_Page_Section__c>();
+        List<GTM_Page_Section__c> cleared = new List<GTM_Page_Section__c>();
+        List<GTM_Page_Section__c> removals = new List<GTM_Page_Section__c>();
         Set<String> removedKeys = new Set<String>();
 
-        for (MA_Page_Section__c sec : secs) {
+        for (GTM_Page_Section__c sec : secs) {
             if (sec.Status__c == 'Draft') {
                 removals.add(sec);
                 removedKeys.add(sec.Section_Key__c);
@@ -843,9 +843,9 @@ public without sharing class GtmPageContentController {
         }
         if (cleared.isEmpty() && removals.isEmpty()) return 0;
 
-        List<MA_Page_Content__c> orphaned = removedKeys.isEmpty()
-            ? new List<MA_Page_Content__c>()
-            : [SELECT Id FROM MA_Page_Content__c
+        List<GTM_Page_Content__c> orphaned = removedKeys.isEmpty()
+            ? new List<GTM_Page_Content__c>()
+            : [SELECT Id FROM GTM_Page_Content__c
                WHERE Offering_Key__c = :offeringKey
                AND   Template_Type__c = :templateType
                AND   Section_Key__c IN :removedKeys
@@ -868,7 +868,7 @@ public without sharing class GtmPageContentController {
         @AuraEnabled public String value { get; set; }
     }
 
-    private static String resolveValue(MA_Page_Content__c rec) {
+    private static String resolveValue(GTM_Page_Content__c rec) {
         // icontext keeps a label and an icon together, so it stores where the
         // other structured type does. Anything unrecognised reads as text,
         // which is the one column every field has.
@@ -907,7 +907,7 @@ public without sharing class GtmPageContentController {
 
         public ContentRecord() {}
 
-        public ContentRecord(MA_Page_Content__c rec) {
+        public ContentRecord(GTM_Page_Content__c rec) {
             this.id                = rec.Id;
             this.name              = rec.Name;
             this.offeringKey       = rec.Offering_Key__c;
@@ -933,8 +933,8 @@ public without sharing class GtmPageContentController {
             this.isDraft           = rec.Status__c == 'Draft' && rec.Draft_Value__c != null;
         }
 
-        public MA_Page_Content__c toSObject() {
-            MA_Page_Content__c rec = new MA_Page_Content__c();
+        public GTM_Page_Content__c toSObject() {
+            GTM_Page_Content__c rec = new GTM_Page_Content__c();
             if (String.isNotBlank(this.id)) rec.Id = this.id;
             rec.Offering_Key__c    = this.offeringKey;
             rec.Template_Type__c   = this.templateType;
@@ -959,8 +959,8 @@ public without sharing class GtmPageContentController {
      * about to stop existing, so nothing downstream should be holding them.
      */
     private static Integer publishFieldDeletes(String offeringKey, String templateType) {
-        List<MA_Page_Content__c> doomed = [
-            SELECT Id FROM MA_Page_Content__c
+        List<GTM_Page_Content__c> doomed = [
+            SELECT Id FROM GTM_Page_Content__c
             WHERE  Offering_Key__c   = :offeringKey
             AND    Template_Type__c  = :templateType
             AND    Pending_Delete__c = true
@@ -977,15 +977,15 @@ public without sharing class GtmPageContentController {
 
     /** Takes back every pending field delete on a page. */
     private static Integer discardFieldDeletes(String offeringKey, String templateType) {
-        List<MA_Page_Content__c> marked = [
-            SELECT Id FROM MA_Page_Content__c
+        List<GTM_Page_Content__c> marked = [
+            SELECT Id FROM GTM_Page_Content__c
             WHERE  Offering_Key__c   = :offeringKey
             AND    Template_Type__c  = :templateType
             AND    Pending_Delete__c = true
             LIMIT  2000
         ];
         if (marked.isEmpty()) return 0;
-        for (MA_Page_Content__c rec : marked) { rec.Pending_Delete__c = false; }
+        for (GTM_Page_Content__c rec : marked) { rec.Pending_Delete__c = false; }
         try {
             update marked;
         } catch (DmlException ex) {
@@ -1005,7 +1005,7 @@ public without sharing class GtmPageContentController {
         if (String.isBlank(recordId) || String.isBlank(key)) {
             throw new AuraHandledException('A field and a property are both required.');
         }
-        MA_Page_Content__c rec = new MA_Page_Content__c(Id = recordId);
+        GTM_Page_Content__c rec = new GTM_Page_Content__c(Id = recordId);
         if (key == 'cssClass')          { rec.Css_Class__c = value; }
         else if (key == 'htmlId')       { rec.Html_Id__c = value; }
         else if (key == 'inlineStyle')  { rec.Inline_Style__c = value; }
@@ -1025,22 +1025,22 @@ public without sharing class GtmPageContentController {
      * The old list showed individual fields by LastModifiedDate, which counted
      * every autosaved keystroke as an event and could not see structural
      * changes at all. A publish is the thing that actually happened to a page,
-     * and MA_Page_Content_Version__c already records one row per field per
+     * and GTM_Page_Content_Version__c already records one row per field per
      * publish — so the rows are grouped back into the publish they came from.
      */
     private static List<PageActivity> getPageActivity() {
-        Map<Id, MA_Page_Content__c> byContent = new Map<Id, MA_Page_Content__c>([
-            SELECT Id, Offering_Key__c, Template_Type__c FROM MA_Page_Content__c LIMIT 2000
+        Map<Id, GTM_Page_Content__c> byContent = new Map<Id, GTM_Page_Content__c>([
+            SELECT Id, Offering_Key__c, Template_Type__c FROM GTM_Page_Content__c LIMIT 2000
         ]);
 
         // Rows published within the same minute are one act of publishing.
         Map<String, PageActivity> grouped = new Map<String, PageActivity>();
         List<String> order = new List<String>();
-        for (MA_Page_Content_Version__c v : [
-            SELECT Content__c, CreatedDate FROM MA_Page_Content_Version__c
+        for (GTM_Page_Content_Version__c v : [
+            SELECT Content__c, CreatedDate FROM GTM_Page_Content_Version__c
             ORDER BY CreatedDate DESC LIMIT 500
         ]) {
-            MA_Page_Content__c parent = byContent.get(v.Content__c);
+            GTM_Page_Content__c parent = byContent.get(v.Content__c);
             if (parent == null) continue;
             String bucket = parent.Offering_Key__c + '::' + parent.Template_Type__c + '::'
                 + v.CreatedDate.formatGmt('yyyy-MM-dd HH:mm');

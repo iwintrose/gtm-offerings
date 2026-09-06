@@ -169,7 +169,7 @@ const SECTION_FALLBACKS = {
 };
 
 // Fallback structure, used only until getPageLayout returns rows. Order here
-// matches the page as originally authored; MA_Page_Section__c overrides it.
+// matches the page as originally authored; GTM_Page_Section__c overrides it.
 const DEFAULT_SECTIONS = [
     { sectionKey: 'header',        layoutType: 'page-header', width: 'standard', label: 'Header' },
     { sectionKey: 'footer',        layoutType: 'page-footer', width: 'standard', label: 'Footer' },
@@ -195,7 +195,7 @@ export default class GtmStory extends LightningElement {
     @track gaugeValue = 0;
     @track scrollPct = 0;
 
-    // MA_Page_Content__c flat map: key = 'section::field', value = resolved string
+    // GTM_Page_Content__c flat map: key = 'section::field', value = resolved string
     @track _cms = {};
     // Structure of the page, ordered. Empty until getPageLayout returns, at
     // which point DEFAULT_SECTIONS stops being used.
@@ -275,7 +275,7 @@ export default class GtmStory extends LightningElement {
     _scrollHandler;
 
     // ─── CMS resolution helpers ────────────────────────────────────────────────
-    // Priority: MA_Page_Content__c (_cms map) → the built-in DEFAULTS
+    // Priority: GTM_Page_Content__c (_cms map) → the built-in DEFAULTS
 
     _ct(key) { return this._cms[key] || null; }
 
