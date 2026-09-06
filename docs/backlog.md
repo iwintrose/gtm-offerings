@@ -241,13 +241,40 @@ for all three deployed clean. Data:
   place alongside) deployed clean — additive, unaffected by the record
   issue since they reference the type, not a record.
 
-**Not started yet, waiting on the platform issue above to clear:** the
-Apex/LWC rewiring for these 3 objects (`GtmPageContentController`,
-`GtmDealNaming`, `GtmPageContentReader`, `GtmAssessmentRequestController`,
-`GtmAssessmentRequestControllerTest`, `GtmAgentProxyController`) — holding
-off cutting code over until `GTM_Assessment_Config__mdt` actually has its
-record, since `GtmAssessmentRequestController` reads both it and
-`GTM_Offering__mdt` together.
+**Still not started:** the Apex rewiring for `GtmAssessmentRequestController`
+/ `GtmAssessmentRequestControllerTest` / `GtmDealNaming` / `GtmAgentProxyController`
+(Stage 2's remaining piece — holding off until `GTM_Assessment_Config__mdt`
+actually has its record, since `GtmAssessmentRequestController` reads it and
+`GTM_Offering__mdt` together). `GtmPageContentController`/`GtmPageContentReader`
+were rewired as part of Stage 3 below (they touch `GTM_Offering__mdt` too,
+already live, so no reason to touch those two files twice).
+
+**Stage 3 — done.** `MA_Page_Content__c` (206 rows), `MA_Page_Section__c`
+(39 rows), and `MA_Page_Content_Version__c` (16 rows, discovered mid-stage —
+its `Content__c` is a **Master-Detail** to Page_Content, which can't point
+at two object types or be repointed after creation, so it had to move in
+the same stage, not later). All three have zero external URL exposure —
+purely internal CMS data — so this was a straightforward hard cutover, no
+redirect logic needed. Rewired: `GtmPageContentController`,
+`GtmPageSectionController`, `GtmPageContentReader`, `GtmAgentGetConfigState`,
+`GtmOfferingCreationTest`, `GtmContentAddress`, their test classes, one real
+hardcoded LWC literal (`gtmConfigurator.js`'s Setup-list URL builder), and
+three dev-tool scripts (`check-live-page-contract.mjs`, `check-page-order.mjs`,
+`fix-field-order.mjs`) that would otherwise have started validating stale,
+frozen data instead of what the app actually reads. `GtmHomeSnapshotController`
+and `GtmAgentGetConfigState` also touch Stage 4/5 objects — only their
+Page_Content/Page_Section lines were touched, confirmed by grep before and
+after each edit. All 58 tests across the four touched test classes pass.
+
+Hit a **third instance of today's platform-side metadata-propagation lag**,
+different shape from the first two: the new fields work fine through Apex
+(proven by the passing tests, which query them directly) but the plain REST
+Data API — what `sf data query` and `check-all.sh`'s node scripts use —
+still returns "No such column" for the same fields well after Apex's own
+view of them is current. A split-brain between two Salesforce API surfaces'
+metadata caches, not a real defect; `check-all.sh`'s live-contract check is
+blocked until that clears, but the application itself is already proven
+correct independent of it. Re-run `check-all.sh` before final cutover.
 
 
 **D7 — `gtmPageBrowser` ("Pages" tab) has the wrong shape.** A rep should
