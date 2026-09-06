@@ -412,6 +412,23 @@ Experience Builder bundle (copy `GTM_Accelerator1`'s `industry` view/route,
 retarget component properties at the live site's own offerings/configurator
 URLs, deploy, publish).
 
+**D10 — Every link requires a password now, no exceptions.** Found while
+adding the copy-link/regenerate-password controls to the link card
+(Pages tab, D7 follow-up): 3 of the 4 real production links (TD Bank,
+Medtronic, LA Metro) had no password at all — only MUCH Music did. Two
+bugs, both fixed: `gtmConfigWizard`'s "Turn off protection" chip let a
+rep explicitly clear it (removed); more importantly,
+`_ensureGeneratedPassword()` only ran when a rep reached step 7, but
+autosave creates/updates the real record from step 1 onward — a rep who
+never reached step 7 got a real record with a blank password regardless
+of that chip. `_save()` now calls it unconditionally, before every save.
+`GtmSavedConfigurationController.saveConfiguration`'s `clearLinkPassword`
+input removed too (no caller sends it, dead code that left the same door
+open a different way). Isiah backfilled TD Bank/Medtronic/LA Metro with
+generated passwords himself and is notifying each contact directly —
+deliberately not done silently, since it changes what a prospect who
+already has the link needs to open it.
+
 ---
 
 ## Known and accepted
