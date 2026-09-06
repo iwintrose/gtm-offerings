@@ -45,8 +45,8 @@ private class GtmSavedConfigurationDealTest {
         Id linkId = GtmSavedConfigurationController.saveConfiguration(in0);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
-            SELECT Opportunity__c FROM MA_Saved_Configuration__c WHERE Id = :linkId
+        GTM_Saved_Configuration__c saved = [
+            SELECT Opportunity__c FROM GTM_Saved_Configuration__c WHERE Id = :linkId
         ];
         System.assertEquals(existing.Id, saved.Opportunity__c,
             'the link should be on the deal the rep chose');
@@ -67,7 +67,7 @@ private class GtmSavedConfigurationDealTest {
         System.assertEquals(before + 1, [SELECT COUNT() FROM Opportunity WHERE AccountId = :a.Id],
             'no choice means a new deal, which is what "A new deal" offers');
         System.assertNotEquals(null,
-            [SELECT Opportunity__c FROM MA_Saved_Configuration__c WHERE Id = :linkId].Opportunity__c);
+            [SELECT Opportunity__c FROM GTM_Saved_Configuration__c WHERE Id = :linkId].Opportunity__c);
     }
 
     @isTest
@@ -84,8 +84,8 @@ private class GtmSavedConfigurationDealTest {
         Id linkId = GtmSavedConfigurationController.saveConfiguration(in0);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
-            SELECT Opportunity__c FROM MA_Saved_Configuration__c WHERE Id = :linkId
+        GTM_Saved_Configuration__c saved = [
+            SELECT Opportunity__c FROM GTM_Saved_Configuration__c WHERE Id = :linkId
         ];
         System.assertNotEquals(theirs.Id, saved.Opportunity__c,
             'a stray id must not attach this link to another client\'s deal');

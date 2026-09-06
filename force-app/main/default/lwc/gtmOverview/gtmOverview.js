@@ -87,7 +87,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                     return {
                         key: d.configId,
                         url: `/lightning/r/Opportunity/${d.opportunityId}/view`,
-                        linkUrl: `/lightning/r/MA_Saved_Configuration__c/${d.configId}/view`,
+                        linkUrl: `/lightning/r/GTM_Saved_Configuration__c/${d.configId}/view`,
                         requestUrl: d.requestId ? `/lightning/r/GTM_Assessment_Request__c/${d.requestId}/view` : '',
                         name: d.opportunityName,
                         account: d.accountName || d.company || '',

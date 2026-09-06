@@ -12,7 +12,7 @@ private class GtmConfigurationReaderTest {
     }
 
     private static Id makeConfig(Boolean active) {
-        MA_Saved_Configuration__c c = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c c = new GTM_Saved_Configuration__c(
             Company__c        = 'Guest Read Co',
             Industry__c       = 'media',
             Offering__c       = 'migration-accelerator',

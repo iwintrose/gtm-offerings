@@ -9,8 +9,8 @@ private class GtmFormDraftControllerTest {
     private static final String KEY  = 'a1b2c3d4e5f60718293a';
     private static final String KEY2 = 'ffffffffffffffffffff';
 
-    private static MA_Saved_Configuration__c link(Boolean active) {
-        MA_Saved_Configuration__c c = new MA_Saved_Configuration__c(
+    private static GTM_Saved_Configuration__c link(Boolean active) {
+        GTM_Saved_Configuration__c c = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Acme Bank',
             Generated_URL__c = 'https://example.com/a',
@@ -22,7 +22,7 @@ private class GtmFormDraftControllerTest {
 
     @IsTest
     static void aDraftComesBackToTheBrowserThatWroteIt() {
-        MA_Saved_Configuration__c c = link(true);
+        GTM_Saved_Configuration__c c = link(true);
 
         Test.startTest();
         Assert.isNull(GtmFormDraftController.getDraft(c.Id, KEY), 'Nothing typed yet');
@@ -44,7 +44,7 @@ private class GtmFormDraftControllerTest {
      */
     @IsTest
     static void theLatestSaveWinsOnATiedTimestamp() {
-        MA_Saved_Configuration__c c = link(true);
+        GTM_Saved_Configuration__c c = link(true);
 
         Test.startTest();
         GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
@@ -58,7 +58,7 @@ private class GtmFormDraftControllerTest {
 
     @IsTest
     static void anotherBrowsersKeyGetsNothing() {
-        MA_Saved_Configuration__c c = link(true);
+        GTM_Saved_Configuration__c c = link(true);
         GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
 
         Test.startTest();
@@ -74,7 +74,7 @@ private class GtmFormDraftControllerTest {
 
     @IsTest
     static void submittingStopsTheFormOfferingItsAnswersBack() {
-        MA_Saved_Configuration__c c = link(true);
+        GTM_Saved_Configuration__c c = link(true);
         GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
 
         Test.startTest();
@@ -87,7 +87,7 @@ private class GtmFormDraftControllerTest {
 
     @IsTest
     static void adisabledLinkIsNotAWritableEndpoint() {
-        MA_Saved_Configuration__c c = link(false);
+        GTM_Saved_Configuration__c c = link(false);
 
         Test.startTest();
         GtmFormDraftController.saveDraft(c.Id, KEY, '{"name":"Ann"}', 'name', 'sess-1');
@@ -99,7 +99,7 @@ private class GtmFormDraftControllerTest {
 
     @IsTest
     static void anOversizeDraftIsRefused() {
-        MA_Saved_Configuration__c c = link(true);
+        GTM_Saved_Configuration__c c = link(true);
 
         Test.startTest();
         GtmFormDraftController.saveDraft(c.Id, KEY, 'x'.repeat(9000), 'name', 'sess-1');

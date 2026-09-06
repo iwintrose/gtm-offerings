@@ -48,7 +48,7 @@ public without sharing class GtmAgentProxyController {
             'properties' => new Map<String,Object>{
                 'config_id' => new Map<String,Object>{
                     'type'        => 'string',
-                    'description' => 'MA_Saved_Configuration__c Id; omit or leave blank for unsaved sessions'
+                    'description' => 'GTM_Saved_Configuration__c Id; omit or leave blank for unsaved sessions'
                 }
             },
             'required' => new List<String>()
@@ -74,7 +74,7 @@ public without sharing class GtmAgentProxyController {
 
     /**
      * @param sessionToken  LWC session token (routes empApi events; passed through for logging only in proxy mode)
-     * @param configId      MA_Saved_Configuration__c Id — blank for unsaved sessions
+     * @param configId      GTM_Saved_Configuration__c Id — blank for unsaved sessions
      * @param userMessage   Latest message from the rep
      * @param historyJson   JSON-serialised conversation history from prior turns
      * @return              JSON: { text, historyJson, changes }

@@ -44,7 +44,7 @@ export default class GtmSavedLinksBar extends LightningElement {
 
     recordUrl(id) {
         return this._orgBaseUrl
-            ? `${this._orgBaseUrl}/lightning/r/MA_Saved_Configuration__c/${id}/view`
+            ? `${this._orgBaseUrl}/lightning/r/GTM_Saved_Configuration__c/${id}/view`
             : '';
     }
 

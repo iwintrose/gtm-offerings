@@ -2,7 +2,7 @@
 private class GtmConfigurationStatusControllerTest {
     @IsTest
     static void activeRecordReturnsTrue() {
-        MA_Saved_Configuration__c rec = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c rec = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator',
             Active__c = true
@@ -14,7 +14,7 @@ private class GtmConfigurationStatusControllerTest {
 
     @IsTest
     static void inactiveRecordReturnsFalse() {
-        MA_Saved_Configuration__c rec = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c rec = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator',
             Active__c = false
@@ -31,13 +31,17 @@ private class GtmConfigurationStatusControllerTest {
     }
 
     @IsTest
-    static void malformedIdIsTreatedAsActive() {
-        System.assertEquals(true, GtmConfigurationStatusController.isActive('not-a-real-id'));
+    static void malformedIdIsTreatedAsInactive() {
+        // Folded into the same "false" case as a nonexistent record now that
+        // GtmLegacyConfigId.resolve() can't tell "malformed" apart from "a
+        // legacy id with no mapping" -- fail closed is the safer default for
+        // either. See the comment on GtmConfigurationStatusController.isActive.
+        System.assertEquals(false, GtmConfigurationStatusController.isActive('not-a-real-id'));
     }
 
     @IsTest
     static void nonexistentRecordReturnsFalse() {
-        MA_Saved_Configuration__c rec = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c rec = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
         );

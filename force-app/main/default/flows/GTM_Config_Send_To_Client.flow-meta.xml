@@ -22,7 +22,7 @@
             <operator>EqualTo</operator>
             <value><stringValue>Sent</stringValue></value>
         </filters>
-        <object>MA_Saved_Configuration__c</object>
+        <object>GTM_Saved_Configuration__c</object>
         <recordTriggerType>Update</recordTriggerType>
         <triggerType>RecordAfterSave</triggerType>
         <connector>

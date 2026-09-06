@@ -13,9 +13,9 @@ private class GtmSavedConfigurationControllerTest {
         Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
+        GTM_Saved_Configuration__c saved = [
             SELECT Offering__c, Industry__c, Company__c, Generated_URL__c, Config_Payload__c
-            FROM MA_Saved_Configuration__c
+            FROM GTM_Saved_Configuration__c
             WHERE Id = :recordId
         ];
         System.assertEquals('migration-accelerator', saved.Offering__c);
@@ -26,7 +26,7 @@ private class GtmSavedConfigurationControllerTest {
 
     @IsTest
     static void updatesExistingConfigurationWhenRecordIdSupplied() {
-        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c existing = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Old Name',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
@@ -46,7 +46,7 @@ private class GtmSavedConfigurationControllerTest {
         System.assertEquals(existing.Id, recordId);
         System.assertEquals(
             'New Name',
-            [SELECT Company__c FROM MA_Saved_Configuration__c WHERE Id = :recordId].Company__c
+            [SELECT Company__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId].Company__c
         );
     }
 
@@ -65,17 +65,17 @@ private class GtmSavedConfigurationControllerTest {
 
     @IsTest
     static void listsSavedConfigurationsNewestFirst() {
-        insert new MA_Saved_Configuration__c(
+        insert new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/a'
         );
-        insert new MA_Saved_Configuration__c(
+        insert new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/b'
         );
 
         Test.startTest();
-        List<MA_Saved_Configuration__c> results = GtmSavedConfigurationController.getMyConfigurations();
+        List<GTM_Saved_Configuration__c> results = GtmSavedConfigurationController.getMyConfigurations();
         Test.stopTest();
 
         System.assertEquals(2, results.size());
@@ -83,7 +83,7 @@ private class GtmSavedConfigurationControllerTest {
 
     @IsTest
     static void deletesConfiguration() {
-        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c existing = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
         );
@@ -95,13 +95,13 @@ private class GtmSavedConfigurationControllerTest {
 
         System.assertEquals(
             0,
-            [SELECT COUNT() FROM MA_Saved_Configuration__c WHERE Id = :existing.Id]
+            [SELECT COUNT() FROM GTM_Saved_Configuration__c WHERE Id = :existing.Id]
         );
     }
 
     @IsTest
     static void togglesActiveWithoutDeletingOrHiding() {
-        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c existing = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
         );
@@ -111,8 +111,8 @@ private class GtmSavedConfigurationControllerTest {
         GtmSavedConfigurationController.setActive(existing.Id, false);
         Test.stopTest();
 
-        MA_Saved_Configuration__c updated = [
-            SELECT Active__c FROM MA_Saved_Configuration__c WHERE Id = :existing.Id
+        GTM_Saved_Configuration__c updated = [
+            SELECT Active__c FROM GTM_Saved_Configuration__c WHERE Id = :existing.Id
         ];
         System.assertEquals(false, updated.Active__c);
         System.assertEquals(1, GtmSavedConfigurationController.getMyConfigurations().size());
@@ -133,10 +133,10 @@ private class GtmSavedConfigurationControllerTest {
         Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
+        GTM_Saved_Configuration__c saved = [
             SELECT Account__c, Contact__c, Estimated_Value__c,
                    Account__r.Name, Contact__r.FirstName, Contact__r.LastName, Contact__r.Email
-            FROM MA_Saved_Configuration__c
+            FROM GTM_Saved_Configuration__c
             WHERE Id = :recordId
         ];
         Assert.isNotNull(saved.Account__c, 'An Account should be created from the company name');
@@ -162,8 +162,8 @@ private class GtmSavedConfigurationControllerTest {
         Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
-            SELECT Account__c FROM MA_Saved_Configuration__c WHERE Id = :recordId
+        GTM_Saved_Configuration__c saved = [
+            SELECT Account__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
         ];
         Assert.areEqual(existing.Id, saved.Account__c, 'Should reuse the existing Account, not duplicate it');
         Assert.areEqual(1, [SELECT COUNT() FROM Account WHERE Name = 'Acme Bank']);
@@ -180,8 +180,8 @@ private class GtmSavedConfigurationControllerTest {
         Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
-            SELECT Contact__c FROM MA_Saved_Configuration__c WHERE Id = :recordId
+        GTM_Saved_Configuration__c saved = [
+            SELECT Contact__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
         ];
         Assert.isNull(saved.Contact__c, 'No email means no Contact should be guessed at');
     }
@@ -210,8 +210,8 @@ private class GtmSavedConfigurationControllerTest {
         GtmSavedConfigurationController.saveConfiguration(second);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
-            SELECT Contact__c, Estimated_Value__c FROM MA_Saved_Configuration__c WHERE Id = :recordId
+        GTM_Saved_Configuration__c saved = [
+            SELECT Contact__c, Estimated_Value__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
         ];
         Assert.isNotNull(saved.Contact__c, 'A blank resend should not wipe out the Contact set on the first save');
         Assert.areEqual(90000, saved.Estimated_Value__c, 'A blank resend should not wipe out the Estimated Value');
@@ -219,7 +219,7 @@ private class GtmSavedConfigurationControllerTest {
 
     @IsTest
     static void wrapsDmlFailureOnSaveAsFriendlyError() {
-        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c existing = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
         );
@@ -242,7 +242,7 @@ private class GtmSavedConfigurationControllerTest {
 
     @IsTest
     static void wrapsDmlFailureOnDeleteAsFriendlyError() {
-        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c existing = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
         );
@@ -331,8 +331,8 @@ private class GtmSavedConfigurationControllerTest {
         Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
-            SELECT Account__c, Contact__c FROM MA_Saved_Configuration__c WHERE Id = :recordId
+        GTM_Saved_Configuration__c saved = [
+            SELECT Account__c, Contact__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
         ];
         Assert.areEqual(realAccount.Id, saved.Account__c, 'Should use the selected Contact\'s own Account, not one resolved from Company text');
         Assert.areEqual(realContact.Id, saved.Contact__c, 'Should use the exact selected Contact, not a fuzzy match');
@@ -354,9 +354,9 @@ private class GtmSavedConfigurationControllerTest {
         Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
         Test.stopTest();
 
-        MA_Saved_Configuration__c saved = [
+        GTM_Saved_Configuration__c saved = [
             SELECT Account__c, Contact__c, Account__r.Name, Contact__r.Email
-            FROM MA_Saved_Configuration__c
+            FROM GTM_Saved_Configuration__c
             WHERE Id = :recordId
         ];
         Assert.isNotNull(saved.Account__c, 'A garbage accountId should fall back to resolving from Company text');
@@ -367,7 +367,7 @@ private class GtmSavedConfigurationControllerTest {
 
     @IsTest
     static void wrapsDmlFailureOnSetActiveAsFriendlyError() {
-        MA_Saved_Configuration__c existing = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c existing = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtmaccelerator/s/configurator'
         );

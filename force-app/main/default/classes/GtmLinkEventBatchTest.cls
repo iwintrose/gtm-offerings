@@ -5,8 +5,8 @@
 @IsTest
 private class GtmLinkEventBatchTest {
 
-    private static MA_Saved_Configuration__c link() {
-        MA_Saved_Configuration__c c = new MA_Saved_Configuration__c(
+    private static GTM_Saved_Configuration__c link() {
+        GTM_Saved_Configuration__c c = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator', Company__c = 'Acme Bank',
             Generated_URL__c = 'https://example.com/a', Active__c = true
         );
@@ -22,7 +22,7 @@ private class GtmLinkEventBatchTest {
 
     @IsTest
     static void aVisitsTrailArrivesInOneCall() {
-        MA_Saved_Configuration__c c = link();
+        GTM_Saved_Configuration__c c = link();
         List<GtmLinkEventController.EventInput> batch = new List<GtmLinkEventController.EventInput>{
             evt('Section Viewed', 'header',    1, 2.44),
             evt('Section Viewed', 'challenge', 2, 9.06),
@@ -49,7 +49,7 @@ private class GtmLinkEventBatchTest {
 
     @IsTest
     static void aRunawayBatchIsCapped() {
-        MA_Saved_Configuration__c c = link();
+        GTM_Saved_Configuration__c c = link();
         List<GtmLinkEventController.EventInput> batch = new List<GtmLinkEventController.EventInput>();
         for (Integer i = 0; i < 200; i++) batch.add(evt('Section Viewed', 'header', i, 1.0));
 
@@ -80,7 +80,7 @@ private class GtmLinkEventBatchTest {
      */
     @IsTest
     static void submittingNamesTheWholeSessionRetroactively() {
-        MA_Saved_Configuration__c c = link();
+        GTM_Saved_Configuration__c c = link();
         Contact who = new Contact(FirstName = 'Ann', LastName = 'Reyes', Email = 'ann@example.com');
         insert who;
         GtmLinkEventController.logEvents(c.Id, 'sess-4', new List<GtmLinkEventController.EventInput>{
@@ -99,7 +99,7 @@ private class GtmLinkEventBatchTest {
 
     @IsTest
     static void anotherSessionIsNeverStitchedByMistake() {
-        MA_Saved_Configuration__c c = link();
+        GTM_Saved_Configuration__c c = link();
         Contact who = new Contact(FirstName = 'Ann', LastName = 'Reyes', Email = 'ann@example.com');
         insert who;
         GtmLinkEventController.logEvents(c.Id, 'mine',      new List<GtmLinkEventController.EventInput>{ evt('Page View', null, 1, null) });

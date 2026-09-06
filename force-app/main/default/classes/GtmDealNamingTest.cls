@@ -80,7 +80,7 @@ private class GtmDealNamingTest {
         Id linkId = GtmSavedConfigurationController.saveConfiguration(in0);
         Test.stopTest();
 
-        Id oppId = [SELECT Opportunity__c FROM MA_Saved_Configuration__c WHERE Id = :linkId].Opportunity__c;
+        Id oppId = [SELECT Opportunity__c FROM GTM_Saved_Configuration__c WHERE Id = :linkId].Opportunity__c;
         String repName = [SELECT Name FROM Opportunity WHERE Id = :oppId].Name;
 
         System.assert(repName.startsWith('Both Paths Co — '),

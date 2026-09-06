@@ -11,6 +11,7 @@
         <targetConfig targets="lightning__RecordPage">
             <objects>
                 <object>MA_Saved_Configuration__c</object>
+                <object>GTM_Saved_Configuration__c</object>
             </objects>
         </targetConfig>
     </targetConfigs>

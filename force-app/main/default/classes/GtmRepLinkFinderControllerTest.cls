@@ -16,7 +16,7 @@ private class GtmRepLinkFinderControllerTest {
         );
         insert opp;
 
-        MA_Saved_Configuration__c older = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c older = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Industry__c = 'fintech',
             Company__c = 'Acme Bank',
@@ -29,7 +29,7 @@ private class GtmRepLinkFinderControllerTest {
         // CreatedDate can't be set on insert -- a second real insert is
         // enough to prove grouping and count without depending on ordering
         // between the two (asserted only as a set, not by position).
-        MA_Saved_Configuration__c newer = new MA_Saved_Configuration__c(
+        GTM_Saved_Configuration__c newer = new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Acme Bank',
             Generated_URL__c = 'https://example.my.site.com/gtm/s/configurator?v=2',
@@ -90,13 +90,13 @@ private class GtmRepLinkFinderControllerTest {
         Contact otherContact = new Contact(FirstName = 'Someone', LastName = 'Else', AccountId = other.Id);
         insert otherContact;
 
-        insert new MA_Saved_Configuration__c(
+        insert new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtm/s/configurator?a=1',
             Account__c = acme.Id,
             Contact__c = acmeContact.Id
         );
-        insert new MA_Saved_Configuration__c(
+        insert new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Generated_URL__c = 'https://example.my.site.com/gtm/s/configurator?a=2',
             Account__c = other.Id,

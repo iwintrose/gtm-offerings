@@ -3,13 +3,13 @@ private class GtmLinkAuthControllerTest {
 
     @TestSetup
     static void setup() {
-        insert new MA_Saved_Configuration__c(
+        insert new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'Test Corp',
             Generated_URL__c = 'https://example.com/test',
             Link_Password__c = 'secret123'
         );
-        insert new MA_Saved_Configuration__c(
+        insert new GTM_Saved_Configuration__c(
             Offering__c = 'migration-accelerator',
             Company__c = 'No Password Corp',
             Generated_URL__c = 'https://example.com/no-pw'
@@ -18,8 +18,8 @@ private class GtmLinkAuthControllerTest {
 
     @IsTest
     static void testCheckPasswordRequired_withPassword() {
-        MA_Saved_Configuration__c rec = [
-            SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
+        GTM_Saved_Configuration__c rec = [
+            SELECT Id FROM GTM_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
         Boolean result = GtmLinkAuthController.checkPasswordRequired(rec.Id);
@@ -29,8 +29,8 @@ private class GtmLinkAuthControllerTest {
 
     @IsTest
     static void testCheckPasswordRequired_noPassword() {
-        MA_Saved_Configuration__c rec = [
-            SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'No Password Corp' LIMIT 1
+        GTM_Saved_Configuration__c rec = [
+            SELECT Id FROM GTM_Saved_Configuration__c WHERE Company__c = 'No Password Corp' LIMIT 1
         ];
         Test.startTest();
         Boolean result = GtmLinkAuthController.checkPasswordRequired(rec.Id);
@@ -48,8 +48,8 @@ private class GtmLinkAuthControllerTest {
 
     @IsTest
     static void testVerifyPassword_correct() {
-        MA_Saved_Configuration__c rec = [
-            SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
+        GTM_Saved_Configuration__c rec = [
+            SELECT Id FROM GTM_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
         Boolean result = GtmLinkAuthController.verifyPassword(rec.Id, 'secret123');
@@ -62,8 +62,8 @@ private class GtmLinkAuthControllerTest {
 
     @IsTest
     static void testVerifyPassword_wrong() {
-        MA_Saved_Configuration__c rec = [
-            SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
+        GTM_Saved_Configuration__c rec = [
+            SELECT Id FROM GTM_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
         Boolean result = GtmLinkAuthController.verifyPassword(rec.Id, 'wrongpassword');
@@ -86,8 +86,8 @@ private class GtmLinkAuthControllerTest {
 
     @IsTest
     static void testVerifyAndIssueToken_correctPassword_returnsMatchedAndToken() {
-        MA_Saved_Configuration__c rec = [
-            SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
+        GTM_Saved_Configuration__c rec = [
+            SELECT Id FROM GTM_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
         GtmLinkAuthController.VerifyResult res =
@@ -112,8 +112,8 @@ private class GtmLinkAuthControllerTest {
 
     @IsTest
     static void testVerifyAndIssueToken_wrongPassword_noToken() {
-        MA_Saved_Configuration__c rec = [
-            SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
+        GTM_Saved_Configuration__c rec = [
+            SELECT Id FROM GTM_Saved_Configuration__c WHERE Company__c = 'Test Corp' LIMIT 1
         ];
         Test.startTest();
         GtmLinkAuthController.VerifyResult res =
@@ -130,8 +130,8 @@ private class GtmLinkAuthControllerTest {
 
     @IsTest
     static void testVerifyAndIssueToken_noPasswordOnRecord_noToken() {
-        MA_Saved_Configuration__c rec = [
-            SELECT Id FROM MA_Saved_Configuration__c WHERE Company__c = 'No Password Corp' LIMIT 1
+        GTM_Saved_Configuration__c rec = [
+            SELECT Id FROM GTM_Saved_Configuration__c WHERE Company__c = 'No Password Corp' LIMIT 1
         ];
         Test.startTest();
         GtmLinkAuthController.VerifyResult res =
