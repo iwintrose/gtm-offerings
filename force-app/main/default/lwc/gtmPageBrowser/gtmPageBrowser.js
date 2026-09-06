@@ -1,5 +1,5 @@
 import { LightningElement, track, wire } from 'lwc';
-import { CurrentPageReference } from 'lightning/navigation';
+import { CurrentPageReference, NavigationMixin } from 'lightning/navigation';
 
 // Same fallback gtmConfigurator itself uses when no offering is named --
 // only reached here if a Story deep link somehow arrives with no offering
@@ -25,7 +25,7 @@ const DEFAULT_OFFERING_KEY = 'migration-accelerator';
  * So this component is now just the fork between those two, decided by
  * how the tab was reached -- not a renderer in its own right.
  */
-export default class GtmPageBrowser extends LightningElement {
+export default class GtmPageBrowser extends NavigationMixin(LightningElement) {
     @track isStoryMode = false;
     @track storyOfferingKey = '';
 
@@ -38,5 +38,21 @@ export default class GtmPageBrowser extends LightningElement {
         }
         this.isStoryMode = true;
         this.storyOfferingKey = state.c__offering || DEFAULT_OFFERING_KEY;
+    }
+
+    /** One header, always on screen, whatever this tab is currently
+     *  showing -- the title is the only thing that changes with context. */
+    get headerTitle() {
+        return this.isStoryMode ? 'The Story' : 'Find a link you sent';
+    }
+
+    /** Story mode is a deep link in from Overview's "Read the story"
+     *  button, not a step in a flow this component owns -- so leaving it
+     *  means clearing that link's own state param, not a local back-stack. */
+    handleBackToPages() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__navItemPage',
+            attributes: { apiName: 'GTM_Pages' }
+        });
     }
 }

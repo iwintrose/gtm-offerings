@@ -1,31 +1,23 @@
-:host { display: block; }
+:host { display: block; font-size: 13px; color: #181818; }
 
-/* Same page shell as gtmPageBrowser/gtmOverview -- siblings in the same app,
-   same ground and gutter. */
-.rlf { padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem; font-size: 13px;
-       color: #181818; background: #f3f3f3; min-height: 100%; }
-
-/* One card, always on screen regardless of step: title, the account
-   search that starts (or restarts) the flow, and -- once there's
-   somewhere to have come from -- the crumb trail. Sticky so scrolling a
-   long contact or link list never scrolls the way back to search out of
-   reach. */
+/* This renders inside gtmPageBrowser's own shell now, which already owns
+   the page background/padding and the tab's one title bar (D7 follow-up:
+   "anything that loads on the Pages tab must maintain the same look and
+   feel" -- a second icon/title here duplicated that bar instead of
+   sharing it). This is the search-and-crumbs bar underneath it, styled
+   as the same kind of card so the two read as one header, not two. */
 .rlf-head {
     background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
     padding: .75rem 1rem; margin-bottom: 1rem;
     box-shadow: 0 1px 1px rgba(0,0,0,.05);
-    position: sticky; top: 0; z-index: 1;
 }
 .rlf-head-row {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 1.25rem; flex-wrap: wrap;
+    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
 }
-.rlf-head-title { display: flex; align-items: center; gap: .75rem; min-width: 0; flex: 1 1 14rem; }
-.rlf-head-text { min-width: 0; }
+.rlf-head-label {
+    margin: 0; font-size: 12px; font-weight: 700; color: #444; flex: none;
+}
 .rlf-head-search { flex: 1 1 16rem; max-width: 22rem; }
-.rlf-ico { flex: none; }
-.rlf-eyebrow { font-size: 12px; color: #444; margin: 0; }
-.rlf-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
 
 .rlf-crumbs {
     display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
