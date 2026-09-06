@@ -611,6 +611,10 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
+        <tab>GTM_Saved_Configuration__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
         <tab>GTM_Offerings_Overview</tab>
         <visibility>Visible</visibility>
     </tabSettings>

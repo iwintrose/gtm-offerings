@@ -44,6 +44,10 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
+        <tab>GTM_Saved_Configuration__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
         <tab>GTM_Assessment_Request__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
