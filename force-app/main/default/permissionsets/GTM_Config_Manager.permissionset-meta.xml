@@ -61,6 +61,15 @@
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>GTM_Saved_Configuration__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
         <allowCreate>false</allowCreate>
         <allowDelete>false</allowDelete>
         <allowEdit>true</allowEdit>
@@ -214,7 +223,17 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Active__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Saved_Configuration__c.Generated_URL__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Generated_URL__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
@@ -224,7 +243,17 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Industry__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Saved_Configuration__c.Company__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Company__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
@@ -234,7 +263,17 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Config_Payload__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Saved_Configuration__c.Account__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Account__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
@@ -244,7 +283,17 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Contact__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Saved_Configuration__c.Estimated_Value__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Estimated_Value__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
@@ -254,7 +303,17 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Opportunity__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Saved_Configuration__c.Link_Password__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Link_Password__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
@@ -264,7 +323,17 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Industry_Label__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>MA_Saved_Configuration__c.Presentation_Stage__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Presentation_Stage__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
