@@ -491,8 +491,63 @@ public without sharing class GtmPageContentController {
             o.canRename   = !o.isFramework;
         }
 
+        // A page's own name, same reserved address renamePage() writes to.
+        // What a page is CALLED (Story, "BD App Help (FAQ)") was hardcoded
+        // in TEMPLATE_LABELS with no way to change it -- this is the read
+        // half of making that editable, same pattern as the tile-name
+        // lookup just above for an offering's own name.
+        for (GTM_Page_Content__c rec : [
+            SELECT Offering_Key__c, Template_Type__c, Text_Value__c
+            FROM   GTM_Page_Content__c
+            WHERE  Template_Type__c != null
+            AND    Section_Key__c = 'page'
+            AND    Field_Key__c   = 'title'
+            AND    Active__c      = true
+            LIMIT  400
+        ]) {
+            if (String.isNotBlank(rec.Text_Value__c)) {
+                home.pageTitles.put(rec.Offering_Key__c + '::' + rec.Template_Type__c, rec.Text_Value__c);
+            }
+        }
+
         home.activity = getPageActivity();
         return home;
+    }
+
+    /**
+     * Rename a page (what it's called, not what it's made of).
+     *
+     * templateType itself can't change -- Apex, SOQL and every layout lookup
+     * key off it -- so this is a display-name override, not a rename of the
+     * address. Stored the same way an offering's own name is: content at a
+     * reserved, un-rendered address (page::title), read back by
+     * getHomeSummary() into pageTitles as an override over TEMPLATE_LABELS.
+     */
+    @AuraEnabled
+    public static String renamePage(String offeringKey, String templateType, String title) {
+        if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
+            throw new AuraHandledException('An offering and a page are both required.');
+        }
+        String clean = title == null ? '' : title.trim();
+        if (String.isBlank(clean)) {
+            throw new AuraHandledException('A name is required.');
+        }
+        if (clean.length() > 120) clean = clean.substring(0, 120);
+
+        GTM_Page_Content__c row = new GTM_Page_Content__c(
+            Content_Address__c = offeringKey + '::' + templateType + '::page::title',
+            Offering_Key__c    = offeringKey,
+            Template_Type__c   = templateType,
+            Section_Key__c     = 'page',
+            Field_Key__c       = 'title',
+            Field_Type__c      = 'text',
+            Label__c           = 'Page title',
+            Active__c          = true,
+            Status__c          = 'Published',
+            Text_Value__c      = clean
+        );
+        upsert row Content_Address__c;
+        return clean;
     }
 
     /**
@@ -643,6 +698,10 @@ public without sharing class GtmPageContentController {
     public class HomeSummary {
         @AuraEnabled public List<OfferingSummary> offerings = new List<OfferingSummary>();
         @AuraEnabled public List<PageActivity> activity = new List<PageActivity>();
+        // Keyed "<offeringKey>::<templateType>", present only for a page
+        // someone has renamed. TEMPLATE_LABELS in c/gtmPageLayouts is the
+        // fallback for everything else -- this is only ever an override.
+        @AuraEnabled public Map<String, String> pageTitles = new Map<String, String>();
     }
 
     public class OfferingSummary {

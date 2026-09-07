@@ -6,6 +6,7 @@ import { starterFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSummary';
 import renameOffering from '@salesforce/apex/GtmPageContentController.renameOffering';
 import createOffering from '@salesforce/apex/GtmPageContentController.createOffering';
+import renamePage from '@salesforce/apex/GtmPageContentController.renamePage';
 
 
 // Every template the picklist allows, so the home can show what an offering
@@ -43,9 +44,14 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track loadError = '';
     @track searchTerm = '';
 
-    // rename
+    // rename (offering)
     @track renamingKey = '';
     @track renameValue = '';
+
+    // rename (page title override -- see renamePage() on the Apex side)
+    @track renamingPageKey = '';
+    @track renamePageValue = '';
+    @track pageTitles = {};
 
     // new offering
     @track newOfferingOpen = false;
@@ -73,6 +79,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
             .then((data) => {
                 this.offerings = (data && data.offerings) || [];
                 this.activity = (data && data.activity) || [];
+                this.pageTitles = (data && data.pageTitles) || {};
             })
             .catch((err) => {
                 this.loadError = (err && err.body && err.body.message)
@@ -89,6 +96,13 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         return `Framework · ${offerings} ${noun} · ${pages} pages`;
     }
 
+    // What a page is called: a rename overrides TEMPLATE_LABELS' generic
+    // default, same precedence an offering's own name already has over its
+    // GTM_Offering__mdt label.
+    pageLabel(offeringKey, templateType) {
+        return this.pageTitles[`${offeringKey}::${templateType}`] || TEMPLATE_LABELS[templateType] || templateType;
+    }
+
     // What an offering still has left to build, named rather than counted.
     // Mirrors the same templatesFor()/SETTINGS_TEMPLATES filter the pages
     // list below uses, so "Still to build" can never name a page the card
@@ -99,7 +113,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         const unbuilt = templatesFor(offering.offeringKey)
             .filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1)
             .filter((t) => !(byType[t] && (byType[t].sectionCount || 0) > 0))
-            .map((t) => TEMPLATE_LABELS[t] || t);
+            .map((t) => this.pageLabel(offering.offeringKey, t));
         return unbuilt.length ? `Still to build: ${unbuilt.join(', ')}.` : '';
     }
 
@@ -167,11 +181,14 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                         const sections = p ? (p.sectionCount || 0) : 0;
                         const fields = p ? (p.fieldCount || 0) : 0;
                         const isBuilt = sections > 0;
+                        const pageKey = `${o.offeringKey}::${t}`;
                         return {
                             id: `${o.offeringKey}-${t}`,
                             templateType: t,
                             offeringKey: o.offeringKey,
-                            label: TEMPLATE_LABELS[t] || t,
+                            pageKey,
+                            label: this.pageLabel(o.offeringKey, t),
+                            isRenaming: this.renamingPageKey === pageKey,
                             isBuilt,
                             detail: isBuilt
                                 ? `${sections} sections · ${fields} fields`
@@ -459,6 +476,50 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
             })
             .catch((err) => {
                 this.loadError = this.messageFrom(err) || 'The offering could not be renamed.';
+                this.isLoading = false;
+            });
+    }
+
+    // ─── renaming a page ──────────────────────────────────────────────────────
+    // What a page is CALLED, not what's on it -- templateType itself never
+    // changes, so this only ever overrides the label shown here (and on the
+    // breadcrumb/rail, via the same pageTitles map). See renamePage() on the
+    // Apex side for why it can't just be the templateType.
+
+    handleStartPageRename(event) {
+        event.stopPropagation();
+        const { offering, template, current } = event.currentTarget.dataset;
+        this.renamingPageKey = `${offering}::${template}`;
+        this.renamePageValue = current || '';
+    }
+
+    handleRenamePageInput(event) { this.renamePageValue = event.target.value; }
+
+    handleRenamePageKey(event) {
+        if (event.key === 'Enter') this.handleSavePageRename();
+        if (event.key === 'Escape') this.handleCancelPageRename();
+    }
+
+    handleCancelPageRename(event) {
+        if (event) event.stopPropagation();
+        this.renamingPageKey = '';
+        this.renamePageValue = '';
+    }
+
+    handleSavePageRename(event) {
+        if (event) event.stopPropagation();
+        const [offeringKey, templateType] = this.renamingPageKey.split('::');
+        const title = (this.renamePageValue || '').trim();
+        if (!offeringKey || !templateType || !title) return;
+        this.isLoading = true;
+        renamePage({ offeringKey, templateType, title })
+            .then(() => {
+                this.renamingPageKey = '';
+                this.renamePageValue = '';
+                this.load();
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The page could not be renamed.';
                 this.isLoading = false;
             });
     }

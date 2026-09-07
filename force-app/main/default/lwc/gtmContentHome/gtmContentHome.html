@@ -110,21 +110,43 @@
               <div class="slds-card__body off-body">
                 <ul class="pg-list">
                   <template for:each={o.pages} for:item="p">
-                    <li key={p.id}>
-                      <button class={p.rowClass}
-                              data-offering={p.offeringKey}
-                              data-template={p.templateType}
-                              onclick={handleOpenPage}>
-                        <lightning-icon icon-name={p.icon} size="x-small" class="pg-icon"></lightning-icon>
-                        <span class="pg-main">
-                          <span class="pg-name">{p.label}</span>
-                          <span class="pg-detail">{p.detail}</span>
-                        </span>
-                        <template if:false={p.isBuilt}>
-                          <span class="slds-badge pg-flag">{p.badge}</span>
-                        </template>
-                        <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
-                      </button>
+                    <li key={p.id} class="pg-row">
+                      <template if:false={p.isRenaming}>
+                        <button class={p.rowClass}
+                                data-offering={p.offeringKey}
+                                data-template={p.templateType}
+                                onclick={handleOpenPage}>
+                          <lightning-icon icon-name={p.icon} size="x-small" class="pg-icon"></lightning-icon>
+                          <span class="pg-main">
+                            <span class="pg-name">{p.label}</span>
+                            <span class="pg-detail">{p.detail}</span>
+                          </span>
+                          <template if:false={p.isBuilt}>
+                            <span class="slds-badge pg-flag">{p.badge}</span>
+                          </template>
+                          <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
+                        </button>
+                        <button class="pg-rename" data-offering={p.offeringKey}
+                                data-template={p.templateType} data-current={p.label}
+                                onclick={handleStartPageRename}
+                                title="Rename this page" aria-label="Rename this page">
+                          <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
+                        </button>
+                      </template>
+                      <template if:true={p.isRenaming}>
+                        <div class="pg-rename-row">
+                          <lightning-input variant="label-hidden" class="pg-rename-in"
+                                           label="Page name" value={renamePageValue}
+                                           onchange={handleRenamePageInput}
+                                           onkeydown={handleRenamePageKey}></lightning-input>
+                          <div class="pg-rename-acts">
+                            <lightning-button label="Save" variant="brand"
+                                              onclick={handleSavePageRename}></lightning-button>
+                            <lightning-button label="Cancel"
+                                              onclick={handleCancelPageRename}></lightning-button>
+                          </div>
+                        </div>
+                      </template>
                     </li>
                   </template>
                 </ul>

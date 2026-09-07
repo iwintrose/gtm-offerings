@@ -192,11 +192,25 @@
 .side-card .slds-media { display: flex; align-items: center; gap: .6rem; }
 
 .pg-list { list-style: none; margin: 0; padding: .3rem; display: flex; flex-direction: column; gap: 1px; }
+.pg-row { display: flex; align-items: center; gap: .15rem; }
 .pg {
-    width: 100%; display: flex; align-items: center; gap: .6rem;
+    flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: .6rem;
     padding: .55rem .6rem; border: 1px solid transparent; border-radius: 4px;
     background: none; cursor: pointer; text-align: left; font: inherit; color: inherit;
 }
+/* Same "reveal on hover" treatment as an offering's own rename button. */
+.pg-rename {
+    flex: none; border: 0; background: none; padding: .35rem; cursor: pointer;
+    color: #747474; border-radius: 3px; line-height: 0; opacity: 0; transition: opacity .12s;
+}
+.pg-row:hover .pg-rename, .pg-rename:focus { opacity: 1; }
+.pg-rename:hover { background: #f3f3f3; color: #0176d3; }
+.pg-rename-row {
+    display: flex; align-items: center; gap: .5rem; width: 100%;
+    padding: .35rem .6rem;
+}
+.pg-rename-in { flex: 1 1 auto; min-width: 0; }
+.pg-rename-acts { display: flex; gap: .35rem; flex: none; }
 .pg:hover { background: #eef4ff; border-color: #0176d3; }
 .pg-main { display: flex; flex-direction: column; min-width: 0; }
 .pg-name { font-size: 13px; font-weight: 600; }
