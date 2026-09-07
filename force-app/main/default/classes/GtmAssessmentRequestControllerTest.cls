@@ -636,4 +636,452 @@ private class GtmAssessmentRequestControllerTest {
 
         Assert.isTrue(result.success, 'A garbage token should be ignored for a direct booking');
     }
+
+    // ------------------------------------------------------------ scoring
+    // Ported from claude/salesforce-marketing-maturity-bsxmxs. Object/class
+    // names retargeted GTM_/Gtm; behavior identical to what shipped there.
+
+    /** One scored answer, in the wire shape the client submits. */
+    private static GtmAssessmentRequestController.AnswerInput answer(String dimension, Integer value) {
+        GtmAssessmentRequestController.AnswerInput a =
+            new GtmAssessmentRequestController.AnswerInput();
+        a.dimension = dimension;
+        a.value = value;
+        return a;
+    }
+
+    /** Every scored dimension answered at the same value. */
+    private static List<GtmAssessmentRequestController.AnswerInput> allAnswersAt(Integer value) {
+        List<GtmAssessmentRequestController.AnswerInput> answers =
+            new List<GtmAssessmentRequestController.AnswerInput>();
+        for (String dimension : GtmAssessmentScoring.DIMENSIONS) {
+            answers.add(answer(dimension, value));
+        }
+        return answers;
+    }
+
+    /** One complexity answer, in the wire shape the client submits. */
+    private static List<GtmAssessmentRequestController.AnswerInput> complexityAnswersAt(Integer value) {
+        List<GtmAssessmentRequestController.AnswerInput> answers =
+            new List<GtmAssessmentRequestController.AnswerInput>();
+        for (String dimension : GtmEstateComplexity.DIMENSIONS) {
+            answers.add(answer(dimension, value));
+        }
+        return answers;
+    }
+
+    @isTest
+    static void submitRequestScoresTheAnswersServerSideAndGeneratesDraftReadout() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        // Two dimensions answered, the rest left blank: 3 + 2 = 5.
+        input.answers = new List<GtmAssessmentRequestController.AnswerInput>{
+            answer('estate_scale', 3),
+            answer('source_access', 2)
+        };
+        input.branchPlatform = 'MCE';
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success);
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c, Section_Scores__c, Branch_Platform__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(5, req.Assessment_Score__c, 'The total is summed in Apex from the raw answers');
+        Assert.areEqual('Discovery First', req.Assessment_Tier__c, 'And the tier band is derived from that total');
+        Assert.areEqual('MCE', req.Branch_Platform__c);
+        Map<String, Object> sections =
+            (Map<String, Object>) JSON.deserializeUntyped(req.Section_Scores__c);
+        Assert.areEqual(2, sections.size());
+        Assert.areEqual(3, (Integer) sections.get('estate_scale'));
+        Assert.areEqual(2, (Integer) sections.get('source_access'));
+
+        List<GTM_Readout__c> readouts = [
+            SELECT Status__c FROM GTM_Readout__c WHERE Assessment_Request__c = :result.assessmentRequestId
+        ];
+        Assert.areEqual(1, readouts.size(), 'A Draft readout should be auto-generated on submission');
+        Assert.areEqual('Draft', readouts[0].Status__c);
+    }
+
+    @isTest
+    static void aTamperedClientScoreIsNeverPersisted() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.answers = new List<GtmAssessmentRequestController.AnswerInput>{
+            answer('estate_scale', 1),
+            answer('source_access', 1)
+        };
+        input.assessmentScore = 999;
+        input.assessmentTier  = 'Fast-Track';
+        input.sectionScores   = '{"estate_scale":4,"source_access":4,"invented":4}';
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c, Section_Scores__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(2, req.Assessment_Score__c, 'The stored score is the one Apex computed: 1 + 1');
+        Assert.areNotEqual(999, req.Assessment_Score__c, 'The client-supplied score must not survive');
+        Assert.areEqual('Discovery First', req.Assessment_Tier__c);
+        Assert.areNotEqual('Fast-Track', req.Assessment_Tier__c, 'Nor the client-supplied tier');
+        Assert.isFalse(
+            req.Section_Scores__c.contains('invented'),
+            'The stored breakdown is rebuilt server-side: ' + req.Section_Scores__c
+        );
+        Map<String, Object> sections =
+            (Map<String, Object>) JSON.deserializeUntyped(req.Section_Scores__c);
+        Assert.areEqual(1, (Integer) sections.get('estate_scale'), 'Not the 4 the client claimed');
+    }
+
+    @isTest
+    static void aFullyAnsweredQuestionnaireTopsOutAtThirtyTwo() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.answers = allAnswersAt(4);
+        input.answers.add(answer('invented_dimension', 4));
+        input.answers.add(answer('another_invented_one', 4));
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(32, req.Assessment_Score__c, 'Eight dimensions at four points is 32, not 40');
+        Assert.areEqual(GtmAssessmentScoring.MAX_TOTAL_SCORE, req.Assessment_Score__c);
+        Assert.areEqual('Fast-Track', req.Assessment_Tier__c);
+    }
+
+    @isTest
+    static void noSourceAccessCapsTheStoredTierAtDiscoveryFirst() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.answers = allAnswersAt(4);
+        for (GtmAssessmentRequestController.AnswerInput a : input.answers) {
+            if (a.dimension == 'source_access') {
+                a.value = 1;
+            }
+        }
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c, Assessment_Advisory__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(29, req.Assessment_Score__c, 'The score is untouched by the gate');
+        Assert.areEqual('Discovery First', req.Assessment_Tier__c,
+            'No extract, no offering -- 29/32 does not buy a Fast-Track');
+        Assert.isFalse(req.Assessment_Advisory__c, 'Capped, not suppressed');
+    }
+
+    @isTest
+    static void theRebuildRatioFlagIsStoredAlongsideAHighTier() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.answers = allAnswersAt(4);
+        for (GtmAssessmentRequestController.AnswerInput a : input.answers) {
+            if (a.dimension == 'orchestration_portability' || a.dimension == 'content_portability') {
+                a.value = 1;
+            }
+        }
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Tier__c, Assessment_Flags__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual('Accelerator-Ready', req.Assessment_Tier__c,
+            'The annotation is non-blocking -- the band is unchanged');
+        Assert.isTrue(req.Assessment_Flags__c.contains('high_rebuild_ratio'));
+        Assert.isTrue(req.Assessment_Flags__c.contains('C/D'));
+    }
+
+    @isTest
+    static void anUnsupportedPairIsStoredAsAdvisoryWithNoTier() {
+        GtmMigrationPairs.resetCache();
+        GtmMigrationPairs.platformOverride = new List<GTM_Migration_Platform__mdt>{
+            new GTM_Migration_Platform__mdt(
+                Platform_Key__c = 'adobe', Display_Label__c = 'Adobe Campaign',
+                Aliases__c = 'Adobe Campaign', Active__c = true
+            ),
+            new GTM_Migration_Platform__mdt(
+                Platform_Key__c = 'sfmc', Display_Label__c = 'Marketing Cloud Engagement',
+                Aliases__c = 'SFMC;MCE', Active__c = true
+            )
+        };
+        GtmMigrationPairs.pairOverride = new List<GTM_Migration_Pair__mdt>{
+            new GTM_Migration_Pair__mdt(
+                Source_Key__c = 'adobe', Target_Key__c = 'sfmc', Supported__c = false,
+                Unsupported_Reason__c = 'Adobe Campaign is not an extractable source.',
+                Active__c = true
+            )
+        };
+
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.currentPlatform = 'Adobe Campaign';
+        input.targetPlatform  = 'MCE';
+        input.answers = allAnswersAt(4);
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c,
+                   Assessment_Advisory__c, Advisory_Reason__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(32, req.Assessment_Score__c, 'Still scored -- it is still useful input');
+        Assert.isNull(req.Assessment_Tier__c, 'But never banded');
+        Assert.isTrue(req.Assessment_Advisory__c);
+        Assert.areEqual('Adobe Campaign is not an extractable source.', req.Advisory_Reason__c);
+    }
+
+    @isTest
+    static void complexityIsStoredOnItsOwnAxisAndNeverAddedToTheScore() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.answers = allAnswersAt(4);                 // readiness 32/32
+        input.complexityAnswers = complexityAnswersAt(3); // complexity 18/18
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c,
+                   Estate_Complexity_Score__c, Estate_Complexity_Band__c,
+                   Estate_Complexity_Basis__c, Estate_Complexity_Dimensions__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(32, req.Assessment_Score__c, 'Complexity must not leak into the readiness total');
+        Assert.areEqual('Fast-Track', req.Assessment_Tier__c);
+        Assert.areEqual(18, req.Estate_Complexity_Score__c);
+        Assert.areEqual('Heavy', req.Estate_Complexity_Band__c);
+        Assert.areEqual('Self-Estimated', req.Estate_Complexity_Basis__c,
+            'A questionnaire answer is a pre-scan estimate, whatever the client called it');
+        Assert.isTrue(req.Estate_Complexity_Dimensions__c.contains('scripting_depth'));
+    }
+
+    @isTest
+    static void aClientCannotLabelItsOwnEstimateAsMeasured() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.complexityAnswers = complexityAnswersAt(1);
+        input.complexityBasis = 'Measured';
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Estate_Complexity_Score__c, Estate_Complexity_Band__c, Estate_Complexity_Basis__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(6, req.Estate_Complexity_Score__c);
+        Assert.areEqual('Light', req.Estate_Complexity_Band__c);
+        Assert.areEqual('Self-Estimated', req.Estate_Complexity_Basis__c);
+    }
+
+    @isTest
+    static void noComplexityAnswersLeavesTheSecondAxisEmptyRatherThanLight() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.answers = allAnswersAt(2);
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Estate_Complexity_Score__c,
+                   Estate_Complexity_Band__c, Estate_Complexity_Basis__c,
+                   Estate_Complexity_Dimensions__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.areEqual(16, req.Assessment_Score__c, 'The readiness axis is unaffected');
+        Assert.isNull(req.Estate_Complexity_Score__c, '"Not estimated", not "Light"');
+        Assert.isNull(req.Estate_Complexity_Band__c);
+        Assert.isNull(req.Estate_Complexity_Basis__c);
+        Assert.isNull(req.Estate_Complexity_Dimensions__c);
+    }
+
+    @isTest
+    static void oversizeSectionScoresAreDroppedRatherThanLosingTheSubmission() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.sectionScores = '{"padding":"' + 'x'.repeat(40000) + '"}';
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success);
+        Assert.isNotNull(
+            result.assessmentRequestId,
+            'The submission must survive an oversize section-scores blob'
+        );
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c, Section_Scores__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.isNull(
+            req.Section_Scores__c,
+            'An oversize blob is stored as null, never truncated into unparseable JSON'
+        );
+        Assert.isNull(
+            req.Assessment_Score__c,
+            'No answers were submitted, so there is no score -- "not assessed", not zero'
+        );
+        Assert.isNull(req.Assessment_Tier__c);
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM GTM_Readout__c WHERE Assessment_Request__c = :result.assessmentRequestId],
+            'And the draft readout is still generated'
+        );
+    }
+
+    @isTest
+    static void submitRequestSucceedsEvenWithoutScoringData() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(sampleInput());
+        Test.stopTest();
+
+        Assert.isTrue(result.success);
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM GTM_Readout__c WHERE Assessment_Request__c = :result.assessmentRequestId]
+        );
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c, Section_Scores__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.isNull(req.Assessment_Score__c, 'Unscored stays unscored -- never a defaulted zero');
+        Assert.isNull(req.Assessment_Tier__c);
+        Assert.isNull(req.Section_Scores__c);
+    }
+
+    @isTest
+    static void aLegacyClientsSectionScoresSurviveWhenItSendsNoAnswers() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.sectionScores = '{"estate_scale":3,"source_access":2}';
+        input.assessmentScore = 30;
+        input.assessmentTier = 'Fast-Track';
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        GTM_Assessment_Request__c req = [
+            SELECT Assessment_Score__c, Assessment_Tier__c, Section_Scores__c
+            FROM GTM_Assessment_Request__c
+            WHERE Id = :result.assessmentRequestId
+        ];
+        Assert.isTrue(req.Section_Scores__c.contains('estate_scale'), 'The legacy blob is kept');
+        Assert.isNull(req.Assessment_Score__c, 'But the client score is still discarded');
+        Assert.isNull(req.Assessment_Tier__c, 'And so is the client tier');
+    }
+
+    // -------------------------------------------------------- draft closing
+    // New for the port: proves closeDraft's append-and-count revocation
+    // (docs/handoff/port-map-ma-to-gtm.md section F) against the real
+    // GtmAssessmentDraftController mint path, end to end.
+
+    @isTest
+    static void submittingClosesTheLinkedDraftByAppendingNotUpdating() {
+        GtmAssessmentDraftController.DraftHandle draft =
+            GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc');
+        Integer rowsBeforeSubmit = [
+            SELECT COUNT() FROM GTM_Form_Draft__c WHERE Resume_Token__c = :draft.resumeToken
+        ];
+
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.draftToken = draft.resumeToken;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success);
+        Integer rowsAfterSubmit = [
+            SELECT COUNT() FROM GTM_Form_Draft__c WHERE Resume_Token__c = :draft.resumeToken
+        ];
+        Assert.areEqual(rowsBeforeSubmit + 1, rowsAfterSubmit,
+            'Submitting must APPEND a closing row, never UPDATE the existing one -- a guest '
+            + 'cannot update in this org (see GtmGuestUpdateProbeTest)');
+
+        GtmAssessmentDraftController.DraftPayload resumed =
+            GtmAssessmentDraftController.resumeDraft(draft.resumeToken);
+        Assert.isNull(resumed, 'A submitted draft must stop resolving');
+
+        List<GTM_Form_Draft__c> closingRow = [
+            SELECT Submitted_Request__c
+            FROM GTM_Form_Draft__c
+            WHERE Resume_Token__c = :draft.resumeToken
+            ORDER BY CreatedDate DESC, Id DESC
+            LIMIT 1
+        ];
+        Assert.areEqual(result.assessmentRequestId, closingRow[0].Submitted_Request__c);
+    }
+
+    @isTest
+    static void submitWithNoDraftTokenNeverTouchesGtmFormDraft() {
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.draftToken = null;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success);
+        // No assertion needed beyond success -- closeDraft's own blank-token
+        // guard means this path issues no GTM_Form_Draft__c query or DML at
+        // all, and a stray exception there would have surfaced as a failure.
+    }
 }

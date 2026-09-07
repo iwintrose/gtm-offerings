@@ -47,13 +47,42 @@ cd "$(dirname "$0")/.."
 # added to the repo without ever being added here, so a from-scratch deploy
 # would have silently skipped every flow, record page, and remote site
 # setting the org actually needs.
+#
+# EXCLUDE_DIRS (optional env var, comma-separated top-level folder names)
+# is the one deliberate escape hatch from that everything-by-default rule,
+# for a directory whose CONTENT the org cannot accept at all -- not a
+# validation error, a hard "this feature is not provisioned here". Confirmed
+# against gtm-dev: bots/ and genAiPlugins/ (the GTM Configurator Assistant
+# Agentforce action) fail deploy with "Not available for deploy for this
+# organization" / "'Invocable' is not a valid value for the enum
+# 'PluginType'" -- both mean Agentforce/Bots is not provisioned on this org,
+# confirmed separately by `SELECT ... FROM BotDefinition` itself failing
+# with INVALID_TYPE. That is an edition/licensing fact about one org, not a
+# defect in the source, so the fix is not to remove bots/genAiPlugins from
+# the repo -- another instance with Agentforce provisioned needs them. Usage
+# for an org missing that provisioning:
+#   EXCLUDE_DIRS=bots,genAiPlugins ./scripts/deploy.sh my-org
 SOURCE_DIRS=()
+IFS=',' read -ra _EXCLUDED <<< "${EXCLUDE_DIRS:-}"
 for d in force-app/main/default/*/; do
   name="$(basename "$d")"
-  if [ "$name" != "customMetadata" ]; then
+  if [ "$name" = "customMetadata" ]; then
+    continue
+  fi
+  skip=0
+  for x in "${_EXCLUDED[@]}"; do
+    if [ "$name" = "$x" ]; then
+      skip=1
+      break
+    fi
+  done
+  if [ "$skip" -eq 0 ]; then
     SOURCE_DIRS+=(--source-dir "force-app/main/default/$name")
   fi
 done
+if [ -n "${EXCLUDE_DIRS:-}" ]; then
+  echo "==> Excluding from this deploy (EXCLUDE_DIRS): ${EXCLUDE_DIRS}"
+fi
 
 # Deployed in two passes, not one: bundling the GTM_Offering__mdt custom
 # metadata TYPE and its seeded RECORD in the same transaction as everything

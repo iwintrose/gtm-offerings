@@ -19,6 +19,24 @@
         <tab>GTM_Assessment_Request__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
+    <!-- Ported from claude/salesforce-marketing-maturity-bsxmxs: readout +
+         instrument-author tabs, so standard platform users can see them. -->
+    <tabSettings>
+        <tab>GTM_Readout__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GTM_Readouts_Overview</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GTM_Readouts_Manager</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GTM_Instrument_Author</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
     <tabSettings>
         <tab>standard-Account</tab>
         <visibility>Visible</visibility>

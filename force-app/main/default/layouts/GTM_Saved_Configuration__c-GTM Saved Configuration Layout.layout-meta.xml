@@ -65,7 +65,7 @@
     <showRunAssignmentRulesCheckbox>false</showRunAssignmentRulesCheckbox>
     <showSubmitAndAttachButton>false</showSubmitAndAttachButton>
     <summaryLayout>
-        <masterLabel>MA Saved Configuration Layout</masterLabel>
+        <masterLabel>GTM Saved Configuration Layout</masterLabel>
         <sizeX>4</sizeX>
         <sizeY>0</sizeY>
     </summaryLayout>

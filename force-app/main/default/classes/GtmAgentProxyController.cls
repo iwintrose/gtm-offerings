@@ -11,6 +11,20 @@
  * delta to the LWC, which dispatches them directly via _applyDelta(). The
  * Agentforce path uses the platform event (GtmAgentApplyConfigUpdate publishes it
  * and the empApi subscription in maConfigCustomize picks it up).
+ *
+ * TWO SCREENS, ONE LOOP. GUS now also sits on the readout editor
+ * (gtmReadoutReview). That is a different job with different tools and a
+ * different prompt, but it is NOT a second tool-use loop: runLoop() below is
+ * the only one, and each screen supplies a GtmAgentToolSurface. chat() is the
+ * configurator's entry point, chatOnReadout() the readout editor's.
+ *
+ * SHARING. This class stays `without sharing`, which is correct for the
+ * configurator's page state and wrong for anything that reads or writes client
+ * deal content. Apex resolves sharing per executing class, so the readout
+ * surface (GtmReadoutAgentSurface) is `with sharing` and gets sharing back
+ * despite being called from here — and it does not lean on that either: it
+ * asserts the running user's record access on the readout explicitly, on every
+ * call, before it reads or proposes anything. See its header.
  */
 public without sharing class GtmAgentProxyController {
 
@@ -20,7 +34,7 @@ public without sharing class GtmAgentProxyController {
     static final Integer MAX_TOKENS      = 1024;
     static final Integer MAX_TOOL_ROUNDS = 5;
 
-    static final String SYSTEM_PROMPT =
+    static final String CONFIG_SYSTEM_PROMPT =
         'You are the GTM Configurator Assistant, embedded in a Publicis Sapient sales tool. ' +
         'You help PS sales reps personalize Migration Accelerator client presentations by reading ' +
         'the current page state and applying precise field updates based on what the rep tells you ' +
@@ -73,6 +87,8 @@ public without sharing class GtmAgentProxyController {
     // ── Public API ────────────────────────────────────────────────────────────
 
     /**
+     * Configurator entry point. Unchanged contract.
+     *
      * @param sessionToken  LWC session token (routes empApi events; passed through for logging only in proxy mode)
      * @param configId      GTM_Saved_Configuration__c Id — blank for unsaved sessions
      * @param userMessage   Latest message from the rep
@@ -83,10 +99,53 @@ public without sharing class GtmAgentProxyController {
     @AuraEnabled
     public static String chat(String sessionToken, String configId,
                               String userMessage, String historyJson) {
+        return runLoop(new ConfigSurface(configId), userMessage, historyJson);
+    }
+
+    /**
+     * Readout-editor entry point: GUS on gtmReadoutReview.
+     *
+     * The readout Id is a PARAMETER OF THE SESSION, not of any tool. The model
+     * is never given a readout Id to pass, and no tool accepts one, so there is
+     * no shape of tool call that can reach a different readout — the blast
+     * radius of a confused or prompt-injected model is the one record the rep
+     * already has open. Access to that record is asserted here, before the
+     * first callout, and again inside every tool.
+     *
+     * workingDraft is the rep's unsaved editor content. Edits are computed
+     * against it and returned as `changes.draftContent` for the LWC to drop
+     * back into the editor — nothing is written to the record. The rep still
+     * clicks Save Draft, and that save still goes through
+     * GtmReadoutController.saveDraftContent with all its state checks. That is
+     * both the human-in-the-loop gate and what keeps this transaction free of
+     * DML between callouts.
+     *
+     * @return JSON: { text, historyJson, changes } where changes may contain
+     *         draftContent (the proposed full readout HTML)
+     */
+    @AuraEnabled
+    public static String chatOnReadout(String readoutId, String workingDraft,
+                                       String userMessage, String historyJson) {
+        if (String.isBlank(readoutId)) {
+            throw new AuraHandledException('A readout Id is required.');
+        }
+        // Fail closed before we spend a callout on a record the rep cannot see.
+        GtmReadoutAgentContext.assertReadable(readoutId);
+        return runLoop(new GtmReadoutAgentSurface(readoutId, workingDraft), userMessage, historyJson);
+    }
+
+    // ── The loop (one, shared) ────────────────────────────────────────────────
+
+    /**
+     * The Claude tool-use loop. Callouts only; the surface's executeTool does
+     * no DML, so every HTTP round trip in this method happens before the
+     * transaction's first (client-side, later) write.
+     */
+    private static String runLoop(GtmAgentToolSurface surface, String userMessage, String historyJson) {
         String apiKey = getApiKey();
         if (String.isBlank(apiKey)) {
             throw new AuraHandledException(
-                'Claude API key not configured. Go to Setup → Custom Settings → MA Agent Settings → Manage → New, and paste your Anthropic API key into the Claude API Key field.'
+                'Claude API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Anthropic API key into the Claude API Key field.'
             );
         }
 
@@ -100,7 +159,7 @@ public without sharing class GtmAgentProxyController {
 
         while (rounds < MAX_TOOL_ROUNDS) {
             rounds++;
-            Map<String,Object> response = callClaude(history, apiKey, model);
+            Map<String,Object> response = callClaude(history, apiKey, model, surface);
             String stopReason           = (String) response.get('stop_reason');
             List<Object> content        = (List<Object>) response.get('content');
 
@@ -125,7 +184,17 @@ public without sharing class GtmAgentProxyController {
                     String toolName    = (String) block.get('name');
                     String toolId      = (String) block.get('id');
                     Map<String,Object> input = (Map<String,Object>) block.get('input');
-                    String resultJson  = executeToolCall(toolName, input, configId, accumulatedChanges);
+                    String resultJson;
+                    try {
+                        resultJson = surface.executeTool(toolName, input, accumulatedChanges);
+                    } catch (Exception e) {
+                        // A surface is contracted not to throw. If one does, the
+                        // conversation degrades to a tool error rather than a
+                        // 500 the rep cannot act on.
+                        resultJson = JSON.serialize(new Map<String,Object>{
+                            'error' => 'Tool execution failed: ' + e.getMessage()
+                        });
+                    }
 
                     toolResults.add(new Map<String,Object>{
                         'type'        => 'tool_result',
@@ -149,6 +218,29 @@ public without sharing class GtmAgentProxyController {
             'historyJson' => JSON.serialize(history),
             'changes'     => accumulatedChanges
         });
+    }
+
+    // ── The configurator surface ──────────────────────────────────────────────
+
+    /**
+     * The original two configurator tools, unchanged, now behind the surface
+     * seam. `without sharing` is inherited from the enclosing class and is
+     * deliberate here: configurator page state is not client deal content.
+     */
+    private class ConfigSurface implements GtmAgentToolSurface {
+        private final String configId;
+        ConfigSurface(String configId) { this.configId = configId; }
+
+        public String systemPrompt()      { return CONFIG_SYSTEM_PROMPT; }
+        public Integer maxTokens()        { return MAX_TOKENS; }
+        public List<Object> toolDefinitions() {
+            return new List<Object>{ TOOL_GET_STATE, TOOL_APPLY_UPDATE };
+        }
+
+        public String executeTool(String toolName, Map<String,Object> input,
+                                  Map<String,Object> accumulatedChanges) {
+            return executeToolCall(toolName, input, configId, accumulatedChanges);
+        }
     }
 
     // ── Tool execution ────────────────────────────────────────────────────────
@@ -243,12 +335,13 @@ public without sharing class GtmAgentProxyController {
 
     // ── HTTP callout ──────────────────────────────────────────────────────────
 
-    private static Map<String,Object> callClaude(List<Object> messages, String apiKey, String model) {
+    private static Map<String,Object> callClaude(List<Object> messages, String apiKey,
+                                                String model, GtmAgentToolSurface surface) {
         String body = JSON.serialize(new Map<String,Object>{
             'model'      => model,
-            'max_tokens' => MAX_TOKENS,
-            'system'     => SYSTEM_PROMPT,
-            'tools'      => new List<Object>{ TOOL_GET_STATE, TOOL_APPLY_UPDATE },
+            'max_tokens' => surface.maxTokens(),
+            'system'     => surface.systemPrompt(),
+            'tools'      => surface.toolDefinitions(),
             'messages'   => messages
         });
 

@@ -1,5 +1,17 @@
 /**
- * A part-finished assessment form, so a prospect who leaves can come back to it.
+ * A part-finished configurator booking form, so a prospect who leaves can
+ * come back to it.
+ *
+ * SHARES A TABLE WITH ANOTHER GUEST POPULATION. GTM_Form_Draft__c also holds
+ * the branching readiness-questionnaire draft (Draft_Type__c = 'Assessment',
+ * owned by GtmAssessmentDraftController, guest permission set
+ * GTM_Assessment_Guest). Every query and insert in THIS class filters/sets
+ * Draft_Type__c = 'Booking' so the two populations never cross -- see
+ * docs/handoff/port-map-ma-to-gtm.md section E for the full security posture
+ * this depends on. GTM_Story_Guest's field grants on this object must never
+ * be widened to include the Assessment-only fields (Resume_Token__c,
+ * Expires_At__c, Status__c beyond its default, Submitted_Request__c,
+ * Pair_Key__c, Last_Saved_At__c).
  *
  * WHAT THIS EXPOSES, deliberately and in full — this is the one class on a
  * public page that lets an unauthenticated visitor WRITE:
@@ -56,7 +68,8 @@ public without sharing class GtmFormDraftController {
         List<GTM_Form_Draft__c> found = [
             SELECT Draft_JSON__c, Furthest_Field__c, CreatedDate
             FROM   GTM_Form_Draft__c
-            WHERE  Draft_Key__c = :key
+            WHERE  Draft_Type__c = 'Booking'
+            AND    Draft_Key__c = :key
             // Id breaks the tie, and it has to: CreatedDate is second-resolution,
             // two saves 1.5 seconds apart routinely share one, and on a tie the
             // database is free to hand back the older row. That is exactly what
@@ -100,6 +113,7 @@ public without sharing class GtmFormDraftController {
 
         try {
             SObject draft = Schema.getGlobalDescribe().get('GTM_Form_Draft__c').newSObject();
+            draft.put('Draft_Type__c', 'Booking');
             draft.put('Draft_Key__c', key);
             draft.put('Saved_Configuration__c', resolvedConfigId);
             draft.put('Draft_JSON__c', draftJson);
@@ -130,6 +144,7 @@ public without sharing class GtmFormDraftController {
         if (key == null || !isLinkWritable(resolvedConfigId)) return;
         try {
             SObject draft = Schema.getGlobalDescribe().get('GTM_Form_Draft__c').newSObject();
+            draft.put('Draft_Type__c', 'Booking');
             draft.put('Draft_Key__c', key);
             draft.put('Saved_Configuration__c', resolvedConfigId);
             draft.put('Draft_JSON__c', EMPTY_DRAFT);

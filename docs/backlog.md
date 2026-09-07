@@ -183,8 +183,10 @@ then succeeded cleanly (dry-run and real, 0 errors). Local source files
 removed to match. `check-all.sh` dangling-references check: none.
 
 **Phase 2 authorized — full `MA_` → `GTM_` custom object/field rename.**
-Confirmed `orgfarm-5c323065da-dev-ed` (org Id `00DgK00000XZieHUAT`) *is*
-production — no separate prod org exists. Full scope run against it: 11
+Confirmed `orgfarm-5c323065da-dev-ed` *is*
+production — no separate prod org exists. (Its org Id is recorded in the
+deploy log for that run, not repeated here — a Salesforce org Id is
+org-specific and does not belong in source.) Full scope run against it: 11
 objects/mdt/settings/events, 108 fields, 34 Apex classes, 14 LWC bundles,
 2 flows, 6 permission sets, 2 profiles, 8 confirmed hardcoded
 API-name-in-string-literal spots a type-reference-only sweep would miss

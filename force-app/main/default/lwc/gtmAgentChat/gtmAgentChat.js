@@ -1,11 +1,45 @@
 import { LightningElement, api, track } from 'lwc';
 import chat from '@salesforce/apex/GtmAgentProxyController.chat';
+import chatOnReadout from '@salesforce/apex/GtmAgentProxyController.chatOnReadout';
 
 const FALLBACK_PLACEHOLDER = 'Ask me to update company, industry, accent color…';
+const MODE_CONFIG = 'config';
+const MODE_READOUT = 'readout';
 
+/**
+ * The GUS chat surface. One component, two screens (ported from
+ * claude/salesforce-marketing-maturity-bsxmxs, folded onto this file rather
+ * than replacing it -- see docs/handoff/port-map-ma-to-gtm.md section 5.6).
+ *
+ * `mode` picks which Apex entry point — and therefore which system prompt and
+ * which tools — the conversation runs against. Everything else (the bubbles,
+ * the history handling, the delta event) is identical, because it should be:
+ * when Agentforce is provisioned this whole component is replaced by
+ * <einstein-copilot-chat> with a different agent-api-name per screen, and
+ * keeping the screens' differences on the SERVER side is what makes that a
+ * one-line swap rather than a rewrite.
+ *
+ * The delta contract is unchanged: the server never writes, it returns
+ * `changes`, and the host component decides what to do with them.
+ *   config  → { company, industry, accent, ... } for the configurator panel
+ *   readout → { draftContent } for gtmReadoutAssist
+ */
 export default class GtmAgentChat extends LightningElement {
     @api sessionToken = '';
     @api configId = '';
+
+    /** 'config' (default) or 'readout'. */
+    @api mode = MODE_CONFIG;
+
+    /** Readout mode: the record the conversation is bound to. */
+    @api readoutId = '';
+
+    /**
+     * Readout mode: the rep's UNSAVED editor content. Sent on every turn so
+     * proposed edits are computed against what the rep is actually looking at,
+     * not against the last saved version.
+     */
+    @api workingDraft = '';
 
     /**
      * The words, which belong to the offering rather than to this component.
@@ -30,8 +64,15 @@ export default class GtmAgentChat extends LightningElement {
     historyJson = '';
     _msgCounter = 0;
 
+    get isReadoutMode() {
+        return this.mode === MODE_READOUT;
+    }
+
     get placeholder() {
-        return this.placeholderText || FALLBACK_PLACEHOLDER;
+        if (this.placeholderText) return this.placeholderText;
+        return this.isReadoutMode
+            ? 'Paste your notes, or ask me to draft a section…'
+            : FALLBACK_PLACEHOLDER;
     }
 
     /**
@@ -79,12 +120,7 @@ export default class GtmAgentChat extends LightningElement {
         this.draft = '';
         this.thinking = true;
 
-        chat({
-            sessionToken : this.sessionToken,
-            configId     : this.configId,
-            userMessage  : text,
-            historyJson  : this.historyJson
-        })
+        this._send(text)
         .then(result => {
             const parsed = JSON.parse(result);
             this.historyJson = parsed.historyJson || '';
@@ -105,6 +141,28 @@ export default class GtmAgentChat extends LightningElement {
         .finally(() => {
             this.thinking = false;
             this._scrollToBottom();
+        });
+    }
+
+    /**
+     * Routes to the entry point for this mode. The readout call deliberately
+     * carries no config session token: the two surfaces share a loop on the
+     * server, not a session.
+     */
+    _send(text) {
+        if (this.isReadoutMode) {
+            return chatOnReadout({
+                readoutId    : this.readoutId,
+                workingDraft : this.workingDraft || '',
+                userMessage  : text,
+                historyJson  : this.historyJson
+            });
+        }
+        return chat({
+            sessionToken : this.sessionToken,
+            configId     : this.configId,
+            userMessage  : text,
+            historyJson  : this.historyJson
         });
     }
 

@@ -16,9 +16,16 @@
         </template>
         <!-- The gap on .cta already separates these two flex items; the
              &nbsp; that used to be here doubled it. -->
-        <button class="cta" onclick={handleOpenBooking}>
-          <span class="cta-long">Get an</span>environment assessment →
-        </button>
+        <template if:false={hasSubmittedAssessment}>
+          <button class="cta" onclick={handleOpenBooking}>
+            <span class="cta-long">Get an</span>environment assessment →
+          </button>
+        </template>
+        <template if:true={hasSubmittedAssessment}>
+          <button class="cta" onclick={handleTopCtaClick} disabled={topCtaDisabled}>
+            {topCtaLabel}
+          </button>
+        </template>
         <template if:true={showCustomizeButton}>
           <!-- Gus is the way in now. "Customize" named a panel; this names
                who you are asking, and it is the same character as the
@@ -39,6 +46,29 @@
       onstagesent={handleStageSent}
       onpreviewclient={handleStagePreview}
     ></c-gtm-stage-actions>
+
+    <!-- Published: every prior section (progress bar through the closing
+         footer) is replaced with a single "view your assessment" entry
+         point. Draft/Approved/no-readout are unaffected here — those only
+         change the top-nav CTA and the "next step" section below.
+         Ported from claude/salesforce-marketing-maturity-bsxmxs. -->
+    <template if:true={showPublishedGate}>
+      <section class="chap readout-gate">
+        <div class="wrap wrap-tight">
+          <div class="eyebrow rv">Your assessment</div>
+          <h2 class="rv d1">Your assessment is ready.</h2>
+          <p class="lede rv d2">
+            We've finished your environment assessment. Open it below to see
+            what we found and what we'd recommend as the next step.
+          </p>
+          <button class="cta" onclick={handleOpenReadoutView}>
+            View your assessment →
+          </button>
+        </div>
+      </section>
+    </template>
+
+    <template if:false={showPublishedGate}>
 
     <div class="progress" style={progressStyle}></div>
 
@@ -348,21 +378,39 @@
           <lightning-formatted-rich-text value={chClosing.head}></lightning-formatted-rich-text>
         </h2>
         <div class="next-card rv d2">
-          <div class="nh">
-            <lightning-formatted-rich-text value={chClosing.cardHead}></lightning-formatted-rich-text>
-          </div>
-          <p>
-            <lightning-formatted-rich-text value={chClosing.body}></lightning-formatted-rich-text>
-          </p>
-          <div class="next-actions">
-            <button class="cta" onclick={handleOpenBooking}>{chClosing.ctaLabel}</button>
-            <a
-              href={chClosing.altCtaUrl}
-              target="_blank"
-              rel="noopener"
-              class="cta line"
-            >{chClosing.altCtaLabel}</a>
-          </div>
+          <template if:false={hasSubmittedAssessment}>
+            <div class="nh">
+              <lightning-formatted-rich-text value={chClosing.cardHead}></lightning-formatted-rich-text>
+            </div>
+            <p>
+              <lightning-formatted-rich-text value={chClosing.body}></lightning-formatted-rich-text>
+            </p>
+            <div class="next-actions">
+              <button class="cta" onclick={handleOpenBooking}>{chClosing.ctaLabel}</button>
+              <a
+                href={chClosing.altCtaUrl}
+                target="_blank"
+                rel="noopener"
+                class="cta line"
+              >{chClosing.altCtaLabel}</a>
+            </div>
+          </template>
+          <template if:true={hasSubmittedAssessment}>
+            <div class="nh">Your request has been submitted.</div>
+            <p>
+              Thanks — your environment assessment request is with our team.
+              We'll be in touch, and this page will let you know the moment
+              it's ready to view.
+            </p>
+            <div class="next-actions">
+              <a
+                href={chClosing.altCtaUrl}
+                target="_blank"
+                rel="noopener"
+                class="cta line"
+              >{chClosing.altCtaLabel}</a>
+            </div>
+          </template>
           <div class="next-meta">
             <span>
               Your contact ·
@@ -403,6 +451,8 @@
       <span class="wm"><span class="tick"></span> {footerLeft}</span>
       <span>{footerRight}</span>
     </footer>
+
+    </template>
 
     <c-gtm-config-wizard
       is-open={customizeOpen}
@@ -450,6 +500,41 @@
       onsubmitted={handleBookingSubmitted}
       onformresumed={handleFormResumed}
     ></c-gtm-config-booking>
+
+    <!-- Ported from claude/salesforce-marketing-maturity-bsxmxs. -->
+    <template if:true={readoutViewOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="readoutTitle" class="scrim">
+        <div class="modal modal--readout">
+          <header class="modal-h">
+            <h2 id="readoutTitle">Your assessment</h2>
+            <button class="modal-x" onclick={handleCloseReadoutView} aria-label="Close">&times;</button>
+          </header>
+          <div class="modal-b modal-b--scroll">
+            <template if:true={readoutLoadError}>
+              <p class="modal-note">{readoutLoadError}</p>
+            </template>
+            <template if:false={readoutLoadError}>
+              <lightning-formatted-rich-text value={readoutContent}></lightning-formatted-rich-text>
+            </template>
+          </div>
+          <template if:true={hasReadoutRep}>
+            <div class="modal-rep">
+              <div class="modal-rep-label">Your contact</div>
+              <div class="modal-rep-name">{readoutRepName}</div>
+              <template if:true={hasReadoutRepEmail}>
+                <a href="mailto:{readoutRepEmail}" class="modal-rep-line">{readoutRepEmail}</a>
+              </template>
+              <template if:true={hasReadoutRepPhone}>
+                <a href="tel:{readoutRepPhone}" class="modal-rep-line">{readoutRepPhone}</a>
+              </template>
+            </div>
+          </template>
+          <footer class="modal-f">
+            <lightning-button label="Close" onclick={handleCloseReadoutView}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
 
     <template if:true={showGateLoading}>
       <div class="expired on"></div>

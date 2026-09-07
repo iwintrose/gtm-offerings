@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Draft_Key__c</fullName>
-    <description>&lt;engagement link id&gt;::&lt;visitor key&gt;. The external id the draft is upserted on, and the only way to reach it: the visitor key is a random value the browser generates and keeps, so a draft is readable only by the browser that wrote it. Not unique: a Guest User licence permits insert and read on a custom object and nothing else, so a save is an append and the newest row for a key is the draft. Indexed as an external id so that read stays cheap.</description>
+    <description>&lt;engagement link id&gt;::&lt;visitor key&gt;. The external id the draft is upserted on, and the only way to reach it: the visitor key is a random value the browser generates and keeps, so a draft is readable only by the browser that wrote it. Not unique: a Guest User licence permits insert and read on a custom object and nothing else, so a save is an append and the newest row for a key is the draft. Indexed as an external id so that read stays cheap. Blank on every Draft_Type__c = 'Assessment' row -- required relaxed to false so this object can also hold the questionnaire draft, which addresses itself by Resume_Token__c instead. GtmFormDraftController's own saveDraft/getDraft/clearDraft return early when draftKey() yields null, so the guarantee that a Booking row always has this set moves from the schema into that controller.</description>
     <label>Draft Key</label>
     <length>120</length>
     <externalId>true</externalId>
-    <required>true</required>
+    <required>false</required>
     <trackTrending>false</trackTrending>
     <type>Text</type>
     <unique>false</unique>

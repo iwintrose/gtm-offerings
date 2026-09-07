@@ -1306,3 +1306,119 @@ b {
     text-transform: uppercase;
     opacity: .55;
 }
+
+/* ── recipient readout state machine ─────────────────────────────────────── */
+/* Ported from claude/salesforce-marketing-maturity-bsxmxs. */
+.cta:disabled {
+    cursor: default;
+    opacity: 0.65;
+    filter: none;
+}
+.cta:disabled:hover {
+    filter: none;
+}
+
+/* The single-screen replacement for every prior chapter once the readout is
+   published. Deliberately plain — matches this page's own section rhythm
+   rather than introducing a new layout language for one state. */
+.readout-gate {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+}
+.readout-gate .cta {
+    margin-top: 0.75rem;
+}
+
+/* ── "view your assessment" modal ────────────────────────────────────────────
+   Structural/functional styling only — the visual/branding direction for the
+   readout content itself is a separate, still-open decision (see the CMS
+   content this renders); not over-invested in here. */
+.scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(20, 18, 15, 0.55);
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+}
+.modal {
+    width: min(30rem, 100%);
+    background: var(--paper);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+.modal--readout {
+    width: min(46rem, 100%);
+    max-height: min(42rem, 90vh);
+    display: flex;
+    flex-direction: column;
+}
+.modal-h {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.15rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    flex: none;
+}
+.modal-h h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    flex: 1;
+}
+.modal-x {
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--ink-soft);
+    padding: 0.2rem;
+}
+.modal-x:hover { color: var(--ink); }
+.modal-b {
+    padding: 0.9rem 1.15rem;
+}
+.modal-b--scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    line-height: 1.6;
+    color: var(--ink);
+}
+.modal-note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    line-height: 1.55;
+}
+.modal-rep {
+    flex: none;
+    padding: 0.8rem 1.15rem;
+    border-top: 1px solid var(--line);
+    background: var(--ground);
+}
+.modal-rep-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.2rem;
+}
+.modal-rep-name { font-size: 0.85rem; font-weight: 700; color: var(--ink); margin-bottom: 0.15rem; }
+.modal-rep-line { display: block; font-size: 0.78rem; color: var(--coral-ink); text-decoration: none; }
+.modal-rep-line:hover { text-decoration: underline; }
+.modal-f {
+    flex: none;
+    padding: 0.75rem 1.15rem;
+    border-top: 1px solid var(--line);
+    background: var(--ground);
+    display: flex;
+    justify-content: flex-end;
+}

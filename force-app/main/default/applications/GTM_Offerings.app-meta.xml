@@ -9,6 +9,8 @@
     <label>GTM Offerings</label>
     <navType>Standard</navType>
     <tabs>GTM_Offerings_Overview</tabs>
+    <tabs>GTM_Readouts_Overview</tabs>
+    <tabs>GTM_Readouts_Manager</tabs>
     <tabs>GTM_Pages</tabs>
     <tabs>GTM_Saved_Configuration__c</tabs>
     <tabs>GTM_Assessment_Request__c</tabs>

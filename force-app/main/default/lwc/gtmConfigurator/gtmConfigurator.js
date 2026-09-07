@@ -13,6 +13,13 @@ import verifyAndIssueToken from '@salesforce/apex/GtmLinkAuthController.verifyAn
 import logEvent from '@salesforce/apex/GtmLinkEventController.logEvent';
 import logEvents from '@salesforce/apex/GtmLinkEventController.logEvents';
 import identifySession from '@salesforce/apex/GtmLinkEventController.identifySession';
+// getPublishedReadout(token) is the one guest-facing readout method
+// GtmReadoutPublicController exposes — by its own class comment, deliberately
+// the ONLY query path onto GTM_Readout__c reachable by an unauthenticated
+// caller. Used here exactly as specified; see the readout state machine
+// section below for how this component gets a token to call it with.
+// Ported from claude/salesforce-marketing-maturity-bsxmxs.
+import getPublishedReadout from '@salesforce/apex/GtmReadoutPublicController.getPublishedReadout';
 import { FIELDS, EXAMPLE, initials, isHex6 } from 'c/gtmConfigData';
 import { CHAPTER_DEFAULTS } from 'c/gtmConfiguratorCopy';
 import USER_ID from '@salesforce/user/Id';
@@ -133,6 +140,22 @@ export default class GtmConfigurator extends LightningElement {
     @track bookingOpen = false;
     @track isConfigManager = false;
     @track savedRecordId = '';
+
+    // ── recipient-facing readout state machine ──────────────────────────────
+    // Ported from claude/salesforce-marketing-maturity-bsxmxs. Draft/Approved
+    // both read as "in review" to the prospect — approval is an internal rep
+    // gate they never see as its own state. Published is the only state that
+    // changes what they're shown.
+    @track assessmentRequestId = '';
+    @track readoutStatus = ''; // '' | 'Draft' | 'Approved' | 'Published'
+    @track readoutPublicToken = '';
+    @track readoutViewOpen = false;
+    @track readoutContent = '';
+    @track readoutRepName = '';
+    @track readoutRepEmail = '';
+    @track readoutRepPhone = '';
+    @track readoutLoadError = '';
+    @track _readoutViewLoaded = false;
 
     @track passwordRequired = false;
     @track passwordVerified = false;
@@ -285,6 +308,10 @@ export default class GtmConfigurator extends LightningElement {
         this.tokenState = this.loadState();
         this.readUrlParams();
         this.setPageTitle();
+        // savedRecordId is set synchronously by readUrlParams() above, so the
+        // assessment state (scoped to it, same as the ma-auth- session key)
+        // can be restored on this same pass.
+        this.restoreAssessmentState();
 
         // In preview the parent owns the copy, so fetching would replace the
         // draft with what is published.
@@ -569,6 +596,13 @@ export default class GtmConfigurator extends LightningElement {
         this.savedRecordId = cfgIdParam || '';
         this.checkActiveStatus();
         if (cfgIdParam) this.loadOverviewCrmData();
+
+        // Carried by a published-readout notification link back to this same
+        // page (see the readout state machine section below) -- checked
+        // straight away so the gate can show without waiting on
+        // restoreAssessmentState()'s sessionStorage-only path.
+        const readoutParam = get('readout');
+        if (readoutParam) this.checkReadoutToken(readoutParam);
 
         // Set from chooseIndustry's tiles (?wizard=1); consumed once
         // isConfigManager resolves -- see maybeAutoOpenWizard(). Never set
@@ -1257,6 +1291,11 @@ export default class GtmConfigurator extends LightningElement {
                 contactId: detail.contactId
             }).catch(() => { /* the request itself already succeeded */ });
         }
+
+        if (detail.assessmentRequestId) {
+            this.assessmentRequestId = detail.assessmentRequestId;
+            this.persistAssessmentId(detail.assessmentRequestId);
+        }
     }
 
     /** A resumed form is worth knowing about: it means the link did its job on
@@ -1265,10 +1304,140 @@ export default class GtmConfigurator extends LightningElement {
         this._track('Form Resumed', 'assessment');
     }
 
+    // ── readout state machine (recipient side) ──────────────────────────────
+    // Ported from claude/salesforce-marketing-maturity-bsxmxs.
+    // GtmReadoutPublicController is, by design (see its own class comment),
+    // the ONLY guest-accessible query path onto GTM_Readout__c, and it
+    // exposes exactly one method: getPublishedReadout(token). There is
+    // deliberately no guest-safe way to look up a readout's status from an
+    // assessment request id alone -- adding one would widen that surface.
+    //
+    // So this state machine only ever *advances* to Published when it
+    // actually has a token, from one of two sources:
+    //   1. A `readout` URL param -- the shape a published notification link
+    //      back to this same page would carry (mirrors how every other
+    //      saved-link value here is read as a URL param).
+    //   2. A token remembered from a previous successful check in this
+    //      browser (sessionStorage, scoped by savedRecordId like ma-auth-).
+    // Short of one of those, a submitted assessment is shown as "in review"
+    // indefinitely -- Draft and Approved are indistinguishable from here
+    // either way, which matches the spec (approval is an internal gate the
+    // prospect never sees as its own state).
+
+    _assessmentSessionKey() {
+        return `ma-assessment-${this.savedRecordId}`;
+    }
+
+    _readoutTokenSessionKey() {
+        return `ma-readout-token-${this.savedRecordId}`;
+    }
+
+    restoreAssessmentState() {
+        if (!this.savedRecordId) return;
+        try {
+            const storedArId = window.sessionStorage
+                && window.sessionStorage.getItem(this._assessmentSessionKey());
+            if (storedArId) this.assessmentRequestId = storedArId;
+
+            const storedToken = window.sessionStorage
+                && window.sessionStorage.getItem(this._readoutTokenSessionKey());
+            if (storedToken) this.checkReadoutToken(storedToken);
+        } catch (e) { /* sessionStorage not available */ }
+    }
+
+    persistAssessmentId(arId) {
+        try {
+            if (window.sessionStorage) {
+                window.sessionStorage.setItem(this._assessmentSessionKey(), arId);
+            }
+        } catch (e) { /* sessionStorage not available */ }
+    }
+
+    persistReadoutToken(token) {
+        try {
+            if (window.sessionStorage) {
+                window.sessionStorage.setItem(this._readoutTokenSessionKey(), token);
+            }
+        } catch (e) { /* sessionStorage not available */ }
+    }
+
+    /**
+     * Confirms a token actually resolves to a currently-published readout,
+     * using the one sanctioned guest call, and caches its content so opening
+     * the modal later doesn't need a second round trip. A submitted-but-
+     * unresolved token (not yet published, or invalid) is not treated as an
+     * error -- the page just stays in its "in review" state, exactly as the
+     * guest contract intends (Published vs. everything else is
+     * indistinguishable to the caller by design).
+     */
+    checkReadoutToken(token) {
+        if (!token) return;
+        getPublishedReadout({ token })
+            .then((data) => {
+                if (!data || !data.content) return;
+                this.readoutStatus = 'Published';
+                this.readoutPublicToken = token;
+                // A token proves a readout exists for this prospect even if
+                // this browser never saw the original submission (e.g. the
+                // published link was opened on a different device).
+                if (!this.assessmentRequestId) this.assessmentRequestId = 'linked';
+                this.persistReadoutToken(token);
+                this._readoutViewLoaded = true;
+                this.readoutContent = data.content;
+                this.readoutRepName = data.repName || '';
+                this.readoutRepEmail = data.repEmail || '';
+                this.readoutRepPhone = data.repPhone || '';
+            })
+            .catch(() => {
+                // Swallowed on purpose, and with no detail in the console.
+                // This is a guest-facing page, and the whole point of
+                // GtmReadoutPublicController's contract is that an anonymous
+                // visitor cannot tell an invalid token from a real one that is
+                // not published yet, or from one that was revoked --
+                // c/gtmReadoutView swallows the identical error for exactly
+                // this reason. A logged error object (status, message, the
+                // token in the request) hands back the distinction the Apex
+                // side is careful never to give. A failure here just leaves
+                // the page in its "in review" state, which is also what a
+                // resolved-but-empty response does.
+            });
+    }
+
+    get hasSubmittedAssessment() { return !!this.assessmentRequestId; }
+    get showPublishedGate() { return this.readoutStatus === 'Published'; }
+
+    get topCtaLabel() {
+        return this.showPublishedGate ? 'View your assessment' : 'Your assessment is in review';
+    }
+    get topCtaDisabled() { return !this.showPublishedGate; }
+
+    handleTopCtaClick() {
+        if (this.showPublishedGate) this.handleOpenReadoutView();
+    }
+
+    handleOpenReadoutView() {
+        this.readoutViewOpen = true;
+        if (!this._readoutViewLoaded && this.readoutPublicToken) {
+            this.checkReadoutToken(this.readoutPublicToken);
+        }
+        if (!this._readoutViewLoaded) {
+            this.readoutLoadError = 'Your assessment could not be opened right now. Please try again shortly.';
+        }
+    }
+
+    handleCloseReadoutView() { this.readoutViewOpen = false; }
+
+    get hasReadoutRep() {
+        return !!(this.readoutRepName || this.readoutRepEmail || this.readoutRepPhone);
+    }
+    get hasReadoutRepEmail() { return !!this.readoutRepEmail; }
+    get hasReadoutRepPhone() { return !!this.readoutRepPhone; }
+
     handleKeydown(event) {
         if (event.key !== 'Escape') return;
         this.bookingOpen = false;
         this.customizeOpen = false;
+        this.readoutViewOpen = false;
     }
 
     // -------------------------------------------------- stage actions events

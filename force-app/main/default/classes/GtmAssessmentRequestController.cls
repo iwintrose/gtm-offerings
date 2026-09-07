@@ -1,19 +1,39 @@
 /**
  * Handles environment-assessment requests submitted from the Migration
- * Accelerator configurator (LWC: maConfigBooking).
+ * Accelerator configurator (LWC: maConfigBooking) and from the branching
+ * readiness questionnaire (LWC: gtmAssessmentQuestionnaire).
  *
  * Runs `without sharing` deliberately: the request form is reachable by the
  * Experience Cloud guest user, which has no read access to Contact. Finding an
  * existing Contact by email requires elevated context. The blast radius is kept
  * small on purpose — this class exposes exactly one entry point, writes only
- * to Account / Contact / Task / Event, never reflects caller input into SOQL,
- * and takes the notification destination from custom metadata rather than from
- * the caller so the endpoint cannot be used as an open mail relay.
+ * to Account / Contact / Task / Event / GTM_Assessment_Request__c, never
+ * reflects caller input into SOQL, and takes the notification destination
+ * from custom metadata rather than from the caller so the endpoint cannot be
+ * used as an open mail relay.
+ *
+ * Scoring is the other thing that follows from being guest-reachable: the
+ * migration-readiness score and tier are computed here, by GtmAssessmentScoring,
+ * from the raw answers, and the estate-complexity score by GtmEstateComplexity.
+ * They are never taken from the request body. See the notes on
+ * RequestInput.assessmentScore.
+ *
+ * Two override rules sit on top of the readiness band, and both are applied
+ * server-side for the same reason the score is: a client must not be able to
+ * talk its way past either.
+ *   - the ACCESS GATE caps the tier at Discovery First when the source-access
+ *     answer is at the floor. No extract, no offering;
+ *   - the UNSUPPORTED-PAIR GATE suppresses the tier entirely when the routing
+ *     answer names a source or target the accelerator cannot process. Which
+ *     pairs those are is configuration (GTM_Migration_Pair__mdt, read by
+ *     GtmMigrationPairs), not code -- see resolvePairEligibility below.
  */
 public without sharing class GtmAssessmentRequestController {
     private static final String DEFAULT_CONFIG = 'Default';
     private static final Integer MAX_SHORT = 255;
     private static final Integer MAX_LONG = 4000;
+    /** Capacity of Section_Scores__c (see its field metadata). */
+    private static final Integer MAX_SECTION_SCORES = 32768;
 
     /** Test seam: lets the test class supply config without inserting CMDT. */
     @TestVisible
@@ -55,6 +75,65 @@ public without sharing class GtmAssessmentRequestController {
         @AuraEnabled public String executiveSponsorship{ get; set; }
         @AuraEnabled public String decisionMakers      { get; set; }
         @AuraEnabled public String urgencyDriver       { get; set; }
+        /**
+         * The raw scored answers, one entry per dimension. This is the only
+         * scoring input Apex trusts: GtmAssessmentScoring turns it into the
+         * total, the tier and the per-section breakdown that actually get
+         * stored. See recordAssessmentRequest.
+         */
+        @AuraEnabled public List<AnswerInput> answers  { get; set; }
+        /**
+         * The raw estate-complexity answers, one entry per dimension of the
+         * SECOND axis (GtmEstateComplexity, 6-18). Kept as its own list rather
+         * than merged into `answers` because the two instruments are
+         * deliberately never summed: readiness says whether the work can be
+         * scoped, complexity says how big it is. Merging them here would be the
+         * first step towards a single blended number, which is the thing the
+         * two-axis design exists to prevent.
+         */
+        @AuraEnabled public List<AnswerInput> complexityAnswers { get; set; }
+        /**
+         * Layer-4 supplement answers -- the extra questions a pair's pack adds
+         * OUTSIDE the eight. Its own list for the same reason complexityAnswers
+         * is its own list: these produce their own named index and must never be
+         * summable into the 32. Scored entries carry `value` (1-3); unscored
+         * verbatim probes carry `text` and are recorded, never computed on.
+         */
+        @AuraEnabled public List<AnswerInput> supplementAnswers { get; set; }
+        /**
+         * "Self-Estimated" (the prospect's pre-scan guess, which is all a
+         * questionnaire can ever be) or "Measured" (recomputed post-scan from a
+         * real extract). Anything else is stored as null rather than as a
+         * guess: presenting a self-estimate as a measurement is the one
+         * mistake this field exists to make impossible.
+         */
+        @AuraEnabled public String complexityBasis { get; set; }
+        /**
+         * IGNORED — kept only so an older client that still sends these does
+         * not fail deserialization on an unknown property.
+         *
+         * These used to be stored verbatim: the browser computed the score and
+         * the tier, and Apex wrote down whatever arrived. That made a prospect
+         * the author of their own readiness score, and that score is what drives
+         * the readout a rep then sends them. Both values are now recomputed
+         * from `answers` on the server and whatever is passed here is discarded
+         * -- discarded rather than validated, because validating a
+         * client-supplied score still means the client picked which of the
+         * acceptable values to claim.
+         */
+        @AuraEnabled public Decimal assessmentScore    { get; set; }
+        /** IGNORED — recomputed from `answers`. See assessmentScore. */
+        @AuraEnabled public String assessmentTier      { get; set; }
+        /**
+         * Legacy JSON string, e.g. {"estate_scale":3,"source_access":2}.
+         * Used only when no `answers` were supplied at all, so submissions from
+         * a client predating the answer contract keep the breakdown they
+         * already had. When `answers` are present this is ignored and the
+         * breakdown is rebuilt from them.
+         */
+        @AuraEnabled public String sectionScores       { get; set; }
+        /** Q0 routing answer: MCE, MCAE, Both, Non-Salesforce, or None. */
+        @AuraEnabled public String branchPlatform      { get; set; }
         /** cfgId of the GTM_Saved_Configuration__c the requester was viewing,
          * when the booking happened from a client's configured link. Used
          * to attribute the Contact to the right rep and to file the request
@@ -68,6 +147,41 @@ public without sharing class GtmAssessmentRequestController {
          */
         @AuraEnabled
         public String submissionToken { get; set; }
+        /**
+         * The resume token of the GTM_Form_Draft__c (Draft_Type__c =
+         * 'Assessment') session this submission was finished from, when the
+         * respondent had saved their place. Optional -- a form filled in one
+         * sitting has none.
+         *
+         * It is used for exactly one thing: closing the draft in this same
+         * transaction (see closeDraft). It is never read for answers. The
+         * answers scored here are the ones in this payload, from the browser
+         * that pressed send, exactly as they were before drafts existed --
+         * because a submit path that could pull answers from a token would be a
+         * second way to get answers into a scored record, and one of the two
+         * would eventually diverge.
+         */
+        @AuraEnabled
+        public String draftToken { get; set; }
+    }
+
+    /**
+     * One scored questionnaire answer. `dimension` is one of
+     * GtmAssessmentScoring.DIMENSIONS; anything else is ignored rather than
+     * rejected, so a client that ships a new question before the server knows
+     * about it degrades to a lower score instead of a failed submission.
+     * `value` is 1-4; out-of-range values are dropped, not clamped.
+     */
+    public class AnswerInput {
+        @AuraEnabled public String dimension { get; set; }
+        @AuraEnabled public Integer value    { get; set; }
+        /**
+         * Free text, used only by the unscored verbatim probes in a supplement
+         * set. Ignored entirely on the scored lists: nothing a prospect types
+         * into a text box can move a number, which is the same reason
+         * assessmentScore is discarded.
+         */
+        @AuraEnabled public String text      { get; set; }
     }
 
     /** What we know about the client link the request came from. */
@@ -111,7 +225,7 @@ public without sharing class GtmAssessmentRequestController {
 
     /**
      * Records an assessment request. Any combination of lead capture and email
-     * notification can be switched on in the MA_Assessment_Config custom
+     * notification can be switched on in the GTM_Assessment_Config custom
      * metadata record; both switched off simply validates and returns.
      */
     @AuraEnabled
@@ -167,6 +281,11 @@ public without sharing class GtmAssessmentRequestController {
                 result.emailSent = notify(input, cleanName, cleanEmail, cfg);
             }
             recordAssessmentRequest(input, cleanName, cleanEmail, ctx, result);
+            // INVALIDATION ON SUBMIT. In the same transaction as the request,
+            // so a submitted assessment and a live resume link cannot coexist:
+            // if this rolls back, so does the request. See closeDraft's own
+            // comment for why this is an append, not an update.
+            closeDraft(input.draftToken, result.assessmentRequestId);
             result.success = true;
             result.message = 'Request received.';
         } catch (DmlException e) {
@@ -375,6 +494,57 @@ public without sharing class GtmAssessmentRequestController {
         try {
             Id cfgId = GtmLegacyConfigId.resolve(input.savedRecordId);
 
+            // Score on the server, from the raw answers, every time.
+            // input.assessmentScore / input.assessmentTier are not read at all
+            // -- see their comments on RequestInput. A submission with no
+            // answers scores to nulls, which is the same record shape an
+            // unscored submission has always produced.
+            // WHICH eight questions were asked is a property of the pair, so
+            // it is resolved before scoring and recorded alongside the result.
+            // Fails open to the base pack -- see GtmAssessmentInstrument.resolve.
+            GtmAssessmentInstrument.Pack pack = resolveInstrumentPack(input);
+
+            // ANSWER-DRIVEN BRANCHING, resolved on the server from the submitted
+            // answers. The questionnaire resolved the same branches as the
+            // respondent moved through it, so that it could show the right next
+            // question -- but that resolution is a rendering decision and this
+            // one is the scoring decision. If a client branched differently, its
+            // answers arrive under keys this pack did not resolve, and the
+            // scorer never reads a key it did not ask for. Same allowlist,
+            // reached from a new direction. See GtmAssessmentInstrument.applyBranches.
+            Map<String, Integer> readinessAnswers = answerMap(input.answers);
+            pack = GtmAssessmentInstrument.applyBranches(pack, readinessAnswers);
+
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+                readinessAnswers,
+                resolvePairEligibility(input),
+                pack
+            );
+
+            // Layer 4, scored into its own named index and stored in its own
+            // field. It cannot reach Assessment_Score__c from here, and that is
+            // structural rather than a matter of remembering.
+            GtmAssessmentReadout.SupplementResult supplements =
+                GtmAssessmentReadout.scoreSupplements(
+                    pack,
+                    answerMap(input.supplementAnswers),
+                    noteMap(input.supplementAnswers)
+                );
+
+            // The second axis, scored the same way and stored beside the first
+            // -- never added into it. See GtmEstateComplexity's header.
+            // Scored against the dimensions THIS PACK resolved, for the same
+            // reason the readiness half is scored against its resolved slots:
+            // a HubSpot respondent is asked about workflows and properties, not
+            // about journeys and 30-100 tables, and the answer has to land under
+            // the key they were actually asked. Answers under keys the pack did
+            // not resolve are never read.
+            GtmEstateComplexity.Complexity complexity =
+                GtmEstateComplexity.score(
+                    answerMap(input.complexityAnswers),
+                    pack == null ? null : pack.complexityKeys()
+                );
+
             GTM_Assessment_Request__c req = new GTM_Assessment_Request__c(
                 Opportunity__c          = ctx.opportunityId,
                 Account__c              = ctx.accountId,
@@ -400,6 +570,44 @@ public without sharing class GtmAssessmentRequestController {
                 Executive_Sponsorship__c= trimTo(input.executiveSponsorship, MAX_SHORT),
                 Decision_Makers__c      = trimTo(input.decisionMakers, MAX_SHORT),
                 Urgency_Driver__c       = trimTo(input.urgencyDriver, MAX_SHORT),
+                Assessment_Score__c     = scored.total,
+                // Null whenever the pair gate fired -- a scored record with no
+                // band is the shape that says "deliberately not banded".
+                Assessment_Tier__c      = scored.tier,
+                Assessment_Advisory__c  = scored.advisory,
+                Advisory_Reason__c      = trimTo(scored.advisoryReason, MAX_SHORT),
+                Assessment_Flags__c     = scored.annotationsJson,
+                Estate_Complexity_Score__c = complexity.total,
+                Estate_Complexity_Band__c  = complexity.band,
+                // A basis with no score behind it is noise, so it is written
+                // only when there is actually a number to label.
+                Estate_Complexity_Basis__c = complexity.hasAnswers
+                    ? defaultBasis(input.complexityBasis)
+                    : null,
+                Estate_Complexity_Dimensions__c = sanitizeSectionScores(
+                    complexity.dimensionScoresJson
+                ),
+                // Server-derived whenever there are answers to derive it from;
+                // the legacy client blob only survives when there are none.
+                Section_Scores__c       = sanitizeSectionScores(
+                    scored.hasAnswers ? scored.sectionScoresJson : input.sectionScores
+                ),
+                // Which pack scored this, and which edition of it. Without the
+                // pair key a stored Section_Scores__c blob stops being readable
+                // the moment a pack is edited -- a 2 against a key nobody can
+                // look up. See the field's own description.
+                Instrument_Pair__c      = trimTo(pack.pairKey, 80),
+                Instrument_Version__c   = trimTo(pack.version, 40),
+                // What it was scored OUT OF, and WHICH questions filled the
+                // eight slots. Both derived here and never read from the
+                // client, for the same reason the score is: option points and
+                // branch predicates are author-editable, so a readout reopened
+                // after an edit needs the frame it was actually measured
+                // against rather than today's.
+                Instrument_Max_Score__c = scored.maxTotal,
+                Instrument_Branch_Path__c = trimTo(scored.branchPathJson, 4096),
+                Supplement_Scores__c    = sanitizeSectionScores(supplements.json),
+                Branch_Platform__c      = trimTo(input.branchPlatform, MAX_SHORT),
                 Submitted_At__c         = DateTime.now(),
                 Status__c               = 'New',
                 Source__c               = 'Migration Accelerator'
@@ -429,9 +637,43 @@ public without sharing class GtmAssessmentRequestController {
             if (ctx.opportunityId != null) {
                 postOpportunityFeed(ctx.opportunityId, cleanName, input);
             }
+
+            // The server-computed score and tier are already on req at this
+            // point -- generate the Draft readout now so a rep has one
+            // waiting the moment the request lands. Best-effort: a failure
+            // here must never take down a submission that already succeeded;
+            // the readout can always be generated later from the request.
+            generateDraftReadout(req.Id);
         } catch (Exception e) {
             // Lead/Task/email already succeeded above -- don't fail the
             // whole submission over the (nice-to-have) structured record.
+        }
+    }
+
+    /**
+     * Best-effort call into GtmReadoutController.generateDraftReadout.
+     * Isolated in its own try/catch (rather than relying on the outer one in
+     * recordAssessmentRequest) so a readout-generation failure is visibly
+     * distinct in debug logs from an assessment-record failure, without
+     * changing recordAssessmentRequest's own fail-open behavior.
+     */
+    private static void generateDraftReadout(Id assessmentRequestId) {
+        try {
+            GtmReadoutController.generateDraftReadout(assessmentRequestId);
+        } catch (Exception e) {
+            // Deliberately not e.getMessage(): a DML exception quotes the
+            // offending field values back, and on this path those values are
+            // prospect-submitted content (company, pain points, success
+            // criteria) -- which would then sit in the debug log of a guest
+            // transaction. The exception type, its line, and the request Id
+            // are enough to find the failure; the record itself holds the
+            // detail, under the access controls it is supposed to be under.
+            System.debug(
+                LoggingLevel.WARN,
+                'Could not generate draft readout for assessment request ' +
+                assessmentRequestId + ' -- ' + e.getTypeName() +
+                ' at line ' + e.getLineNumber() + '.'
+            );
         }
     }
 
@@ -708,7 +950,63 @@ public without sharing class GtmAssessmentRequestController {
         }
     }
 
-    /** Compares two hex strings in O(n) time to prevent HMAC timing attacks. */
+    /**
+     * Closes the questionnaire draft (if any) this submission was finished
+     * from, so a submitted assessment and a live resume link cannot coexist.
+     *
+     * APPENDS, NEVER UPDATES. An empirical probe against this org (see
+     * docs/handoff/port-map-ma-to-gtm.md section F) confirmed a guest cannot
+     * update a GTM_Form_Draft__c row, including one it created itself, in
+     * this org -- INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY both times.
+     * So this method appends one final row carrying Submitted_Request__c;
+     * because that row becomes the newest for the token,
+     * GtmAssessmentDraftController.resumeDraft's own "most recent row" lookup
+     * finds it and stops resolving the token, without this class updating
+     * anything.
+     *
+     * Failures are swallowed. A submission that succeeded must not be reported
+     * as failed because a draft row would not insert -- the draft is already
+     * unreachable to a client that has just been told its assessment was
+     * received, and the purge job removes it either way. Nothing about the
+     * draft, including its token, is logged.
+     */
+    private static void closeDraft(String draftToken, String assessmentRequestId) {
+        if (String.isBlank(draftToken) || draftToken.length() > 64) {
+            return;
+        }
+        try {
+            // Only close a token that actually resolves to an open Assessment
+            // draft right now -- an unknown or already-closed token gets a
+            // silent no-op, exactly like every other failure mode here.
+            List<GTM_Form_Draft__c> rows = [
+                SELECT Expires_At__c, Pair_Key__c
+                FROM GTM_Form_Draft__c
+                WHERE Draft_Type__c = 'Assessment'
+                AND Resume_Token__c = :draftToken
+                ORDER BY CreatedDate DESC, Id DESC
+                LIMIT 1
+            ];
+            if (rows.isEmpty() || rows[0].Expires_At__c == null || rows[0].Expires_At__c < System.now()) {
+                return;
+            }
+            GTM_Form_Draft__c closingRow = new GTM_Form_Draft__c(
+                Draft_Type__c    = 'Assessment',
+                Resume_Token__c  = draftToken,
+                Draft_JSON__c    = '{}',
+                Pair_Key__c      = rows[0].Pair_Key__c,
+                Status__c        = 'Submitted',
+                Expires_At__c    = rows[0].Expires_At__c,
+                Last_Saved_At__c = System.now()
+            );
+            if (String.isNotBlank(assessmentRequestId) && isId(assessmentRequestId)) {
+                closingRow.Submitted_Request__c = (Id) assessmentRequestId;
+            }
+            insert closingRow;
+        } catch (Exception e) {
+            // See above. Deliberately silent, and deliberately message-free.
+        }
+    }
+
     private static Boolean constantTimeEqual(String a, String b) {
         if (a == null || b == null || a.length() != b.length()) return false;
         Integer diff = 0;
@@ -754,6 +1052,156 @@ public without sharing class GtmAssessmentRequestController {
         }
         String trimmed = value.trim();
         return trimmed.length() > max ? trimmed.substring(0, max) : trimmed;
+    }
+
+    /**
+     * The guard for Section_Scores__c -- the one prospect-supplied field that
+     * carries a *structured* value rather than free text, which is why it does
+     * not simply get the trimTo(...) treatment its siblings get.
+     *
+     * Unguarded it was the only input that could throw STRING_TOO_LONG, and
+     * recordAssessmentRequest's outer catch would then have swallowed the whole
+     * GTM_Assessment_Request__c insert -- losing the submission over one field.
+     *
+     * But truncating is the wrong repair here. GtmReadoutController parses this
+     * blob as JSON to build the readout's section breakdown
+     * (sectionScoreLines), and a JSON document cut at character 32768 is
+     * syntactically broken: it parses as nothing, so the breakdown silently
+     * vanishes from the readout while the record still *looks* like it holds
+     * section scores. Corrupt-but-plausible is the one outcome worth ruling
+     * out, since the readout is what a rep sends a prospect.
+     *
+     * So an oversize value is dropped, not truncated: null is honest, the
+     * readout template already handles a blank value by omitting the section
+     * breakdown entirely, and everything else about the submission survives. A
+     * legitimate per-section score map is a few hundred characters -- 32KB of
+     * it is not data we are losing.
+     */
+    private static String sanitizeSectionScores(String value) {
+        if (String.isBlank(value)) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() > MAX_SECTION_SCORES) {
+            // No prospect content in the log line -- see the note on
+            // generateDraftReadout's catch.
+            System.debug(
+                LoggingLevel.WARN,
+                'Section scores dropped: ' + trimmed.length() +
+                ' characters exceeds the ' + MAX_SECTION_SCORES +
+                '-character field. Storing null rather than a truncated, unparseable blob.'
+            );
+            return null;
+        }
+        return trimmed;
+    }
+
+    /**
+     * Asks GtmMigrationPairs whether the accelerator can process what the
+     * requester says they are moving from and to.
+     *
+     * Best-effort by construction: any failure reading the pair metadata
+     * returns an un-evaluated verdict, which leaves the gate inert and the
+     * assessment scored as normal. A config-read problem must not be able to
+     * silently downgrade a prospect's result -- and it must certainly not be
+     * able to take down the submission, which is what an uncaught exception
+     * here would do (the caller's catch would lose the whole record).
+     *
+     * The pair is read from the platform fields rather than from
+     * Branch_Platform__c because those are what actually name a source and a
+     * target; the Q0 routing answer only says which question variant was shown.
+     */
+    private static GtmAssessmentScoring.PairEligibility resolvePairEligibility(RequestInput input) {
+        try {
+            return GtmMigrationPairs.evaluate(input.currentPlatform, input.targetPlatform);
+        } catch (Exception e) {
+            System.debug(
+                LoggingLevel.WARN,
+                'Migration pair could not be evaluated; the pair gate stays inert: ' +
+                e.getTypeName()
+            );
+            return new GtmAssessmentScoring.PairEligibility();
+        }
+    }
+
+    /**
+     * The instrument pack for this submission's source/target combination.
+     * Best-effort in exactly the way the pair gate is: a resolution failure
+     * yields the base pack, so a half-deployed or missing pack table costs the
+     * pair-specific wording and nothing else. An assessment that refuses to
+     * score because a pack is missing would be strictly worse than one scored
+     * against the base eight.
+     */
+    private static GtmAssessmentInstrument.Pack resolveInstrumentPack(RequestInput input) {
+        try {
+            return GtmAssessmentInstrument.getPack(input.currentPlatform, input.targetPlatform);
+        } catch (Exception e) {
+            System.debug(
+                LoggingLevel.WARN,
+                'Instrument pack could not be resolved; falling back to base: ' + e.getTypeName()
+            );
+            return GtmAssessmentInstrument.basePack();
+        }
+    }
+
+    /**
+     * The basis to store for a complexity score that actually has answers.
+     * A questionnaire answer is a pre-scan self-estimate and nothing else --
+     * ALWAYS Self-Estimated, regardless of what the client sends, including a
+     * well-formed "Measured". `supplied` is deliberately not trusted at all:
+     * this submission path (submitRequest) is the guest-reachable
+     * questionnaire, which cannot produce a measured value by construction --
+     * a prospect cannot have already run a real scan through this form.
+     * "Measured" can only ever be set some other way (e.g. a rep editing the
+     * record after a real extract), never through this path. Fixed a bug
+     * here: the previous implementation called GtmEstateComplexity.acceptedBasis
+     * (a format validator, not a trust boundary) and accepted "Measured" when
+     * it was well-formed, contradicting this method's own original intent and
+     * its own test, aClientCannotLabelItsOwnEstimateAsMeasured.
+     */
+    private static String defaultBasis(String supplied) {
+        return GtmEstateComplexity.BASIS_SELF_ESTIMATED;
+    }
+
+    /**
+     * The verbatim half of a supplement submission: dimension -> text, for the
+     * probes that are deliberately unscored. Trimmed to the same short-field
+     * ceiling as any other prospect-supplied string, because it is one.
+     */
+    private static Map<String, String> noteMap(List<AnswerInput> answers) {
+        Map<String, String> out = new Map<String, String>();
+        if (answers == null) {
+            return out;
+        }
+        for (AnswerInput a : answers) {
+            if (a == null || String.isBlank(a.dimension) || String.isBlank(a.text)) {
+                continue;
+            }
+            out.put(a.dimension.trim(), trimTo(a.text, MAX_SHORT));
+        }
+        return out;
+    }
+
+    /**
+     * Flattens the wire shape into the dimension -> value map GtmAssessmentScoring
+     * works on. A Map is the point, not an implementation detail: a repeated
+     * dimension collapses to one entry, so a payload that answers
+     * "estate_scale" fifty times contributes once. Blank dimension names are
+     * skipped; unknown ones are left for the scorer to ignore, since it is the
+     * place that knows which dimensions exist.
+     */
+    private static Map<String, Integer> answerMap(List<AnswerInput> answers) {
+        Map<String, Integer> out = new Map<String, Integer>();
+        if (answers == null) {
+            return out;
+        }
+        for (AnswerInput a : answers) {
+            if (a == null || String.isBlank(a.dimension)) {
+                continue;
+            }
+            out.put(a.dimension.trim(), a.value);
+        }
+        return out;
     }
 
     private static Decimal parseIntOrNull(String value) {

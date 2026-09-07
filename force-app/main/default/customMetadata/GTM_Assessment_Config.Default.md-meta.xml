@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
     <label>Default</label>
     <protected>false</protected>
     <values>
@@ -21,5 +21,28 @@
     <values>
         <field>Activity_Type__c</field>
         <value xsi:type="xsd:string">Task</value>
+    </values>
+    <values>
+        <field>Create_Readout_Case__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <!-- Retired; nothing reads it. Kept only so the field can be deleted
+         together with this value in a later cleanup. -->
+    <values>
+        <field>Create_Readout_Task__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>Default_Readout_Owner__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <!-- Blank on purpose: a site URL is org state, not source. Set it in the
+         target org (docs/runbooks/questionnaire-resume.md); until it is set,
+         GtmAssessmentDraftController falls back to Site.getBaseSecureUrl() and,
+         failing that, declines to send a resume email rather than sending one
+         with a broken or foreign link in it. -->
+    <values>
+        <field>Resume_Link_Base_URL__c</field>
+        <value xsi:nil="true"/>
     </values>
 </CustomMetadata>

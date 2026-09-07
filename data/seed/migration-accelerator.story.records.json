@@ -2,7 +2,7 @@
   "records": [
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row1"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -21,7 +21,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row2"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -40,7 +40,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row3"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -59,7 +59,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row4"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -78,7 +78,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row5"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -97,7 +97,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row6"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -116,7 +116,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row7"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -135,7 +135,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row8"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -154,7 +154,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row9"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -173,7 +173,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row10"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -192,7 +192,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row11"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -211,7 +211,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row12"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -230,7 +230,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row13"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -249,7 +249,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row14"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -268,7 +268,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row15"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -287,7 +287,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row16"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -306,7 +306,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row17"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -325,7 +325,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row18"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -344,7 +344,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row19"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -363,7 +363,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row20"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -382,7 +382,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row21"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -401,7 +401,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row22"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -420,7 +420,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "canon1"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -439,7 +439,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row24"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -458,7 +458,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row25"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -477,7 +477,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row26"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -496,7 +496,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row27"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -515,7 +515,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row28"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -534,7 +534,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row29"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -553,7 +553,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row30"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -572,7 +572,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row31"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -591,7 +591,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row32"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -610,7 +610,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row33"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -629,7 +629,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row34"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -647,7 +647,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row35"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -666,7 +666,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row36"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -685,7 +685,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row37"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -704,7 +704,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row38"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -723,7 +723,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row39"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -742,7 +742,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row40"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -757,7 +757,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row41"
       },
       "Offering_Key__c": "migration-accelerator",
@@ -772,7 +772,7 @@
     },
     {
       "attributes": {
-        "type": "MA_Page_Content__c",
+        "type": "GTM_Page_Content__c",
         "referenceId": "row42"
       },
       "Offering_Key__c": "migration-accelerator",

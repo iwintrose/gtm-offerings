@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Draft_JSON__c</fullName>
-    <description>The answers so far, as the form's own field map. Only fields the visitor filled in themselves are ever written here.</description>
+    <!-- Widened from 32768 to 131072 (a safe, non-destructive change) so this
+         one column can hold both the short booking-form draft and the long
+         branching assessment-questionnaire draft - see Draft_Type__c.
+         PROSPECT DATA - never logged, never put in an exception message, and
+         never included in any email. Only fields the visitor filled in
+         themselves are ever written here, whether that visitor is filling in
+         the configurator booking form or the readiness questionnaire. -->
+    <description>The answers so far -- the booking form's own field map, or the questionnaire's answer payload, discriminated by Draft_Type__c. Only fields the visitor filled in themselves are ever written here. Field-level access: GTM_Config_Manager (internal reps) and GTM_Story_Guest (its own booking-draft population only, via GtmFormDraftController). GTM_Assessment_Guest is deliberately NOT granted this field, or any field/object permission on GTM_Form_Draft__c at all -- its access to the questionnaire-draft population is entirely through GtmAssessmentDraftController's class grant. See docs/handoff/port-map-ma-to-gtm.md section E.</description>
     <label>Draft</label>
-    <length>32768</length>
+    <length>131072</length>
     <trackTrending>false</trackTrending>
     <type>LongTextArea</type>
     <visibleLines>10</visibleLines>

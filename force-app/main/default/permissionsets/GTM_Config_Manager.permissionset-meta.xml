@@ -42,6 +42,26 @@
         <apexClass>GtmRepLinkFinderController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>GtmReadoutController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmAssessmentQuestions</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmAssessmentInstrument</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmAgentProxyController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmReadoutAgentContext</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>true</allowDelete>
@@ -113,6 +133,24 @@
         <modifyAllRecords>false</modifyAllRecords>
         <object>GTM_Offering_Feedback__c</object>
         <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>GTM_Readout__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>GTM_Readout_Version__c</object>
+        <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <fieldPermissions>
         <field>GTM_Saved_Configuration__c.Presentation_Stage__c</field>
@@ -444,6 +482,168 @@
         <field>GTM_Offering_Feedback__c.Answered_At__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Advisory_Reason__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Assessment_Advisory__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Assessment_Flags__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Assessment_Score__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Assessment_Tier__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Branch_Platform__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Estate_Complexity_Band__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Estate_Complexity_Basis__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Estate_Complexity_Dimensions__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Estate_Complexity_Score__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Instrument_Pair__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Instrument_Version__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Section_Scores__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Supplement_Scores__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>GTM_Assessment_Request__c.Instrument_Branch_Path__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>GTM_Assessment_Request__c.Instrument_Max_Score__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Opportunity__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Draft_Content__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Rep_Context_Notes__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Approved_Content__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Readout_Data__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Approved_Data__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Approved_By__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Approved_Date__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Published_Date__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout__c.Public_Link_Token__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Form_Draft__c.Resume_Token__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Form_Draft__c.Expires_At__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Form_Draft__c.Last_Saved_At__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Form_Draft__c.Submitted_Request__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Form_Draft__c.Pair_Key__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <!-- No fieldPermissions entry for GTM_Form_Draft__c.Draft_Type__c: it is a
+         required field, and Salesforce does not allow field-level security to
+         be set on a required field via permission set ("You cannot deploy to
+         a required field") - confirmed against this org. It is always
+         accessible to anyone with object-level access, which GTM_Config_Manager
+         already has above. Same applies to Status__c, also required - see
+         its own omission below. -->
     <tabSettings>
         <tab>GTM_Saved_Configuration__c</tab>
         <visibility>Visible</visibility>
@@ -462,6 +662,33 @@
     </tabSettings>
     <tabSettings>
         <tab>GTM_Content_Manager</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GTM_Readout__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GTM_Readouts_Overview</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GTM_Readouts_Manager</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <!-- standard-Case tabSettings + the Case objectPermissions block were both
+         removed here: this org's user license rejects any Case permission
+         grant on this permission set at all ("The user license doesn't allow
+         the permission: Read/Create/Edit Case"), confirmed empirically by
+         trying allowEdit, then allowCreate, then allowRead alone, then
+         allowRead alongside this tabSettings entry - every combination that
+         included Case failed. Case-based readout review (GtmReadoutCommentController)
+         is unaffected: that guest/rep flow does not depend on this
+         permission set's Case grant. Revisit if this org's license changes,
+         or grant Case access to reps through a different permission set/
+         profile whose license does allow it. -->
+    <tabSettings>
+        <tab>GTM_Instrument_Author</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
