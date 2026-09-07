@@ -111,6 +111,39 @@ the actual target org:
 None of these are things a script should guess at on your behalf --
 wrong values here are org-specific judgment calls, not defaults to bake in.
 
+## Sample / demo data
+
+A fresh deploy carries schema and the one seeded `GTM_Offering__mdt` record
+(the product's own real offering copy -- not sample data, that's what
+every org running this app is actually selling) but no client-shaped
+records: no engagement links, no accounts tied to this app, nothing to
+demo with. Two scripts fill that gap, both built entirely through this
+app's own real Apex entry points (`saveConfiguration`, `submitRequest`) so
+they can't drift out of sync with real validation, scoring, or FLS:
+
+- **`scripts/data/reset-accelerator-demo.apex`** -- four fictional clients
+  (`MUCH Music (Demo)`, `TD Bank (Demo)`, `Medtronic (Demo)`, `LA Metro
+  (Demo)`, clearly labeled as such), spread across industries and source
+  platforms, three converted to a scored assessment request and one that
+  opened the link and dropped off -- a deliberately non-uniform, realistic
+  spread rather than four identical "perfect" records. Safe to keep, edit
+  the `spec` list for your own demo needs, or delete -- delete-then-rebuild,
+  matched by name, and touches nothing else in the org.
+- **`scripts/data/seed-cmc-sample.apex`** -- a single richer walkthrough
+  (Commercial Metals Company, a real company used here only as a stand-in;
+  nothing in it represents an actual engagement) exercising the full
+  BD-rep-to-recipient flow end to end: engagement link with a password,
+  guest read, token-gated submission, server-scored readout. Idempotent --
+  re-running it after the Account already exists just prints the existing
+  record Ids instead of duplicating. Portable: it's a self-contained script
+  with no dependency on any specific org's existing data, so it runs the
+  same way in any org this app is deployed to.
+
+```bash
+sf apex run --file scripts/data/reset-accelerator-demo.apex --target-org my-new-org
+sf apex run --file scripts/data/seed-cmc-sample.apex --target-org my-new-org
+```
+
 ## If this needs to go to *many* orgs, not just one
 
 Everything here already qualifies to become a proper **unlocked package**
