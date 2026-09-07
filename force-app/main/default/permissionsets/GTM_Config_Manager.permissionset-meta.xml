@@ -116,6 +116,29 @@
         <object>GTM_Page_Content__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
+    <!-- GTM_Page_Section__c had no object or field grants anywhere in this
+         permission set, or in any other permission set in the repo, despite
+         being the object every "add/reorder/publish a page section" action
+         in Content Manager writes to: the same gap this file's other
+         comments already document for GTM_Page_Content__c, GTM_Readout__c
+         and GTM_Readout_Version__c, just never caught for this one. It has
+         stayed invisible because every read/write of it goes through a
+         compiled without-sharing/with-sharing Apex class that never
+         enforces FLS (no WITH SECURITY_ENFORCED or stripInaccessible
+         anywhere in this codebase), so the app itself never broke, but
+         anything that does enforce FLS in the future, or any direct
+         list-view/report/API access by a properly-scoped user, would hit
+         "No such column" on every field below. Confirmed missing against
+         gtm-dev by anonymous Apex under a non-admin integration user. -->
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>GTM_Page_Section__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>true</allowDelete>
@@ -436,6 +459,41 @@
     </fieldPermissions>
     <fieldPermissions>
         <field>GTM_Page_Content__c.Text_Value__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Active__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Draft_State__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Help_Text__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Label__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Sort_Order__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Status__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Width__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>

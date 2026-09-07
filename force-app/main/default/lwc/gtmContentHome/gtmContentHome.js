@@ -1,5 +1,5 @@
-import { LightningElement, track } from 'lwc';
-import { NavigationMixin } from 'lightning/navigation';
+import { LightningElement, track, wire } from 'lwc';
+import { NavigationMixin, CurrentPageReference } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import createPage from '@salesforce/apex/GtmPageSectionController.createPage';
 import { starterFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
@@ -51,7 +51,20 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track newOfferingOpen = false;
     @track newOfferingName = '';
 
-    connectedCallback() { this.load(); }
+    /**
+     * Lightning keeps a standard app tab's component alive when you switch
+     * away and back rather than remounting it, so a connectedCallback-only
+     * load left this screen showing whatever it last saw -- an offering
+     * built in Content Manager and switched back to here stayed missing
+     * until a full browser reload. CurrentPageReference fires again on every
+     * navigation to this tab even without a remount, connectedCallback's own
+     * first fire included, so it replaces connectedCallback as the one place
+     * this loads from.
+     */
+    @wire(CurrentPageReference)
+    onPageRef() { this.load(); }
+
+    handleRefresh() { this.load(); }
 
     load() {
         this.isLoading = true;
@@ -325,16 +338,19 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                 this.newOfferingName = '';
                 this.dispatchEvent(new ShowToastEvent({
                     title: 'Offering created',
-                    message: `"${name}" is ready. Its Offerings Listing page already has a starting section.`,
+                    message: `"${name}" is ready — let's build its Story page first.`,
                     variant: 'success'
                 }));
-                // Straight into the new offering's own listing page, which is
-                // the only page it has and the one that needs writing. Deferred
-                // a microtask past the modal-close writes above so the
-                // NavigationMixin dispatch doesn't land in the same tick as
-                // those reactive writes — the same shape handleGoToPage() below
-                // already uses (its Apex round-trip separates the two).
-                return Promise.resolve().then(() => this.openEditor(key, 'offerings-listing', /* isNew */ true));
+                // Straight into Story, the offering's front door -- not
+                // offerings-listing, which auto-seeds a tile the moment the
+                // offering exists and used to be where this landed, ahead of
+                // the one instruction (the hint banner) telling the user to
+                // go to Story instead. Deferred a microtask past the
+                // modal-close writes above so the NavigationMixin dispatch
+                // doesn't land in the same tick as those reactive writes —
+                // the same shape handleGoToPage() below already uses (its
+                // Apex round-trip separates the two).
+                return Promise.resolve().then(() => this.openEditor(key, 'story', /* isNew */ true));
             })
             .catch((err) => {
                 this.loadError = this.messageFrom(err) || 'The offering could not be created.';

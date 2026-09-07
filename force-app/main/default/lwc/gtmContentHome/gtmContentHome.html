@@ -13,6 +13,9 @@
           </div>
         </div>
         <div class="slds-page-header__col-actions">
+          <lightning-button label="Refresh" icon-name="utility:refresh"
+                            disabled={isLoading}
+                            onclick={handleRefresh}></lightning-button>
           <lightning-button label="New offering" icon-name="utility:new"
                             variant="brand"
                             onclick={handleOpenNewOffering}></lightning-button>

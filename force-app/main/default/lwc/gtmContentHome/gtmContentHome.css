@@ -32,7 +32,7 @@
 }
 .home-head .slds-page-header__row { display: flex; align-items: center; gap: 1rem; }
 .home-head .slds-page-header__col-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
-.home-head .slds-page-header__col-actions { margin-left: auto; }
+.home-head .slds-page-header__col-actions { margin-left: auto; display: flex; gap: 0.5rem; }
 .home-head-icon { flex: none; }
 .home-eyebrow { font-size: 12px; color: #444; margin: 0; }
 .home-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
