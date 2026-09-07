@@ -14,9 +14,9 @@
           </div>
         </div>
         <div class="slds-page-header__col-actions">
-          <lightning-button label="New prospect page" icon-name="utility:new"
+          <lightning-button label="New engagement link" icon-name="utility:new"
                             variant="brand" disabled={navBusy}
-                            onclick={handleNewProspectPage}></lightning-button>
+                            onclick={handleNewEngagementLink}></lightning-button>
         </div>
       </div>
     </div>
@@ -149,7 +149,7 @@
           </div>
         </template>
         <template if:true={showEmptyDeals}>
-          <p class="ov-empty">No deals yet. Every prospect page you build for an opportunity shows up here with what the recipient did with it.</p>
+          <p class="ov-empty">No deals yet. Every engagement link you send for an opportunity shows up here with what the recipient did with it.</p>
         </template>
       </div>
     </article>

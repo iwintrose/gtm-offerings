@@ -12,38 +12,6 @@
         <visible>true</visible>
     </applicationVisibilities>
     <tabSettings>
-        <tab>devedapp__Get_Started_Agentforce</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>devedapp__Get_Started_Data_Cloud</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>devedapp__Get_Started_MuleSoft</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>devedapp__Get_Started_SFDX</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>devedapp__Welcome</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>GTM_Offerings_Overview</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>GTM_Pages</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>MA_Saved_Configuration__c</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
         <tab>GTM_Saved_Configuration__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>

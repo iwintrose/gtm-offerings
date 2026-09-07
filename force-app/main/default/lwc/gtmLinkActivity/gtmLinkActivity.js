@@ -58,9 +58,10 @@ export default class GtmLinkActivity extends LightningElement {
 
     @wire(getRelatedListRecords, {
         parentRecordId: '$_configId',
-        // relationshipName is GTM_Link_Events, not the default Link_Events,
-        // a leftover from the D6 rename avoiding a collision with the old
-        // MA_Saved_Configuration__c object's own Link_Events relationship.
+        // relationshipName is GTM_Link_Events, not the default Link_Events --
+        // a leftover from the D6 rename, when it had to avoid colliding with
+        // the (since-deleted) MA_Saved_Configuration__c object's own
+        // Link_Events relationship.
         relatedListId: 'GTM_Link_Events__r',
         fields: [
             'GTM_Link_Event__c.Id',

@@ -20,10 +20,6 @@
         <enabled>true</enabled>
     </classAccesses>
     <tabVisibilities>
-        <tab>MA_Saved_Configuration__c</tab>
-        <visibility>DefaultOn</visibility>
-    </tabVisibilities>
-    <tabVisibilities>
         <tab>GTM_Assessment_Request__c</tab>
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
@@ -35,15 +31,6 @@
         <tab>GTM_Pages</tab>
         <visibility>DefaultOn</visibility>
     </tabVisibilities>
-    <objectPermissions>
-        <allowCreate>true</allowCreate>
-        <allowDelete>true</allowDelete>
-        <allowEdit>true</allowEdit>
-        <allowRead>true</allowRead>
-        <modifyAllRecords>false</modifyAllRecords>
-        <object>MA_Saved_Configuration__c</object>
-        <viewAllRecords>false</viewAllRecords>
-    </objectPermissions>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>true</allowDelete>
@@ -62,91 +49,6 @@
         <object>GTM_Assessment_Request__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Industry__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>GTM_Saved_Configuration__c.Industry__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Company__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>GTM_Saved_Configuration__c.Company__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Config_Payload__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>GTM_Saved_Configuration__c.Config_Payload__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Opportunity__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>GTM_Saved_Configuration__c.Opportunity__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Link_Password__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>GTM_Saved_Configuration__c.Link_Password__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Industry_Label__c</field>
-        <readable>true</readable>
-        <editable>false</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>GTM_Saved_Configuration__c.Industry_Label__c</field>
-        <readable>true</readable>
-        <editable>false</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Account__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>GTM_Saved_Configuration__c.Account__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Contact__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>GTM_Saved_Configuration__c.Contact__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <field>MA_Saved_Configuration__c.Estimated_Value__c</field>
-        <readable>true</readable>
-        <editable>true</editable>
-    </fieldPermissions>
     <fieldPermissions>
         <field>GTM_Saved_Configuration__c.Estimated_Value__c</field>
         <readable>true</readable>

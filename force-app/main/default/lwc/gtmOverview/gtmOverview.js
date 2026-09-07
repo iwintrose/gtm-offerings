@@ -210,7 +210,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     get funnel() {
         const deals = this.deals;
         const stages = [
-            { key: 'sent',      label: 'Page sent',   hint: 'A prospect page prepared for a deal',   n: deals.length },
+            { key: 'sent',      label: 'Page sent',   hint: 'An engagement link prepared for a deal',   n: deals.length },
             { key: 'opened',    label: 'Opened it',   hint: 'The recipient read the page',           n: deals.filter((d) => d.opened).length },
             { key: 'started',   label: 'Started the form', hint: 'They began the assessment',        n: deals.filter((d) => d.started).length },
             { key: 'requested', label: 'Asked for the assessment', hint: 'A request came back',      n: deals.filter((d) => d.converted).length }
@@ -371,7 +371,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
      * Building a page for an offering is a different job for a different
      * person, and lives in the Content Manager.
      */
-    handleNewProspectPage() {
+    handleNewEngagementLink() {
         if (this.navBusy) return;
         this.navBusy = true;
         getSiteHomePageUrl()
