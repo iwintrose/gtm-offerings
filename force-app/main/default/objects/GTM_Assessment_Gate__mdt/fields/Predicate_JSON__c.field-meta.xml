@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Predicate_JSON__c</fullName>
+    <label>Predicate JSON</label>
+    <!-- Salesforce does not support `required` on a LongTextArea field -
+         confirmed against this org ("Can not specify 'required' for a
+         CustomField of type LongTextArea"). Every build-instrument.py
+         emission always sets this, so the practical effect is unchanged;
+         only the metadata-level guarantee is removed. -->
+    <description>Boolean predicate over answers: {&quot;all&quot;:[...]} or {&quot;any&quot;:[...]}, nesting allowed, leaves of the form {&quot;field&quot;:k,&quot;op&quot;:o,&quot;value&quot;:v}. field is source, target, a slot key or a supplement key; op is eq/ne/lt/lte/gt/gte/in/not_in. A field with no answer makes its clause false -- a gate that fires on data nobody supplied reads as the tool guessing.</description>
+    <type>LongTextArea</type>
+    <length>4000</length>
+    <visibleLines>10</visibleLines>
+</CustomField>

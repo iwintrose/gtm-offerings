@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Field updates for the GTM_Readout_Approval approval process, and nothing else.
+  There are no workflow rules here on purpose: the only automation this object
+  has is the approval process (approvalProcesses/) plus the GtmReadoutApprovalSync
+  trigger, and a workflow rule would be a third, invisible place where Status__c
+  could move.
+
+  These three updates are the entire contract between the platform's approval
+  engine and the Status__c state machine:
+
+      submitted  -> Pending Approval
+      approved   -> Approved
+      rejected / recalled -> Draft
+
+  Everything else an approval implies — copying Draft_Content__c into
+  Approved_Content__c, stamping Approved_By__c / Approved_Date__c, writing the
+  GTM_Readout_Version__c snapshot — is done by GtmReadoutApprovalSync, because a
+  workflow field update cannot target a Rich Text Area field and so cannot make
+  the approved-content snapshot at all. That trigger keys off the same Status__c
+  transition these updates produce, so the two stay in step.
+
+  Nothing here publishes. Publishing mints a live link into a prospect's inbox
+  and stays a deliberate rep action in GtmReadoutController.publishReadout.
+-->
+<Workflow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fieldUpdates>
+        <fullName>Readout_Status_Pending_Approval</fullName>
+        <description>Initial submission action on GTM_Readout_Approval: a readout waiting on an approver is not a draft anyone should keep editing, and the record is locked at the same moment.</description>
+        <field>Status__c</field>
+        <literalValue>Pending Approval</literalValue>
+        <name>Readout Status Pending Approval</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Readout_Status_Approved</fullName>
+        <description>Final approval action on GTM_Readout_Approval. Marks the readout approved and nothing more -- it does not publish, and does not mint a public link.</description>
+        <field>Status__c</field>
+        <literalValue>Approved</literalValue>
+        <name>Readout Status Approved</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Readout_Status_Draft</fullName>
+        <description>Final rejection and recall action on GTM_Readout_Approval: a rejected or recalled readout goes back to being an editable draft, which is also what re-arms the process's Status__c = Draft entry criteria.</description>
+        <field>Status__c</field>
+        <literalValue>Draft</literalValue>
+        <name>Readout Status Draft</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+    </fieldUpdates>
+</Workflow>

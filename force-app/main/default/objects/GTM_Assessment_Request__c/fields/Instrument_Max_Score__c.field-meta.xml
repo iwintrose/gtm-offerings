@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Instrument_Max_Score__c</fullName>
+    <label>Instrument Max Score</label>
+    <description>The maximum this submission was actually scored out of, DERIVED at submit time by summing the top authored points of the eight slots the resolved pack (and the branch path taken) presented -- never typed, and never read from the client. It is stored because option points are author-editable: without it, a readout reopened after someone retunes an offering&apos;s scores would print today&apos;s maximum next to yesterday&apos;s total. In a healthy instrument it is always 32, and GtmAssessmentScoring refuses to trust authored points that make it anything else -- so a value other than 32 here is the signal that a pack was hand-edited past the build script.</description>
+    <required>false</required>
+    <type>Number</type>
+    <precision>4</precision>
+    <scale>0</scale>
+    <unique>false</unique>
+</CustomField>

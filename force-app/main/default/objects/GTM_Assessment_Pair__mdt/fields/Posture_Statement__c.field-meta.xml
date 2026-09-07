@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Posture_Statement__c</fullName>
+    <label>Posture Statement</label>
+    <description>The above-the-fold sentence, in the client&#x27;s language, saying what is measured and what is not. Rendered before the score, not after it: a posture caveat below the number is a footnote, and footnotes are not read.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>1000</length>
+    <visibleLines>5</visibleLines>
+</CustomField>

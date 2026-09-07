@@ -1,0 +1,81 @@
+{
+  "appPageId": "8a38f8a2-ecf6-40bb-bc18-d20c8619aae8",
+  "componentName": "siteforce:dynamicLayout",
+  "dataProviders": [],
+  "id": "eddd75ca-2f4a-49a1-a324-778ade8dadd2",
+  "label": "Assessment",
+  "regions": [
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "background": "background: rgba(0,0,0,0)",
+            "backgroundOverlay": "rgba(0,0,0,0.5)",
+            "contentAreaWidth": 100,
+            "sectionConfig": {
+              "UUID": "31405ad6-9af7-47df-bf7c-9670f377d1b2",
+              "columns": [
+                {
+                  "UUID": "ec9d6742-78dc-49a2-8e14-537fa6835420",
+                  "columnKey": "1",
+                  "columnName": "Column 1",
+                  "columnWidth": "12",
+                  "seedComponents": []
+                }
+              ]
+            },
+            "sectionHeight": 300
+          },
+          "componentName": "forceCommunity:section",
+          "id": "31405ad6-9af7-47df-bf7c-9670f377d1b2",
+          "regions": [
+            {
+              "components": [
+                {
+                  "componentAttributes": {},
+                  "componentName": "c:gtmAssessmentQuestionnaire",
+                  "id": "95e50363-3042-4424-bda2-14141c6662d5",
+                  "renderPriority": "NEUTRAL",
+                  "renditionMap": {},
+                  "type": "component"
+                }
+              ],
+              "id": "ec9d6742-78dc-49a2-8e14-537fa6835420",
+              "regionLabel": "Column 1",
+              "regionName": "1",
+              "renditionMap": {},
+              "type": "region"
+            }
+          ],
+          "renderPriority": "NEUTRAL",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "3528d8f4-165b-461e-8d39-0a0db9b429cb",
+      "regionName": "content",
+      "type": "region"
+    },
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "customHeadTags": "<meta name=\"robots\" content=\"noindex, nofollow, noarchive\" />",
+            "description": "",
+            "title": "Migration readiness assessment"
+          },
+          "componentName": "forceCommunity:seoAssistant",
+          "id": "e862415e-1f53-4a47-a00c-35e86bd62598",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "cb16dbd0-cc3d-4374-a2b1-59f2e261bbfe",
+      "regionName": "sfdcHiddenRegion",
+      "type": "region"
+    }
+  ],
+  "themeLayoutType": "Inner",
+  "type": "view",
+  "viewType": "custom-assessment"
+}

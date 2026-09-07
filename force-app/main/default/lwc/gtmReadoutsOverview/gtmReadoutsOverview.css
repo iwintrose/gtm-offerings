@@ -1,0 +1,34 @@
+:host { display: block; }
+.ov { padding: 0.75rem; font-size: 13px; color: #181818; }
+.ov-bar { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+.ov-title { margin: 0; font-size: 18px; font-weight: 700; flex: 1; }
+.ov-err {
+    margin-bottom: 0.75rem; padding: 0.6rem 0.8rem;
+    border: 1px solid #f2c2c2; border-radius: 5px; background: #fdf2f2; color: #ba0517;
+}
+.ov-loading { position: relative; min-height: 120px; }
+.ov-empty { margin: 0; font-size: 12.5px; color: #747474; line-height: 1.6; max-width: 32rem; }
+
+.cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 0.6rem;
+}
+.rcard {
+    display: flex; flex-direction: column; gap: 0.3rem; text-align: left;
+    padding: 0.75rem 0.85rem; border: 1px solid #e5e5e5; border-radius: 6px;
+    background: #fff; cursor: pointer; font: inherit; color: inherit;
+}
+.rcard:hover { border-color: #0176d3; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.rcard-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.rcard-name { font-size: 13.5px; font-weight: 700; }
+.rcard-meta { margin: 0; font-size: 11.5px; color: #747474; }
+.rcard-modified { margin: 0; font-size: 10.5px; color: #969696; }
+
+.badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 0.05rem 0.4rem; border-radius: 3px; white-space: nowrap;
+}
+.badge--draft { background: #fef5e7; color: #8c4b02; border: 1px solid #f0d9a8; }
+.badge--pending-approval { background: #f4f0fb; color: #5a1ba9; border: 1px solid #d9c7f3; }
+.badge--approved { background: #eaf5ea; color: #2e844a; border: 1px solid #b3ddb8; }
+.badge--published { background: #eef4ff; color: #014486; border: 1px solid #b9d3f5; }

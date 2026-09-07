@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Supplement_Scores__c</fullName>
+    <label>Supplement Scores</label>
+    <description>JSON for the layer-4 supplement sets: {"index":{"mcn_readiness_index":{"total":7,"min":4,"max":12}},"answers":{"data_cloud_state":2},"notes":{"shared_audience_definitions":"six of forty"}}. Deliberately its own field and its own named index rather than extra keys in Section_Scores__c: supplements sit OUTSIDE the 32 and must never be summable into it, and a separate column is the cheapest way to make that structurally true instead of merely intended. "notes" holds unscored verbatim probes, recorded as said.</description>
+    <length>32768</length>
+    <trackHistory>false</trackHistory>
+    <type>LongTextArea</type>
+    <visibleLines>5</visibleLines>
+</CustomField>

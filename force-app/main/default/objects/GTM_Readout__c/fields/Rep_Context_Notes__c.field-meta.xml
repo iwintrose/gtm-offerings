@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Rep_Context_Notes__c</fullName>
+    <description>Internal, rep-supplied deal context: discovery notes, call summaries, anything the rep knows that the prospect's assessment answers do not say. Read by the readout assistant (GUS) as INPUT and never published — it is not part of Draft_Content__c or Approved_Content__c, so it never reaches the prospect-facing readout or the public link. Plain text, not HTML, precisely so that pasted client-supplied text can be handed to the model as data rather than as markup or instructions.</description>
+    <externalId>false</externalId>
+    <label>Rep Context Notes</label>
+    <length>32768</length>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>6</visibleLines>
+</CustomField>

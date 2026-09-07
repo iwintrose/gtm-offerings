@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Source_Posture__c</fullName>
+    <label>Source Posture</label>
+    <description>Posture of the SOURCE end alone. Separate from the headline because it is what decides whether estate figures are illustrative: those figures come from reading the source, so an instrumented source with an interview_only target (SFMC to MCN) has measured counts and an unverified destination, and flattening the two would misreport one of them.</description>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>interview_only</fullName>
+                <default>true</default>
+                <label>interview_only</label>
+            </value>
+            <value>
+                <fullName>assisted</fullName>
+                <default>false</default>
+                <label>assisted</label>
+            </value>
+            <value>
+                <fullName>instrumented</fullName>
+                <default>false</default>
+                <label>instrumented</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

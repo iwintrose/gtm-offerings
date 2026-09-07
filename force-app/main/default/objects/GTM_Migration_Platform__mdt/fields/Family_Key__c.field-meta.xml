@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Family_Key__c</fullName>
+    <label>Family Key</label>
+    <description>Optional grouping key shared by platforms that behave alike for assessment purposes, e.g. hubspot and marketo both sitting in inbound_suite. It is the second link in the instrument&#x27;s resolution chain (exact pair, then source-family x target, then target-only, then base), so a family-level pack can say the true thing about several sources at once without anyone copying a pack per platform. Purely additive: a platform with no family simply skips that link.</description>
+    <required>false</required>
+    <type>Text</type>
+    <length>80</length>
+    <unique>false</unique>
+</CustomField>

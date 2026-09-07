@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Assessment_Request__c</fullName>
+    <label>Assessment Request</label>
+    <!-- NOT required, deliberately - this contradicts the field's original
+         authored metadata (required=true), which was a genuine pre-existing
+         bug: requirement #5 (docs/handoff/2026-09-07-assessment-readout.md)
+         is that orphan readouts - ones with no assessment request at all -
+         are a real, supported state that routes to the GTM_Readout_Triage
+         queue. GtmReadoutAgentContextTest.aReadoutWithNoAssessmentSaysSoRatherThanFailing
+         inserts exactly such a readout and always has; required=true would
+         make that insert fail every time, which it does empirically against
+         this org. Never caught before because nothing on this branch had
+         ever been deployed. -->
+    <description>The assessment this readout was generated from, or blank for an orphan readout routed to GTM_Readout_Triage.</description>
+    <type>Lookup</type>
+    <referenceTo>GTM_Assessment_Request__c</referenceTo>
+    <relationshipLabel>Readouts</relationshipLabel>
+    <relationshipName>GTM_Readouts</relationshipName>
+    <required>false</required>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

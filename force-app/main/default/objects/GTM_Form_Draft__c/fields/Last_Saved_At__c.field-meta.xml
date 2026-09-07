@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Last_Saved_At__c</fullName>
+    <description>When this specific row was written -- CreatedDate would do the same job, but a dedicated field keeps GtmAssessmentDraftController's resumeDraft response shape stable if CreatedDate ever becomes unreliable to expose (e.g. a future data migration). Questionnaire drafts only (Draft_Type__c = 'Assessment'); null on Booking rows.</description>
+    <label>Last Saved At</label>
+    <type>DateTime</type>
+</CustomField>

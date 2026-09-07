@@ -1,0 +1,709 @@
+# HUBSPOT -> SALESFORCE MARKETING CLOUD ENGAGEMENT.
+#
+# THE SAMPLE CLIENT PATH. This is the move the worked engagement actually makes,
+# and until this file existed it resolved to `base` -- the eight unadapted
+# questions in generic wording. That was honest and it was wrong to ship on the
+# path most likely to be walked.
+#
+# READ IT AGAINST hubspot__mcn, NOT AS A COPY OF IT. Same source, different
+# target, and the target is the half that decides how severe a source-side gap
+# is. Classic MCE has AMPscript, Data Extensions, Publication Lists and a mature
+# preference-centre story; Marketing Cloud Next has none of those yet. So this
+# pack diverges from hubspot__mcn in four places on purpose, each one recorded
+# where it happens:
+#
+#   slot 2  the target end is real here, so the anchors say so;
+#   slot 4  content is a REWRITE against available primitives, not a re-model,
+#           and is scoped to MARKETING EMAIL -- HubSpot CMS is a different
+#           migration, asked unscored as cms_scope_expectation;
+#   slot 5  the top of the scale is a decomposable object graph, not Data Cloud;
+#   slot 7  NO CEILING. The MCN cap existed because MCN Consent & Custom
+#           Preferences is Spring '26+ with unverified parity. That reason does
+#           not exist for MCE, and an inherited ceiling nobody re-checked is a
+#           prospect quietly marked down for a limitation of a platform they
+#           are not moving to.
+#
+# POSTURE IS ASYMMETRIC, which is the first pack where that is true. Nothing
+# reads HubSpot; the target is genuinely instrumented. The headline is still the
+# weaker end -- estate figures come from reading the source, and nothing reads
+# the source.
+#
+# MC NEXT IS NOT THE TARGET. The engagement names a few MCN use cases as
+# forward-looking items. They are captured as an UNSCORED probe in
+# sfmc_classic_readiness and nowhere else: mcn_readiness does not fire, no gate
+# keyed on sfmc_next can fire, and no callout implies MCN is where this is
+# going. A forward-looking paragraph is a paragraph; it is not a destination.
+
+name: hubspot_to_sfmc
+source: hubspot
+target: sfmc
+specificity: 1
+active: true
+version: "2026.09.1"
+
+capability_posture: interview_only
+source_posture: interview_only
+target_posture: instrumented
+posture_statement: >-
+  Before you start, one thing about how we will read your answers. The two ends
+  of this move are not equally known. Nothing reads HubSpot — there is no source
+  connector, so every count you give us is your description of the estate rather
+  than a measurement of it. The destination is the opposite: Marketing Cloud
+  Engagement has a real capability manifest, a target adapter that scaffolds
+  against it, and live tenant access. So we treat the estate figures as
+  illustrative and the named gaps as not: they are structural properties of
+  Journey Builder, Content Builder and Data Extensions, and they will be true of
+  your estate whatever its size turns out to be.
+
+emphasis_slots: [orchestration_portability, crm_and_data_model_entanglement, consent_portability]
+supplement_sets: [sfmc_classic_readiness, hubspot_context]
+
+overrides:
+  # ---- Slot 1. Layer 1: same anchors, HubSpot's nouns. ----
+  - dimension: estate_scale
+    layer: reword
+    label: Estate Scale
+    question: >-
+      Roughly how much is live in HubSpot today — active workflows, lists,
+      marketing emails, landing pages and forms — and across how many business
+      units or portals?
+    evidence_prompt: "Ask for five numbers, not an adjective: active workflows, lists, marketing emails published in the last 12 months, live landing pages, live forms. Then ask how many portals and (Enterprise only) how many business units."
+    respondent_hint: >-
+      Useful to have to hand: your counts of active workflows, lists, marketing
+      emails published in the last 12 months, live landing pages and live forms,
+      and the number of portals you run.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — the object catalogue's own nouns; forms are added to the four hubspot__mcn asks because forms_and_ctas_rebuild makes them a distinct scope item here rather than a subtype of content, and because the site form scan can find embeds the tenant count will not. skills/mce-mcn-helper/references/skills/02-maturity.md — the org-signal method (count the artefacts, do not accept the adjective). Anchors are unchanged from base, which is what keeps this layer 1: a 40-workflow HubSpot estate and a 40-campaign Eloqua estate score the same, which is the point of slot 1.
+
+  # ---- Slot 2. Layer 2 + a visible ceiling. Diverges from hubspot__mcn: ----
+  # ---- the TARGET end of this question is real here.                    ----
+  - dimension: source_access
+    layer: recalibrate
+    question: >-
+      If we started next week, how would an extract of your HubSpot estate
+      actually be produced, who would do it — and does anyone hold the
+      Marketing Cloud side yet?
+    options:
+      - value: 1
+        label: "No HubSpot admin access, no owner, nobody has exported anything before — and no Marketing Cloud tenant or credentials to write to."
+      - value: 2
+        label: "A HubSpot super admin exists; private-app tokens have not been created and would need approval. Marketing Cloud access has not been discussed."
+      - value: 3
+        label: "A super admin can create a scoped private app this week and someone can run an operator-led extract; the Marketing Cloud installed package is provisioned or one approval away."
+      - value: 4
+        label: "A supported connector reads the source directly with no operator in the loop."
+    max_attainable: 3
+    ceiling_reason: "No HubSpot connector ships today. The best available path is an operator-run extract against a scoped private app, which is what a 3 describes — so a 4 is not on offer for this pair, for anyone. The Marketing Cloud end is not what caps this: a server-to-server installed package is a real, obtainable credential, and a 3 assumes it."
+    evidence_prompt: "Ask who holds HubSpot Super Admin and whether their security team permits private apps at all. Separately, ask who would create the Marketing Cloud installed package — it is frequently a different person in a different team, and that is the lead-time item."
+    respondent_hint: >-
+      Worth checking before you answer: who holds HubSpot Super Admin, whether
+      your security team allows private apps at all, and who would create the
+      Marketing Cloud installed package. That last one is often a different team.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — gap pattern no_hubspot_source_adapter, "The MVP source matrix is Eloqua and SFMC. A HubSpot-source engagement gets no automated inventory, no canonical IR generation, and no adapter-driven disposition", and infrastructure.manifest_status.adapter_status "none". docs/specs/tier-2/sfmc-target-adapter.md — the target end IS implemented, which is why this pack's anchors name it where hubspot__mcn's could not: on that pair neither end was instrumented, so its anchors are source-only and a 3 says nothing about the destination. Here a 3 has to carry both ends or it would promise a write path nobody has provisioned. The CEILING is unchanged from hubspot__mcn and unchanged in reason: capping rather than rewording the 4 keeps this comparable to a pair where a 4 IS reachable — the same scale, with a stated ceiling, rather than a different scale wearing the same numbers.
+
+  # ---- Slot 3. Layer 2: re-enrolment, goal criteria, go-to-action loops. ----
+  - dimension: orchestration_portability
+    layer: recalibrate
+    question: >-
+      How much of your workflow logic depends on re-enrolment, goal criteria, or
+      go-to-action steps that jump backwards — as opposed to a straight sequence
+      of branches and delays?
+    options:
+      - value: 1
+        label: "Re-enrolment is on across most workflows, goals drive exits, and at least one workflow loops backwards. The re-entry behaviour IS the programme."
+      - value: 2
+        label: "Several workflows re-enrol or use goal criteria; removing them would change what the programme does. Maybe one backwards jump."
+      - value: 3
+        label: "Mostly linear branch-and-delay logic; re-enrolment is on in a handful of places and is not load-bearing. No loops."
+      - value: 4
+        label: "Linear, single-entry flows throughout. No goals, no loops, no re-enrolment anywhere."
+    evidence_prompt: "Ask them to open one workflow and read out its enrolment settings — 're-enrol contacts' and 'goal' are checkboxes, so this is a factual answer rather than an impression. Then ask whether any workflow has a go-to-action step, and where it points."
+    respondent_hint: >-
+      If you are not sure, open one of your busier workflows: 're-enrol contacts'
+      and 'goal' are checkboxes in its settings, and a go-to-action step is
+      visible on the canvas.
+    rationale: >-
+      capabilities/platforms/sfmc.yaml — flow_control.loops unsupported, "Journey Builder does not support loopbacks - contacts only move forward", and gap_patterns loopback_flow at blocker. migration-accelerator/capabilities/platforms/hubspot.yaml — the three source-side patterns this question is anchored on and their CLASSIC severities, which are not the MCN ones: workflow_loop_go_to_action is "Blocker for both classic SFMC and SFMC Next — the constraint is identical", while workflow_reenrollment and workflow_goal_criteria are major, with classic SFMC's stated approximations being a re-entry-enabled journey plus a scheduled Automation Studio query, and journey Exit Criteria, respectively. That asymmetry is why the anchors put the LOOP at option 1 and let re-enrolment alone sit at 2-3: on this target a loop is a redesign and re-enrolment is a scheduled query, and an anchor set that scored them alike would be reporting a rebuild where there is a build.
+
+  # ---- Slot 4. Layer 2. THE MATERIAL DIVERGENCE FROM hubspot__mcn.      ----
+  # ---- Classic MCE has AMPscript and Data Extensions. HubL against a    ----
+  # ---- platform that has them is a REWRITE; against one that does not   ----
+  # ---- it is a re-model. Same estate, one band better here, on purpose. ----
+  # ---- RESCOPED to MARKETING EMAIL ONLY. HubL and custom modules span   ----
+  # ---- two migrations -- the email estate, which this engagement moves  ----
+  # ---- into Content Builder, and HubSpot CMS, which it does not. The    ----
+  # ---- CMS half is now an unscored scope probe in hubspot_context.      ----
+  - dimension: content_portability
+    layer: recalibrate
+    label: Email Content Portability
+    question: >-
+      Thinking only about your marketing emails, which would be rebuilt as
+      Content Builder templates and assets: how many email templates are in real
+      use, how much of each is custom modules and HubL doing real logic rather
+      than standard modules and copy, and how many language variants are
+      maintained? Landing pages and site pages are a separate question later on,
+      so leave them out here.
+    options:
+      - value: 1
+        label: "A large template and module library that emails are assembled from, with HubL macros, includes and loops doing real logic inside the email, and every template maintained in several language variants."
+      - value: 2
+        label: "A module library editors compose emails from, with HubL conditionals and CRM-association lookups doing real work. Reuse is genuine, so the target-side block library has to exist before content moves."
+      - value: 3
+        label: "Some custom modules and conditional HubL in emails, but the logic is over the contact's own properties and rewrites cleanly into AMPscript and a Data Extension lookup."
+      - value: 4
+        label: "Templates and copy only, few enough to rebuild deliberately, with personalisation that is merge fields and nothing more."
+    evidence_prompt: "Ask for two counts and one ratio: email templates used in the last 12 months, modules ranked by usage IN EMAILS (not across the site), and how many of those templates exist in more than one language. The estimate is per construct and per template, not per email. Do NOT count landing pages, site pages or blog templates here — whether any of that is even moving is the cms_scope_expectation probe, not this slot."
+    respondent_hint: >-
+      Useful to have to hand: how many email templates you have used in the last
+      12 months, which custom modules appear in those emails, and how many of
+      the templates exist in more than one language.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — hubl_templating's severity_by_target, quoted because it is the entire reason these anchors differ from hubspot__mcn's: "Major for both, for different reasons. Classic SFMC: AMPscript is comparably expressive, so most HubL constructs have SOME analogue — it is a rewrite, not a redesign. SFMC Next: there is no scripting language at all, so expressive HubL escalates toward blocker." Also custom_modules, "Classic SFMC: content blocks and template slots recover part of the reuse", which is what option 2's library-build clause prices. capabilities/platforms/sfmc.yaml — actions.email_send declares personalization and dynamic_content supported, i.e. the primitives the rewrite lands on exist. THE RECALIBRATION, stated plainly: an estate of custom modules and expressive HubL scores 3 here and 2 on hubspot__mcn. That is not generosity, it is the manifest's own severity split; scoring it 2 on both would have said the two targets cost the same to rebuild against, which is the one thing the manifest explicitly denies. THE RESCOPE, and why HubDB left these anchors: HubL is HubSpot's templating language and custom modules are the blocks built from it, and both are used in two places that migrate differently. Marketing emails are rebuilt in Content Builder by this engagement, so they are readiness and they are scored. Landing pages, site pages, blog and HubDB-driven pages are HubSpot CMS, and in a marketing-automation move to Marketing Cloud Engagement the client typically keeps HubSpot CMS or moves the web estate as a separate programme with a separate sponsor — migration-accelerator/capabilities/platforms/hubspot.yaml, sequences_out_of_scope's severity_by_target states the principle for the analogous case, "the severity comes from the scope and budget boundary, not from a technical asymmetry". Scoring web-estate readiness inside an eight-slot marketing-automation instrument overstated the engagement, and it did it in the direction that hurts: a client who keeps their website on HubSpot was marked down for content nobody was being asked to move. HubDB therefore no longer sits at option 1. It has not been dropped: whether that content is expected to move is now asked directly and unscored as cms_scope_expectation in migration-accelerator/instrument/supplements/hubspot_context.yaml, and the hubdb_dependency callout below is reframed to read as conditional on that answer — which is where a scope boundary belongs, since a 1-4 on someone else's programme is a number with no owner.
+
+  # ---- Slot 5. Layer 3: SUBSTITUTION, as on hubspot__mcn -- but the top ----
+  # ---- of the scale is re-anchored for a target that wants a subscriber ----
+  # ---- model, not a unified profile.                                    ----
+  - dimension: data_model_readiness
+    layer: substitute
+    new_key: crm_and_data_model_entanglement
+    label: CRM & Data Model Entanglement
+    question: >-
+      In HubSpot, the CRM and the marketing platform are the same product. How
+      much of your customer data model would have to move with the marketing
+      estate, who else is using it, and does the part marketing needs decompose
+      into a subscriber and a set of sendable tables?
+    options:
+      - value: 1
+        label: "HubSpot IS the CRM. Sales works in it daily, deals and pipeline live there, and nobody can say which properties marketing actually sends on."
+      - value: 2
+        label: "HubSpot CRM is in real use by at least one non-marketing team, and custom objects, associations or shared properties are read by marketing automation."
+      - value: 3
+        label: "Marketing's audience needs are known and mostly contact-level: a subscriber key is identifiable and the rest would land as a handful of sendable tables."
+      - value: 4
+        label: "The system of record for the customer is already elsewhere and in scope; HubSpot holds marketing attributes that decompose cleanly into a subscriber plus sendable data extensions."
+    evidence_prompt: "Ask who logs into HubSpot who is not in marketing, and what they do there. Then ask what would be the subscriber key — if the answer is a discussion rather than a field name, this is not a 3."
+    respondent_hint: >-
+      Two things worth knowing before you answer: who logs into HubSpot who is
+      not in marketing and what they do there, and whether you could name the
+      single field that would identify a subscriber in the new platform.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — crm_lives_inside_hubspot at blocker, "In an Eloqua or SFMC estate the CRM is somewhere else and the MA platform syncs to it. In HubSpot the CRM IS the platform", and its severity_by_target, which is the reason the TOP of this scale is rewritten rather than inherited: "SFMC Next is arguably harsher: it assumes Data Cloud Unified Individual as the person model, so the CRM decision must be made before Identity Resolution can even be configured." Classic MCE asks for no such thing. docs/specs/tier-2/sfmc-target-adapter.md — what it does ask for instead: "this Journey needs a sendable entry DE keyed on SubscriberKey with these columns", with the operator modelling DEs in Contact Builder. So a 4 here describes a DECOMPOSABLE object graph — subscriber key, sendable DEs, attribute sets — not readiness of a unified profile, and a client with no Data Cloud plans is not marked down for it. SUBSTITUTION RATIONALE (required for layer 3): the slot keeps position 5 and keeps its risk theme — whether the audience/data layer can be moved — but what makes it risky here is entanglement with another team's system of record rather than the shape of a schema, so the base slot's question is a different question rather than a harder one. Rewording the base anchors would have produced a scale whose 1 and 4 described different axes. Slot count, position and the 1-4 scale are unchanged, so the total is still out of 32 and still comparable.
+
+  # ---- Slot 6. Layer 1. Target-independent by the manifest's own words. ----
+  - dimension: integration_containment
+    layer: recalibrate
+    question: >-
+      Of the things wired into HubSpot — app-marketplace integrations, forms and
+      CTAs embedded on sites you do not control, webhooks, Operations Hub custom
+      code, ad-audience syncs — how many are owned by a team outside marketing,
+      and how many would have to be re-pointed by someone else before you could
+      switch off HubSpot?
+    options:
+      - value: 1
+        label: "Several are owned outside marketing, including forms or CTAs embedded on sites another team controls, and nobody has a full list of who owns what."
+      - value: 2
+        label: "The main ones are known and at least one sits with another team, so cutover depends on a schedule marketing does not set."
+      - value: 3
+        label: "A small number of integrations, all with a named owner inside or beside marketing, and any embedded forms are on pages we control."
+      - value: 4
+        label: "Nothing outside marketing depends on HubSpot. Forms are on our own pages and the integrations we have could be re-pointed by this team alone."
+    evidence_prompt: "Ask for the installed-apps list, the connected ad accounts, and the count of forms embedded outside their own domain. The last one is the number they will not have. Then ask, per item, who would have to do the work — the answer that matters is the owner, not the count, which Integration Surface already collects."
+    respondent_hint: >-
+      Worth knowing before you answer: which teams own the integrations connected
+      to HubSpot, and whether any of your forms or CTAs are embedded on pages
+      another team looks after.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — forms_and_ctas_rebuild, "Major for both, and largely target-independent — the hard part is the customer's web estate, not the target platform", and operations_hub_custom_code and ads_audience_sync, all three of which are things wired INTO the platform by somebody else. skills/mce-mcn-helper/references/skills/10-roadmap.md — the external-dependency and risk-register framing, where integrations owned outside marketing set the roadmap's outer bound, which is the anchor this scale is now built on. RECALIBRATED FROM LAYER 1, and the reason is the second axis rather than the manifest. The base anchors counted integrations ("many external systems", "several known", "a handful", "one or two"), and migration-accelerator/instrument/complexity.yaml's integration_surface dimension counts them too — so a respondent met the same question twice, six screens apart, and could reasonably conclude the form was not paying attention. The two axes are genuinely different and the questions now say so: complexity asks HOW MANY are wired in, readiness asks WHO OWNS THEM and whether cutover waits on somebody else. That is the blast-radius risk the slot's theme names, it is not a size measure, and it is the answer that sets the roadmap's outer bound. The named examples are unchanged; only the scale moved.
+
+  # ---- Slot 7. Layer 2, NO CEILING. See the header. ----
+  - dimension: consent_portability
+    layer: recalibrate
+    question: >-
+      Where does subscription and consent state live — HubSpot subscription
+      types with a lawful basis, the account-level suppression layer, or
+      somewhere outside the platform entirely — and how many distinct
+      subscription types are in use?
+    options:
+      - value: 1
+        label: "Consent is subscription types plus list membership, with no record of when or how it was given, and nobody is sure how many types are live."
+      - value: 2
+        label: "Subscription types are used properly and lawful basis is recorded, but only inside HubSpot, and there are more types than a publication-list model would absorb without collapsing some together."
+      - value: 3
+        label: "Subscription state has provenance and a small enough type set to map one-to-one onto publication lists, or is mirrored outside HubSpot and could be re-established."
+      - value: 4
+        label: "A system in scope already masters consent as cross-channel policy, verified against current sending behaviour, and Marketing Cloud would consume it rather than own it."
+    evidence_prompt: "Ask for the count of subscription types and the count of publication lists the target would have. Where the first number is bigger than the second, ask which types would be merged — that merge is the compliance risk, and it is a decision someone has to sign."
+    respondent_hint: >-
+      Useful to have to hand: whether your subscription records show when and how
+      consent was given, and whether anything outside HubSpot also holds that
+      state.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — consent.migration_note, "Subscription types map to SFMC Publication Lists / Business Units, or to SFMC Next consent objects — confirm the target's model before designing the mapping", and subscription_type_model_mismatch's severity_by_target: "Blocker for both. The failure modes differ: classic SFMC risks collapsing granular subscription types into coarser publication lists (over-mailing people who opted out of one thing); SFMC Next's consent model should be confirmed against the tenant rather than assumed." That is the whole recalibration: on this target the risk is a MANY-TO-ONE COLLAPSE with a named, existing destination construct, not an unverified product, so the anchors are counted in subscription types against publication lists. NO max_attainable, and the removal is deliberate rather than an omission. hubspot__mcn caps this slot at 3 because "MCN Consent & Custom Preferences is a Spring '26+ capability and its parity with a live preference centre is unverified" — nobody could score a 4 because the thing a 4 describes could not be confirmed to exist. Classic MCE has publication lists, per-BU subscriber status and hosted preference centres today (docs/specs/tier-2/sfmc-target-adapter.md lists Publication Lists among the send infrastructure the adapter writes checklists for and the operator configures in Setup), so a 4 is attainable and carrying the MCN ceiling over would have marked a prospect down for a limitation of a platform they are not moving to. The consent_parity_risk gate is keyed on target sfmc_next and correctly does not fire here.
+
+  # ---- Slot 8. Not overridden, ever. decision_readiness is layer 0 for ----
+  # ---- every pair: it is the slot that decides whether anything is     ----
+  # ---- bought, and it must mean the same thing everywhere.             ----
+
+# ===========================================================================
+# ESTATE COMPLEXITY — the second axis, in HubSpot's nouns.
+#
+# All six are overridden here, and all six for one reason: the base wording is
+# the TARGET's vocabulary asked of a SOURCE estate. It asks a HubSpot marketer
+# about "30-100 tables, moderate SQL", "standard publication or subscription
+# lists" and "business units or child accounts". They have none of those, so
+# they cannot answer honestly, and the axis reports the guess as a measurement.
+#
+# EVERY OPTION HERE IS A COUNT OR A VOLUME. That is the rule in
+# migration-accelerator/instrument/complexity.yaml, and it is what stops these
+# six duplicating the eight readiness slots they sit beside. Four of them do sit
+# beside one: journey_footprint next to slot 3, data_extension_complexity next
+# to slot 5, integration_surface next to slot 6, consent_suppression_model next
+# to slot 7. In each of those four pairs the complexity question now asks HOW
+# MANY and the readiness question asks HOW PORTABLE, and neither borrows the
+# other's vocabulary. The alternative — deriving the four overlapping dimensions
+# from the readiness answers — was rejected on the record: complexity is
+# reported to the client as a measured second axis with a stated basis
+# (Estate_Complexity_Basis__c), and a derived value is neither self-estimated
+# nor measured, so post-scan recomputation would silently disagree with it.
+#
+# NOTHING IS SUBSTITUTED and nothing is capped. Every dimension keeps its base
+# key, so a HubSpot self-estimate and a post-scan measurement of the same estate
+# land on the same six keys and can be compared row by row.
+
+complexity_overrides:
+  - dimension: journey_footprint
+    layer: recalibrate
+    label: Workflow Footprint
+    question: >-
+      Roughly how many workflows are switched on in HubSpot right now, and how
+      many of those start from something happening rather than from a schedule?
+    measures: How many automated programmes are live, and how they start
+    options:
+      - value: 1
+        label: "Fewer than 20 active workflows, mostly list-based or scheduled enrolment."
+      - value: 2
+        label: "Between 20 and 80 active workflows, a mix of list-based enrolment and event or form triggers."
+      - value: 3
+        label: "More than 80 active workflows, with enrolment driven mostly by events, webhooks or API calls."
+    respondent_hint: >-
+      Your workflows list shows the active count directly, and each workflow's
+      enrolment trigger is on its first step.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — automation.workflows, "HubSpot's orchestration primitive, equivalent in role to Eloqua Campaign Canvas / SFMC Journey Builder", and entry_sources' webhook_or_api_enrolment, which is the trigger class that makes a footprint expensive to rebuild rather than merely large. The base wording counted "journeys or automated programs", which is the target's word for the same thing and which a HubSpot marketer has to translate before answering. THE BAND EDGES ARE UNCHANGED (20 / 80): this is a rewording plus a trigger-mix recalibration, not a new scale, so a 2 here and a 2 on an Eloqua estate still describe comparably sized estates — which is the whole reason GTM_Assessment_Request__c.Estate_Complexity_Basis__c can put a self-estimate and a post-scan measurement on one axis. Kept strictly to COUNT AND TRIGGER MIX so it does not restate slot 3, which asks how much of the workflow LOGIC survives Journey Builder; skills/mce-mcn-helper/references/skills/03-org-scoring.md is the count-the-artefacts method both halves come from.
+
+  - dimension: data_extension_complexity
+    layer: recalibrate
+    label: Data Model Size
+    question: >-
+      How much customer data sits behind your sends — roughly how many contact
+      properties are in use, and do you have custom objects as well as contacts
+      and companies?
+    measures: How much audience data there is, and how many pieces it is in
+    options:
+      - value: 1
+        label: "Contacts and companies with mostly HubSpot-standard properties; a few dozen custom properties at most, and no custom objects."
+      - value: 2
+        label: "A few hundred custom properties in use, deals or tickets read by marketing, and perhaps one or two custom objects."
+      - value: 3
+        label: "Custom properties in the high hundreds or more, several custom objects with their own associations, and calculated or rollup properties feeding segmentation."
+    respondent_hint: >-
+      Settings then Properties gives you the count per object, and Data Model
+      lists any custom objects.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — object_catalog.crm_data_model, whose nouns these options are built from: contact_properties (with its custom, calculation and rollup subtypes), companies, deals, tickets, custom_objects ("Commonly reported ceiling is 10 custom object definitions with up to 1,000 properties each; treat the numbers as unverified" — which is why the top band says "high hundreds or more" rather than quoting a ceiling as fact) and associations. The base wording asked about "30-100 tables, moderate SQL", which describes Marketing Cloud's Data Extensions and Query Activities; HubSpot has neither, so the base question was unanswerable on this pair rather than merely awkward. Kept to SIZE ONLY — property counts and object types — so it does not restate slot 5, which asks whether the model is entangled with another team's system of record and whether it decomposes into a subscriber plus sendable tables. calculated_property_formula in the same manifest is why calculation and rollup properties are named at option 3: they are the ones that inflate the number AND the work.
+
+  - dimension: scripting_depth
+    layer: recalibrate
+    label: Custom Code Footprint
+    question: >-
+      How much hand-written code is there inside your HubSpot estate — HubL in
+      templates and custom modules, and custom code or webhook actions inside
+      workflows?
+    measures: How much hand-written code is embedded in the estate
+    options:
+      - value: 1
+        label: "Drag-and-drop and rich-text throughout. No custom modules of our own, and no custom code actions in workflows."
+      - value: 2
+        label: "A handful of custom modules, some HubL in templates, and up to about five custom code or webhook actions across all workflows."
+      - value: 3
+        label: "A custom module library that most content is built from, HubL doing real work in templates, and custom code or webhook actions in regular use."
+    respondent_hint: >-
+      Design Manager lists your custom modules, and custom code and webhook
+      actions appear as steps inside workflows.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — content.hubl ("HubSpot's Jinja-derived templating language ... Direct analogue of the AMPscript problem in the sfmc_next manifest"), content.custom_modules ("Reusable, parameterised content components (fields + HubL + HTML + CSS + JS) ... the hardest content artefact to port"), and gap pattern operations_hub_custom_code, which is where the workflow half comes from; infrastructure names custom_code_and_webhook_actions as "Operations Hub Professional+", so an account without that tier answers 1 truthfully rather than guessing. The base wording asked about "server-side code" and "hosted pages", which are Marketing Cloud's SSJS and CloudPages. The band shape (none / up to five / throughout) is carried over unchanged from the base scale so the two remain comparable. Counts artefacts only; how expressive that HubL is, and therefore whether it rewrites into AMPscript, is slot 4's question and is deliberately not asked twice.
+
+  - dimension: business_unit_structure
+    layer: reword
+    label: Account Structure
+    question: >-
+      How many HubSpot portals do you run, and are they split into business
+      units inside one account?
+    measures: How many separate tenancies or brand containers there are
+    options:
+      - value: 1
+        label: "One portal, with no business units."
+      - value: 2
+        label: "Two to five portals or business units, sharing some content and property definitions."
+      - value: 3
+        label: "Six or more portals or business units, or brands that share content and audiences across several of them."
+    respondent_hint: >-
+      Business units are an Enterprise feature, so if you have never seen the
+      setting, the answer is almost certainly one portal.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — the tenancy nouns the object catalogue and infrastructure.tier_gating use (portals, and Enterprise-only business units), replacing the base wording's "child accounts", which is not a HubSpot construct at all. LAYER 1: the bands are untouched (one / two to five / six or more) because the thing being counted is the same thing — separate brand containers, each of which becomes its own destination business unit and its own adapter run per docs/specs/tier-2/sfmc-target-adapter.md §7.1. This is the one complexity dimension with no readiness slot beside it, so there was nothing to disentangle; it needed HubSpot's vocabulary and nothing more. Distinct from the target_bu_structure supplement in migration-accelerator/instrument/supplements/sfmc_classic_readiness.yaml, which asks the opposite question about the DESTINATION tenant.
+
+  - dimension: integration_surface
+    layer: recalibrate
+    label: Connected Systems
+    question: >-
+      How many other systems are connected to HubSpot — marketplace apps,
+      connected ad accounts, and anything built against the API?
+    measures: How many other systems are wired in
+    options:
+      - value: 1
+        label: "A CRM or ad-account connection or two from the marketplace, and nothing custom."
+      - value: 2
+        label: "Several marketplace apps plus one or two things built against the HubSpot API, and some connected ad accounts."
+      - value: 3
+        label: "Many connected apps and ad accounts, plus custom integrations built against the API, and forms embedded on sites beyond our own."
+    respondent_hint: >-
+      Your installed-apps list and connected ad accounts are both under Settings
+      then Integrations.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — extraction.authentication's private-app model ("The standard mechanism for a single-tenant integration"), gap patterns ads_audience_sync and forms_and_ctas_rebuild, and object_catalog.audiences.ads_audiences, whose gloss is the reason connected ad accounts are counted separately from apps: "The sync connection itself is a live integration, not an asset." The base wording ("Basic native CRM sync only ... Custom REST/SOAP integrations") describes a Marketing Cloud estate; HubSpot's equivalent surface is the app marketplace plus private apps, and asking it in SOAP terms produced an answer about a protocol nobody uses here. COUNT ONLY, which is the whole point of the recalibration: slot 6 on this pair was moved off counting and onto OWNERSHIP for exactly this reason — a respondent was being asked how many integrations they had twice, three screens apart. Here it is the count; there it is who would have to re-point them.
+
+  - dimension: consent_suppression_model
+    layer: recalibrate
+    label: Permission Model Size
+    question: >-
+      How many subscription types are in use, and how many places hold opt-out
+      or suppression state — HubSpot alone, or other systems as well?
+    measures: How many permission categories exist, and how many places they live
+    options:
+      - value: 1
+        label: "A handful of subscription types, and HubSpot's own opt-out and suppression state is the only record."
+      - value: 2
+        label: "Ten or more subscription types, or a preference page we have customised, or one other system that also holds opt-outs."
+      - value: 3
+        label: "Dozens of subscription types, per-language or per-brand preference pages, and opt-out state held in more than one other system as well."
+    respondent_hint: >-
+      Your subscription types are listed under Marketing then Email then
+      Subscription Types, with a count at the top.
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — consent.model, "(contact × subscription type) → status + legal basis, plus an account-level suppression layer", object_catalog.consent_and_identity.subscription_types ("Ceiling commonly stated as 1,000 per account", unverified, which is why the top band says "dozens" rather than naming a limit) and preference_pages, "per-brand-domain and per-language", which is the artefact that multiplies at option 3. The base wording offered "standard publication or subscription lists" — a Marketing Cloud construct — as its bottom option, so a HubSpot respondent's most likely honest answer was not on the scale. COUNTS AND PLACES ONLY. Whether that state has provenance and survives the mapping onto publication lists is slot 7, and preference_page_rebuild is priced there rather than here: this dimension sizes the permission model, that slot judges whether it moves intact.
+
+callouts:
+  # The one most likely to be discovered after contract rather than before it.
+  - pattern: smart_list_continuous_reevaluation
+    status: partial
+    severity: major
+    category: audience
+    issue: "Automation depends on active (smart) list membership that is continuously re-evaluated, including automatic removal"
+    gloss: "HubSpot active lists are live — contacts join AND LEAVE as criteria stop matching. Marketing Cloud cannot evaluate filter membership at runtime, so an active list becomes a scheduled Automation Studio query and membership is stale between runs."
+    workaround: >-
+      Convert each active list to a scheduled-refresh audience and set the
+      refresh cadence from the automation's real sensitivity rather than from a
+      default. Where membership is read inside a decision, pre-calculate it as a
+      boolean on the entry Data Extension. Where automatic REMOVAL is
+      load-bearing — suppression lists above all — implement the removal
+      explicitly: a stale suppression list mails people who opted out.
+    manual_steps:
+      - "Inventory active lists and the workflows that consume them"
+      - "For each, establish how fast membership changes must propagate — in minutes, hours or days"
+      - "Set a refresh cadence per audience from that answer, and write it down as a commitment"
+      - "Add a boolean per list to the entry DE where a decision reads membership, populated by a Query Activity before entry"
+      - "Identify every list whose REMOVAL behaviour matters and implement removal explicitly"
+      - "Audit suppression-role lists first — those are the compliance-relevant ones"
+    verification_required: false
+    rationale: >-
+      capabilities/platforms/sfmc.yaml — decisions.filter_membership status unsupported, "Cannot evaluate filter membership at runtime", and gap_patterns filter_membership_runtime at major with the pre-compute workaround. migration-accelerator/capabilities/platforms/hubspot.yaml — smart_list_continuous_reevaluation, "HubSpot active lists are live: contacts join and LEAVE as criteria stop matching, with no refresh step. Filtered DEs (classic) refresh on a schedule ... the automatic-removal behaviour is the half clients do not realise they depend on", and list_membership_runtime_branch, which is the same constraint hit from the branch side. RAISED FIRST AND DELIBERATELY: this is the most under-anticipated change for a HubSpot customer moving to classic MCE. Nothing is lost in expressiveness — the filter can be written — so it never shows up as a failed mapping; what is lost is IMMEDIACY, and a latency downgrade is invisible in a config read and obvious in production. It belongs before contract, not after.
+
+  - pattern: crm_lives_inside_hubspot
+    status: unsupported
+    severity: blocker
+    category: data_model
+    issue: "Marketing automation reads and writes CRM records that live in HubSpot's own CRM, not in an external system of record"
+    gloss: "In an Eloqua or SFMC estate the CRM is somewhere else and the marketing platform syncs to it. In HubSpot the CRM IS the platform, so a marketing migration has to answer a question that never arises otherwise: where does the CRM go?"
+    workaround: >-
+      This is a scoping decision, not a technical workaround. Three outcomes,
+      with completely different cost and cutover risk: HubSpot stays as the CRM
+      and Marketing Cloud integrates to it via Marketing Cloud Connect; the CRM
+      moves to Sales Cloud; or the estate splits, marketing on Salesforce and
+      sales still in HubSpot. Force it to the surface in Assess and get it
+      decided before Blueprint.
+    manual_steps:
+      - "Inventory which CRM objects marketing automation actually reads and writes"
+      - "Establish whether Sales and Service will remain on HubSpot post-migration"
+      - "Decide: HubSpot stays as CRM / CRM moves to Sales Cloud / the estate splits"
+      - "If HubSpot stays, design the integration and name its owner and its budget"
+      - "If the CRM moves, add a CRM migration workstream — it is not in the marketing scope"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — gap pattern crm_lives_inside_hubspot, quoted; severity taken from its severity_by_target, "Blocker for both classic SFMC and SFMC Next", with the MCN-specific half (Data Cloud Unified Individual, Identity Resolution ordering) dropped because it does not apply to this target.
+
+  - pattern: workflow_loop_go_to_action
+    status: unsupported
+    severity: blocker
+    category: flow_control
+    issue: "Source workflow uses a go-to-action step that jumps backwards, forming a loop"
+    gloss: "Journey Builder is strictly forward-only — contacts never move backwards. Typical HubSpot loops are poll-until-qualified, retry-N-times and hold-until-eligible."
+    workaround: >-
+      Classify each backward edge, then convert it. Poll-until-true becomes Wait
+      By Attribute on a pre-calculated datetime. Retry-N-times becomes an
+      unrolled fixed-count sequence, and the truncation gets documented. 
+      Hold-until-eligible is not a loop at all — it routes to the frequency-
+      capping infrastructure. Where nothing fits, split into multiple journeys
+      chained by Fire Event.
+    manual_steps:
+      - "Trace every go-to-action edge and mark the ones that point backwards"
+      - "Classify each backward edge: poll / retry / hold"
+      - "For poll: pre-calculate the exit datetime or boolean into the entry DE"
+      - "For retry: unroll to a fixed maximum count and document the truncation"
+      - "For hold: route to the frequency-capping suppression DE instead"
+      - "Where nothing else fits, split into multiple journeys connected by Fire Event"
+    verification_required: false
+    rationale: >-
+      capabilities/platforms/sfmc.yaml — flow_control.loops unsupported and gap_patterns loopback_flow at blocker, whose manual steps this mirrors; migration-accelerator/capabilities/platforms/hubspot.yaml — workflow_loop_go_to_action, the same constraint from the source side, severity_by_target "Blocker for both classic SFMC and SFMC Next — the constraint is identical". Two manifests written independently agreeing on one constraint is the strongest evidence in this pack.
+
+  - pattern: workflow_reenrollment
+    status: unsupported
+    severity: major
+    category: flow_control
+    issue: "Source workflow has re-enrolment enabled — records re-enter on repeat trigger matches"
+    gloss: "Journey Builder has no re-enrolment concept. Entry is per-injection, so the source of repeated entry is rebuilt outside the journey as a scheduled query."
+    workaround: >-
+      Enable re-entry on the target journey, then build a scheduled Automation
+      Studio query that injects re-qualifying contacts, plus a last-entered-date
+      attribute the injection guards against so nobody enters twice inside the
+      intended window. Validate the cadence against the source's REAL
+      re-enrolment frequency, not against its configuration.
+    manual_steps:
+      - "Record each workflow's re-enrolment triggers and its observed re-enrolment frequency"
+      - "Enable re-entry on the target journey"
+      - "Build a scheduled Automation Studio query that injects re-qualifiers"
+      - "Add a last-entered-date attribute and guard the injection against it"
+      - "Validate re-entry cadence against the source's real behaviour"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — workflow_reenrollment; severity and workaround taken from the CLASSIC half of its severity_by_target, "Classic SFMC: a re-entry-enabled journey plus a scheduled Automation Studio query approximates it", rather than the MCN half. Major rather than blocker for the same reason: an approximation exists and is buildable.
+
+  - pattern: workflow_goal_criteria
+    status: unsupported
+    severity: major
+    category: flow_control
+    issue: "Source workflow declares goal criteria that both auto-unenrol records and define the conversion metric"
+    gloss: "A HubSpot goal does two jobs — it exits the record on conversion and it supplies the workflow's headline conversion rate. Journey Builder provides the first as Exit Criteria and the second not at all."
+    workaround: >-
+      Split the goal in two. The exit half becomes journey Exit Criteria, and
+      its evaluation frequency has to be confirmed rather than assumed —
+      HubSpot's is near-continuous. The metric half is a reporting requirement
+      handed to whoever owns reporting; it does not travel with the journey.
+      Flag any workflow whose goal is its only success measure, because that
+      report otherwise disappears silently.
+    manual_steps:
+      - "Extract the goal filter for every workflow that has one"
+      - "Implement the exit half as journey Exit Criteria"
+      - "Confirm the target's evaluation frequency against HubSpot's near-continuous one"
+      - "Hand the conversion-metric definition to the reporting workstream explicitly"
+      - "Flag any workflow whose goal is its ONLY success measure"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — workflow_goal_criteria, with the classic half of severity_by_target ("goal exit is approximated with an Exit Criteria evaluation on the journey") and its stated failure mode kept verbatim: losing the exit half means records keep receiving nurture after they convert, which is visible to the customer.
+
+  - pattern: hubdb_dependency
+    status: unsupported
+    severity: blocker
+    category: data_model
+    issue: "CONDITIONAL ON SCOPE — where HubDB-backed content is expected to move, that content depends on tables queried at render time"
+    gloss: "HubDB is a relational store HubL queries WHILE RENDERING, and most of what it backs is HubSpot CMS — landing pages, site pages, blog listings. Whether any of that is in this migration is the cms_scope_expectation probe, not an assumption this callout gets to make. Where the answer is that it stays on HubSpot CMS, this is a boundary to write down and nothing more. Where the answer is that it moves, or where an EMAIL renders from a HubDB query, it is a blocker: nothing in Marketing Cloud renders from an arbitrary queried table at send time, so the data moves to a Data Extension and the render-time query becomes an AMPscript Lookup or a pre-computed value."
+    workaround: >-
+      Settle the scope question first — read the cms_scope_expectation answer
+      before pricing any of this. If HubSpot CMS is being kept, record the
+      boundary, confirm nothing in the EMAIL estate queries HubDB, and stop
+      here. If the content is expected to move, or an email does query a table,
+      split it into a data problem and a rendering problem. Each HubDB table
+      becomes a Data Extension. Each render-time query becomes either an
+      AMPscript Lookup, for a static lookup, or a value pre-computed into the
+      send audience where it is dynamic per recipient. Listing-style content —
+      a variable-length list rendered from a table — is the case that does not
+      convert; rebuild it as a dynamic block or accept reduced fidelity.
+    manual_steps:
+      - "Read the cms_scope_expectation answer first: is HubSpot CMS being kept, moved, or moved as a separate programme?"
+      - "Confirm separately whether any MARKETING EMAIL renders from a HubDB query — that half is in scope whatever happens to the website"
+      - "If the content stays on HubSpot CMS, write the boundary into the scope document and stop"
+      - "Inventory HubDB tables and every HubL query against them"
+      - "Classify each query: static lookup / per-recipient dynamic / listing"
+      - "Model each table as a Data Extension"
+      - "Replace static lookups with AMPscript Lookup or a merge field"
+      - "Pre-compute per-recipient dynamic values into the entry audience"
+      - "Rebuild listing-style content as a dynamic block, or accept reduced fidelity"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — hubdb_dependency, severity "Blocker for both", with the CLASSIC resolution taken from its severity_by_target: "the table becomes a Data Extension and the render-time query becomes AMPscript Lookup — closest analogue, still a rebuild". capabilities/platforms/sfmc.yaml — actions.email_send personalization true, i.e. the primitive the workaround depends on exists. Blocker is retained even though a path exists, because it is a rebuild with a schema attached and it is routinely scoped as content when it is application development. REFRAMED AS CONDITIONAL, and kept rather than dropped, when slot 4 was rescoped to marketing email in this same file: HubDB is no longer an anchor on a scored slot because most of what it backs is HubSpot CMS and this engagement does not move HubSpot CMS. That does not make it a non-issue — it makes it an issue whose existence depends on an answer, and the answer is now asked as cms_scope_expectation in migration-accelerator/instrument/supplements/hubspot_context.yaml. A callout that asserted a blocker regardless would price a website rebuild into a marketing-automation number; a callout deleted outright would let a client who DOES expect their HubDB pages to come along discover it in build. Conditional wording is the only framing that is true in both cases.
+
+  - pattern: hubl_templating
+    status: unsupported
+    severity: major
+    category: personalization
+    issue: "Email, template, or module contains HubL beyond simple token substitution"
+    gloss: "HubL is a full templating language. Plain tokens port to merge fields trivially; loops, conditionals, macros, filters, includes and HubDB or CRM queries do not. Against classic Marketing Cloud this is a rewrite into AMPscript, not a redesign."
+    workaround: >-
+      Classify every HubL construct before estimating, and estimate by construct
+      count rather than by email count. Plain token becomes a merge field,
+      mechanically. Conditional or loop over the contact's own attributes
+      becomes a dynamic content block. A HubDB or CRM-object query needs the
+      data pre-joined first. Macro, include and filter chains are rebuilt as a
+      target-native block. Render-diff the top-volume emails against production
+      samples rather than trusting the rewrite.
+    manual_steps:
+      - "Pull template and module source via the CMS API and inventory HubL constructs"
+      - "Classify each construct: token / attribute conditional / data query / macro chain"
+      - "Rebuild in Content Builder, using AMPscript where the construct needs logic"
+      - "Render-diff the output against production samples for the top-volume emails"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — hubl_templating, and the classic half of its severity_by_target verbatim: "Classic SFMC: AMPscript is comparably expressive, so most HubL constructs have SOME analogue — it is a rewrite, not a redesign." The MCN half ("no scripting language at all ... escalates toward blocker") is dropped, which is also why slot 4's anchors are one band more generous than hubspot__mcn's. NOTE: the AMPscript question open on sfmc__mcn (docs/runbooks/assessment-instrument.md, decision D-AMP) does not touch this pack. AMPscript in CLASSIC Marketing Cloud is not in dispute by anyone; the contested question is whether it survives into MCN, and MCN is not this target.
+
+  - pattern: custom_modules
+    status: unsupported
+    severity: major
+    category: personalization
+    issue: "Content is assembled from custom modules — parameterised HubL components with typed fields"
+    gloss: "A mature HubSpot content system is a module library, not a set of emails. Content Builder has content blocks and template slots, which recover part of the reuse but not the typed-field component model, so the abstraction flattens unless a target-side library is built first."
+    workaround: >-
+      Do not port module by module. Inventory modules by USAGE COUNT, build a
+      small library of content blocks and templates covering the high-usage
+      ones, and inline the long tail with a record of what was dropped. Budget
+      the library build as its own task BEFORE content migration starts, and
+      warn the client that the editor's workflow changes — that is a
+      change-management item, not a build item.
+    manual_steps:
+      - "Export module source and field definitions via the CMS API"
+      - "Rank modules by usage count across emails and email templates; rank site usage separately and only if cms_scope_expectation says the web estate is moving"
+      - "Design a Content Builder block and template library covering the top modules"
+      - "Inline or retire the long tail, and record what was dropped"
+      - "Brief the content team on the editing-experience change before cutover"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — custom_modules, with the classic half of severity_by_target, "Classic SFMC: content blocks and template slots recover part of the reuse", where the MCN half is left as a question against the tenant. Kept separate from hubl_templating because the estimating unit differs: HubL is priced per construct and modules are priced per usage-ranked library. The usage ranking is scoped to EMAIL usage to match slot 4's rescope in this file: a module used on fifty landing pages and in no email is a HubSpot CMS artefact, and ranking it alongside email modules inflates the library the target side has to build. Site usage is ranked only where cms_scope_expectation (migration-accelerator/instrument/supplements/hubspot_context.yaml) says the web estate is in scope.
+
+  - pattern: forms_and_ctas_rebuild
+    status: unsupported
+    severity: major
+    category: content
+    issue: "HubSpot forms and CTAs are embedded across customer-owned web properties"
+    gloss: "Forms and CTAs are embed scripts served from HubSpot and dropped into pages marketing may not own. Target-side they become CloudPages plus Web Collect, and every swap is a website release on somebody else's schedule."
+    workaround: >-
+      Run the site form scan FIRST — it is the one HubSpot capability the
+      accelerator already has, and it finds embeds on customer-owned domains
+      that no tenant export will ever show you. Reconcile what it finds against
+      the in-tenant form inventory; the delta is the real risk. Then disposition
+      each embed: port to a CloudPage with Web Collect, bridge it (keep the
+      HubSpot form posting and relay submissions), rebuild, or retire. Bridging
+      is often the only way to avoid a big-bang website change.
+    manual_steps:
+      - "Run a site form scan across all customer-owned domains before scoping forms"
+      - "Reconcile discovered embeds against the in-tenant form inventory"
+      - "Identify who owns each hosting web property and whether they have capacity"
+      - "Disposition each form and CTA: port / bridge / rebuild / retire"
+      - "Inventory legacy versus new-editor CTAs separately and state what happens to each one's analytics history"
+      - "Plan the embed swap as a website release, on the web team's schedule, not marketing's"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — forms_and_ctas_rebuild, "Major for both, and largely target-independent — the hard part is the customer's web estate, not the target platform", with its cross-reference to docs/specs/tier-2/site-form-scanning.md §C.4.2 for the embed signatures. The CloudPages + Web Collect naming is the classic-target expression of the same rebuild.
+
+  - pattern: lead_scoring_model_no_export
+    status: unsupported
+    severity: major
+    category: scoring
+    issue: "Estate uses HubSpot lead scoring; predictive scores in particular have no exportable model"
+    gloss: "Rule-based scoring is readable and can be transcribed. Predictive scoring is not exportable at all — only current values come out, and classic Marketing Cloud has no native scoring engine to receive either, so scoring lands in a query, an automation, or upstream in the CRM."
+    workaround: >-
+      Transcribe rule-based scoring and rebuild it target-side, accepting that
+      decay and time-frame criteria may need explicit date attributes. Migrate
+      predictive values as a dated, frozen snapshot for continuity, declare an
+      explicit end-of-life for that snapshot, and plan the replacement model as
+      a post-migration workstream with its own budget. Warn Sales explicitly:
+      score-driven routing degrading is a sales-visible failure.
+    manual_steps:
+      - "Transcribe every scoring rule set before tenant access ends"
+      - "Identify which downstream automation and routing depends on score thresholds"
+      - "Decide where scoring will live — Automation Studio query, or upstream in the CRM"
+      - "Rebuild rule-based scoring and reconcile against a sample cohort"
+      - "Export current predictive values as a dated snapshot and agree its expiry"
+      - "Name the owner of the replacement model, and brief Sales"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — lead_scoring_model_no_export, with the classic half of severity_by_target: "Classic SFMC has no native scoring engine, so scoring has to live in a query/automation or upstream in the CRM." capabilities/platforms/sfmc.yaml — the capability set contains no scoring construct of any kind, which is the same fact from the target's side.
+
+  - pattern: sequences_out_of_scope
+    status: unsupported
+    severity: major
+    category: scope
+    issue: "Estate uses HubSpot Sequences — a Sales Hub capability outside the marketing migration's scope and budget"
+    gloss: "Sequences are rep-sent 1:1 cadences from a connected mailbox, licensed under Sales Hub and owned by Sales. The Salesforce counterpart is Sales Engagement — a different product, a different budget line, usually a different buyer."
+    workaround: >-
+      Decide explicitly whether Sequences are in or out, in Assess rather than
+      Execute. If in, they route to the Sales Cloud workstream rather than being
+      absorbed here. If out, get it written down, and confirm what happens to
+      them at HubSpot decommissioning — that is a hard dependency on the CRM
+      decision above.
+    manual_steps:
+      - "Ask Sales — not Marketing — whether Sequences are in use and how heavily"
+      - "Establish the licence and budget owner"
+      - "Record an explicit in-scope / out-of-scope decision in the engagement scope document"
+      - "If out of scope, confirm what happens at HubSpot decommissioning"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — sequences_out_of_scope, severity_by_target "Target-independent. The severity comes from the scope and budget boundary, not from a technical asymmetry", and its cross-reference to the sequences_ownership probe in migration-accelerator/instrument/supplements/hubspot_context.yaml, which this pack fires. Raised as a callout as well as a probe because the probe's answer is routinely "nobody has asked Sales", and a callout survives that answer where a question does not.
+
+  - pattern: reporting_no_port_path
+    status: unsupported
+    severity: blocker
+    category: reporting
+    issue: "Saved reports, dashboards, and attribution reports have no export path and no target equivalent"
+    gloss: "HubSpot's report builder spans marketing AND CRM objects in one query surface because they are one database. There is no API for report definitions, and classic Marketing Cloud's native reporting is materially weaker — so this is the gap most likely to be found after go-live, by an executive whose dashboard is empty."
+    workaround: >-
+      Treat reporting as a parallel workstream from day one rather than a
+      migration deliverable. Inventory the reports actually VIEWED — usually far
+      fewer than the number that exist — rebuild those, and get written
+      acceptance that pre-cutover attribution history does not come along.
+      Retain a read-only HubSpot seat past cutover if historic reporting must
+      stay reachable.
+    manual_steps:
+      - "Inventory dashboards and saved reports; identify which are genuinely viewed, and by whom"
+      - "Screenshot and document definitions manually — there is no reliable export"
+      - "Establish who signs off marketing reporting; in a HubSpot estate this is frequently outside marketing"
+      - "Scope the target reporting build as its own workstream with its own budget"
+      - "Get written acceptance that pre-cutover attribution history does not migrate"
+      - "Retain a read-only HubSpot seat past cutover if historic reporting must remain accessible"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — reporting_no_port_path, whose severity_by_target says this target is the WORSE of the two: "Blocker for both, and arguably worse for classic SFMC, which has materially weaker native reporting than HubSpot. SFMC Next plus Data Cloud can eventually exceed HubSpot's reporting, but only after a modelling and build effort." Cross-referenced to the reporting_signoff probe in migration-accelerator/instrument/supplements/hubspot_context.yaml, which this pack fires.
+
+  - pattern: no_hubspot_source_adapter
+    status: unsupported
+    severity: blocker
+    category: tooling
+    issue: "The accelerator has no HubSpot source adapter — automated extraction and IR generation are not available"
+    gloss: "The MVP source matrix is Eloqua and SFMC. A HubSpot-source engagement gets no automated inventory, no canonical IR generation and no adapter-driven disposition. This is a delivery-capability gap, not a platform gap, and it is why the source end of this readout is interview-only."
+    workaround: >-
+      Scope a workshop-led assessment with an explicitly reduced fidelity claim,
+      or fund the adapter build. Either way, set the expectation in the SOW
+      rather than at the first status meeting. The site form scan is the one
+      automated HubSpot capability that does exist and it should be run early,
+      because it finds the things no tenant export shows.
+    manual_steps:
+      - "Set expectations in the SOW: HubSpot assessment is workshop-led, not adapter-led"
+      - "Provision a scoped private-app token early — scope approval is a lead-time item"
+      - "Run the site form scan for off-tenant forms"
+      - "Use UI exports plus ad-hoc API scripts for the object inventory"
+      - "Re-verify every verification_required entry in the HubSpot manifest before it drives a client-facing number"
+    verification_required: false
+    rationale: >-
+      migration-accelerator/capabilities/platforms/hubspot.yaml — no_hubspot_source_adapter, severity blocker, severity_by_target "Target-independent", and infrastructure.manifest_status.adapter_status "none". Carried as a callout as well as a posture because the posture statement explains the READOUT and this explains the ENGAGEMENT: it is the reason slot 2 is capped at 3, and a reader who sees the cap should be able to find the reason without being told it twice in the same voice.
+
+rationale: >-
+  migration-accelerator/capabilities/platforms/hubspot.yaml for the source end — 26 gap patterns, each carrying a severity_by_target that separates classic SFMC from Marketing Cloud Next, and this pack uses the classic half throughout. capabilities/platforms/sfmc.yaml for the target end — the real capability manifest and its four named gap patterns, two of which (loopback_flow, filter_membership_runtime) are the same constraints the HubSpot manifest describes from the other side. docs/specs/tier-2/sfmc-target-adapter.md for what the accelerator actually does at the target: scaffolds, documents DE requirements, and leaves Contact Builder and send infrastructure to the operator — which is what the sfmc_classic_readiness supplement set asks about.

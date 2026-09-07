@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Rationale__c</fullName>
+    <label>Rationale</label>
+    <description>Why this override exists, citing source file paths. REQUIRED and non-empty for layer substitute: swapping a slot out is the largest thing an author can do to comparability, so it is the one edit that must justify itself in writing.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>4000</length>
+    <visibleLines>10</visibleLines>
+</CustomField>

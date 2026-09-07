@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <enableActivities>true</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>true</enableFeeds>
+    <!-- Field history tracking, on. With approval now running through the
+         platform, ProcessInstance/ProcessInstanceStep answer "who approved this
+         and when" and history answers "when did each state change happen" —
+         both without any custom record.
+
+         It does NOT make GTM_Readout_Version__c redundant, which is why that
+         object is still here: field history does not retain values for Long
+         Text / Rich Text Area fields, so the approved *content* is not
+         recoverable from it. Only the version snapshot answers "prove what was
+         approved". Tracked fields are the short ones on which that distinction
+         does not apply — see each field's trackHistory, and note that
+         Public_Link_Token__c is deliberately not among them. -->
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <externalSharingModel>Private</externalSharingModel>
+    <!-- Managers keep access to their reps' readouts through the role
+         hierarchy. This is the platform default for a custom object - true
+         is what Salesforce assigns when this element is omitted, which is why
+         it is omitted rather than stated here: grantAccessUsingHierarchies
+         can only be set via an UPDATE, once the object already exists -
+         including it on this object's first (create) deploy is itself a
+         deploy-blocking error ("Element grantAccessUsingHierarchies invalid
+         at this location in type CustomObject"), confirmed against this org.
+         It is the one additional access path we deliberately keep open
+         alongside the owning rep. No sharing rules are defined for this
+         object — adding one would re-open what the Private sharingModel
+         below closes. -->
+    <label>GTM Readout</label>
+    <nameField>
+        <displayFormat>RDO-{0000}</displayFormat>
+        <label>Readout Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>GTM Readouts</pluralLabel>
+    <searchLayouts></searchLayouts>
+    <!-- Private, not Public Read/Write: a readout holds per-deal client content
+         and is scoped to the rep who owns the deal. Access flows from OwnerId,
+         which GtmReadoutController.Generator assigns explicitly at creation
+         (Opportunity owner -> assessment request owner -> running user ->
+         configured fallback, always an active non-Guest User) rather than
+         letting it default to the Experience Cloud guest user in the
+         submit transaction. GTM_Readout_Version__c is a master-detail child and
+         inherits this via ControlledByParent — do not set it independently. -->
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

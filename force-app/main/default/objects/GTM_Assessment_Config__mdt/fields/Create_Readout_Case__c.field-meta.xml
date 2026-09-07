@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Create_Readout_Case__c</fullName>
+    <label>Create Readout Case</label>
+    <description>File a Case ("Review and approve readout") against the readout when a Draft is auto-generated from an assessment submission. The Case is the rep's work item and the thread the recipient's comments land on, so switching it off also switches off recipient comments for readouts generated while it is off. The readout's OwnerId is set regardless -- that is what grants access under the Private sharing model. Replaces Create_Readout_Task__c.</description>
+    <type>Checkbox</type>
+    <defaultValue>true</defaultValue>
+</CustomField>

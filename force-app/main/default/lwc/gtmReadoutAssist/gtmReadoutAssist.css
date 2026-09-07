@@ -1,0 +1,55 @@
+:host { display: block; }
+
+.ra {
+    margin-top: 0.75rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    background: #fbfbfb;
+}
+
+.ra-head {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.55rem 0.7rem;
+}
+.ra-title { font-weight: 700; font-size: 13px; }
+.ra-sub { color: #747474; font-size: 12px; flex: 1; }
+.ra-toggle { margin-left: auto; }
+
+/* Same lock-coloured treatment the editor uses for "something is holding this
+   record", so the two read as one surface. */
+.ra-notice {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin: 0 0.7rem 0.6rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #d9c7f3; border-left-width: 3px; border-radius: 4px;
+    background: #f8f5fd; font-size: 12.5px;
+}
+
+.ra-grid {
+    display: grid;
+    grid-template-columns: minmax(16rem, 1fr) minmax(18rem, 1.2fr);
+    gap: 0.85rem;
+    padding: 0 0.7rem 0.7rem;
+}
+@media (max-width: 48rem) {
+    .ra-grid { grid-template-columns: 1fr; }
+}
+
+.ra-col { min-width: 0; }
+.ra-col--chat { min-height: 22rem; display: flex; }
+.ra-col--chat > * { flex: 1; min-width: 0; }
+
+.ra-label {
+    display: block; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; color: #444;
+}
+.ra-label--spaced { margin-top: 1rem; }
+
+.ra-hint { color: #747474; font-size: 11.5px; margin: 0.2rem 0 0.4rem; line-height: 1.45; }
+
+.ra-notes { display: block; }
+.ra-notes textarea { min-height: 7rem; resize: vertical; font-size: 12.5px; line-height: 1.45; }
+.ra-notes-foot { display: flex; justify-content: flex-end; margin-top: 0.4rem; }
+
+.ra-files { margin: 0.4rem 0 0; padding-left: 1rem; }
+.ra-file { font-size: 12px; color: #444; }

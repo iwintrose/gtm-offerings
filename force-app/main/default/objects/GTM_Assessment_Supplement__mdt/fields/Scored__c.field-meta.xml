@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Scored__c</fullName>
+    <label>Scored</label>
+    <description>Whether this question contributes to the set&#x27;s index. False means verbatim capture only. Never contributes to the readiness total either way.</description>
+    <type>Checkbox</type>
+    <defaultValue>true</defaultValue>
+</CustomField>

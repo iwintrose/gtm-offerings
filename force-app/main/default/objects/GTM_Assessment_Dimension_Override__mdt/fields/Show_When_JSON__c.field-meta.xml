@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Show_When_JSON__c</fullName>
+    <label>Show When JSON</label>
+    <description>Answer-driven branching. A predicate in the SAME shape GTM_Assessment_Gate__mdt.Predicate_JSON__c uses -- {&quot;all&quot;:[...]} / {&quot;any&quot;:[...]} / {&quot;field&quot;:k,&quot;op&quot;:o,&quot;value&quot;:v} -- deliberately reusing that language rather than inventing a second one. BLANK is the important case: a row with no predicate is the slot&apos;s DEFAULT and always applies, which is what guarantees the slot is filled on every path. A row WITH a predicate is a VARIANT: it substitutes for the default when the predicate matches, and can never leave the slot empty. Eight slots are answered either way. A predicate may only reference &quot;source&quot;, &quot;target&quot;, or the base key of a slot at a STRICTLY LOWER position -- scripts/build-instrument.py rule 8 enforces it -- so branches resolve deterministically in position order and the client and the server always agree.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>32768</length>
+    <visibleLines>8</visibleLines>
+</CustomField>

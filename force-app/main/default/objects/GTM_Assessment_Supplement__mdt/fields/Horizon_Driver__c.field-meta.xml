@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Horizon_Driver__c</fullName>
+    <label>Horizon Driver</label>
+    <description>Marks the one question in a set whose answered option supplies the readout&#x27;s horizon line. The horizon text is carried per-option in Options_JSON__c so no Apex has to know this question&#x27;s key -- the same reason nothing in Apex branches on a platform name.</description>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+</CustomField>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Resume_Token__c</fullName>
+    <description>The address a questionnaire draft is reached by (Draft_Type__c = 'Assessment' only; null on Booking rows) -- a cryptographically random, URL-safe value the server mints on the first save and emails to the respondent on request. NOT unique, unlike the earlier design: the empirical guest-update probe (docs/handoff/port-map-ma-to-gtm.md section F, run 2026-09-07 against this org) confirmed a guest cannot UPDATE a record via Apex here, even one it created itself (INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY both times), so every save after the first is a new row sharing this same token value -- append-and-count, the same mechanism GtmFormDraftController already proves works for the booking form. The most recent row for a token (ORDER BY CreatedDate DESC, Id DESC) is the current answers; a submission appends one final row with Submitted_Request__c populated, which is what makes GtmAssessmentDraftController.resumeDraft stop resolving the token without updating anything.</description>
+    <label>Resume Token</label>
+    <length>64</length>
+    <externalId>true</externalId>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
