@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Respondent_Hint__c</fullName>
+    <label>Respondent Hint</label>
+    <description>The prospect-facing hint shown under this question — where to find the numbers it asks for, in their own platform's words. Written TO the respondent. Its counterpart, Evidence Prompt, is written ABOUT the respondent and is consultant-only; the two must never be confused, because the guest questionnaire renders this one and only this one.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>1000</length>
+    <visibleLines>3</visibleLines>
+</CustomField>

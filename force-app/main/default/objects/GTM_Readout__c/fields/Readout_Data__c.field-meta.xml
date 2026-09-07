@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Readout_Data__c</fullName>
+    <description>Frozen structured snapshot of the assessment, written ONCE by GtmReadoutModel at draft generation and never edited afterwards. It is the half of the readout that is measurement rather than prose: scores, the band ladders they were scored against, per-dimension provenance, capability gaps, estate figures and the horizon. gtmReadoutView renders the designed readout from this plus the approved prose. Frozen on purpose — a later recalibration of the score bands must not silently redraw an already-approved readout&apos;s ladder.</description>
+    <externalId>false</externalId>
+    <label>Readout Data</label>
+    <length>131072</length>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>6</visibleLines>
+</CustomField>

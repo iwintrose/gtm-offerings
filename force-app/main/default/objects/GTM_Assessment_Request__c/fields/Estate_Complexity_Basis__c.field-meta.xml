@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Estate_Complexity_Basis__c</fullName>
+    <label>Estate Complexity Basis</label>
+    <description>Where the complexity number came from. "Self-Estimated" is the prospect's own pre-scan answer, collected in the questionnaire; "Measured" is the post-scan figure derived from an actual extract. The distinction matters when a rep quotes it: a self-estimate is a starting hypothesis, a measurement is evidence.</description>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Self-Estimated</fullName>
+                <default>false</default>
+                <label>Self-Estimated (pre-scan)</label>
+            </value>
+            <value>
+                <fullName>Measured</fullName>
+                <default>false</default>
+                <label>Measured (post-scan)</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

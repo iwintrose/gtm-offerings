@@ -2,6 +2,19 @@
    Port of gtm-offerings/index.html
    :root -> .oc-root (LWC shadow DOM has no :root) */
 
+/* The frame is the viewport, not the browser window.
+   On the site those are the same thing; inside the GTM Content Manager the
+   container is the preview frame, so a phone-width preview renders the phone
+   layout instead of a squashed desktop one. Width-based @media rules below are
+   @container rules for exactly this reason -- they answered the browser, which
+   is why a 414px preview drew three columns and wrapped a card's text one word
+   per line. Colour-scheme and reduced-motion stay @media: they are user
+   preferences, not measurements of this box. */
+:host {
+  container-type: inline-size;
+  container-name: offerings;
+}
+
 :host {
   display: block;
 }
@@ -20,7 +33,7 @@
   --shadow-soft: 0 6px 18px -10px rgba(23, 24, 28, 0.12);
 
   display: block;
-  min-height: 100vh;
+  min-height: var(--story-vh, 100vh);
   background: var(--bg);
   color: var(--ink);
   font-family: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
@@ -112,7 +125,7 @@
   color: var(--ink-faint);
   letter-spacing: 0.04em;
 }
-@media (max-width: 520px) {
+@container offerings (max-width: 520px) {
   .bar-tag {
     display: none;
   }
@@ -178,12 +191,12 @@ h1 {
   gap: 1rem;
   margin-top: 2.8rem;
 }
-@media (max-width: 860px) {
+@container offerings (max-width: 860px) {
   .grid {
     grid-template-columns: 1fr 1fr;
   }
 }
-@media (max-width: 560px) {
+@container offerings (max-width: 560px) {
   .grid {
     grid-template-columns: 1fr;
   }

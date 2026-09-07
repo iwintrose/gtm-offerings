@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RemoteSiteSetting xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Anthropic Claude API — used by MaAgentProxyController for the GTM Configurator AI proxy until Agentforce is provisioned.</description>
+    <description>Anthropic Claude API — used by GtmAgentProxyController for the GTM Configurator AI proxy until Agentforce is provisioned.</description>
     <disableProtocolSecurity>false</disableProtocolSecurity>
     <isActive>true</isActive>
     <url>https://api.anthropic.com</url>

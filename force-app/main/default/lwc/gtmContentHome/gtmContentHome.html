@@ -1,16 +1,24 @@
 <template>
   <div class="home">
 
-    <header class="home-head">
-      <div>
-        <h1>Content</h1>
-        <p class="home-sub">
-          Every offering, the pages under it, and what has changed recently.
-          Choose a page to edit it.
-        </p>
+    <!-- Salesforce's own record-home header: icon, object label, title, actions. -->
+    <div class="slds-page-header home-head">
+      <div class="slds-page-header__row">
+        <div class="slds-page-header__col-title">
+          <lightning-icon icon-name="standard:article" size="medium" class="home-head-icon"></lightning-icon>
+          <div class="slds-media__body">
+            <p class="slds-page-header__name-title home-eyebrow">Content</p>
+            <h1 class="home-title">GTM Offerings</h1>
+            <p class="slds-page-header__name-meta home-meta">{headerMeta}</p>
+          </div>
+        </div>
+        <div class="slds-page-header__col-actions">
+          <lightning-button label="New offering" icon-name="utility:new"
+                            variant="brand"
+                            onclick={handleOpenNewOffering}></lightning-button>
+        </div>
       </div>
-      <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh}></lightning-button>
-    </header>
+    </div>
 
     <template if:true={loadError}>
       <div class="home-error" role="alert">
@@ -28,100 +36,192 @@
       <div class="home-empty">
         <p><b>No offerings registered.</b></p>
         <p class="home-empty-sub">
-          Offerings come from MA_Offering__mdt. Add a record there and its pages appear here.
+          Offerings come from GTM_Offering__mdt. Add a record there and its pages appear here.
         </p>
       </div>
     </template>
 
     <template if:true={hasOfferings}>
-      <div class="home-search">
-        <lightning-input type="search" label="Search offerings and pages" variant="label-hidden"
-                          placeholder="Search offerings and pages…" value={searchTerm}
-                          onchange={handleSearch}></lightning-input>
-      </div>
+      <div class="home-body">
 
-      <template if:true={showNoSearchResults}>
-        <p class="home-empty-sub home-no-results">Nothing matches "{searchTerm}".</p>
-      </template>
+        <div class="home-search">
+          <lightning-input type="search" label="Search offerings and pages" variant="label-hidden"
+                            placeholder="Search offerings and pages…" value={searchTerm}
+                            onchange={handleSearch}></lightning-input>
+        </div>
 
-      <div class="home-cols">
+        <template if:true={showNoSearchResults}>
+          <p class="home-empty-sub home-no-results">Nothing matches "{searchTerm}".</p>
+        </template>
 
-        <section class="off-col">
+        <!-- Two columns. The framework holds the first cell because the pages
+             it owns sit above every offering, so it is not one card among
+             them; the offerings fill in after it. -->
+        <div class="off-grid">
           <template for:each={filteredCards} for:item="o">
-            <article key={o.key} class="off">
-              <div class="off-head">
-                <div class="off-id">
-                  <h2>{o.label}</h2>
-                  <span class="off-key">{o.key}</span>
-                </div>
-                <span class="off-stat">{o.summary}</span>
+            <article key={o.key} class={o.cardClass}>
+
+              <div class="slds-card__header off-head">
+                <header class="slds-media slds-media_center">
+                  <span class="slds-media__figure">
+                    <lightning-icon icon-name={o.icon} size="small"></lightning-icon>
+                  </span>
+                  <div class="slds-media__body off-id">
+                    <template if:false={o.isEditing}>
+                      <h2 class="off-name">
+                        <span>{o.label}</span>
+                        <template if:true={o.canRename}>
+                          <button class="off-rename" data-key={o.key} onclick={handleStartRename}
+                                  title="Rename this offering">
+                            <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
+                          </button>
+                        </template>
+                      </h2>
+                      <p class="off-key">{o.subtitle}</p>
+                    </template>
+                    <template if:true={o.isEditing}>
+                      <div class="off-rename-row">
+                        <lightning-input variant="label-hidden" class="off-rename-in"
+                                         label="Offering name" value={renameValue}
+                                         onchange={handleRenameInput}
+                                         onkeydown={handleRenameKey}></lightning-input>
+                        <div class="off-rename-acts">
+                          <lightning-button label="Save" variant="brand"
+                                            onclick={handleSaveRename}></lightning-button>
+                          <lightning-button label="Cancel"
+                                            onclick={handleCancelRename}></lightning-button>
+                        </div>
+                      </div>
+                      <p class="off-key off-rename-note">Renaming this changes the name on the offerings page too.</p>
+                    </template>
+                  </div>
+                  <div class="slds-no-flex">
+                    <span class={o.badgeClass}>{o.summary}</span>
+                  </div>
+                </header>
               </div>
-              <ul class="pg-list">
-                <template for:each={o.pages} for:item="p">
-                  <li key={p.id}>
-                    <button class={p.rowClass}
-                            data-offering={p.offeringKey}
-                            data-template={p.templateType}
-                            data-built={p.isBuilt}
-                            onclick={handleOpenPage}>
-                      <span class="pg-main">
-                        <span class="pg-name">{p.label}</span>
-                        <span class="pg-detail">{p.detail}</span>
-                      </span>
-                      <template if:false={p.isBuilt}>
-                        <lightning-badge label={p.badge} class="pg-flag"></lightning-badge>
-                      </template>
-                      <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
-                    </button>
-                  </li>
+
+              <div class="slds-card__body off-body">
+                <ul class="pg-list">
+                  <template for:each={o.pages} for:item="p">
+                    <li key={p.id}>
+                      <button class={p.rowClass}
+                              data-offering={p.offeringKey}
+                              data-template={p.templateType}
+                              onclick={handleOpenPage}>
+                        <lightning-icon icon-name={p.icon} size="x-small" class="pg-icon"></lightning-icon>
+                        <span class="pg-main">
+                          <span class="pg-name">{p.label}</span>
+                          <span class="pg-detail">{p.detail}</span>
+                        </span>
+                        <template if:false={p.isBuilt}>
+                          <span class="slds-badge pg-flag">{p.badge}</span>
+                        </template>
+                        <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
+                      </button>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+
+              <footer class="slds-card__footer off-foot">
+                <button class="off-foot-btn" data-key={o.key} onclick={handleNewPageFor}>
+                  <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
+                  <span>{o.addLabel}</span>
+                </button>
+                <template if:true={o.showSettings}>
+                  <button class="off-foot-settings" data-key={o.key} data-template={o.settingsTemplate}
+                          onclick={handleOpenSettings} title={o.settingsHint}>
+                    <lightning-icon icon-name="utility:settings" size="xx-small"></lightning-icon>
+                    <span>Settings</span>
+                  </button>
                 </template>
-              </ul>
+              </footer>
             </article>
           </template>
-        </section>
+        </div>
 
         <aside class="side">
-          <h2 class="side-h">Create</h2>
           <button class="side-new" onclick={handleOpenNewPage}>
             <span class="side-new-plus">+</span>
             <span class="side-new-main">
-              <span class="side-new-label">New Prospect Page</span>
+              <span class="side-new-label">New Offering Page</span>
               <span class="side-new-sub">Build a page for an offering</span>
             </span>
           </button>
 
-          <h2 class="side-h side-h--spaced">Activity</h2>
-          <template if:false={hasActivity}>
-            <p class="side-empty">
-              Nothing published yet. Publishing a page records what changed and
-              when, and it shows up here.
-            </p>
-          </template>
-          <ul class="rec-list">
-            <template for:each={activityRows} for:item="r">
-              <li key={r.id}>
-                <button class="rec"
-                        data-offering={r.offeringKey}
-                        data-template={r.templateType}
-                        onclick={handleOpenRecent}>
-                  <span class="rec-what">{r.what}</span>
-                  <span class="rec-where">{r.where}</span>
-                  <span class="rec-when">{r.when}</span>
-                </button>
-              </li>
-            </template>
-          </ul>
+          <article class="slds-card side-card">
+            <div class="slds-card__header">
+              <header class="slds-media slds-media_center">
+                <span class="slds-media__figure">
+                  <lightning-icon icon-name="standard:feed" size="small"></lightning-icon>
+                </span>
+                <div class="slds-media__body"><h2 class="side-h">Activity</h2></div>
+              </header>
+            </div>
+            <div class="slds-card__body slds-card__body_inner">
+              <template if:false={hasActivity}>
+                <p class="side-empty">
+                  Nothing published yet. Publishing a page records what changed and
+                  when, and it shows up here.
+                </p>
+              </template>
+              <ul class="rec-list">
+                <template for:each={activityRows} for:item="r">
+                  <li key={r.id}>
+                    <button class="rec"
+                            data-offering={r.offeringKey}
+                            data-template={r.templateType}
+                            onclick={handleOpenRecent}>
+                      <span class="rec-what">{r.what}</span>
+                      <span class="rec-where">{r.where}</span>
+                      <span class="rec-when">{r.when}</span>
+                    </button>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </article>
         </aside>
 
       </div>
+
+      <!-- The other half of the feedback card on the GTM Offerings overview.
+           It sits under the offerings rather than beside them because it is
+           read after you have seen what exists, not instead of it. -->
+      <c-gtm-feedback-queue></c-gtm-feedback-queue>
     </template>
   </div>
+
+    <template if:true={newOfferingOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="noTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="noTitle">New offering</h2>
+            <p>Name it. Its pages come next.</p>
+          </header>
+          <div class="modal-b">
+            <lightning-input label="Offering name" value={newOfferingName}
+                             placeholder="e.g. Data Cloud Accelerator"
+                             onchange={handleNewOfferingInput}
+                             onkeydown={handleNewOfferingKey}></lightning-input>
+            <p class="modal-note">{newOfferingHint}</p>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseNewOffering}></lightning-button>
+            <lightning-button label="Create offering" variant="brand"
+                              disabled={createOfferingDisabled}
+                              onclick={handleCreateOffering}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
 
     <template if:true={newPageOpen}>
       <section role="dialog" aria-modal="true" aria-labelledby="npTitle" class="scrim">
         <div class="modal">
           <header class="modal-h">
-            <h2 id="npTitle">New Prospect Page</h2>
+            <h2 id="npTitle">New Offering Page</h2>
             <p>Pick the offering and which of its pages to build.</p>
           </header>
           <div class="modal-b">
@@ -139,4 +239,9 @@
         </div>
       </section>
     </template>
+
+    <!-- B1: the app's own static help panel. Collapsed by default; content is
+         CMS-editable through this same app, under the Framework offering's
+         "Content Manager Help (FAQ)" page. -->
+    <c-gtm-faq-panel template-type="faq-content-manager" fab-label="Help"></c-gtm-faq-panel>
 </template>

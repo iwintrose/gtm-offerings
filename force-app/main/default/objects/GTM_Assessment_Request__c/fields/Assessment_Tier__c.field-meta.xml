@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Assessment_Tier__c</fullName>
+    <label>Assessment Tier</label>
+    <description>Migration-readiness band derived from Assessment_Score__c at submission time, and the thing that decides what is sold: Discovery First (8-14, cannot responsibly scope yet), Prep Required (15-20, migratable once named prerequisites are met), Accelerator-Ready (21-26, standard engagement), Fast-Track (27-32, compressed / fixed-scope candidate). A HIGH score means a SMALL, SIMPLE, LOW-RISK estate -- not a sophisticated marketing operation. Two overrides apply on top of the band: a source_access answer of 1 caps the tier at Discovery First, and an unsupported source/target pair suppresses this field entirely (see Assessment_Advisory__c). Drives the readout template.</description>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Discovery First</fullName>
+                <default>false</default>
+                <label>Discovery First</label>
+            </value>
+            <value>
+                <fullName>Prep Required</fullName>
+                <default>false</default>
+                <label>Prep Required</label>
+            </value>
+            <value>
+                <fullName>Accelerator-Ready</fullName>
+                <default>false</default>
+                <label>Accelerator-Ready</label>
+            </value>
+            <value>
+                <fullName>Fast-Track</fullName>
+                <default>false</default>
+                <label>Fast-Track</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

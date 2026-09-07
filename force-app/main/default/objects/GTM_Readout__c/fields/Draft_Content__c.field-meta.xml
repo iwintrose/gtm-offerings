@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Draft_Content__c</fullName>
+    <description>HTML rich-text content the rep edits while the readout is in Draft. Templated from the assessment score/tier/section breakdown and qualitative fields on generation.</description>
+    <label>Draft Content</label>
+    <length>32768</length>
+    <trackTrending>false</trackTrending>
+    <type>Html</type>
+    <visibleLines>10</visibleLines>
+</CustomField>

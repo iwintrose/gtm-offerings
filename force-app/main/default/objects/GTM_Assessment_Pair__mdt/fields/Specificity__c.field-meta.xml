@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Specificity__c</fullName>
+    <label>Specificity</label>
+    <description>1 exact pair, 2 source-family x target, 3 target-only, 4 base. The resolution chain merges every matching pack from 4 down to 1, so a lower number wins. Written by scripts/build-instrument.py from the shape of the keys rather than typed by hand, because a specificity that disagrees with its keys silently reorders the merge.</description>
+    <required>true</required>
+    <precision>2</precision>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

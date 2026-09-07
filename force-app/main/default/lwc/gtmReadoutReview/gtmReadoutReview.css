@@ -1,0 +1,105 @@
+:host { display: block; }
+.rr { padding: 0.75rem; font-size: 13px; color: #181818; max-width: 56rem; }
+
+.rr-error {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 0.75rem; padding: 0.5rem 0.7rem;
+    border: 1px solid #fe9339; border-left-width: 3px; border-radius: 4px;
+    background: #fef5ec; font-size: 12.5px;
+}
+.rr-error-x {
+    margin-left: auto; border: 0; background: none; cursor: pointer;
+    font-size: 16px; line-height: 1; color: #747474; padding: 0 0.2rem;
+}
+
+.rr-loading { position: relative; min-height: 160px; }
+.rr-empty { color: #747474; font-size: 12.5px; }
+
+.rr-bar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+.rr-title { font-size: 16px; font-weight: 700; flex: 1; }
+.rr-refresh { margin-left: auto; }
+
+.status-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 0.1rem 0.5rem; border-radius: 3px; white-space: nowrap;
+}
+.status-badge--draft { background: #fef5e7; color: #8c4b02; border: 1px solid #f0d9a8; }
+.status-badge--pending-approval { background: #f4f0fb; color: #5a1ba9; border: 1px solid #d9c7f3; }
+.status-badge--approved { background: #eaf5ea; color: #2e844a; border: 1px solid #b3ddb8; }
+.status-badge--published { background: #eef4ff; color: #014486; border: 1px solid #b9d3f5; }
+
+/* The link out to the review Case — the native comment thread. */
+.rr-case {
+    display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+    margin-bottom: 0.75rem; font-size: 12px;
+}
+.rr-case-link { color: #0176d3; text-decoration: none; font-weight: 600; }
+.rr-case-link:hover { text-decoration: underline; }
+.rr-case-hint { color: #747474; }
+
+.rr-pending {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 0.75rem; padding: 0.5rem 0.7rem;
+    border: 1px solid #d9c7f3; border-left-width: 3px; border-radius: 4px;
+    background: #f8f5fd; font-size: 12.5px;
+}
+
+.rr-stamp { margin-bottom: 0.5rem; font-size: 12px; color: #747474; }
+
+.rr-body {
+    border: 1px solid #e5e5e5; border-radius: 6px; background: #fff;
+    min-height: 16rem; margin-bottom: 0.75rem;
+}
+.rr-body--readonly { padding: 1rem 1.15rem; }
+
+.rr-live {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 0.8rem; margin-bottom: 0.75rem;
+    border: 1px solid #b9d3f5; border-radius: 5px; background: #eef4ff;
+    font-size: 12.5px;
+}
+.rr-live-label { font-weight: 700; color: #014486; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.05em; }
+.rr-live-link { color: #0176d3; word-break: break-all; }
+
+/* Same warning treatment as .rr-error — this is the other thing in this
+   editor that interrupts to say something consequential is about to happen. */
+.rr-confirm {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    margin-bottom: 0.75rem; padding: 0.6rem 0.7rem;
+    border: 1px solid #fe9339; border-left-width: 3px; border-radius: 4px;
+    background: #fef5ec; font-size: 12.5px;
+}
+.rr-confirm-text { flex: 1; min-width: 16rem; }
+.rr-confirm-cancel { margin-left: auto; }
+
+.rr-foot { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.rr-danger { --slds-c-button-text-color: #ba0517; }
+.rr-danger button { color: #ba0517; }
+
+/* GUS proposed content into the editor. Informational, not a warning — nothing
+   has happened to the record — so it reads in the published-link blue rather
+   than the confirm/error orange. */
+.rr-proposal {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 0.6rem; padding: 0.5rem 0.7rem;
+    border: 1px solid #b9d3f5; border-left-width: 3px; border-radius: 4px;
+    background: #eef4ff; font-size: 12.5px;
+}
+.rr-proposal-text { flex: 1; }
+
+/* ── recipient preview ───────────────────────────────────────────────────
+   The editor shows prose; the recipient sees prose plus everything rendered
+   from the frozen snapshot. This is where a rep, and more importantly an
+   approver, sees the two halves together. */
+.rr-preview-bar {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    padding: 0.6rem 1rem; border-bottom: 1px solid #e5e5e5; background: #fafaf9;
+}
+.rr-preview-hint { font-size: 12px; color: #747474; line-height: 1.45; flex: 1 1 16rem; }
+.rr-preview {
+    border-bottom: 1px solid #e5e5e5;
+    max-height: 70vh; overflow-y: auto;
+    /* The component sizes to its container, so the preview lays out as the
+       column it really is rather than as a desktop page squeezed into one. */
+    container-type: inline-size;
+}

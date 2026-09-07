@@ -5,14 +5,14 @@ Refuse to deploy metadata the org knows more about than this branch does.
 Two branches deploy to one org here, so the org — not git — is where they
 meet. A deploy of a shared file silently replaces whatever the other branch
 put there: that is how the "+ New Prospect Page" button was removed, and how
-MaSavedConfigurationController would lose half its methods if this branch's
+GtmSavedConfigurationController would lose half its methods if this branch's
 copy were ever deployed.
 
 This retrieves the org's current version of each named component and compares
 it to the local one. It does not care about formatting or ordering; it cares
 about one thing: does the org contain something this branch does not?
 
-    scripts/check-org-drift.py ApexClass:MaSavedConfigurationController ...
+    scripts/check-org-drift.py ApexClass:GtmSavedConfigurationController ...
     scripts/check-org-drift.py --changed          # everything git says changed
 
 Exit 0 = safe to deploy. Exit 1 = the org has content you would destroy.

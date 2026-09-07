@@ -1,0 +1,12 @@
+{
+  "activeViewId": "70de930f-387c-4208-a581-5a28ecc11273",
+  "appPageId": "8a38f8a2-ecf6-40bb-bc18-d20c8619aae8",
+  "configurationTags": [],
+  "devName": "Story__c",
+  "id": "80e7425f-225b-47a7-a687-f30193eb55f3",
+  "label": "Story",
+  "pageAccess": "UseParent",
+  "routeType": "custom-story",
+  "type": "route",
+  "urlPrefix": "story"
+}

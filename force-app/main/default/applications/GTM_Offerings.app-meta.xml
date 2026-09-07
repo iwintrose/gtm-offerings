@@ -9,14 +9,13 @@
     <label>GTM Offerings</label>
     <navType>Standard</navType>
     <tabs>GTM_Offerings_Overview</tabs>
-    <tabs>MA_Saved_Configuration__c</tabs>
-    <tabs>MA_Assessment_Request__c</tabs>
-    <tabs>MA_CMS_Content_Index__c</tabs>
-    <tabs>standard-Lead</tabs>
+    <tabs>GTM_Readouts_Overview</tabs>
+    <tabs>GTM_Readouts_Manager</tabs>
+    <tabs>GTM_Pages</tabs>
+    <tabs>GTM_Saved_Configuration__c</tabs>
+    <tabs>GTM_Assessment_Request__c</tabs>
     <tabs>standard-Opportunity</tabs>
     <tabs>standard-Account</tabs>
     <tabs>standard-Contact</tabs>
-    <tabs>standard-report</tabs>
-    <tabs>standard-Dashboard</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>

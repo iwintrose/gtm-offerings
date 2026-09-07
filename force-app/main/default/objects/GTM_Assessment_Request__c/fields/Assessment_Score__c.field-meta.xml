@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Assessment_Score__c</fullName>
+    <label>Assessment Score</label>
+    <description>Sum of scored answers from the migration-readiness questionnaire, 8-32 (Q0 routing question excluded). Every dimension is scored so that 4 = lowest migration risk, so a high total means a small, portable, well-owned estate. Computed at submission time by GtmAssessmentScoring, server-side, from the raw answers only. The separate Estate_Complexity_Score__c axis is deliberately NOT added into this number.</description>
+    <required>false</required>
+    <precision>18</precision>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

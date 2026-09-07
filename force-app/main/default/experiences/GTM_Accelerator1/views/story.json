@@ -1,0 +1,83 @@
+{
+  "appPageId": "8a38f8a2-ecf6-40bb-bc18-d20c8619aae8",
+  "componentName": "siteforce:dynamicLayout",
+  "dataProviders": [],
+  "id": "70de930f-387c-4208-a581-5a28ecc11273",
+  "label": "Story",
+  "regions": [
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "background": "background: rgba(0,0,0,0)",
+            "backgroundOverlay": "rgba(0,0,0,0.5)",
+            "contentAreaWidth": 100,
+            "sectionConfig": {
+              "UUID": "31c6fb03-51c7-473e-aff9-f0c4ca291583",
+              "columns": [
+                {
+                  "UUID": "fee3c740-df07-4c9d-a9ee-7b1930498411",
+                  "columnKey": "1",
+                  "columnName": "Column 1",
+                  "columnWidth": "12",
+                  "seedComponents": []
+                }
+              ]
+            },
+            "sectionHeight": 300
+          },
+          "componentName": "forceCommunity:section",
+          "id": "31c6fb03-51c7-473e-aff9-f0c4ca291583",
+          "regions": [
+            {
+              "components": [
+                {
+                  "componentAttributes": {
+                    "offeringKey": "migration-accelerator"
+                  },
+                  "componentName": "c:gtmStory",
+                  "id": "85c0c68d-30ac-4bef-8983-d043de303cfc",
+                  "renderPriority": "NEUTRAL",
+                  "renditionMap": {},
+                  "type": "component"
+                }
+              ],
+              "id": "fee3c740-df07-4c9d-a9ee-7b1930498411",
+              "regionLabel": "Column 1",
+              "regionName": "1",
+              "renditionMap": {},
+              "type": "region"
+            }
+          ],
+          "renderPriority": "NEUTRAL",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "1587fc3b-2967-4ed4-ad31-78864d190f6a",
+      "regionName": "content",
+      "type": "region"
+    },
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "customHeadTags": "",
+            "description": "",
+            "title": "Migration Accelerator"
+          },
+          "componentName": "forceCommunity:seoAssistant",
+          "id": "8a490af5-5dab-4efd-a3dd-6b45f0b2a8c9",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "ba8b26c8-3618-448b-8380-6e9de9ac6027",
+      "regionName": "sfdcHiddenRegion",
+      "type": "region"
+    }
+  ],
+  "themeLayoutType": "Inner",
+  "type": "view",
+  "viewType": "custom-story"
+}

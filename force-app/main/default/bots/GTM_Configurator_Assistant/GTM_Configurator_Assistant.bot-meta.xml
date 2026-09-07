@@ -2,9 +2,15 @@
 <!--
   Agentforce agent for the GTM Configurator panel.
   REQUIRES: Agentforce (Einstein Copilot) provisioned on the org.
-  Deploy with: sf project deploy start --source-dir force-app/main/default/bots
-  After deploy: activate the agent in Agentforce Studio, then swap the
-  placeholder <div> in maConfigCustomize.html for:
+  Deploy with: sf project deploy start, pointing its source-dir flag at
+  force-app/main/default/bots  (the flag is not spelled out here because a
+  double hyphen is not legal inside an XML comment and breaks the deploy).
+  After deploy: activate the agent in Agentforce Studio. The placeholder
+  <div> this comment used to point at (maConfigCustomize.html) does not
+  exist on this branch - that bundle was deleted as part of the GTM_ cutover.
+  Before wiring this agent up, find (or add) the appropriate insertion point
+  in the current configurator side panel (gtmConfigurator.html or its child
+  bundles) and add:
     <einstein-copilot-chat agent-api-name="GTM_Configurator_Assistant"
       session-variables={agentSessionVars}></einstein-copilot-chat>
 -->

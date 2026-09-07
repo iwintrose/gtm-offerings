@@ -5,66 +5,49 @@
     </template>
 
 
-    <div class="bar">
+    <div class="bar" data-section="header">
       <div class="bar-wm">
-        <span class="tick"></span> Publicis Sapient
-        <span class="bar-tag mono">/ GTM Offerings</span>
+        <span class="tick"></span> {brandLabel}
+        <span class="bar-tag mono">{brandTag}</span>
       </div>
       <div class="bar-right">
-        <c-ma-saved-links-bar></c-ma-saved-links-bar>
+        <c-gtm-saved-links-bar></c-gtm-saved-links-bar>
         <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
       </div>
     </div>
 
-    <div class="wrap">
-      <div class="eyebrow"><span class="bead"></span> Step 1 of 2</div>
-      <template if:true={_editMode}>
-        <a href={builderUrl} target="_blank" rel="noopener" class="hd-edit-chip">
-          Edit page layout in Experience Builder ↗
-        </a>
-      </template>
-      <h1>Choose your offering.</h1>
-      <p class="sub">
-        Pick the practice offering you're presenting. Next, you'll tell us who
-        it's for, and the story reframes around them.
-      </p>
+    <div class="wrap" data-section="intro">
+      <div class="eyebrow"><span class="bead"></span> {eyebrow}</div>
+      <h1>{headline}</h1>
+      <p class="sub">{subhead}</p>
 
       <div class="grid">
-        <a class="tile live" href={industryUrl}>
-          <div class="tile-accent-bar"></div>
-          <div class="tile-mark">MA</div>
-          <div class="tile-name">Migration Accelerator</div>
-          <div class="tile-desc">
-            <lightning-formatted-rich-text value={tileDescription}></lightning-formatted-rich-text>
-          </div>
-          <div class="tile-go">Explore this offering →</div>
-        </a>
-
-        <div class="tile soon">
-          <div class="tile-mark">?</div>
-          <div class="tile-name">Next offering</div>
-          <div class="tile-desc">
-            Space reserved for the next practice offering added to this
-            framework.
-          </div>
-          <span class="soon-tag">Coming soon</span>
-        </div>
-
-        <div class="tile soon">
-          <div class="tile-mark">?</div>
-          <div class="tile-name">Next offering</div>
-          <div class="tile-desc">
-            Space reserved for the next practice offering added to this
-            framework.
-          </div>
-          <span class="soon-tag">Coming soon</span>
-        </div>
+        <!-- One element per iteration so the key has somewhere to live: a live
+             tile links onward, a placeholder has no href and does not. -->
+        <template for:each={tiles} for:item="t">
+          <a key={t.id} class={t.tileClass} href={t.href} data-section={t.sectionKey}>
+            <template if:true={t.isLive}>
+              <div class="tile-accent-bar"></div>
+            </template>
+            <div class="tile-mark">{t.mark}</div>
+            <div class="tile-name">{t.name}</div>
+            <div class="tile-desc">
+              <lightning-formatted-rich-text value={t.description}></lightning-formatted-rich-text>
+            </div>
+            <template if:true={t.isLive}>
+              <div class="tile-go">Explore this offering &rarr;</div>
+            </template>
+            <template if:false={t.isLive}>
+              <span class="soon-tag">Coming soon</span>
+            </template>
+          </a>
+        </template>
       </div>
     </div>
 
-    <footer class="pf">
-      <span>gtm-offerings — shared front door</span>
-      <span>Publicis Sapient · internal</span>
+    <footer class="pf" data-section="footer">
+      <span>{footerLeft}</span>
+      <span>{footerRight}</span>
     </footer>
   </div>
 </template>

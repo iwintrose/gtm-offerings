@@ -1,5 +1,26 @@
 <template>
   <div class="ov">
+    <!-- Salesforce's own record-header proportions, so this reads as a page in
+         the app rather than a page inside it. Same shape as the Content
+         Manager home, because they are siblings. -->
+    <div class="slds-page-header ov-head">
+      <div class="slds-page-header__row">
+        <div class="slds-page-header__col-title">
+          <lightning-icon icon-name="standard:opportunity" size="medium" class="ov-head-icon"></lightning-icon>
+          <div class="slds-media__body">
+            <p class="slds-page-header__name-title ov-eyebrow">Go to market</p>
+            <h1 class="ov-title">GTM Offerings</h1>
+            <p class="slds-page-header__name-meta ov-meta">{headerMeta}</p>
+          </div>
+        </div>
+        <div class="slds-page-header__col-actions">
+          <lightning-button label="New engagement link" icon-name="utility:new"
+                            variant="brand" disabled={navBusy}
+                            onclick={handleNewEngagementLink}></lightning-button>
+        </div>
+      </div>
+    </div>
+
     <template if:true={loadError}>
       <div class="ov-err" role="alert">
         <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
@@ -10,22 +31,51 @@
 
     <div class="ov-cols">
       <!-- left: the numbers, stacked, because they are read down not across -->
-      <section class="ov-col ov-col--stats">
-        <h2 class="ov-h">Snapshot</h2>
-        <template for:each={tiles} for:item="t">
-          <div key={t.key} class="tile">
-            <div class="tile-top">
-              <lightning-icon icon-name={t.icon} size="x-small" class="tile-ico"></lightning-icon>
-              <span class="tile-label">{t.label}</span>
-            </div>
-            <div class={t.valueClass}>{t.value}</div>
+      <article class="slds-card ov-card ov-col--stats">
+        <div class="slds-card__header ov-card-h">
+          <lightning-icon icon-name="standard:opportunity_splits" size="small"></lightning-icon>
+          <h2 class="ov-h">How far pages get</h2>
+        </div>
+        <div class="slds-card__body ov-card-b">
+          <template if:true={funnelReady}>
+            <ol class="fn">
+              <template for:each={funnel} for:item="st">
+                <li key={st.key} class="fn-step">
+                  <div class="fn-top">
+                    <span class="fn-label" title={st.hint}>{st.label}</span>
+                    <span class="fn-n">{st.n}</span>
+                  </div>
+                  <div class="fn-track"><div class={st.barClass} style={st.barStyle}></div></div>
+                  <template if:true={st.showDrop}>
+                    <span class={st.dropClass}>{st.dropLabel}</span>
+                  </template>
+                </li>
+              </template>
+            </ol>
+          </template>
+          <template if:false={funnelReady}>
+            <p class="ov-empty">No pages sent yet. Once you build one for a deal, how far it gets shows here.</p>
+          </template>
+
+          <div class="asides">
+            <template for:each={asides} for:item="a">
+              <div key={a.key} class="aside">
+                <lightning-icon icon-name={a.icon} size="xx-small" class="aside-ico"></lightning-icon>
+                <span class="aside-l">{a.label}</span>
+                <span class={a.valueClass}>{a.value}</span>
+              </div>
+            </template>
           </div>
-        </template>
-      </section>
+        </div>
+      </article>
 
       <!-- middle: the work waiting on someone -->
-      <section class="ov-col ov-col--work">
-        <h2 class="ov-h">New assessment requests</h2>
+      <article class="slds-card ov-card ov-col--work">
+        <div class="slds-card__header ov-card-h">
+          <lightning-icon icon-name="standard:question_feed" size="small"></lightning-icon>
+          <h2 class="ov-h">New assessment requests</h2>
+        </div>
+        <div class="slds-card__body ov-card-b">
         <template if:true={hasRequests}>
           <div class="rows">
             <template for:each={requests} for:item="r">
@@ -42,58 +92,141 @@
         <template if:true={showEmptyRequests}>
           <p class="ov-empty">Nothing waiting. New requests from the public pages land here.</p>
         </template>
-      </section>
-
-      <!-- right: what a rep comes here to do -->
-      <section class="ov-col ov-col--act">
-        <h2 class="ov-h">Create</h2>
-        <button class={actClass} onclick={handleNewProspectPage} disabled={navBusy}>
-          <template if:true={navBusy}>
-            <span class="act-spinner" aria-hidden="true"></span>
-          </template>
-          <template if:false={navBusy}>
-            <span class="act-plus">+</span>
-          </template>
-          <span class="act-main">
-            <span class="act-label">{newPageLabel}</span>
-            <span class="act-sub">{newPageSub}</span>
-          </span>
-        </button>
-        <a class="act act--quiet" href={contentManagerUrl}>
-          <span class="act-main">
-            <span class="act-label">Open the Content Manager</span>
-            <span class="act-sub">For editors: change the pages behind these offerings</span>
-          </span>
-        </a>
-      </section>
+        </div>
+      </article>
     </div>
 
+    <!-- The deals a page has been sent for, and what came back. This is the
+         join a BD used to have to make in their head: an opportunity, the link
+         prepared for it, and the request that link produced -- or did not. -->
+    <article class="slds-card ov-card ov-deals">
+      <div class="slds-card__header ov-card-h">
+        <lightning-icon icon-name="standard:opportunity" size="small"></lightning-icon>
+        <h2 class="ov-h">Deals in play</h2>
+        <span class="ov-h-note">What each recipient did with the page you sent</span>
+      </div>
+      <div class="slds-card__body ov-card-b">
+        <template if:true={hasDeals}>
+          <div class="deals" role="table" aria-label="Deals in play">
+            <div class="deal deal--head" role="row">
+              <span role="columnheader">Deal</span>
+              <span role="columnheader">CRM stage</span>
+              <span role="columnheader">On the page</span>
+              <span role="columnheader">Request</span>
+              <span role="columnheader">Last activity</span>
+            </div>
+            <template for:each={deals} for:item="d">
+              <div key={d.key} class="deal" role="row">
+                <span class="deal-id" role="cell">
+                  <a class="deal-name" href={d.url}>{d.name}</a>
+                  <span class="deal-sub">{d.account}</span>
+                </span>
+                <span class="deal-crm" role="cell">
+                  <span class="deal-stage">{d.crmStage}</span>
+                  <template if:true={d.close}>
+                    <span class="deal-sub">closes {d.close}</span>
+                  </template>
+                </span>
+                <span role="cell">
+                  <span class={d.stageClass}>{d.stageLabel}</span>
+                  <span class="deal-sub">{d.viewsLabel}</span>
+                </span>
+                <span role="cell">
+                  <template if:true={d.hasRequest}>
+                    <a class="deal-req" href={d.requestUrl}>{d.requestName}</a>
+                    <span class="deal-sub">{d.requestStatus}</span>
+                  </template>
+                  <template if:false={d.hasRequest}>
+                    <span class="deal-none">—</span>
+                  </template>
+                </span>
+                <span class="deal-when" role="cell">
+                  <span>{d.lastLabel}</span>
+                  <a class="deal-sub deal-link" href={d.linkUrl}>Open the link</a>
+                </span>
+              </div>
+            </template>
+          </div>
+        </template>
+        <template if:true={showEmptyDeals}>
+          <p class="ov-empty">No deals yet. Every engagement link you send for an opportunity shows up here with what the recipient did with it.</p>
+        </template>
+      </div>
+    </article>
+
     <!-- offerings, each linking to its own story -->
-    <section class="ov-offerings">
-      <h2 class="ov-h">Offerings</h2>
+    <article class="slds-card ov-card ov-offerings">
+      <div class="slds-card__header ov-card-h">
+        <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
+        <h2 class="ov-h">Offerings</h2>
+      </div>
+      <div class="slds-card__body ov-card-b">
       <div class="cards">
-        <template for:each={offerings} for:item="o">
-          <div key={o.offeringKey} class="ocard">
-            <div class="ocard-top">
-              <span class="ocard-name">{o.label}</span>
-              <span class="ocard-key">{o.offeringKey}</span>
+        <template for:each={offeringCards} for:item="o">
+          <article key={o.offeringKey} class="slds-card ocard">
+            <div class="slds-card__header ocard-top">
+              <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
+              <div class="ocard-id">
+                <span class="ocard-name">{o.label}</span>
+                <span class="ocard-key">{o.pageList}</span>
+              </div>
             </div>
             <p class="ocard-sum">{o.summary}</p>
             <div class="ocard-acts">
               <template if:true={o.hasStory}>
-                <a class="ocard-btn ocard-btn--primary" href={o.storyUrl}
-                   target="_blank" rel="noopener">View the story &#8599;</a>
+                <button class="ocard-btn ocard-btn--primary" data-offering={o.offeringKey}
+                        onclick={handleReadStory}>Read the story</button>
               </template>
               <button class="ocard-btn" data-offering={o.offeringKey}
-                      onclick={handleEditOffering}>Edit pages</button>
+                      onclick={handleToggleFeedback}>{o.toggleLabel}</button>
             </div>
-          </div>
+
+            <!-- Somewhere to say something about what you just read, and to see
+                 what came back. Closed by default: the card is for reading. -->
+            <div class={o.panelClass}>
+              <template if:true={o.isOpen}>
+                <textarea class="fb-input" placeholder="What did you notice? A claim that will not survive a client, a number that is stale, something missing."
+                          value={draft} onchange={handleDraftChange}></textarea>
+                <div class="fb-send">
+                  <button class="ocard-btn ocard-btn--primary" disabled={sendDisabled}
+                          onclick={handleSendFeedback}>Send to the writers</button>
+                </div>
+                <template if:true={o.notes.length}>
+                  <ul class="notes">
+                    <template for:each={o.notes} for:item="n">
+                      <li key={n.key} class="note">
+                        <div class="note-head">
+                          <span class="note-who">{n.who}</span>
+                          <template if:true={n.page}><span class="note-page">{n.page}</span></template>
+                          <span class={n.statusClass}>{n.status}</span>
+                          <span class="note-when">{n.when}</span>
+                        </div>
+                        <p class="note-body">{n.body}</p>
+                        <template if:true={n.hasResponse}>
+                          <p class="note-reply"><span class="note-reply-k">Writers</span>{n.response}</p>
+                        </template>
+                        <template if:true={n.needsYou}>
+                          <p class="note-ask">They have asked you something — reply on the record.</p>
+                        </template>
+                      </li>
+                    </template>
+                  </ul>
+                </template>
+              </template>
+            </div>
+          </article>
         </template>
       </div>
       <template if:true={showEmptyOfferings}>
         <p class="ov-empty">No offerings set up yet — ask an admin to add one.</p>
       </template>
-    </section>
+      </div>
+    </article>
 
   </div>
+
+  <!-- B1: the app's own static help panel. Collapsed by default; content is
+       CMS-editable in the Content Manager app, under the Framework
+       offering's "BD App Help (FAQ)" page. -->
+  <c-gtm-faq-panel template-type="faq-bd" fab-label="Help"></c-gtm-faq-panel>
 </template>

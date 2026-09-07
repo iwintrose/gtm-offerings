@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Template_Type__c</fullName>
+    <description>Which page template this section belongs to. Mirrors MA_Page_Content__c.Template_Type__c.</description>
+    <label>Template Type</label>
+    <required>true</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>story</fullName>
+                <default>false</default>
+                <label>story</label>
+            </value>
+            <value>
+                <fullName>offerings-listing</fullName>
+                <default>false</default>
+                <label>offerings-listing</label>
+            </value>
+            <value>
+                <fullName>offerings-page</fullName>
+                <default>false</default>
+                <label>offerings-page</label>
+            </value>
+            <value>
+                <fullName>industry-chooser</fullName>
+                <default>false</default>
+                <label>industry-chooser</label>
+            </value>
+            <value>
+                <fullName>configurator</fullName>
+                <default>false</default>
+                <label>configurator</label>
+            </value>
+            <value>
+                <fullName>faq-bd</fullName>
+                <default>false</default>
+                <label>faq-bd</label>
+            </value>
+            <value>
+                <fullName>faq-content-manager</fullName>
+                <default>false</default>
+                <label>faq-content-manager</label>
+            </value>
+            <value>
+                <fullName>assistant</fullName>
+                <default>false</default>
+                <label>assistant</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

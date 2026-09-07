@@ -5,60 +5,31 @@
     </template>
 
 
-    <div class="bar">
+    <div class="bar" data-section="header">
       <div class="bar-wm">
-        <span class="tick"></span> Migration Accelerator
-        <span class="bar-tag mono">/ choose your industry</span>
+        <span class="tick"></span> {brandLabel}
+        <span class="bar-tag mono">{brandTag}</span>
       </div>
       <div class="bar-right">
         <a class="bar-back mono" href={offeringsUrl}>← offerings</a>
-        <c-ma-saved-links-bar></c-ma-saved-links-bar>
+        <c-gtm-saved-links-bar></c-gtm-saved-links-bar>
         <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
       </div>
     </div>
 
-    <div class="wrap">
-      <div class="eyebrow"><span class="bead"></span> Step 2 of 2</div>
-      <template if:true={_editMode}>
-        <a href={builderUrl} target="_blank" rel="noopener" class="hd-edit-chip">
-          Edit page layout in Experience Builder ↗
-        </a>
-      </template>
-      <h1>Choose your industry.</h1>
-      <p class="sub">
-        Migrations look different in every sector. Pick one and the
-        client-facing page reframes around what actually matters for that
-        business, not a generic pitch.
-      </p>
+    <div class="wrap" data-section="intro">
+      <div class="eyebrow"><span class="bead"></span> {eyebrow}</div>
+      <h1>{headline}</h1>
+      <p class="sub">{subhead}</p>
 
       <div class="grid">
         <template for:each={industries} for:item="ind">
-          <div key={ind.key} class={ind.wrapClass}>
+          <div key={ind.key} class={ind.wrapClass} data-section={ind.sectionKey}>
             <a class="tile" href={ind.href}>
               <div class="tile-name">{ind.label}</div>
               <div class="tile-desc">{ind.desc}</div>
               <div class="tile-go">Configure for this industry →</div>
             </a>
-            <template if:true={_editMode}>
-              <button class="cedit-btn" data-id={ind.key} onclick={handleChipClick}>✎ Edit</button>
-              <div class={ind.popClass} onclick={handlePopClick}>
-                <div class="pop-hd">
-                  <div class="pop-name">{ind.label}</div>
-                  <div class="pop-id">{ind.indexRecordId}</div>
-                </div>
-                <div class="pop-acts">
-                  <a href={ind.cmsUrl} target="_blank" rel="noopener" class="pop-act pop-act--cms">
-                    <span class="picon"></span>Edit CMS content ↗
-                  </a>
-                  <a href={ind.builderUrl} target="_blank" rel="noopener" class="pop-act pop-act--bld">
-                    <span class="picon"></span>Edit page layout ↗
-                  </a>
-                  <a href={ind.indexUrl} target="_blank" rel="noopener" class="pop-act pop-act--rec">
-                    <span class="picon"></span>View index record ↗
-                  </a>
-                </div>
-              </div>
-            </template>
           </div>
         </template>
 
@@ -79,9 +50,9 @@
       </div>
     </div>
 
-    <footer class="pf">
-      <span>migration-accelerator — offering-scoped</span>
-      <span>Publicis Sapient · internal</span>
+    <footer class="pf" data-section="footer">
+      <span>{footerLeft}</span>
+      <span>{footerRight}</span>
     </footer>
   </div>
 </template>

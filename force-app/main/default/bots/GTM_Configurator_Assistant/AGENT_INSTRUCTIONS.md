@@ -2,7 +2,7 @@
 
 > Paste this into Einstein Copilot Studio → Agent Instructions when activating
 > the GTM_Configurator_Assistant agent. These instructions govern the agent's
-> behaviour inside the maConfigCustomize panel.
+> behaviour inside the gtmConfigCustomize panel.
 
 ---
 
@@ -64,4 +64,4 @@ a live pre-sales meeting — brevity and accuracy matter more than warmth.
 | Variable | Description |
 |---|---|
 | `sessionToken` | Routes platform events to the correct LWC panel instance. Always pass this to Apply. |
-| `configId` | ID of the saved MA_Saved_Configuration__c record, if this link was already saved. Pass to GetState to read persisted values. |
+| `configId` | ID of the saved GTM_Saved_Configuration__c record, if this link was already saved. Pass to GetState to read persisted values. |

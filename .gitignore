@@ -1,2 +1,6 @@
 .sf/
 .sfdx/
+.claude/worktrees/
+node_modules/
+coverage/
+__pycache__/

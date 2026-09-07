@@ -139,25 +139,80 @@ sf project deploy start --source-dir force-app/main/default/lwc/<component>
 
 ## What's Still Outstanding
 
-### 1. Deploy maConfigurator contrast fix to org
-User ran `git pull gtm-offerings lwc-scaffold-import` and needs to deploy:
-```bash
-sf project deploy start --source-dir force-app/main/default/lwc/maConfigurator
-```
+_Last verified against the org on 2026-09-04. The three items that used to sit
+here (deploy the contrast fix, fix a `/gtmstory/s/` CTA, verify public access)
+are done or moot — the CTA they named no longer exists in the code._
 
-### 2. Fix maStory CTA Link
-**Issue:** Links to `/gtmstory/s/` — should be `/gtmaccelerator`
-```bash
-grep -r "gtmstory\|/s/" force-app/main/default/lwc/maStory/
-```
-Update the URL, commit to `lwc-scaffold-import`, push, deploy.
+### 1. ~~Delete the GTM Framework site~~ — resolved; the method is worth keeping
 
-### 3. Verify Public Access on maStory
-- Setup → Digital Experiences → All Sites → Activate
-- Experience Builder → Settings → General → "Public can access the site" ✓
-- Publish site
+Salesforce **never** deletes an Experience Cloud site: `destructiveChanges` on
+the bundle returns *"You can't delete an Experience Cloud site."* Archiving is
+not enough either — an archived site keeps a **published snapshot**, and a
+component referenced by that snapshot cannot be deleted.
+
+What actually clears it, when a component has to go:
+
+1. Unarchive the site (UI only — there is no API path: `Network` is not
+   updatable from Apex, and `PATCH /connect/communities/{id}` returns
+   `METHOD_NOT_ALLOWED`).
+2. Deploy the site's `Network` metadata with `<status>UnderConstruction</status>`.
+   `Live` is rejected with a misleading *"still active … before you archive"*;
+   `UnderConstruction` is accepted.
+3. Deploy the edited `ExperienceBundle` so the Development instance no longer
+   references the component.
+4. `sf community publish --name "<site>"` — this is what replaces the published
+   snapshot. It fails with `INSUFFICIENT_ACCESS` while the site is inactive.
+5. Run the destructive deploy. It now succeeds.
+6. Put the site back with `<status>DownForMaintenance</status>`.
+
+### 2. Duplicate FlexiPages in the org
+The org has three `Assessment_Request_Record_Page` FlexiPages (`_1`, `_2` are
+duplicates); this repo has one. Harmless, but the extras should be deleted so
+the org and the branch agree.
+
+### 3. Match Gus to the Betty/Dex character sheet
+`c/gtmMascot` is built from chibi principles rather than from the existing
+character designs, because those were not available. Line weight, eye shape and
+palette should be reconciled against them.
 
 ---
+
+## Why a rep sees the rep experience on the public site
+
+Two things have to be true, and both were false at different times:
+
+**1. The site must authenticate internal users.** `Network.allowInternalUserLogin`
+was `false` on GTM Accelerator and GTM Story, so an internal user opening a
+`my.site.com` link was served as the site's **guest user** even while logged
+into the org. Everything gated on "is this a rep" then failed closed: Gus and
+the saved links bar were hidden, and a prospect link demanded its password from
+the person who created it. It is `true` on both sites now.
+
+This is org configuration and is deliberately **not** in this repo — a full
+`Network` file would replace live site settings on any future deploy, which is
+the drift problem that has already cost this project real UI. To change it:
+
+```bash
+sf project retrieve start --metadata "Network:GTM Accelerator" --target-metadata-dir /tmp/n
+# edit allowInternalUserLogin, then deploy that one file back
+```
+
+**2. The page must be able to ask who is looking.** See `MaViewerContext.isRep()`
+— an internal Salesforce user is a rep, the site guest user is not. It lives in
+its own class because Apex access is granted per class: asking this through
+`MaSavedConfigurationController` would have exposed `saveConfiguration`,
+`deleteConfiguration` and `searchContacts` to the public.
+
+---
+
+## Before deleting any component
+
+`scripts/check-references.py` scans **this branch**. Experience Builder keeps
+page layouts in the org, and they do not reliably round-trip through the site
+bundles in source — `maAdminBar` and `gtmAppShell` both read as orphans here
+while the org had them on four live pages. Confirm against the org first
+(the script prints the commands), or let the destructive deploy refuse: it
+names the exact pages, which is the authoritative answer.
 
 ## Key Working Agreement
 

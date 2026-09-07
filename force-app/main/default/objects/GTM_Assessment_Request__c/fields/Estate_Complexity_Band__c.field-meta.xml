@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Estate_Complexity_Band__c</fullName>
+    <label>Estate Complexity Band</label>
+    <description>Light (6-9) / Moderate (10-13) / Heavy (14-18), derived from Estate_Complexity_Score__c by GtmEstateComplexity. Reported alongside the readiness tier as the second axis of the readout, never blended with it.</description>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Light</fullName>
+                <default>false</default>
+                <label>Light</label>
+            </value>
+            <value>
+                <fullName>Moderate</fullName>
+                <default>false</default>
+                <label>Moderate</label>
+            </value>
+            <value>
+                <fullName>Heavy</fullName>
+                <default>false</default>
+                <label>Heavy</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

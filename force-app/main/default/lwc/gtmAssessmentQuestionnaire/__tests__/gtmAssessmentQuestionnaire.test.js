@@ -1,0 +1,713 @@
+import { createElement } from 'lwc';
+import GtmAssessmentQuestionnaire from 'c/gtmAssessmentQuestionnaire';
+import getPlatforms from '@salesforce/apex/GtmAssessmentInstrument.getPlatforms';
+import getPack from '@salesforce/apex/GtmAssessmentInstrument.getPack';
+import getQuestionnaire from '@salesforce/apex/GtmAssessmentQuestions.getQuestionnaire';
+import submitRequest from '@salesforce/apex/GtmAssessmentRequestController.submitRequest';
+import saveDraft from '@salesforce/apex/GtmAssessmentDraftController.saveDraft';
+import resumeDraft from '@salesforce/apex/GtmAssessmentDraftController.resumeDraft';
+import emailResumeLink from '@salesforce/apex/GtmAssessmentDraftController.emailResumeLink';
+
+jest.mock(
+    '@salesforce/apex/GtmAssessmentInstrument.getPlatforms',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
+jest.mock(
+    '@salesforce/apex/GtmAssessmentInstrument.getPack',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
+jest.mock(
+    '@salesforce/apex/GtmAssessmentQuestions.getQuestionnaire',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
+jest.mock(
+    '@salesforce/apex/GtmAssessmentRequestController.submitRequest',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
+jest.mock(
+    '@salesforce/apex/GtmAssessmentDraftController.saveDraft',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
+jest.mock(
+    '@salesforce/apex/GtmAssessmentDraftController.resumeDraft',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
+jest.mock(
+    '@salesforce/apex/GtmAssessmentDraftController.emailResumeLink',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
+
+const flush = () => new Promise((r) => setTimeout(r, 0));
+
+const PLATFORMS = [
+    { key: 'sfmc', label: 'Salesforce Marketing Cloud', family: null },
+    { key: 'sfmc_next', label: 'Marketing Cloud Next', family: 'core_native' }
+];
+
+function opts(points) {
+    return [1, 2, 3, 4].map((v) => ({
+        value: v,
+        label: `option ${v}`,
+        points: points ? points[v - 1] : v,
+        available: true
+    }));
+}
+
+function slot(position, key, extra = {}) {
+    return {
+        position,
+        key,
+        baseKey: key,
+        label: `Slot ${position}`,
+        question: `Question ${position}?`,
+        // The prospect-facing half. Its consultant-facing counterpart is not on
+        // the wire at all: GtmAssessmentInstrument.Slot.evidencePrompt is not
+        // @AuraEnabled, so a pack cannot carry one even if someone wanted it to.
+        respondentHint: `Hint ${position}`,
+        variantKey: 'default',
+        options: opts(),
+        variants: [],
+        substitutable: true,
+        ...extra
+    };
+}
+
+/** Eight slots, one of them capped, one of them branched on slot 1. */
+function pack() {
+    const capped = slot(2, 'source_access');
+    capped.options = capped.options.map((o) =>
+        o.value === 4
+            ? { ...o, available: false, unavailableReason: 'No connector ships today.' }
+            : o
+    );
+    const branched = slot(7, 'consent_portability');
+    branched.variants = [
+        {
+            ...slot(7, 'consent_ownership_outside_platform'),
+            baseKey: 'consent_portability',
+            variantKey: 'consent_owned_elsewhere',
+            question: 'Who masters consent?',
+            showWhenJson: '{"all":[{"field":"estate_scale","op":"lte","value":2}]}'
+        }
+    ];
+    return {
+        pairKey: 'sfmc__mcn',
+        version: '2026.09.1',
+        sourceKey: 'sfmc',
+        targetKey: 'sfmc_next',
+        postureStatement: 'We can read your current estate.',
+        resolutionNote: null,
+        complexityDimensions: [
+            'workflow_footprint_native', 'data_extension_complexity', 'scripting_depth',
+            'business_unit_structure', 'integration_surface', 'consent_suppression_model'
+        ].map((k, i) => ({
+            position: i + 1,
+            key: k,
+            baseKey: k,
+            label: `Adapted ${i + 1}`,
+            question: `How many ${k}?`,
+            respondentHint: `Where to find ${k}`,
+            options: [1, 2, 3].map((v) => ({ value: v, label: `a ${v}`, available: true }))
+        })),
+        supplements: [
+            {
+                key: 'data_cloud_state',
+                setKey: 'mcn_readiness',
+                scored: true,
+                question: 'Where is Data Cloud?',
+                options: [1, 2, 3].map((v) => ({ value: v, label: `dc ${v}`, available: true }))
+            },
+            {
+                key: 'core_footprint',
+                setKey: 'mcn_readiness',
+                scored: true,
+                question: 'Is Core stood up?',
+                options: [1, 2, 3].map((v) => ({ value: v, label: `core ${v}`, available: true }))
+            },
+            {
+                key: 'shared_audience_definitions',
+                setKey: 'mcn_readiness',
+                scored: false,
+                question: 'How many share an audience definition?',
+                options: []
+            },
+            {
+                key: 'forward_looking_ambitions',
+                setKey: 'mcn_readiness',
+                scored: false,
+                question: 'What are you hoping for later?',
+                options: []
+            },
+            {
+                key: 'reporting_signoff',
+                setKey: 'mcn_readiness',
+                scored: false,
+                question: 'Who signs reporting off?',
+                options: []
+            },
+            {
+                key: 'cms_scope_expectation',
+                setKey: 'mcn_readiness',
+                scored: false,
+                question: 'Does the web estate move?',
+                options: []
+            }
+        ],
+        slots: [
+            slot(1, 'estate_scale'),
+            capped,
+            slot(3, 'orchestration_portability'),
+            slot(4, 'content_portability'),
+            slot(5, 'data_model_readiness'),
+            slot(6, 'integration_containment'),
+            branched,
+            slot(8, 'decision_readiness')
+        ]
+    };
+}
+
+const COMPLEXITY = ['journey_footprint', 'data_extension_complexity', 'scripting_depth'].map(
+    (k, i) => ({
+        dimensionKey: k,
+        dimensionName: `Complexity ${i + 1}`,
+        questionText: `How complex is ${k}?`,
+        options: [1, 2, 3].map((v) => ({ value: v, label: `c ${v}` }))
+    })
+);
+
+async function mount() {
+    const el = createElement('c-gtm-assessment-questionnaire', {
+        is: GtmAssessmentQuestionnaire
+    });
+    document.body.appendChild(el);
+    await flush();
+    await flush();
+    return el;
+}
+
+const q = (el, sel) => el.shadowRoot.querySelectorAll(sel);
+const one = (el, sel) => el.shadowRoot.querySelector(sel);
+
+/** Answers every visible option group on the current step by clicking option 3. */
+function answerStep(el, value = 3) {
+    q(el, 'fieldset').forEach((fs) => {
+        const btns = fs.querySelectorAll(`.q-opt-btn[data-value="${value}"]`);
+        if (btns.length) btns[0].click();
+    });
+}
+
+async function next(el) {
+    one(el, '.q-btn--go').click();
+    await flush();
+    await flush();
+}
+
+async function toReadiness(el) {
+    one(el, 'select[data-field="source"]').value = 'sfmc';
+    one(el, 'select[data-field="source"]').dispatchEvent(new CustomEvent('change'));
+    one(el, 'select[data-field="target"]').value = 'sfmc_next';
+    one(el, 'select[data-field="target"]').dispatchEvent(new CustomEvent('change'));
+    await flush();
+    await next(el);
+}
+
+describe('c-gtm-assessment-questionnaire', () => {
+    beforeEach(() => {
+        window.localStorage.clear();
+        getPlatforms.mockResolvedValue(PLATFORMS);
+        getPack.mockResolvedValue(pack());
+        getQuestionnaire.mockResolvedValue({
+            readiness: [],
+            complexity: COMPLEXITY,
+            readinessMaxScore: 32,
+            complexityMaxScore: 18
+        });
+        submitRequest.mockResolvedValue({ assessmentRequestId: '001' });
+        saveDraft.mockResolvedValue({
+            resumeToken: 'TOKEN-AAA',
+            expiresAt: '2026-10-06T09:00:00.000Z',
+            created: true
+        });
+        resumeDraft.mockResolvedValue(null);
+        emailResumeLink.mockResolvedValue({ sent: true, message: 'Sent.' });
+    });
+
+    afterEach(() => {
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+        jest.clearAllMocks();
+    });
+
+    it('opens on the routing step, not on a wall of questions', async () => {
+        const el = await mount();
+        expect(one(el, '.q-title').textContent).toBe('About the move');
+        expect(q(el, 'fieldset').length).toBe(0);
+        // Six steps are known before a pack resolves — routing, the three fixed
+        // readiness groups, complexity and contact — because those are the fixed
+        // frame and do not depend on the pair. The seventh appears once the pack
+        // says this pair has supplements. Counting them the other way round
+        // (deriving all the readiness steps from the resolved pack) made the
+        // form appear to double in length the moment you answered the first
+        // question, which is the opposite of what a progress bar is for.
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 1 of 6');
+    });
+
+    it('adds the supplement step once the pack says the pair has one', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 2 of 9');
+    });
+
+    it('shows the posture statement exactly once, leading the first questions', async () => {
+        // It used to render at the bottom of every screen after routing -- the
+        // same ~90 words, verbatim, seven times, ending "every count below"
+        // while sitting at the bottom with nothing below it. Not the routing
+        // step: the pack does not exist until that step is left, so a posture
+        // rendered there would be empty for every respondent, every time.
+        const el = await mount();
+        expect(q(el, '.q-posture').length).toBe(0);
+        await toReadiness(el);
+        expect(q(el, '.q-posture').length).toBe(1);
+        expect(one(el, '.q-posture').textContent).toContain('We can read your current estate.');
+        // And on no screen after it.
+        let guard = 0;
+        while (!one(el, '.q-done') && guard < 12) {
+            answerStep(el);
+            const before = one(el, '.q-progress-label')
+                ? one(el, '.q-progress-label').textContent : null;
+            await next(el);
+            if (one(el, '.q-progress-label') &&
+                one(el, '.q-progress-label').textContent === before) break;
+            expect(q(el, '.q-posture').length).toBe(0);
+            guard += 1;
+        }
+        expect(guard).toBeGreaterThan(3);
+    });
+
+    it('shows the respondent hint and never an interviewer note', async () => {
+        // The worst fault the form had: every readiness slot ended with a
+        // consultant's note written in the second person ABOUT the person
+        // reading it ("Ask for five numbers, not an adjective"). The fix is
+        // structural -- evidencePrompt is not @AuraEnabled, so it is not on the
+        // wire -- and this pins the rendered half.
+        const el = await mount();
+        await toReadiness(el);
+        const hints = [...q(el, '.q-evidence')].map((n) => n.textContent.trim());
+        expect(hints).toContain('Hint 1');
+        hints.forEach((h) => expect(h.startsWith('Ask')).toBe(false));
+    });
+
+    it('asks the complexity dimensions the PACK resolved, not the unadapted six', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, '.q-title') ||
+               one(el, '.q-title').textContent !== 'How big the job is') {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+            if (guard > 6) break;
+        }
+        expect(one(el, '.q-title').textContent).toBe('How big the job is');
+        const questions = [...q(el, '.q-question')].map((n) => n.textContent);
+        expect(questions[0]).toBe('How many workflow_footprint_native?');
+        // The flat getQuestionnaire() list is a fallback only; a resolved pack
+        // wins, or the second axis is still asking a HubSpot marketer about
+        // "30-100 tables, moderate SQL".
+        questions.forEach((t) => expect(t.startsWith('How complex is')).toBe(false));
+    });
+
+    it('spreads the supplements over screens and never stacks free text', async () => {
+        // Eight supplements on one screen, five of them consecutive empty
+        // textareas, is what this replaces -- in a component whose own header
+        // says never more than four questions on a screen.
+        const el = await mount();
+        await toReadiness(el);
+        const runs = [];
+        // Counted ACROSS screen boundaries: two textareas either side of a
+        // Continue button are still two textareas in a row to the person
+        // answering them.
+        let run = 0;
+        let guard = 0;
+        while (!one(el, '.q-done') && guard < 14) {
+            if (one(el, '.q-title') &&
+                one(el, '.q-title').textContent === 'About the target platform') {
+                expect(q(el, 'fieldset').length).toBeLessThanOrEqual(4);
+                q(el, 'fieldset').forEach((fs) => {
+                    if (fs.querySelector('textarea')) {
+                        run += 1;
+                        runs.push(run);
+                    } else {
+                        run = 0;
+                    }
+                });
+            }
+            answerStep(el);
+            const before = one(el, '.q-progress-label')
+                ? one(el, '.q-progress-label').textContent : null;
+            await next(el);
+            if (one(el, '.q-progress-label') &&
+                one(el, '.q-progress-label').textContent === before) break;
+            guard += 1;
+        }
+        expect(runs.length).toBeGreaterThan(0);
+        expect(Math.max(...runs)).toBeLessThanOrEqual(2);
+    });
+
+    it('labels the two counters as different things', async () => {
+        // "Step 2 of 8" in the header above cards counting "1 of 8 ... 8 of 8"
+        // was two different eights on one screen with nothing to tell them apart.
+        const el = await mount();
+        await toReadiness(el);
+        expect(one(el, '.q-progress-label').textContent.startsWith('Section ')).toBe(true);
+        expect(one(el, '.q-pos').textContent).toBe('Question 1 of 8');
+    });
+
+    it('refuses to leave the routing step without a source and a target', async () => {
+        const el = await mount();
+        await next(el);
+        expect(one(el, '.q-error')).not.toBeNull();
+        expect(one(el, '.q-title').textContent).toBe('About the move');
+    });
+
+    it('never shows more than four questions on one step', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, '.q-done') && guard < 12) {
+            expect(q(el, 'fieldset').length).toBeLessThanOrEqual(4);
+            answerStep(el);
+            const before = one(el, '.q-progress-label').textContent;
+            await next(el);
+            if (one(el, '.q-progress-label') &&
+                one(el, '.q-progress-label').textContent === before) break;
+            guard += 1;
+        }
+        expect(guard).toBeGreaterThan(0);
+    });
+
+    it('renders a capped option visibly unavailable with its reason, rather than dropping it', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        const off = one(el, '.q-opt--off');
+        expect(off).not.toBeNull();
+        expect(off.querySelector('.q-opt-btn').disabled).toBe(true);
+        expect(one(el, '.q-opt-why').textContent).toContain('No connector ships today.');
+        // The whole point: it is still on the page. A respondent can see a 4 was
+        // not on offer and why.
+        expect(q(el, '.q-opt-btn[data-value="4"]').length).toBeGreaterThan(0);
+    });
+
+    it('will not let an over-ceiling answer be chosen at all', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        const capped = one(el, '.q-opt--off .q-opt-btn');
+        capped.click();
+        await flush();
+        expect(one(el, '.q-opt--off').classList.contains('q-opt--on')).toBe(false);
+    });
+
+    it('keeps answers when stepping back', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        answerStep(el);
+        await next(el);
+        one(el, '.q-btn--quiet').click();
+        await flush();
+        expect(q(el, '.q-opt--on').length).toBe(3);
+    });
+
+    it('branches a later slot on an earlier answer, and still asks eight questions', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        // Answer slot 1 low, which fires the consent branch.
+        one(el, '.q-opt-btn[data-key="estate_scale"][data-value="1"]').click();
+        await flush();
+        // Walk to the step holding slot 7.
+        answerStep(el, 2);
+        await next(el);
+        answerStep(el, 2);
+        await next(el);
+        const questions = Array.from(q(el, '.q-question')).map((p) => p.textContent);
+        expect(questions).toContain('Who masters consent?');
+        // Two questions on the final readiness step: positions 7 and 8. The
+        // branch substituted; it did not remove.
+        expect(q(el, 'fieldset').length).toBe(2);
+    });
+
+    it('labels the supplements as not affecting the score', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, '.q-aside-tag') && guard < 8) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        const aside = one(el, '.q-aside-tag');
+        expect(aside).not.toBeNull();
+        expect(aside.textContent).toBe('These do not affect your score');
+        expect(one(el, '.q-textarea')).not.toBeNull();
+    });
+
+    it('submits raw answers and never a score', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, 'input[data-field="name"]') && guard < 9) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+
+        expect(submitRequest).toHaveBeenCalled();
+        const payload = submitRequest.mock.calls[0][0].input;
+        expect(payload.assessmentScore).toBeUndefined();
+        expect(payload.assessmentTier).toBeUndefined();
+        expect(payload.sectionScores).toBeUndefined();
+        expect(payload.answers.length).toBe(8);
+        expect(payload.answers[0]).toHaveProperty('dimension');
+        expect(payload.answers[0]).toHaveProperty('value');
+        expect(payload.complexityAnswers.length).toBe(6);
+    });
+
+    /**
+     * SAME-DEVICE RESUME. The assertion that matters is the step label: an
+     * answer map that comes back but dumps the respondent at step 1 is not
+     * resuming, it is asking them to find their place again. The old version of
+     * this test asserted `not.toBe('Section 1 of 7')`, which a regression to
+     * "Section 1 of 6" would have passed.
+     */
+    it('restores both the answers AND the step after a reload', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        answerStep(el);
+        document.body.removeChild(el);
+
+        getPack.mockResolvedValue(pack());
+        const again = await mount();
+        expect(one(again, '.q-progress-label').textContent).toBe('Section 2 of 9');
+        expect(one(again, '.q-title').textContent).toBe(
+            'What you are moving, and whether we can read it'
+        );
+        expect(q(again, '.q-opt--on').length).toBe(3);
+    });
+
+    it('restores a later step too, not just the first one', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        answerStep(el);
+        await next(el);
+        answerStep(el);
+        await next(el);
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 4 of 9');
+        document.body.removeChild(el);
+
+        getPack.mockResolvedValue(pack());
+        const again = await mount();
+        expect(one(again, '.q-progress-label').textContent).toBe('Section 4 of 9');
+    });
+
+    /**
+     * Two engagement links on one machine used to overwrite each other, because
+     * the storage key was one string for the whole origin.
+     */
+    it('keeps one engagement link progress out of another link progress', async () => {
+        const a = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        a.savedRecordId = 'cfg-A';
+        document.body.appendChild(a);
+        await flush();
+        await flush();
+        await toReadiness(a);
+        answerStep(a);
+        document.body.removeChild(a);
+
+        const b = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        b.savedRecordId = 'cfg-B';
+        document.body.appendChild(b);
+        await flush();
+        await flush();
+        expect(one(b, '.q-progress-label').textContent).toBe('Section 1 of 6');
+        expect(q(b, '.q-opt--on').length).toBe(0);
+    });
+
+    // ─── cross-device resume ────────────────────────────────────────────
+
+    it('saves nothing to the server while still on the routing step', async () => {
+        await mount();
+        expect(saveDraft).not.toHaveBeenCalled();
+    });
+
+    it('mints a draft on the first step transition, before any email exists', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        expect(saveDraft).toHaveBeenCalled();
+        const args = saveDraft.mock.calls[0][0];
+        expect(args.resumeToken).toBe('');
+        expect(args.pairKey).toBe('sfmc__mcn');
+        expect(JSON.parse(args.payload).stepIndex).toBe(1);
+    });
+
+    it('tells the respondent plainly that nothing is saved yet, then that it is', async () => {
+        const el = await mount();
+        one(el, 'select[data-field="source"]').value = 'sfmc';
+        one(el, 'select[data-field="source"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        expect(one(el, '.q-keep-tag').textContent).toContain('this device only');
+
+        await toReadiness(el);
+        answerStep(el);
+        await flush();
+        expect(one(el, '.q-keep-tag').textContent).toContain('Your place is saved');
+        expect(one(el, '.q-keep-url').value).toContain('resume=TOKEN-AAA');
+    });
+
+    it('reuses the token it was given rather than minting a second draft', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        answerStep(el);
+        saveDraft.mockResolvedValue({
+            resumeToken: 'TOKEN-AAA',
+            expiresAt: '2026-10-06T09:00:00.000Z',
+            created: false
+        });
+        await next(el);
+        const last = saveDraft.mock.calls[saveDraft.mock.calls.length - 1][0];
+        expect(last.resumeToken).toBe('TOKEN-AAA');
+    });
+
+    it('picks a saved draft back up on another device, at the step it was left on', async () => {
+        resumeDraft.mockResolvedValue({
+            payload: JSON.stringify({
+                v: 2,
+                routing: { source: 'sfmc', target: 'sfmc_next', timeline: '', environmentSize: '' },
+                answers: { estate_scale: 3, source_access: 2, orchestration_portability: 4 },
+                complexity: {},
+                supplements: {},
+                notes: {},
+                contact: { name: '', email: '', company: '', role: '', context: '' },
+                stepIndex: 2
+            }),
+            expiresAt: '2026-10-06T09:00:00.000Z',
+            lastSavedAt: '2026-09-06T09:00:00.000Z'
+        });
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.resumeToken = 'TOKEN-BBB';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await flush();
+
+        expect(resumeDraft).toHaveBeenCalledWith({ resumeToken: 'TOKEN-BBB' });
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 3 of 9');
+        expect(one(el, '.q-notice')).not.toBeNull();
+    });
+
+    /**
+     * Expired, submitted, mistyped and never-issued are one response from the
+     * server, and must be one sentence here. Local answers survive it.
+     */
+    it('says so once when a link is dead, and keeps what is on this device', async () => {
+        const first = await mount();
+        await toReadiness(first);
+        answerStep(first);
+        document.body.removeChild(first);
+
+        resumeDraft.mockResolvedValue(null);
+        getPack.mockResolvedValue(pack());
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.resumeToken = 'TOKEN-DEAD';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await flush();
+
+        expect(one(el, '.q-notice').textContent).toContain('no longer available');
+        expect(q(el, '.q-opt--on').length).toBe(3);
+    });
+
+    it('carries the draft token on submit so the server can revoke it', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        // Walk to the contact step rather than counting screens: how many there
+        // are is a property of the resolved pack, and a test that hard-codes it
+        // fails every time a supplement set grows.
+        let guard = 0;
+        while (!one(el, 'input[data-field="name"]') && guard < 14) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Dana Cole';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'dana@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+
+        const payload = submitRequest.mock.calls[0][0].input;
+        expect(payload.draftToken).toBe('TOKEN-AAA');
+        expect(payload.assessmentScore).toBeUndefined();
+    });
+
+    it('does not block the form when the server save fails', async () => {
+        saveDraft.mockRejectedValue({ body: { message: 'no' } });
+        const el = await mount();
+        await toReadiness(el);
+        await flush();
+        expect(one(el, '.q-title').textContent).toBe(
+            'What you are moving, and whether we can read it'
+        );
+        expect(one(el, '.q-keep-bad')).not.toBeNull();
+    });
+
+    it('emails the link with the token and the typed address, and stores neither', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        answerStep(el);
+        await flush();
+        const input = one(el, '.q-keep-email input');
+        input.value = 'someone@example.com';
+        input.dispatchEvent(new CustomEvent('change'));
+        await flush();
+        [...q(el, '.q-keep-actions .q-btn')].pop().click();
+        await flush();
+        await flush();
+
+        expect(emailResumeLink).toHaveBeenCalledWith({
+            resumeToken: 'TOKEN-AAA',
+            emailAddress: 'someone@example.com'
+        });
+        // The address given for a resume link is not the respondent's contact
+        // details, and must not quietly become them.
+        const stored = JSON.parse(
+            window.localStorage.getItem('ma-assessment-progress-v2:direct')
+        );
+        expect(stored.contact.email).toBe('');
+    });
+
+    it('renders the questions from the pack rather than from a hardcoded list', async () => {
+        const el = await mount();
+        await toReadiness(el);
+        expect(one(el, '.q-question').textContent).toBe('Question 1?');
+        expect(getPack).toHaveBeenCalledWith({
+            sourceName: 'sfmc',
+            targetName: 'sfmc_next'
+        });
+    });
+});

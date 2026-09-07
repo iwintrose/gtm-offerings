@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Sequence__c</fullName>
+    <description>Order of this event within its session, starting at 1. Without it the events of a session are only orderable by CreatedDate, which is second-resolution and ties constantly when a page fires several at once — so the path a visitor actually took could not be reconstructed.</description>
+    <label>Sequence</label>
+    <precision>6</precision>
+    <scale>0</scale>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

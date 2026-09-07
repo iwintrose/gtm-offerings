@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Variant_Order__c</fullName>
+    <label>Variant Order</label>
+    <description>Evaluation order among the branch variants of ONE slot: lowest first, and the FIRST variant whose Show_When_JSON__c matches is the question asked. Order matters because two predicates may both be true, and &quot;whichever row the query happened to return first&quot; is not an answer an author can reason about. Ignored on a row with no Show_When_JSON__c (the default), of which there is at most one per slot per pack.</description>
+    <required>false</required>
+    <type>Number</type>
+    <precision>4</precision>
+    <scale>0</scale>
+    <unique>false</unique>
+</CustomField>

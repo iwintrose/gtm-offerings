@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordPage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordPage">
+            <objects>
+                <object>GTM_Assessment_Request__c</object>
+                <object>GTM_Saved_Configuration__c</object>
+            </objects>
+            <property name="parentIsSavedConfiguration" type="Boolean" default="false"
+                      label="Placed on the Engagement Link page"
+                      description="Turn on when this component sits on the Engagement Link (GTM_Saved_Configuration__c) record page -- recordId is the link itself there, not an Assessment Request." />
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

@@ -1,0 +1,115 @@
+# ANY SOURCE -> MARKETING CLOUD NEXT.
+#
+# The target-only pack. Everything here is true of the destination whatever you
+# are leaving, which is exactly what the third link in the resolution chain is
+# for: the MCN prerequisite stack, the Flow-not-Journey-Builder deltas, and the
+# manifest entries the adapter author could not authoritatively confirm.
+#
+# VERIFICATION_REQUIRED IS CARRIED, NOT SUMMARISED. Several MCN capability
+# assertions in the adapter spec are working assumptions pending a real tenant.
+# Those callouts carry verification_required: true through to the readout so the
+# rendered sentence hedges by construction, rather than depending on whoever
+# writes the deck that week remembering to hedge. An unhedged claim about a
+# GA-pending API is the kind of thing that gets repeated back to you in a
+# steering meeting.
+
+name: any_to_mcn
+source: "*"
+target: sfmc_next
+specificity: 3
+active: true
+version: "2026.09.1"
+
+capability_posture: interview_only
+source_posture: interview_only
+target_posture: interview_only
+posture_statement: >-
+  Before you start, one thing about how we will read your answers. No adapter
+  writes to Marketing Cloud Next today, so our target-side model is the
+  accelerator's working picture of the platform, not a Salesforce reference, and
+  several entries are pending verification against a real tenant. Estate figures
+  are illustrative.
+
+emphasis_slots: [data_model_readiness, consent_portability]
+supplement_sets: [mcn_readiness]
+
+overrides:
+  - dimension: consent_portability
+    layer: reword
+    question: >-
+      Where does permission state live today, and could it be expressed as one
+      cross-channel consent policy rather than as suppression lists attached to
+      individual sends?
+    evidence_prompt: "Ask how many suppression lists exist and whether any two campaigns share one."
+    rationale: skills/mce-mcn-helper/references/framework-reference.md — "Publication List / Suppression List -> Consent & Preference Policy (Replaced). Per-channel manual lists replaced by cross-channel policies enforced automatically", and the workflow motion "Configure a Consent Policy once -> enforces across all campaigns and channels automatically".
+
+  - dimension: data_model_readiness
+    layer: recalibrate
+    question: >-
+      How close is your audience data to something a unified profile can be
+      built from — one identifiable person across sources, or per-campaign
+      tables that only make sense to the campaign that built them?
+    options:
+      - value: 1
+        label: "Per-campaign tables with no shared key. Nobody could say which rows are the same person."
+      - value: 2
+        label: "A dominant key exists in practice, but joins are manual and each team maintains its own copy."
+      - value: 3
+        label: "A documented model with a stable key; identity across sources is a mapping exercise, not a discovery one."
+      - value: 4
+        label: "A unified profile already exists and is load-bearing — Data Cloud or equivalent, with identity resolution configured."
+    rationale: skills/mce-mcn-helper/references/framework-reference.md — "Subscriber Key / Contact Key -> Unified Individual (Party ID) (Replaced). Not a field rename. Identity is resolved across all sources automatically"; and "Data Extension -> Data Model Object. Discipline shifts from schema design to schema mapping." A 4 now means "identity resolution already done", which is materially harder to earn than the base anchor, because on this target it is the thing the whole Foundation phase exists to build.
+
+callouts:
+  - pattern: no_reentry_equivalent
+    status: partial
+    severity: major
+    category: flow_control
+    issue: "Source orchestration relies on re-entry rules or entry suppression"
+    gloss: "Campaign Flow has no 'No Re-entry' equivalent yet"
+    workaround: "Track flow entry in a DMO and use it as a segment exclusion."
+    verification_required: false
+    rationale: skills/mce-mcn-helper/references/framework-reference.md — "Journey Builder -> Campaign Flow ... No 'No Re-entry' equivalent yet - workaround is a DMO tracking flow entry used as segment exclusion."
+
+  - pattern: engagement_split_partial
+    status: partial
+    severity: major
+    category: decisions
+    issue: "Source branches on email open/click behaviour"
+    gloss: "There is no Engagement Split element; engagement is a Calculated Insight read by a Decision element"
+    workaround: "Generate a Calculated Insight per required engagement signal and reference it in the Decision element."
+    verification_required: true
+    rationale: docs/specs/tier-2/sfmc-next-target-adapter.md — capabilities.decisions.engagement_split, status partial, verification_required true.
+
+  - pattern: filter_membership_partial
+    status: partial
+    severity: major
+    category: decisions
+    issue: "Source evaluates segment/filter membership at runtime"
+    gloss: "Segment membership is evaluable via Calculated Insight, not at Flow runtime directly"
+    workaround: "Pre-calculate segment-membership boolean as a Calculated Insight."
+    verification_required: false
+    rationale: docs/specs/tier-2/sfmc-next-target-adapter.md — capabilities.decisions.filter_membership.
+
+  - pattern: flow_wait_semantics
+    status: partial
+    severity: minor
+    category: flow_control
+    issue: "Source relies on precise wait timing or event-based pauses"
+    gloss: "Wait element semantics and event-based pause behaviour are working assumptions in the accelerator's model"
+    workaround: "Confirm platform event configuration and wait granularity in the tenant before relying on either."
+    verification_required: true
+    rationale: docs/specs/tier-2/sfmc-next-target-adapter.md — capabilities.flow_control.waits.duration / until_date / until_event, all carrying verification_required true; framework-reference.md notes schedule granularity is currently daily/weekly with hourly not yet first-class.
+
+  - pattern: channel_reprovisioning
+    status: partial
+    severity: major
+    category: actions
+    issue: "SMS, push or short-code sending is in scope"
+    gloss: "Senders and short codes are re-provisioned, never transferred, and this is the longest lead time in the programme"
+    workaround: "Start SMS re-provisioning immediately and in parallel; do not wait for the Foundation phase."
+    verification_required: true
+    rationale: >-
+      skills/mce-mcn-helper/references/framework-reference.md — "Short codes and senders must be re-provisioned - not transferred"; skills/mce-mcn-helper/references/skills/10-roadmap.md — "SMS re-provisioning: add 6-12 weeks (start immediately - longest lead time)". docs/specs/tier-2/sfmc-next-target-adapter.md marks sms_send and push_send verification_required true.
+
+rationale: docs/specs/tier-2/sfmc-next-target-adapter.md and skills/mce-mcn-helper/references/framework-reference.md — the two sources for everything target-side in this pack.

@@ -1,0 +1,89 @@
+<template>
+    <template if:true={hasAccess}>
+        <div class="sl-root">
+            <button class="sl-toggle" onclick={handleToggle}>
+                Saved
+                <svg class={chevronClass} viewBox="0 0 12 8" width="10" height="7" aria-hidden="true">
+                    <path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </button>
+            <div class={panelClass}>
+                <template if:true={actionError}>
+                    <p class="sl-error" role="alert">{actionError}</p>
+                </template>
+                <template if:false={hasGroups}>
+                    <p class="sl-empty">No saved links yet — build one in Customize and hit Save.</p>
+                </template>
+                <template for:each={groups} for:item="offering">
+                    <div key={offering.key} class="sl-offering">
+                        <div class="sl-offering-name">{offering.name}</div>
+                        <template for:each={offering.industries} for:item="industry">
+                            <div key={industry.key} class="sl-industry">
+                                <div class="sl-industry-name">{industry.name}</div>
+                                <template for:each={industry.links} for:item="link">
+                                    <div key={link.id} class={link.rowClass}>
+                                        <span class={link.statusDotClass} title={link.statusLabel}></span>
+                                        <div class="sl-link-main">
+                                            <a class="sl-link-name" href={link.url} target="_blank" rel="noopener">{link.label}</a>
+                                            <div class="sl-link-meta">
+                                                <a class="sl-link-record" href={link.recordUrl} target="_blank" rel="noopener">{link.recordNumber}</a>
+                                                <span>·</span>
+                                                <span>{link.date}</span>
+                                                <template if:true={link.contactName}>
+                                                    <span>·</span>
+                                                    <span>{link.contactName}</span>
+                                                </template>
+                                            </div>
+                                            <!-- The deal, named. A client with
+                                                 several links is normal; which
+                                                 deal each one is for is the
+                                                 thing you would otherwise have
+                                                 to guess. -->
+                                            <template if:true={link.dealName}>
+                                                <div class="sl-deal" title="The opportunity this link was built for">
+                                                    <span class="sl-deal-name">{link.dealName}</span>
+                                                    <template if:true={link.dealStage}>
+                                                        <span class={link.dealStageClass}>{link.dealStage}</span>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <template if:true={link.noDeal}>
+                                                <div class="sl-deal sl-deal--none"
+                                                     title="Not linked to an opportunity, so it cannot be told apart from another link for this client">
+                                                    <span class="sl-deal-name">No deal linked</span>
+                                                </div>
+                                            </template>
+                                            <!-- Two links on the SAME deal is
+                                                 the case that is probably a
+                                                 mistake. -->
+                                            <template if:true={link.shared}>
+                                                <span class="sl-dupe" title="More than one link points at this same opportunity">
+                                                    {link.sharedLabel}
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <div class="sl-link-actions">
+                                            <button
+                                                class="sl-toggle-active"
+                                                title={link.toggleTitle}
+                                                data-id={link.id}
+                                                data-active={link.activeAttr}
+                                                onclick={handleToggleActive}
+                                            >{link.toggleLabel}</button>
+                                            <button
+                                                class="sl-delete"
+                                                title="Delete"
+                                                data-id={link.id}
+                                                onclick={handleDelete}
+                                            >✕</button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+</template>

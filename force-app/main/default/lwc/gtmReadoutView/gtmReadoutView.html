@@ -1,0 +1,488 @@
+<template>
+  <!-- One DOM, two modes. data-mode selects the stylesheet branch; print is a
+       third form and is guaranteed by CSS alone, because a headless PDF path
+       does not reliably fire beforeprint. Read is the base form and renders
+       correctly before any of the JS below has run. -->
+  <div class={rootClass} data-mode={mode} onkeydown={handleKey}>
+
+    <template if:true={isLoading}>
+      <div class="rv-loading">
+        <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+      </div>
+    </template>
+
+    <template if:true={hasReadout}>
+      <!-- ═══ utility bar ═══ -->
+      <div class="utility">
+        <div class="wordmark">publicis<br>sapient</div>
+        <div class="util-right">
+          <!-- Driven by posture, never hardcoded: the marker appears exactly
+               when the source end was not instrumented, which is the only
+               condition under which the estate figures are the client's
+               account rather than a measurement. -->
+          <template if:true={model.illustrative}>
+            <span class="util-meta sample">ILLUSTRATIVE FIGURES</span>
+          </template>
+          <template if:true={model.company}>
+            <span class="util-meta">{model.companyUpper}</span>
+          </template>
+          <template if:false={previewMode}>
+            <div class="viewtoggle" role="group" aria-label="View">
+              <span class="vt-label" aria-hidden="true">VIEW</span>
+              <button type="button" class={presentClass} onclick={handleShowPresent}
+                      title="Paged — one idea per screen, for presenting">PRESENT</button>
+              <button type="button" class={readClass} onclick={handleShowRead}
+                      title="Continuous — scroll at your own pace">READ</button>
+              <button type="button" onclick={handlePrint} title="Print or save as PDF">PRINT</button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="stagewrap" data-tone={tone}>
+        <div class="stage">
+          <template for:each={model.panels} for:item="panel">
+            <!-- data-panel rather than id: LWC mangles ids inside a shadow
+                 root, so an id is not a stable handle for a test or for a
+                 host page that wants to scroll to a section. -->
+            <section key={panel.key} class={panel.cls} data-panel={panel.id} tabindex="-1"
+                     role="region" aria-label={panel.title}>
+
+              <!-- The cover, fused into the first panel. In Read mode this is
+                   the masthead a reader lands on; in Present mode the CSS
+                   hides it because the panel itself is the cover. -->
+              <template if:true={panel.isVerdict}>
+                <template if:true={model.hasMasthead}>
+                  <div class="verdict-masthead">
+                    <div class="l">
+                      <template if:true={model.company}>{model.companyUpper}<br></template>
+                      <template if:true={model.hasPairLine}>{model.pairLineUpper}</template>
+                    </div>
+                  </div>
+                </template>
+              </template>
+
+              <div class="sec-head">
+                <div>
+                  <p class="eyebrow">{panel.eyebrow}</p>
+                  <h2>{panel.headline}</h2>
+                </div>
+              </div>
+
+              <!-- ══ 01 VERDICT ══ -->
+              <template if:true={panel.isVerdict}>
+                <!-- The advisory banner LEADS, and the tier is absent below it
+                     rather than dashed. When the accelerator cannot process
+                     the pair, the honest readout says so first rather than
+                     burying it under a band that implies a scoped migration is
+                     on the table. -->
+                <template if:true={panel.hasAdvisory}>
+                  <div class="advisory" role="note">
+                    <span class="t">ADVISORY ONLY</span>
+                    <span>{panel.advisory.reason} {panel.advisory.note}</span>
+                  </div>
+                </template>
+
+                <!-- POSTURE, above the number. A caveat printed under a number
+                     is a footnote, and footnotes are not read out loud. -->
+                <template if:true={panel.hasPosture}>
+                  <p class="posture">
+                    <span class="t">WHAT THIS IS BASED ON</span>
+                    {panel.postureStatement}
+                  </p>
+                </template>
+
+                <template if:true={panel.hasScores}>
+                  <!-- Read mode: the compact pair carries the numbers above
+                       the fold; the axes below carry the ladders. -->
+                  <div class="scorepair">
+                    <template if:true={panel.readiness}>
+                      <div>
+                        <div class="axis-lbl">MIGRATION READINESS</div>
+                        <div class="bigscore lato">{panel.readiness.score}<span class="of"> / {panel.readiness.max}</span></div>
+                        <template if:true={panel.readiness.hasName}>
+                          <div class="tiername">{panel.readiness.name}</div>
+                        </template>
+                      </div>
+                    </template>
+                    <template if:true={panel.complexity}>
+                      <div>
+                        <div class="axis-lbl">ESTATE COMPLEXITY</div>
+                        <div class="bigscore lato">{panel.complexity.score}<span class="of"> / {panel.complexity.max}</span></div>
+                        <template if:true={panel.complexity.hasName}>
+                          <div class="tiername ink">{panel.complexity.name}</div>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+
+                  <div class="axes">
+                    <template if:true={panel.readiness}>
+                      <div>
+                        <div class="axis-lbl">MIGRATION READINESS</div>
+                        <div class="bigscore lato">{panel.readiness.score}<span class="of"> / {panel.readiness.max}</span></div>
+                        <template if:true={panel.readiness.hasName}>
+                          <div class="tiername">{panel.readiness.name}</div>
+                        </template>
+                        <!-- The ladder is drawn from the band edges frozen in
+                             the snapshot, not from today's scoring. A
+                             recalibration next quarter must not redraw an
+                             already-approved readout. -->
+                        <template if:true={panel.readiness.hasBands}>
+                          <div class="stair" role="img" aria-label={panel.readiness.ladderLabel}>
+                            <template for:each={panel.readiness.bands} for:item="band">
+                              <div key={band.key} class={band.cls}>
+                                <span class="lbl">{band.label}</span>
+                                <span class="rng mono">{band.range}</span>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                        <template if:true={panel.readiness.hasScale}>
+                          <p class="scalenote">{panel.readiness.scale}</p>
+                        </template>
+                      </div>
+                    </template>
+
+                    <!-- The second axis, on its own line and never blended
+                         with the first: a heavier estate is a bigger
+                         engagement, not a worse client. -->
+                    <template if:true={panel.complexity}>
+                      <div>
+                        <div class="axis-lbl">ESTATE COMPLEXITY</div>
+                        <div class="bigscore lato">{panel.complexity.score}<span class="of"> / {panel.complexity.max}</span></div>
+                        <template if:true={panel.complexity.hasName}>
+                          <div class="tiername ink">{panel.complexity.name}</div>
+                        </template>
+                        <template if:true={panel.complexity.hasBands}>
+                          <div class="cx-grid" role="img" aria-label={panel.complexity.ladderLabel}>
+                            <template for:each={panel.complexity.bands} for:item="band">
+                              <div key={band.key} class={band.cls}>
+                                <div class="t">{band.label}</div>
+                                <div class="s mono">{band.range}</div>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                        <template if:true={panel.complexity.hasBasis}>
+                          <p class="scalenote">Basis: {panel.complexity.basis}</p>
+                        </template>
+                        <template if:true={panel.complexity.hasScale}>
+                          <p class="scalenote">{panel.complexity.scale}</p>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+
+                <template if:true={model.hasIllustrativeNote}>
+                  <p class="scan-note"><em>{model.illustrativeNote}</em></p>
+                </template>
+
+                <!-- The things that stay true even when the headline number
+                     looks good. Beside the verdict, not inside the breakdown. -->
+                <template if:true={panel.hasAnnotations}>
+                  <ul class="notelist">
+                    <template for:each={panel.annotations} for:item="note">
+                      <li key={note.key}><span class="m">{note.marker}</span><span>{note.text}</span></li>
+                    </template>
+                  </ul>
+                </template>
+
+                <!-- A gate qualifies a band; it never replaces one. Both halves
+                     are printed, which is why the tier phrase above already
+                     reads "Fast-Track, foundation-gated" rather than either
+                     half alone. -->
+                <template if:true={panel.hasGates}>
+                  <template for:each={panel.gates} for:item="gate">
+                    <div key={gate.key} class="gate">
+                      <div class="t">{gate.title}</div>
+                      <p>{gate.block}</p>
+                    </div>
+                  </template>
+                </template>
+              </template>
+
+              <!-- ══ 03 THE PATH ══ -->
+              <template if:true={panel.isPath}>
+                <p class="pathline">Foundation and data lead. Audience follows them. Journeys wait on both.</p>
+                <div class="lanes">
+                  <div class="phase-scale" aria-hidden="true">
+                    <span>1</span><span>2</span><span>3</span><span>4</span>
+                  </div>
+                  <template for:each={panel.lanes} for:item="lane">
+                    <div key={lane.key} class="lane">
+                      <div class="lane-lbl">{lane.label}</div>
+                      <div class="lane-track"><div class={lane.segClass}>{lane.work}</div></div>
+                    </div>
+                  </template>
+                  <div class="phase-scale" aria-hidden="true">
+                    <span>PHASE 1</span><span>PHASE 2</span><span>PHASE 3</span><span>PHASE 4</span>
+                  </div>
+                </div>
+                <!-- The same facts, transposed. Below the width where a bar can
+                     carry a readable label the bars become a shape graphic and
+                     this list becomes the text. -->
+                <div class="phaselist">
+                  <template for:each={panel.phases} for:item="phase">
+                    <div key={phase.key} class="phase">
+                      <div class="ph">{phase.label}</div>
+                      <ul>
+                        <template for:each={phase.items} for:item="item">
+                          <li key={item.key}>
+                            <span class="ln">{item.lane}</span>
+                            <span class="w"><i class={item.swatch}></i><span>{item.work}<template
+                              if:true={item.continues}> (continues)</template></span></span>
+                          </li>
+                        </template>
+                      </ul>
+                    </div>
+                  </template>
+                  <div class="enable-band">ENABLEMENT — RUNS THROUGHOUT, NEVER &ldquo;DONE&rdquo;</div>
+                </div>
+                <template if:true={panel.hasHorizon}>
+                  <p class="horizon">{panel.horizon}</p>
+                </template>
+              </template>
+
+              <!-- ══ 04 WHAT WON'T PORT ══ -->
+              <template if:true={panel.isGaps}>
+                <template if:true={panel.hasTierKey}>
+                  <p class="tierkey">{panel.tierKey}</p>
+                </template>
+                <template if:true={panel.hasGroups}>
+                  <table class="wontport">
+                    <caption class="vh">Constructs with no direct target equivalent, grouped by tier</caption>
+                    <thead>
+                      <tr><th>Source construct</th><th>On the target</th><th>What it takes</th></tr>
+                    </thead>
+                    <template for:each={panel.groups} for:item="group">
+                      <tbody key={group.key}>
+                        <tr class="rowgroup"><th colspan="3" scope="colgroup">{group.title}</th></tr>
+                        <template for:each={group.rows} for:item="row">
+                          <tr key={row.key}>
+                            <td class="dim">{row.construct}</td>
+                            <td class="lbl" data-l="ON THE TARGET">
+                              <template if:true={row.hasOnTarget}>{row.onTarget}</template>
+                            </td>
+                            <td class="lbl" data-l="WHAT IT TAKES">
+                              <template if:true={row.hasTakes}>{row.takes}</template>
+                              <!-- The hedge rides on the row, from
+                                   verification_required — not on whoever
+                                   writes the deck that week. -->
+                              <template if:true={row.hedged}>
+                                <em class="hedge">{row.hedge}</em>
+                              </template>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </template>
+                  </table>
+                </template>
+              </template>
+
+              <!-- ══ 05 YOUR ESTATE ══ -->
+              <template if:true={panel.isEstate}>
+                <template if:true={panel.hasTiles}>
+                  <div class="inv">
+                    <template for:each={panel.tiles} for:item="tile">
+                      <div key={tile.key} class="iv">
+                        <div class="n lato">{tile.n}</div>
+                        <div class="c">{tile.label}</div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template if:true={panel.hasFacts}>
+                  <div class="facts">
+                    <template for:each={panel.facts} for:item="fact">
+                      <div key={fact.key} class="fact">
+                        <div class="k">{fact.label}</div>
+                        <div class="v">{fact.value}</div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </template>
+
+              <!-- ══ 06 SCORECARD ══ -->
+              <template if:true={panel.isScorecard}>
+                <template if:true={panel.hasRows}>
+                  <div class="scan">
+                    <div class="scan-bars" role="img" aria-label="Dimension scores, weakest first">
+                      <template for:each={panel.bars} for:item="bar">
+                        <span key={bar.key} class={bar.cls}></span>
+                      </template>
+                    </div>
+                    <template if:true={panel.hasScanNote}>
+                      <p class="scan-note">{panel.scanNote}</p>
+                    </template>
+                  </div>
+                  <table class="scorecard">
+                    <caption class="vh">Readiness scorecard, dimensions ordered weakest first</caption>
+                    <thead>
+                      <tr><th>Dimension</th><th>Stage</th><th>Score</th><th>How we know</th><th>Read</th></tr>
+                    </thead>
+                    <tbody>
+                      <template for:each={panel.rows} for:item="row">
+                        <tr key={row.key}>
+                          <td class="dim">{row.label}</td>
+                          <td class="stg">
+                            <div class="ministair" role="img" aria-label={row.stageLabel}>
+                              <template for:each={row.steps} for:item="step">
+                                <span key={step.key} class={step.cls}></span>
+                              </template>
+                            </div>
+                          </td>
+                          <td class="scr">{row.score}</td>
+                          <!-- Every row carries a chip. Where it comes from is
+                               the honest part: the pack's source posture, said
+                               plainly in the basis panel below. -->
+                          <td class="pv">
+                            <template if:true={row.hasChip}>
+                              <span class={row.chipClass}>{row.chip}</span>
+                            </template>
+                          </td>
+                          <td class="read">
+                            <template if:true={row.hasRead}>{row.read}</template>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </template>
+              </template>
+
+              <!-- ══ 07 THE BASIS ══ -->
+              <template if:true={panel.isBasis}>
+                <p class="lede">Listing the limits is what makes the rest of the numbers worth trusting.</p>
+                <template if:true={panel.hasHow}>
+                  <p class="basis-h">HOW WE KNOW</p>
+                  <div class="limits">
+                    <template for:each={panel.how} for:item="row">
+                      <div key={row.key} class="lim">
+                        <span class="m">{row.marker}</span>
+                        <span><b>{row.lead}</b> {row.text}</span>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <!-- All six, in full, every time. Not editable, not abridged. -->
+                <template if:true={panel.hasLimits}>
+                  <p class="basis-h">WHAT WE CAN'T SEE</p>
+                  <div class="limits">
+                    <template for:each={panel.limits} for:item="row">
+                      <div key={row.key} class="lim">
+                        <span class="m">&mdash;</span>
+                        <span><b>{row.lead}</b> {row.text}</span>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template if:true={panel.hasResolutionNote}>
+                  <p class="scan-note"><em>{panel.resolutionNote}</em></p>
+                </template>
+              </template>
+
+              <!-- The rep's prose, sanitised on the way in. Every section's
+                   words land in the panel that owns them; nothing a rep or GUS
+                   wrote is ever dropped. -->
+              <template if:true={panel.hasPreamble}>
+                <div class="prose">
+                  <lightning-formatted-rich-text value={panel.preamble}></lightning-formatted-rich-text>
+                </div>
+              </template>
+              <template if:true={panel.hasProse}>
+                <div class="prose">
+                  <lightning-formatted-rich-text value={panel.prose}></lightning-formatted-rich-text>
+                </div>
+              </template>
+
+              <!-- ══ 08 the close ══ -->
+              <template if:true={panel.hasRep}>
+                <div class="close-grid">
+                  <div class="avatar" aria-hidden="true">{panel.rep.initials}</div>
+                  <div class="who">
+                    <div class="ask">For questions please contact:</div>
+                    <div class="nm">{panel.rep.name}</div>
+                    <template if:true={panel.rep.hasEmail}>
+                      <div class="nm"><a href={panel.rep.emailHref}>{panel.rep.email}</a></div>
+                    </template>
+                    <template if:true={panel.rep.hasPhone}>
+                      <div class="nm mono"><a href={panel.rep.phoneHref}>{panel.rep.phone}</a></div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+
+              <div class="foot"><span>&copy; Publicis Sapient</span><span>{panel.title}</span></div>
+            </section>
+          </template>
+        </div>
+
+        <button class="arrow l" type="button" aria-label="Previous section" onclick={handlePrev}>&lsaquo;</button>
+        <button class="arrow r" type="button" aria-label="Next section" onclick={handleNext}>&rsaquo;</button>
+        <div class="counter">{counterLabel}</div>
+      </div>
+
+      <!-- Write-only by design: this posts to the readout's review case and
+           never reads the thread back, because that thread also carries the
+           reps' own internal notes. See GtmReadoutCommentController. -->
+      <template if:true={showComment}>
+        <div class="rv-comment">
+          <div class="rv-comment-label">HAVE A COMMENT?</div>
+          <p class="rv-comment-sub">
+            Tell us which part of the readout it is about. It goes straight to your
+            Publicis Sapient contact, who will follow up with you.
+          </p>
+          <lightning-combobox
+            label="Section"
+            placeholder="Choose a section"
+            options={sectionOptions}
+            value={selectedSection}
+            onchange={handleSectionChange}
+            disabled={isCommentDisabled}>
+          </lightning-combobox>
+          <lightning-textarea
+            label="Your comment"
+            value={commentValue}
+            max-length={maxCommentLength}
+            onchange={handleCommentChange}
+            disabled={isCommentDisabled}>
+          </lightning-textarea>
+          <div class="rv-comment-actions">
+            <lightning-button
+              label="Send comment"
+              variant="brand"
+              onclick={handleSendComment}
+              disabled={isCommentDisabled}>
+            </lightning-button>
+          </div>
+          <template if:true={commentNotice}>
+            <div class={commentNoticeClass} role="status">{commentNotice}</div>
+          </template>
+        </div>
+      </template>
+
+      <div class="docfoot">
+        <span>&copy; PUBLICIS SAPIENT</span>
+        <template if:true={model.illustrative}><span>ILLUSTRATIVE FIGURES</span></template>
+        <span>MIGRATION ACCELERATOR</span>
+      </div>
+    </template>
+
+    <!-- Every failure looks the same: an invalid token, an unpublished one and
+         one that never existed are indistinguishable here, which is the guest
+         security requirement. -->
+    <template if:true={notFound}>
+      <div class="rv-notfound">
+        <div class="rv-nf-title">This link isn't available.</div>
+        <p class="rv-nf-sub">
+          It may have expired, been taken down, or the link may not be correct.
+          Please reach out to your Publicis Sapient contact for an up-to-date link.
+        </p>
+      </div>
+    </template>
+  </div>
+</template>

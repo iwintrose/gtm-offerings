@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Max_Attainable__c</fullName>
+    <label>Max Attainable</label>
+    <description>Highest value this slot can score for this pair, 1-4. Options above it render visibly unavailable with Ceiling_Reason__c beside them, and a submitted answer above it is DROPPED rather than clamped -- the same rule the scorer applies to any out-of-range value, for the same reason: clamping invents an answer nobody gave.</description>
+    <required>false</required>
+    <precision>2</precision>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

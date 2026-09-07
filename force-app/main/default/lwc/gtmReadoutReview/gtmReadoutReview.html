@@ -1,0 +1,169 @@
+<template>
+  <div class="rr">
+    <template if:true={loadError}>
+      <div class="rr-error" role="alert">
+        <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+        <span>{loadError}</span>
+        <button class="rr-error-x" onclick={handleDismissError} title="Dismiss">&times;</button>
+      </div>
+    </template>
+
+    <template if:true={isLoading}>
+      <div class="rr-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+    </template>
+
+    <template if:true={hasReadout}>
+      <header class="rr-bar">
+        <span class="rr-title">{title}</span>
+        <span class={statusClass}>{statusLabel}</span>
+        <lightning-button-icon class="rr-refresh" icon-name="utility:refresh"
+                                alternative-text="Refresh" title="Refresh"
+                                onclick={handleRefresh}></lightning-button-icon>
+      </header>
+
+      <!-- The recipient's comments arrive as case comments and the rep replies
+           there, natively. This link is the only comment-related UI in this
+           component, on purpose. -->
+      <template if:true={hasCase}>
+        <div class="rr-case">
+          <lightning-icon icon-name="utility:comments" size="xx-small"></lightning-icon>
+          <a href={caseUrl} class="rr-case-link">{caseLabel}</a>
+          <span class="rr-case-hint">Recipient comments and your replies live here.</span>
+        </div>
+      </template>
+
+      <!-- The recipient's view of this readout. What a rep approves has to be
+           what a recipient reads, and most of what a recipient reads — every
+           number, every band, every provenance chip — is rendered from the
+           frozen snapshot rather than from the prose in the editor. -->
+      <div class="rr-preview-bar">
+        <lightning-button label={previewLabel} onclick={handleTogglePreview}></lightning-button>
+        <span class="rr-preview-hint">
+          The scores, ladders and provenance chips come from the assessment, not from the
+          text below — this is the only place you can see the whole readout.
+        </span>
+      </div>
+      <template if:true={showPreview}>
+        <div class="rr-preview">
+          <c-gtm-readout-view
+            preview-mode
+            preview-content={previewContent}
+            preview-data={previewData}>
+          </c-gtm-readout-view>
+        </div>
+      </template>
+
+      <!-- ── Draft: editable ── -->
+      <template if:true={isDraft}>
+        <template if:true={isEditing}>
+        <!-- GUS put content in the editor. It is not saved and will not be
+             until the rep clicks Save Draft. -->
+        <template if:true={hasUnsavedProposal}>
+          <div class="rr-proposal" role="status">
+            <lightning-icon icon-name="utility:einstein" size="xx-small"></lightning-icon>
+            <span class="rr-proposal-text">
+              GUS updated the draft below. Nothing is saved yet — read it, edit it, then Save Draft.
+            </span>
+            <button class="rr-error-x" onclick={handleDismissProposalNotice} title="Dismiss">&times;</button>
+          </div>
+        </template>
+        <div class="rr-body">
+          <lightning-input-rich-text
+            value={draftValue}
+            onchange={handleDraftChange}
+            disabled={isSaving}>
+          </lightning-input-rich-text>
+        </div>
+        </template>
+        <footer class="rr-foot">
+          <lightning-button label="Save Draft" onclick={handleSaveDraft} disabled={isSaving}></lightning-button>
+          <lightning-button label="Send for approval" variant="brand"
+                            onclick={handleSubmitForApproval} disabled={isSaving}></lightning-button>
+        </footer>
+      </template>
+
+      <!-- ── Pending Approval: locked by the approval process ── -->
+      <template if:true={isPendingApproval}>
+        <div class="rr-pending" role="status">
+          <lightning-icon icon-name="utility:clock" size="x-small"></lightning-icon>
+          <span>{pendingApproverLine}</span>
+        </div>
+        <div class="rr-body rr-body--readonly">
+          <lightning-formatted-rich-text value={draftValue}></lightning-formatted-rich-text>
+        </div>
+        <footer class="rr-foot">
+          <lightning-button label="Recall request" onclick={handleRecall}
+                            disabled={isSaving}></lightning-button>
+        </footer>
+      </template>
+
+      <!-- ── Approved: read-only, awaiting publish ── -->
+      <template if:true={isApproved}>
+        <template if:true={hasApprovalStamp}>
+          <div class="rr-stamp">{approvalStampLine}</div>
+        </template>
+        <div class="rr-body rr-body--readonly">
+          <lightning-formatted-rich-text value={approvedContent}></lightning-formatted-rich-text>
+        </div>
+        <!-- Returning to draft discards the approved lock and the approver
+             stamp, so it asks before it does it. -->
+        <template if:true={isConfirmingReturn}>
+          <div class="rr-confirm" role="alertdialog" aria-label="Return this readout to draft?">
+            <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+            <span class="rr-confirm-text">
+              Return this readout to draft? The current approval is discarded and it will need
+              approving again. A copy of the approved version is kept in version history.
+            </span>
+            <lightning-button label="Cancel" onclick={handleCancelReturnToDraft}
+                              disabled={isSaving} class="rr-confirm-cancel"></lightning-button>
+            <lightning-button label="Discard approval" variant="destructive"
+                              onclick={handleConfirmReturnToDraft} disabled={isSaving}></lightning-button>
+          </div>
+        </template>
+        <footer class="rr-foot">
+          <lightning-button label="Return to draft" onclick={handleReturnToDraftRequest}
+                            disabled={isSaving}></lightning-button>
+          <lightning-button label="Publish" variant="brand" onclick={handlePublish} disabled={isSaving}></lightning-button>
+        </footer>
+      </template>
+
+      <!-- ── Published: read-only, live link ── -->
+      <template if:true={isPublished}>
+        <template if:true={hasApprovalStamp}>
+          <div class="rr-stamp">{approvalStampLine}</div>
+        </template>
+        <div class="rr-body rr-body--readonly">
+          <lightning-formatted-rich-text value={approvedContent}></lightning-formatted-rich-text>
+        </div>
+        <div class="rr-live">
+          <span class="rr-live-label">Live link</span>
+          <a href={publicUrl} target="_blank" rel="noopener" class="rr-live-link">{publicUrl}</a>
+        </div>
+        <footer class="rr-foot">
+          <lightning-button label="Unpublish" class="rr-danger" onclick={handleUnpublish} disabled={isSaving}></lightning-button>
+        </footer>
+      </template>
+      <!-- GUS. Rendered in every state, not only Draft: reading an approved
+           readout back and drafting alternative wording in chat is useful, and
+           the server refuses the edit and says which action unlocks it. A
+           visible refusal beats a panel that vanishes. -->
+      <c-gtm-readout-assist
+        readout-id={readoutId}
+        working-draft={draftValue}
+        status={statusLabel}
+        ondraftproposed={handleDraftProposed}
+      ></c-gtm-readout-assist>
+    </template>
+
+    <template if:false={hasReadout}>
+      <template if:false={isLoading}>
+        <template if:false={loadError}>
+          <!-- Names the tab as it is labelled in the nav (GTM_Readouts_Overview
+               is "Readout Queue"), so the instruction points somewhere a rep
+               can actually find. -->
+          <p class="rr-empty">Choose a readout from the Readout Queue tab to open it here.</p>
+        </template>
+      </template>
+    </template>
+  </div>
+</template>

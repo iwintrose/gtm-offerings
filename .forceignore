@@ -1,0 +1,13 @@
+# Jest unit tests and their fixtures live inside LWC bundle directories
+# (force-app/main/default/lwc/*/__tests__/), which is the standard LWC jest
+# convention -- but Salesforce's metadata deploy walks the whole bundle
+# directory and tries to parse everything in it as component source, so a
+# .test.js file or a fixture .json/.md file under __tests__/ fails the
+# deploy outright ("Invalid LWC imported identifier", "Invalid suffix").
+# These were never a problem before this repo had jest tests to ignore.
+**/__tests__/**
+
+# Standard Node tooling noise, in case it's ever present locally.
+**/node_modules/**
+**/coverage/**
+**/__pycache__/**

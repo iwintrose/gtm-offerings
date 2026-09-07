@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Instrument__c</fullName>
+    <label>Instrument</label>
+    <description>Which of the two axes this question feeds. Readiness questions are scored 1-4 and sum to Assessment_Score__c (8-32); Complexity questions are scored 1-3 and sum to Estate_Complexity_Score__c (6-18). The two are never added together.</description>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Readiness</fullName>
+                <default>true</default>
+                <label>Readiness</label>
+            </value>
+            <value>
+                <fullName>Complexity</fullName>
+                <default>false</default>
+                <label>Complexity</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

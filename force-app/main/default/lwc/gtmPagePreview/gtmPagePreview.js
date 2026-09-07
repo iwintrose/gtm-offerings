@@ -18,7 +18,7 @@ const MAX_W = 1920;
  * The page is drawn at a true CSS width and then scaled, rather than being
  * squeezed into whatever space is left. That distinction is the whole point of
  * a device preview — a 414px-wide render tells you about the phone layout, a
- * squashed 414px-wide panel tells you about nothing. c/maStory carries
+ * squashed 414px-wide panel tells you about nothing. c/gtmStory carries
  * container queries so it responds to this frame rather than to the browser.
  */
 export default class GtmPagePreview extends LightningElement {
@@ -28,6 +28,9 @@ export default class GtmPagePreview extends LightningElement {
     @api fieldMeta = [];
     @api pageUrl = '';
     @api hasDrafts = false;
+
+    /** Which page is being edited. Decides which renderer to preview with. */
+    @api templateType = 'story';
 
     // The section the editor has selected. Setting it scrolls the canvas.
     @api
@@ -52,6 +55,57 @@ export default class GtmPagePreview extends LightningElement {
     _suppress = false;
     _suppressTimer;
     _queued = false;
+
+    // ─── which renderer ───────────────────────────────────────────────────────
+    // Every page previews through the component that actually renders it, fed
+    // the draft being edited. A stand-in that only approximated the page would
+    // drift from it, and "no preview available" is not an answer when the
+    // whole point of the editor is seeing the change.
+
+    get isStory() { return this.templateType === 'story'; }
+    get isOfferings() {
+        // An offerings-listing is one tile on the offerings page, so it is
+        // previewed in the page it appears on rather than on its own.
+        return this.templateType === 'offerings-page'
+            || this.templateType === 'offerings-listing';
+    }
+    get isIndustry() { return this.templateType === 'industry-chooser'; }
+    get isConfigurator() { return this.templateType === 'configurator'; }
+    get isUnknown() {
+        return !this.isStory && !this.isOfferings && !this.isIndustry && !this.isConfigurator;
+    }
+
+    /**
+     * The offerings page draws its tiles from every offering, so when the tile
+     * itself is what is being edited, the draft is handed in and takes that
+     * offering's place in the grid.
+     */
+    get previewTile() {
+        if (this.templateType !== 'offerings-listing') return null;
+        const c = this.content || {};
+        return {
+            offeringKey: this.offeringKey,
+            mark: c['tile::mark'] || '',
+            name: c['tile::name'] || '',
+            description: c['tile::description'] || '',
+            isLive: true
+        };
+    }
+
+    /** The offerings page's own copy is framework content, not this page's. */
+    get offeringsContent() {
+        return this.templateType === 'offerings-page' ? this.content : {};
+    }
+
+    get previewNote() {
+        if (this.templateType === 'offerings-listing') {
+            return 'Shown in place on the offerings page — the other tiles are live.';
+        }
+        if (this.templateType === 'configurator') {
+            return 'Shown as a prospect sees it, using the first industry on this page.';
+        }
+        return '';
+    }
 
     // ─── head ─────────────────────────────────────────────────────────────────
 
@@ -217,6 +271,30 @@ export default class GtmPagePreview extends LightningElement {
         window.addEventListener('pointerup', up);
     }
 
+    /**
+     * The preview is for reading, not for using.
+     *
+     * Everything in it is real: real anchors to the live site, real buttons
+     * that open a booking modal or reveal a panel. An editor clicking one while
+     * checking their copy either loses the editor or fires an action meant for
+     * a prospect. Stopped at the frame so no renderer has to know it is being
+     * previewed.
+     *
+     * Scrolling, selecting and the rail's own scroll-spy are untouched: this
+     * only cancels a click that would navigate or act.
+     */
+    handlePreviewClick(event) {
+        // Every click, not just the ones that look actionable. Checking the
+        // target with closest() does not work here: the page renders inside its
+        // own shadow root, so a click on an anchor in there is retargeted to
+        // the host element by the time it reaches this handler, and the check
+        // would pass exactly the links it was meant to stop.
+        //
+        // Selecting text still works -- that is mousedown and drag, not click.
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     // ─── scroll sync ──────────────────────────────────────────────────────────
 
     handleIntent() {
@@ -238,9 +316,18 @@ export default class GtmPagePreview extends LightningElement {
     }
 
     rects() {
-        const story = this.template.querySelector('c-ma-story');
-        if (!story || typeof story.getSectionRects !== 'function') return [];
-        return story.getSectionRects();
+        const el = this.template.querySelector(
+            'c-gtm-story, c-offering-chooser, c-choose-industry, c-gtm-configurator'
+        );
+        if (!el || typeof el.getSectionRects !== 'function') return [];
+
+        // Only sections this page actually has. An offerings-listing is
+        // previewed inside the offerings page, so the renderer reports that
+        // page's header, intro and footer -- none of which belong to the page
+        // being edited. Scrolling then selected a section the editor did not
+        // have, and the tile being edited vanished from the panel.
+        const own = new Set((this.sections || []).map((s) => s.sectionKey));
+        return el.getSectionRects().filter((r) => own.has(r.sectionKey));
     }
 
     /**

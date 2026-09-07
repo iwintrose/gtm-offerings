@@ -23,7 +23,16 @@
         <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
         <button class="gcm-crumb" onclick={handleBackToPages}>All pages</button>
         <lightning-icon icon-name="utility:chevronright" size="xx-small" class="gcm-crumb-sep"></lightning-icon>
-        <span class="gcm-crumb-current">{selectedTemplate}</span>
+        <!-- A picker, not a label: moving between an offering's pages is the
+             same kind of move as changing offering, so it costs the same. -->
+        <lightning-combobox
+          label="Page"
+          variant="label-hidden"
+          value={selectedTemplate}
+          options={pageOptions}
+          onchange={handlePageChange}
+          class="gcm-pick gcm-pick--page">
+        </lightning-combobox>
       </template>
 
       <span class={saveStateClass} title="Edits save as a draft while you type">
@@ -161,7 +170,7 @@
                   <lightning-icon icon-name={s.icon} size="x-small" class="sec-icon"></lightning-icon>
                   <div class="sec-main">
                     <span class="sec-name">{s.label}</span>
-                    <span class="sec-meta">{s.layoutType} &middot; {s.fieldCount} fields</span>
+                    <span class="sec-meta">{s.layoutLabel} &middot; {s.fieldCount} fields</span>
                     <template if:true={s.hasPending}>
                       <span class="sec-pending">{s.pendingLabel}</span>
                     </template>
@@ -224,6 +233,7 @@
             content={previewContent}
             field-meta={previewFieldMeta}
             page-url={livePageUrl}
+            template-type={selectedTemplate}
             has-drafts={hasDrafts}
             active-key={activeKey}
             onsectionchange={handlePreviewSectionChange}>
@@ -240,6 +250,12 @@
             <p>A layout decides what the section can hold. Its fields are created with it.</p>
           </header>
           <div class="modal-b">
+            <!-- A page whose renderer draws no section sequence has nothing to
+                 add: its content comes from elsewhere. Saying so beats an
+                 empty grid and a disabled button. -->
+            <template if:false={hasLayoutOptions}>
+              <p class="modal-note">{noLayoutsReason}</p>
+            </template>
             <div class="cards">
               <template for:each={layoutOptions} for:item="l">
                 <button key={l.value} class={l.cardClass} data-layout={l.value}

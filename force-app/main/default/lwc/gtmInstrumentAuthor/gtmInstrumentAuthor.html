@@ -1,0 +1,234 @@
+<template>
+    <div class="ia">
+        <header class="ia-bar">
+            <span class="ia-brand">Instrument editor</span>
+            <span class="ia-sep"></span>
+            <label class="ia-pick">
+                <span>From</span>
+                <select data-field="sourceKey" onchange={handlePair}>
+                    <option value="">Any source</option>
+                    <template for:each={sourceOptions} for:item="p">
+                        <option key={p.value} value={p.value} selected={p.selected}>{p.label}</option>
+                    </template>
+                </select>
+            </label>
+            <label class="ia-pick">
+                <span>To</span>
+                <select data-field="targetKey" onchange={handlePair}>
+                    <option value="">Any target</option>
+                    <template for:each={targetOptions} for:item="p">
+                        <option key={p.value} value={p.value} selected={p.selected}>{p.label}</option>
+                    </template>
+                </select>
+            </label>
+            <template if:true={pack}>
+                <span class="ia-pack">pack: {pack.pairKey} · v{pack.version}</span>
+            </template>
+            <div class="ia-tabs">
+                <button type="button" class={editTabClass} onclick={handleEdit}>Questions &amp; scores</button>
+                <button type="button" class={previewTabClass} onclick={handlePreview}>Preview</button>
+            </div>
+        </header>
+
+        <template if:true={error}>
+            <p class="ia-error">{error}</p>
+        </template>
+
+        <template if:true={loading}>
+            <p class="ia-loading">Resolving the instrument…</p>
+        </template>
+
+        <template if:false={loading}>
+            <div class="ia-cols">
+                <!-- ── slot rail ─────────────────────────────────────── -->
+                <aside class="ia-rail">
+                    <p class="ia-colhead">The eight slots</p>
+                    <template for:each={rail} for:item="s">
+                        <button
+                            key={s.baseKey}
+                            type="button"
+                            class={s.cls}
+                            data-key={s.baseKey}
+                            onclick={handleSelectSlot}
+                        >
+                            <span class="ia-slot-pos">{s.position}</span>
+                            <span class="ia-slot-main">
+                                <span class="ia-slot-name">{s.label}</span>
+                                <span class="ia-slot-meta">
+                                    {s.branchNote}
+                                    <template if:true={s.pinned}> · pinned</template>
+                                </span>
+                            </span>
+                        </button>
+                    </template>
+                    <p class="ia-hint">
+                        Slots 1 and 8 are pinned: they cannot be substituted or branched
+                        away, so two prospects' totals always describe the same spine.
+                    </p>
+                </aside>
+
+                <!-- ── main ──────────────────────────────────────────── -->
+                <section class="ia-main">
+                    <!-- edit -->
+                    <template if:true={isEdit}>
+                        <template for:each={questionCards} for:item="card">
+                            <article key={card.id} class="ia-card">
+                                <p class={card.headingCls}>{card.heading}</p>
+                                <p class="ia-card-key">answers store under <code>{card.resolvedKey}</code></p>
+                                <p class="ia-question">{card.question}</p>
+
+                                <!-- branch predicate -->
+                                <template if:false={card.isDefault}>
+                                    <label class="ia-field">
+                                        <span class="ia-label">Ask this question when…</span>
+                                        <textarea
+                                            class="ia-code"
+                                            rows="4"
+                                            data-id={card.id}
+                                            onchange={handleShowWhen}
+                                        >{card.showWhen}</textarea>
+                                    </label>
+                                    <template if:true={card.showWhenError}>
+                                        <p class="ia-warn">{card.showWhenError}</p>
+                                    </template>
+                                </template>
+                                <template if:true={card.isDefault}>
+                                    <p class="ia-note">
+                                        No condition. This is the question that fills the slot
+                                        when no branch fires — which is why branching can never
+                                        leave a slot unanswered.
+                                    </p>
+                                </template>
+
+                                <!-- per-option points -->
+                                <table class="ia-opts">
+                                    <thead>
+                                        <tr>
+                                            <th class="ia-th-v">Option</th>
+                                            <th>Answer</th>
+                                            <th class="ia-th-p">Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={card.options} for:item="o">
+                                            <tr key={o.key} class={o.cls}>
+                                                <td class="ia-td-v">{o.value}</td>
+                                                <td>
+                                                    {o.label}
+                                                    <template if:true={o.unavailable}>
+                                                        <span class="ia-capped">capped: {o.unavailableReason}</span>
+                                                    </template>
+                                                </td>
+                                                <td class="ia-td-p">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="4"
+                                                        value={o.points}
+                                                        data-id={card.id}
+                                                        data-index={o.index}
+                                                        onchange={handlePoints}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                                <p class="ia-range">
+                                    This question is worth {card.bottom}–{card.top}.
+                                </p>
+                                <template if:true={card.pointsWarning}>
+                                    <p class="ia-warn">{card.pointsWarning}</p>
+                                </template>
+                            </article>
+                        </template>
+
+                        <template if:true={hasEdits}>
+                            <article class="ia-card ia-card--out">
+                                <p class="ia-card-head">Your changes, as YAML</p>
+                                <p class="ia-note">
+                                    The instrument's source of truth is the pair YAML; the custom
+                                    metadata is a build output. Paste this in, run the build script,
+                                    and every one of the eleven rules runs before it can reach a
+                                    client.
+                                </p>
+                                <pre class="ia-yaml">{yamlFragment}</pre>
+                                <button type="button" class="ia-btn" onclick={handleDiscard}>
+                                    Discard changes
+                                </button>
+                            </article>
+                        </template>
+                    </template>
+
+                    <!-- preview -->
+                    <template if:true={isPreview}>
+                        <div class="ia-score">
+                            <div>
+                                <span class="ia-score-n">{previewScoreLine}</span>
+                                <template if:true={previewBand}>
+                                    <span class="ia-score-band">{previewBand}</span>
+                                </template>
+                            </div>
+                            <span class="ia-score-progress">{previewProgress}</span>
+                            <button type="button" class="ia-btn" onclick={handleClearPreview}>Reset</button>
+                        </div>
+                        <p class="ia-note">
+                            Answer as a respondent would. Every slot is always asked; what a
+                            branch changes is which question fills it.
+                        </p>
+
+                        <template for:each={previewSlots} for:item="slot">
+                            <article key={slot.key} class="ia-card">
+                                <p class="ia-card-head">
+                                    {slot.position}. {slot.label}
+                                    <template if:true={slot.branched}>
+                                        <span class="ia-badge">{slot.branchNote}</span>
+                                    </template>
+                                </p>
+                                <p class="ia-question">{slot.question}</p>
+                                <div class="ia-popts">
+                                    <template for:each={slot.options} for:item="o">
+                                        <button
+                                            key={o.key}
+                                            type="button"
+                                            class={o.cls}
+                                            data-key={slot.key}
+                                            data-value={o.value}
+                                            disabled={o.unavailable}
+                                            onclick={handlePreviewChoice}
+                                        >
+                                            <span class="ia-popt-pts">{o.points}</span>
+                                            <span class="ia-popt-label">{o.label}</span>
+                                            <template if:true={o.unavailable}>
+                                                <span class="ia-capped">{o.unavailableReason}</span>
+                                            </template>
+                                        </button>
+                                    </template>
+                                </div>
+                            </article>
+                        </template>
+
+                        <article class="ia-card ia-card--out">
+                            <p class="ia-card-head">Branch path</p>
+                            <p class="ia-note">
+                                What the server would store on Instrument_Branch_Path__c —
+                                which question actually filled each slot.
+                            </p>
+                            <table class="ia-path">
+                                <tbody>
+                                    <template for:each={previewPath} for:item="p">
+                                        <tr key={p.key}>
+                                            <td><code>{p.key}</code></td>
+                                            <td><code>{p.variant}</code></td>
+                                            <td><code>{p.asked}</code></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </article>
+                    </template>
+                </section>
+            </div>
+        </template>
+    </div>
+</template>

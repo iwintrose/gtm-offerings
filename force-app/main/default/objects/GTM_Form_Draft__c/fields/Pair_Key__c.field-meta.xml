@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Pair_Key__c</fullName>
+    <description>Which instrument pack (e.g. hubspot__sfmc) this questionnaire draft is being answered against. Configuration, not prospect data -- trimmed to field length rather than trusted. Null on Booking rows.</description>
+    <label>Pair Key</label>
+    <length>80</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

@@ -1,0 +1,12 @@
+{
+  "activeViewId" : "72c4d3ef-66ff-495a-bca4-20f5e6cd9e7e",
+  "appPageId" : "8a38f8a2-ecf6-40bb-bc18-d20c8619aae8",
+  "configurationTags" : [ ],
+  "devName" : "Readout__c",
+  "id" : "5ba861b0-a881-4a6b-9494-ed7cd17e73a6",
+  "label" : "Readout",
+  "pageAccess" : "UseParent",
+  "routeType" : "custom-readout",
+  "type" : "route",
+  "urlPrefix" : "readout"
+}

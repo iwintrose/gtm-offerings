@@ -1,0 +1,68 @@
+/* Gus. Two colours only — the page stock and one accent — so he sits on a
+   dark configurator, a white Lightning page or a coloured brand header
+   without being restyled at each stop. */
+:host {
+    display: inline-block;
+    line-height: 0;
+    --gus-paper: #ffffff;
+    --gus-edge: #c9c9c9;
+    --gus-ink: #2b2b2b;
+    --gus-accent: var(--coral, #e8542f);
+}
+
+.gus { display: block; overflow: visible; }
+.gus--sm { width: 28px; height: 28px; }
+.gus--md { width: 44px; height: 44px; }
+.gus--lg { width: 72px; height: 72px; }
+
+.head, .body {
+    fill: var(--gus-paper);
+    stroke: var(--gus-edge);
+    stroke-width: 1.8;
+}
+.page {
+    fill: var(--gus-page, #f0ece4);
+    stroke: var(--gus-edge);
+    stroke-width: 1.6;
+}
+.rule { stroke: var(--gus-edge); stroke-width: 1.5; stroke-linecap: round; opacity: .75; }
+
+.tuft { fill: none; stroke: var(--gus-edge); stroke-width: 1.8; stroke-linecap: round; }
+.bead { fill: var(--gus-accent); }
+
+.eye { fill: var(--gus-ink); }
+.glint { fill: #fff; }
+.blush { fill: var(--gus-accent); opacity: .28; }
+.smile {
+    fill: none;
+    stroke: var(--gus-ink);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+}
+
+/* Thinking: the bead breathes. Nothing else moves — a character that jitters
+   while you read is a distraction, not a personality. */
+.gus--thinking .bead {
+    animation: gus-pulse 1.4s ease-in-out infinite;
+    transform-origin: 37.5px 4px;
+}
+@keyframes gus-pulse {
+    0%, 100% { transform: scale(1);   opacity: 1; }
+    50%      { transform: scale(1.4); opacity: .65; }
+}
+
+/* Happy: the eyes widen slightly and the smile opens. Nothing bounces. */
+.gus--happy .eye { ry: 6; }
+.gus--happy .blush { opacity: .42; }
+
+@media (prefers-reduced-motion: reduce) {
+    .gus--thinking .bead { animation: none; }
+}
+
+/* On a dark surface the paper would glare, so it steps down instead. */
+:host(.on-dark) {
+    --gus-paper: #f2efe9;
+    --gus-edge: #8d8880;
+    --gus-ink: #23211e;
+    --gus-page: #ffffff;
+}

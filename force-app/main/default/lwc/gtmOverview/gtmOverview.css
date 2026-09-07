@@ -1,46 +1,76 @@
-@import 'c/gtmTokens';
 :host { display: block; }
-.ov { padding: 0.75rem; font-size: var(--gtm-font-size-base); color: var(--gtm-text); }
-.ov-err {
-    display: flex; align-items: center; gap: 0.5rem;
-    margin-bottom: 0.75rem; padding: 0.6rem 0.8rem;
-    border: 1px solid #f2c2c2; border-radius: var(--gtm-radius); background: #fdf2f2; color: var(--gtm-danger);
+/* Mounted straight onto a tab, so nothing above supplies the gutter: without
+   horizontal padding the cards touch the browser edge. The amount is the
+   judgement call -- the Content Manager's clamp(1rem, 3vw, 2rem) resolves to
+   the full 2rem on any normal desktop, which is twice Salesforce's own page
+   gutter and costs a column's worth of the deals table. This is the same
+   shape, tightened, and both pages now use it. */
+.ov { padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem; font-size: 13px; color: #181818; background: #f3f3f3; min-height: 100%; }
+
+/* Same header shape as the Content Manager home; they are sibling pages and
+   should not look like they came from different products. */
+.ov-head {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: .75rem 1rem; margin-bottom: 1rem;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
 }
-.ov-err span { flex: 1; }
-.ov-err-x {
-    border: 0; background: transparent; color: inherit; cursor: pointer;
-    font-size: 16px; line-height: 1; padding: 0;
+.ov-head .slds-page-header__row { display: flex; align-items: center; gap: 1rem; }
+.ov-head .slds-page-header__col-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.ov-head .slds-page-header__col-actions { margin-left: auto; }
+.ov-head-icon { flex: none; }
+.ov-eyebrow { font-size: 12px; color: #444; margin: 0; }
+.ov-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+.ov-meta { margin: .1rem 0 0; font-size: 12px; color: #747474; }
+
+/* A column so the body takes the slack: with the grid stretching the cards to
+   one height, a non-flex card leaves its content floating at the top and the
+   card bottom empty. */
+.ov-card {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.ov-card-h {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
+    min-height: 3rem;
+}
+.ov-card-b { padding: .5rem .6rem .65rem; flex: 1 1 auto; }
+.ov-err {
+    margin-bottom: 0.75rem; padding: 0.6rem 0.8rem;
+    border: 1px solid #f2c2c2; border-radius: 5px; background: #fdf2f2; color: #ba0517;
 }
 
 /* Three columns, each with a different job: numbers read down the left, work
    waiting in the middle, the action you came to start on the right. */
+/* Two columns now: the numbers, and the work waiting. The third held the
+   create actions, which belong in the page header with the other record
+   actions rather than in a column of their own. */
 .ov-cols {
     display: grid;
-    grid-template-columns: 15rem minmax(20rem, 1fr) 17rem;
-    gap: 0.75rem;
-    align-items: start;
+    grid-template-columns: 17rem minmax(20rem, 1fr);
+    gap: 1rem;
+    align-items: stretch;
 }
 @media (max-width: 1100px) {
     .ov-cols { grid-template-columns: 1fr; }
 }
 
 .ov-col {
-    background: var(--gtm-bg-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius);
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
     padding: 0.7rem 0.8rem 0.9rem;
 }
-.ov-h {
-    margin: 0 0 0.6rem;
-    font-size: var(--gtm-font-size-label); font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--gtm-text-muted);
-}
-.ov-empty { margin: 0; font-size: 12px; color: var(--gtm-text-muted); line-height: 1.5; }
+/* Inside a card header this is the card's title, so it is a title, not a
+   micro-label above a group. */
+.ov-h { margin: 0; font-size: 14px; font-weight: 700; color: #181818; }
+.ov-empty { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
 
 /* ── left: stats ─────────────────────────────────────────────────────────── */
 .tile { padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; }
 .tile:last-child { border-bottom: 0; padding-bottom: 0; }
 .tile-top { display: flex; align-items: center; gap: 0.35rem; }
-.tile-ico { --sds-c-icon-color-foreground-default: var(--gtm-text-muted); }
-.tile-label { font-size: 11.5px; color: var(--gtm-text-muted); }
+.tile-ico { --sds-c-icon-color-foreground-default: #747474; }
+.tile-label { font-size: 11.5px; color: #747474; }
 .tile-value {
     margin-top: 0.15rem;
     font-size: 26px; font-weight: 700; line-height: 1.1;
@@ -60,7 +90,7 @@
 .row:hover { background: #f7f9fc; }
 .row-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .row-name { font-weight: 600; font-size: 12.5px; }
-.row-meta { font-size: 11.5px; color: var(--gtm-text-muted); }
+.row-meta { font-size: 11.5px; color: #747474; }
 .row-date {
     font-size: 11.5px; color: #969696;
     font-variant-numeric: tabular-nums; white-space: nowrap;
@@ -70,52 +100,295 @@
 .act {
     display: flex; align-items: flex-start; gap: 0.5rem; width: 100%;
     padding: 0.65rem 0.7rem; margin-bottom: 0.5rem;
-    border: 1px solid #0176d3; border-radius: var(--gtm-radius); background: #0176d3;
+    border: 1px solid #0176d3; border-radius: 5px; background: #0176d3;
     color: #fff; cursor: pointer; text-align: left; text-decoration: none;
 }
 .act:hover { background: #014486; border-color: #014486; }
-.act:disabled { opacity: 0.85; cursor: wait; }
-.act--failed { background: var(--gtm-danger); border-color: var(--gtm-danger); }
-.act--failed:hover { background: #8f0411; border-color: #8f0411; }
-.act-spinner {
-    width: 15px; height: 15px; flex: 0 0 15px; margin-top: 2px;
-    border: 2px solid rgba(255, 255, 255, 0.4); border-top-color: #fff;
-    border-radius: 50%; animation: act-spin 0.7s linear infinite;
-}
-@keyframes act-spin { to { transform: rotate(360deg); } }
 .act--quiet {
-    background: var(--gtm-bg-surface); color: var(--gtm-text); border-color: var(--gtm-border);
+    background: #fff; color: #181818; border-color: #e5e5e5;
 }
 .act--quiet:hover { background: #f7f7f7; border-color: #c9c9c9; }
 .act-plus { font-size: 18px; line-height: 1.1; }
 .act-main { display: flex; flex-direction: column; gap: 0.1rem; }
-.act-label { font-size: var(--gtm-font-size-base); font-weight: 700; }
+.act-label { font-size: 13px; font-weight: 700; }
 .act-sub { font-size: 11.5px; opacity: 0.85; line-height: 1.4; }
-.act--quiet .act-sub { color: var(--gtm-text-muted); opacity: 1; }
+.act--quiet .act-sub { color: #747474; opacity: 1; }
 
 /* ── offerings ───────────────────────────────────────────────────────────── */
-.ov-offerings {
-    margin-top: 0.75rem;
-    background: var(--gtm-bg-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius);
-    padding: 0.7rem 0.8rem 0.9rem;
-}
+.ov-offerings { margin-top: 1rem; }
 .cards {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
-    gap: 0.6rem;
+    gap: 0.75rem;
+    align-items: stretch;
 }
-.ocard { border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius); padding: 0.7rem 0.75rem; }
-.ocard-top { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+.ocard {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.ocard-top {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
+    min-height: 3rem;
+}
+.ocard-id { display: flex; flex-direction: column; min-width: 0; }
+.ocard-sum, .ocard-acts { padding-left: .75rem; padding-right: .75rem; }
+.ocard-acts { padding-bottom: .7rem; }
 .ocard-name { font-size: 13.5px; font-weight: 700; }
 .ocard-key {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 10px; color: #969696;
 }
-.ocard-sum { margin: 0.3rem 0 0.6rem; font-size: 11.5px; color: var(--gtm-text-muted); }
-.ocard-acts { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ocard-sum { margin: 0.55rem 0 0.6rem; font-size: 11.5px; color: #747474; flex: 1 1 auto; }
+.ocard-acts { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: auto; }
 .ocard-btn {
     padding: 0.28rem 0.55rem;
-    border: 1px solid #c9c9c9; border-radius: var(--gtm-radius); background: var(--gtm-bg-surface);
-    font-size: 12px; color: var(--gtm-text); cursor: pointer; text-decoration: none;
+    border: 1px solid #c9c9c9; border-radius: 4px; background: #fff;
+    font-size: 12px; color: #181818; cursor: pointer; text-decoration: none;
 }
 .ocard-btn:hover { border-color: #0176d3; color: #0176d3; }
 .ocard-btn--primary { border-color: #0176d3; color: #0176d3; font-weight: 600; }
+
+/* ── modal ───────────────────────────────────────────────────────────────── */
+.scrim {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,20,24,.5); display: grid; place-items: center; padding: 1rem;
+}
+.modal {
+    width: min(28rem, 100%); background: #fff; border-radius: 8px;
+    box-shadow: 0 10px 34px rgba(0,0,0,.22);
+    /* Not overflow:hidden — a combobox drops its menu outside the modal box,
+       and clipping it makes the picker look broken. The rounded corners are
+       kept by clipping only the header and footer, which are what touch them. */
+    overflow: visible;
+}
+.modal-h { border-radius: 8px 8px 0 0; }
+.modal-f { border-radius: 0 0 8px 8px; }
+.modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid #e5e5e5; }
+.modal-h h2 { margin: 0 0 .2rem; font-size: 16px; font-weight: 700; }
+.modal-h p { margin: 0; font-size: 12.5px; color: #444; }
+.modal-b { padding: .9rem 1.15rem; display: flex; flex-direction: column; gap: .7rem; }
+.modal-note { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
+.modal-f {
+    padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
+    display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
+}
+
+/* ── same language as the Content Manager home ─────────────────────────────
+   These are sibling pages and should feel like one product: the same card
+   rail, the same response to the pointer, the same restraint. */
+.ov-card, .ocard {
+  border-top: 3px solid #747474;
+  transition: box-shadow .14s ease, transform .14s ease;
+}
+.ov-col--stats { border-top-color: #0176d3; }
+.ov-col--work  { border-top-color: #fe9339; }
+.ocard         { border-top-color: #9050e9; }
+
+.ov-card:hover, .ocard:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .09);
+  transform: translateY(-1px);
+}
+
+/* The numbers are the point of the snapshot, so they get to be numbers:
+   aligned, tabular, and large enough to read across the room. */
+.tile-value, .ov-title { font-variant-numeric: tabular-nums; }
+
+.row { transition: background .12s ease; }
+.row:hover { background: #f6f9fe; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-card, .ocard, .row { transition: none; }
+  .ov-card:hover, .ocard:hover { transform: none; }
+}
+
+/* The offerings section holds offerings, so it carries their colour. Every
+   card on the page now has a rail; none is an exception. */
+.ov-offerings { border-top-color: #9050e9; }
+
+/* Same SLDS grid trap as the Content Manager home: `.slds-card + .slds-card`
+   adds a rem of top margin to every card after the first, which in a grid is
+   every card but the leftmost of the first row. */
+.ov-cols > .ov-card + .ov-card,
+.ov-cols > .ov-card { margin: 0; }
+.cards > .ocard + .ocard,
+.cards > .ocard { margin: 0; }
+.ov-offerings { margin-top: 1rem; }
+.ov-cols > .ov-card > .slds-card__header,
+.ov-cols > .ov-card > .slds-card__body,
+.cards > .ocard > .slds-card__header,
+.cards > .ocard > .slds-card__body { margin: 0; }
+.side > .side-card + .side-card,
+.side > .side-card { margin: 0; }
+
+/* ── Deals in play ─────────────────────────────────────────────────────────
+   A table drawn with grid rather than <table>: the columns have to stay in
+   step across rows, and the last one has to be able to wrap on a narrow
+   window without the others moving. */
+.ov-deals { margin-top: 1rem; }
+.ov-h-note {
+    margin-left: auto;
+    font-size: .75rem;
+    color: #5c5c5c;
+}
+.deals { display: flex; flex-direction: column; }
+.deal {
+    display: grid;
+    grid-template-columns: minmax(190px, 2fr) minmax(120px, 1fr) minmax(150px, 1.2fr) minmax(110px, 1fr) minmax(130px, 1fr);
+    gap: .75rem;
+    align-items: start;
+    padding: .7rem .25rem;
+    border-bottom: 1px solid #e5e5e5;
+}
+.deal:last-child { border-bottom: 0; }
+.deal--head {
+    padding-bottom: .4rem;
+    font-size: .7rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #6b6b6b;
+}
+.deal-id, .deal-crm, .deal-when { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.deal-name { font-weight: 600; color: #0176d3; text-decoration: none; }
+.deal-name:hover { text-decoration: underline; }
+.deal-stage { font-weight: 500; }
+.deal-sub { font-size: .75rem; color: #5c5c5c; }
+.deal-req { color: #0176d3; text-decoration: none; font-weight: 500; }
+.deal-req:hover { text-decoration: underline; }
+.deal-none { color: #9a9a9a; }
+.deal-link { color: #0176d3; text-decoration: none; }
+.deal-link:hover { text-decoration: underline; }
+
+/* One pill per funnel state. Colour carries the meaning, so the shape stays
+   identical: a reader scanning the column is comparing states, not sizes. */
+.pill {
+    display: inline-block;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+.pill--good  { background: #d7f0e0; color: #14532d; }
+.pill--warn  { background: #fdeacb; color: #7a4a05; }
+.pill--info  { background: #dce9fb; color: #0b3d75; }
+.pill--quiet { background: #ececec; color: #545454; }
+
+.tile-value--warn { color: #a1500a; }
+
+@media (max-width: 900px) {
+    /* Stacked, the column headings stop meaning anything, so they go. */
+    .deal--head { display: none; }
+    .deal { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── The funnel ────────────────────────────────────────────────────────────
+   Bars rather than tiles because the shape is the message: four numbers in a
+   column tell you the values, one bar under another tells you where the loss
+   is without reading any of them. */
+.fn { list-style: none; margin: 0; padding: 0; }
+.fn-step { padding: .45rem 0; }
+.fn-top { display: flex; align-items: baseline; gap: .5rem; }
+.fn-label { font-size: 12.5px; color: #3b3b3b; }
+.fn-n {
+    margin-left: auto;
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+.fn-track {
+    margin-top: .3rem;
+    height: 7px;
+    border-radius: 999px;
+    background: #ebebeb;
+    overflow: hidden;
+}
+.fn-bar { height: 100%; border-radius: 999px; background: #0176d3; }
+/* The last stage is the one that pays, so it is the one that is not blue. */
+.fn-bar--end { background: #2e844a; }
+.fn-drop {
+    display: inline-block;
+    margin-top: .25rem;
+    font-size: 11.5px;
+    color: #8a8a8a;
+}
+/* Only the largest single loss is emphasised: a funnel where every drop shouts
+   is a funnel nobody acts on. */
+.fn-drop--worst { color: #a1500a; font-weight: 600; }
+
+.asides {
+    margin-top: .9rem;
+    padding-top: .7rem;
+    border-top: 1px solid #e9e9e9;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+.aside { display: flex; align-items: center; gap: .4rem; font-size: 12.5px; color: #3b3b3b; }
+.aside-ico { flex: none; opacity: .6; }
+.aside-l { min-width: 0; }
+.aside-v { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.aside-v--warn { color: #a1500a; }
+
+/* ── Offering feedback ─────────────────────────────────────────────────────
+   Closed by default: the card is for reading about an offering, and a form
+   sitting open on every card turns a reading surface into a form. */
+.ocard-panel { display: none; }
+.ocard-panel--on {
+    display: block;
+    margin-top: .75rem;
+    padding: .75rem .75rem .85rem;
+    border-top: 1px solid #ececec;
+}
+.fb-input {
+    width: 100%;
+    min-height: 4.5rem;
+    padding: .5rem .6rem;
+    border: 1px solid #d8d8d8;
+    border-radius: 4px;
+    font: inherit;
+    font-size: 12.5px;
+    resize: vertical;
+}
+.fb-input:focus { outline: 2px solid #0176d3; outline-offset: -1px; border-color: #0176d3; }
+.fb-send { display: flex; justify-content: flex-end; margin-top: .5rem; }
+
+.notes { list-style: none; margin: .9rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+.note { padding-top: .7rem; border-top: 1px solid #f0f0f0; }
+.note:first-child { border-top: 0; padding-top: 0; }
+.note-head { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; font-size: 11.5px; }
+.note-who { font-weight: 600; color: #181818; }
+.note-page { color: #747474; }
+.note-when { margin-left: auto; color: #9a9a9a; }
+.note-body { margin: .3rem 0 0; font-size: 12.5px; color: #3b3b3b; }
+
+/* The reply is the half that makes this a loop rather than a suggestion box,
+   so it is indented under the note it answers rather than listed beside it. */
+.note-reply {
+    margin: .4rem 0 0 .6rem;
+    padding-left: .6rem;
+    border-left: 2px solid #d7e5f5;
+    font-size: 12.5px;
+    color: #3b3b3b;
+}
+.note-reply-k {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #0b3d75;
+}
+.note-ask { margin: .35rem 0 0; font-size: 11.5px; font-weight: 600; color: #a1500a; }
+
+.note-pill {
+    padding: .05rem .4rem;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 600;
+}
+.note-pill--new             { background: #dce9fb; color: #0b3d75; }
+.note-pill--needs-more-info { background: #fdeacb; color: #7a4a05; }
+.note-pill--in-progress     { background: #ece3fb; color: #43308a; }
+.note-pill--resolved        { background: #d7f0e0; color: #14532d; }
+.note-pill--declined        { background: #ececec; color: #545454; }
