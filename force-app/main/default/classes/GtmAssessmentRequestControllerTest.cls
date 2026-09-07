@@ -1175,4 +1175,89 @@ private class GtmAssessmentRequestControllerTest {
         // guard means this path issues no GTM_Form_Draft__c query or DML at
         // all, and a stray exception there would have surfaced as a failure.
     }
+
+    // ----------------------------------------------------- offering scoping
+    //
+    // ADR-0007 section 3: the offering key is resolved server-side, once, and
+    // stamped on the request at insert. Never client-supplied.
+
+    private static GTM_Saved_Configuration__c linkFor(String offeringKey) {
+        Account acc = new Account(Name = 'Northwind Retail');
+        insert acc;
+        GTM_Saved_Configuration__c cfg = new GTM_Saved_Configuration__c(
+            Offering__c      = offeringKey,
+            Company__c       = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Account__c       = acc.Id,
+            OwnerId          = UserInfo.getUserId()
+        );
+        insert cfg;
+        return cfg;
+    }
+
+    @isTest
+    static void aDirectBookingWithNoLinkIsStampedMigrationAccelerator() {
+        // The fallback: migration-accelerator is the only offering that has
+        // ever been assessed, so it is the honest answer rather than a guess.
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        Test.startTest();
+        GtmAssessmentRequestController.submitRequest(sampleInput());
+        Test.stopTest();
+
+        List<GTM_Assessment_Request__c> reqs = [
+            SELECT Offering_Key__c, Source__c FROM GTM_Assessment_Request__c
+        ];
+        Assert.areEqual(1, reqs.size());
+        Assert.areEqual('migration-accelerator', reqs[0].Offering_Key__c);
+    }
+
+    @isTest
+    static void theLinksOwnOfferingIsWhatGetsStamped() {
+        // The whole point: a request booked against a second offering's
+        // engagement link is that offering's, not Migration Accelerator's.
+        GTM_Saved_Configuration__c cfg = linkFor('second-offering');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = cfg.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        List<GTM_Assessment_Request__c> reqs = [
+            SELECT Offering_Key__c FROM GTM_Assessment_Request__c
+        ];
+        Assert.areEqual(1, reqs.size());
+        Assert.areEqual('second-offering', reqs[0].Offering_Key__c,
+            'The engagement link\'s own offering decides which instrument scored this');
+    }
+
+    @isTest
+    static void aNonMigrationOfferingIsNeverPairGated() {
+        // ADR-0007 section 5: "can the accelerator process this platform move"
+        // is a migration business rule. An offering that is not a migration
+        // gets the inert, never-evaluated verdict, so no tier is ever
+        // suppressed on it by a gate that does not apply.
+        GTM_Saved_Configuration__c cfg = linkFor('second-offering');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = cfg.Id;
+        // A source/target combination Migration Accelerator would refuse.
+        input.currentPlatform = 'Some Platform The Accelerator Cannot Process';
+        input.targetPlatform  = 'Another One';
+
+        Test.startTest();
+        GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        List<GTM_Assessment_Request__c> reqs = [
+            SELECT Assessment_Advisory__c, Advisory_Reason__c
+            FROM GTM_Assessment_Request__c
+        ];
+        Assert.areEqual(1, reqs.size());
+        Assert.isFalse(reqs[0].Assessment_Advisory__c,
+            'The migration pair gate must not fire for a non-migration offering');
+        Assert.isNull(reqs[0].Advisory_Reason__c);
+    }
 }

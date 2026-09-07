@@ -729,4 +729,95 @@ private class GtmAssessmentInstrumentTest {
         System.assertEquals(GtmAssessmentScoring.MIN_TOTAL_SCORE, f.bands[0].lowest);
         System.assertEquals(GtmAssessmentScoring.MAX_TOTAL_SCORE, f.bands[3].highest);
     }
+
+    // ------------------------------------------------------ offering isolation
+    //
+    // The unit-level half of ADR-0007's isolation proof (the QA protocol
+    // repeats it end-to-end against real deployed metadata). These use the
+    // REAL question rows for a non-migration-accelerator offering rather than
+    // the @TestVisible seams, because what is being proved is precisely that
+    // the offering filter is applied -- a seam that returns rows regardless of
+    // offering would prove nothing about it.
+
+    @IsTest
+    static void anUnknownOfferingGetsAnEmptyFrameRatherThanMigrationAcceleratorsEight() {
+        // The single most important negative result in this change. An offering
+        // with no content of its own must render NOTHING, not Migration
+        // Accelerator's eight dimensions wearing another offering's name --
+        // that silent borrow is the leak the whole ADR exists to prevent, and
+        // it is exactly what a "sensible default" in baseSlots would reintroduce.
+        GtmAssessmentInstrument.resetCache();
+        GtmAssessmentQuestions.resetCache();
+
+        GtmAssessmentInstrument.Pack pack =
+            GtmAssessmentInstrument.basePack('an-offering-that-does-not-exist');
+
+        Assert.areEqual(0, pack.slots.size(),
+            'An offering with no question rows borrows nothing');
+        Assert.areEqual(0, pack.complexityDimensions.size(),
+            'Neither axis borrows');
+
+        Set<String> maKeys = new Set<String>(GtmAssessmentScoring.DIMENSIONS);
+        for (GtmAssessmentInstrument.Slot slot : pack.slots) {
+            Assert.isFalse(maKeys.contains(slot.key),
+                'LEAK: an unknown offering resolved a Migration Accelerator key');
+        }
+    }
+
+    @IsTest
+    static void migrationAcceleratorStillResolvesItsOwnEightFromRealMetadata() {
+        // The other direction, and the regression guard on the change: the only
+        // offering that exists must be exactly as it was.
+        GtmAssessmentInstrument.resetCache();
+        GtmAssessmentQuestions.resetCache();
+
+        GtmAssessmentInstrument.Pack pack =
+            GtmAssessmentInstrument.basePack('migration-accelerator');
+
+        Assert.areEqual(8, pack.slots.size(), 'Migration Accelerator keeps its eight slots');
+        Assert.areEqual(6, pack.complexityDimensions.size(), 'and its six complexity dimensions');
+        for (Integer i = 0; i < GtmAssessmentScoring.DIMENSIONS.size(); i++) {
+            Assert.areEqual(GtmAssessmentScoring.DIMENSIONS[i], pack.slots[i].baseKey,
+                'in the same order');
+        }
+    }
+
+    @IsTest
+    static void pairsAndOverridesAreScopedToTheOfferingThatAuthoredThem() {
+        // Reads real deployed metadata: every GTM_Assessment_Pair__mdt row in
+        // the org is migration-accelerator's, so another offering must resolve
+        // an empty chain rather than inheriting it.
+        GtmAssessmentInstrument.resetCache();
+        GtmAssessmentQuestions.resetCache();
+
+        GtmAssessmentInstrument.Pack ma =
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack other =
+            GtmAssessmentInstrument.resolve('an-offering-that-does-not-exist', 'hubspot', 'sfmc_next');
+
+        Assert.isFalse(ma.resolutionChain.isEmpty(),
+            'Migration Accelerator still resolves a chain from its own pairs');
+        Assert.isTrue(other.resolutionChain.isEmpty(),
+            'LEAK: another offering resolved a chain from pairs it does not own');
+        Assert.areEqual(0, other.supplements.size(),
+            'LEAK: another offering inherited supplements');
+        Assert.areEqual(0, other.gates.size(),
+            'LEAK: another offering inherited gates');
+    }
+
+    @IsTest
+    static void getFrameIsResolvedPerOfferingRatherThanServedFromOneSharedAnswer() {
+        GtmAssessmentInstrument.resetCache();
+        GtmAssessmentQuestions.resetCache();
+
+        GtmAssessmentInstrument.Frame ma =
+            GtmAssessmentInstrument.getFrame('migration-accelerator');
+        GtmAssessmentInstrument.Frame other =
+            GtmAssessmentInstrument.getFrame('an-offering-that-does-not-exist');
+
+        Assert.areEqual(8, ma.slotCount);
+        Assert.areEqual(32, ma.maxTotal, 'Migration Accelerator is still out of 32');
+        Assert.areEqual(0, other.slotCount,
+            'An offering with no content reports no slots rather than borrowing eight');
+    }
 }

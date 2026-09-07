@@ -634,4 +634,163 @@ private class GtmAssessmentScoringTest {
             Assert.areEqual(b.tier, GtmAssessmentScoring.tierFor(b.highest));
         }
     }
+
+    // --------------------------------------------------- the per-offering frame
+    //
+    // ADR-0007: the frame stopped being a compiled singleton. These prove the
+    // two halves of that -- an offering's own GTM_Assessment_Frame__mdt record
+    // is honoured, and every way of NOT having a usable one falls back to the
+    // constants above rather than throwing or inventing a scale.
+
+    private static GTM_Assessment_Frame__mdt frameRecord(
+        String offeringKey, Integer minValue, Integer maxValue, String bandsJson
+    ) {
+        return new GTM_Assessment_Frame__mdt(
+            Offering_Key__c    = offeringKey,
+            Min_Answer_Value__c = minValue,
+            Max_Answer_Value__c = maxValue,
+            Bands_JSON__c      = bandsJson
+        );
+    }
+
+    @isTest
+    static void anOfferingWithNoFrameRecordScoresAgainstTheCompiledConstants() {
+        // The path EVERY migration-accelerator submission takes in production,
+        // because no frame record is deployed for it and none is meant to be.
+        // Its absence is what proves the fallback, so this is the well-trodden
+        // path rather than an error branch (ADR-0007 section 6).
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        GtmAssessmentScoring.Score scored =
+            GtmAssessmentScoring.score('migration-accelerator', allAt(4));
+
+        Assert.areEqual(32, scored.total, 'Falls back to the compiled 8 x 4');
+        Assert.areEqual(32, scored.maxTotal);
+        Assert.areEqual(GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier);
+    }
+
+    @isTest
+    static void anOfferingNobodyHasConfiguredAlsoFallsBackRatherThanFailing() {
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>{
+            frameRecord('some-other-offering', 1, 5, null)
+        };
+        GtmAssessmentFrames.resetCache();
+
+        GtmAssessmentScoring.Score scored =
+            GtmAssessmentScoring.score('an-offering-with-no-row', allAt(4));
+
+        Assert.areEqual(32, scored.total, 'No row for THIS offering means the fallback');
+        Assert.areEqual(GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier);
+    }
+
+    @isTest
+    static void anOfferingsOwnBandsDecideItsTier() {
+        // Same answers, same total, a different tier -- because the offering
+        // authored different edges. This is the whole point of the ADR: a
+        // second offering's frame does not have to resemble this one's.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>{
+            frameRecord('second-offering', 1, 4,
+                '[{"tier":"Low","lowest":8,"highest":30},' +
+                 '{"tier":"High","lowest":31,"highest":32}]')
+        };
+        GtmAssessmentFrames.resetCache();
+
+        GtmAssessmentScoring.Score fixture =
+            GtmAssessmentScoring.score('second-offering', allAt(3));
+        Assert.areEqual(24, fixture.total);
+        Assert.areEqual('Low', fixture.tier, 'Banded by the offering\'s own edges');
+
+        // The same 24 is Accelerator-Ready on Migration Accelerator's edges.
+        Assert.areEqual(
+            GtmAssessmentScoring.TIER_ACCELERATOR_READY,
+            GtmAssessmentScoring.score('migration-accelerator', allAt(3)).tier,
+            'The same total bands differently per offering, which is the point'
+        );
+    }
+
+    @isTest
+    static void aMalformedBandsJsonFallsBackRatherThanThrowing() {
+        // Every shape of broken: unparseable, a gap, a descent, and not a list.
+        // Each must leave the offering scoring on the compiled bands rather
+        // than half-banded -- a band set with a gap puts some totals in no band
+        // at all, which is worse than the wrong band.
+        for (String bad : new List<String>{
+            'not json at all',
+            '[]',
+            '{"tier":"Only","lowest":8,"highest":32}',
+            '[{"tier":"A","lowest":8,"highest":14},{"tier":"B","lowest":20,"highest":32}]',
+            '[{"tier":"A","lowest":8,"highest":14},{"tier":"B","lowest":10,"highest":32}]',
+            '[{"tier":"A","lowest":8}]'
+        }) {
+            GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>{
+                frameRecord('broken-offering', 1, 4, bad)
+            };
+            GtmAssessmentFrames.resetCache();
+
+            GtmAssessmentScoring.Score scored =
+                GtmAssessmentScoring.score('broken-offering', allAt(4));
+
+            Assert.areEqual(32, scored.total, 'Still scores: ' + bad);
+            Assert.areEqual(
+                GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier,
+                'Falls back to the compiled bands rather than half-banding: ' + bad
+            );
+        }
+    }
+
+    @isTest
+    static void aBlankOrNullOfferingKeyIsTheCompiledFrame() {
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>{
+            frameRecord('second-offering', 1, 9, '[{"tier":"X","lowest":8,"highest":72}]')
+        };
+        GtmAssessmentFrames.resetCache();
+
+        Assert.areEqual(32, GtmAssessmentScoring.score(null, allAt(4)).total);
+        Assert.areEqual(32, GtmAssessmentScoring.score('', allAt(4)).total);
+    }
+
+    @isTest
+    static void theRebuildRatioAnnotationIsMigrationAcceleratorsAlone() {
+        // Not generalised, per ADR-0007 section 6: it is keyed on three
+        // dimension names no other offering is required to have, and it is
+        // business judgement about migrations rather than generic config.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        Map<String, Integer> atFloor = allAtExcept(4, new Map<String, Integer>{
+            GtmAssessmentScoring.DIM_ORCHESTRATION => 1,
+            GtmAssessmentScoring.DIM_CONTENT       => 1
+        });
+
+        Assert.areEqual(
+            1,
+            GtmAssessmentScoring.score('migration-accelerator', atFloor).annotations.size(),
+            'Migration Accelerator still annotates'
+        );
+        Assert.areEqual(
+            0,
+            GtmAssessmentScoring.score('second-offering', atFloor).annotations.size(),
+            'Another offering gets no migration-specific annotation'
+        );
+    }
+
+    @isTest
+    static void theAccessGateIsMigrationAcceleratorsAlone() {
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        Map<String, Integer> noAccess = allAtExcept(4, new Map<String, Integer>{
+            GtmAssessmentScoring.DIM_SOURCE_ACCESS => 1
+        });
+
+        Assert.isTrue(
+            GtmAssessmentScoring.score('migration-accelerator', noAccess).cappedByAccessGate,
+            'Migration Accelerator still caps at Discovery First without source access'
+        );
+        Assert.isFalse(
+            GtmAssessmentScoring.score('second-offering', noAccess).cappedByAccessGate,
+            'An offering that is not a migration has no source platform to lack access to'
+        );
+    }
 }
