@@ -6,7 +6,17 @@
 `force-app/main/default/classes/GtmPageContentController.cls`, plus the
 `gtmContentManager` orientation-banner changes the plan (§4) required in
 the same commit.
-**Verdict: NOT APPROVED.**
+**Original verdict (this pass): NOT APPROVED — superseded, see
+`offering-bug-qa-approval.md` for the round-2 re-verification and final
+APPROVED verdict.**
+
+**Resolution (round 2, same day):** The Blocker below was a transient
+deploy-timing race, not a lasting defect — confirmed independently by
+re-retrieving the deployed class and re-running the exact functional
+scenario with a fresh test offering. See
+`docs/agent-artifacts/offering-bug-qa-approval.md` for the full re-check.
+This document is kept as-is (the round-1 finding was real and reproducible
+at the time) for the record of what was caught and why.
 
 ---
 
