@@ -1,6 +1,6 @@
 # ADR-0007 — The assessment instrument becomes per-offering, not a global singleton
 
-**Status:** Proposed
+**Status:** Accepted — implemented, phases 0-5, deployed to gtm-dev.
 
 ## Context
 

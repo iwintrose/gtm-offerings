@@ -167,6 +167,25 @@ would only move part of the solution. Full reasoning: ADR-0001.
 
 Shape: instrument authoring → branching questionnaire → server-side scoring
 → auto-generated readout → native Approval Process → guest-viewable publish.
+
+**Per-offering since ADR-0007.** The instrument is no longer a global
+singleton hardcoded to Migration Accelerator. Every offering gets a fully
+independent instrument — its own dimensions, questions, scoring frame, gates
+and branching, in its own `migration-accelerator/instrument/<offering-key>/`
+directory, with `Offering_Key__c` on all five content CMDT types and on
+`GTM_Assessment_Request__c`. `GTM_Assessment_Frame__mdt` holds one record per
+offering carrying the scale and band edges; **no record exists for
+`migration-accelerator` and none should be created** — its absence is what
+exercises the Apex fallback to the compiled constants, and that fallback is
+the path every production assessment takes today. Two rules stay
+Migration-Accelerator-only on purpose and are **not** generalised: the
+rebuild-ratio annotation / source-access cap in `GtmAssessmentScoring`, and
+the `GtmMigrationPairs` platform-eligibility gate (ADR-0007 §5, §6). The
+hard boundary to preserve when touching any of this: **an offering that
+resolves to no instrument must score nothing, never fall back to another
+offering's dimension keys** — a confident score against questions the
+respondent was never asked is worse than no score, and that leak has already
+been introduced and caught once.
 Full detail lives in `docs/runbooks/assessment-instrument.md` and
 `docs/runbooks/readout-public-link.md` — read those, don't ask this file to
 repeat them. The approval process is `GTM_Readout_Approval`
@@ -181,7 +200,7 @@ can't `grep` for like Apex or LWC.
 | Feature specs | `docs/specs/` — pre-rename (`MA_`), verify names against code first |
 | Runbooks | `docs/runbooks/`: `assessment-instrument.md` (instrument content/scoring), `readout-public-link.md` (readout link, approval, guest security), `questionnaire-resume.md` (save/resume), `fresh-org-deploy.md` (from-zero deploy, unverified), `experience-site-lifecycle.md` (deleting a component a site still references) |
 | Decision log | `docs/backlog.md` — a jot pad, not architecture doc; updated every session |
-| Architecture | `docs/architecture/overview.md` + `docs/architecture/adr/0001`–`0006` |
+| Architecture | `docs/architecture/overview.md` + `docs/architecture/adr/0001`–`0007` |
 | Deploy | `DEPLOYMENT.md` first; `docs/runbooks/fresh-org-deploy.md` for the from-zero case |
 
 ## 9. Commands

@@ -499,6 +499,25 @@ uses the live link today. **Not fixed. Needs a real decision** — promote
 answers — each a different size of change, not this session's to pick
 unilaterally.
 
+*Update (ADR-0007, per-offering instrument):* what "fixed" has to include has
+changed slightly, though none of the above is invalidated.
+`GtmAssessmentInstrument.getPack`, `GtmAssessmentScoring.score`,
+`GtmEstateComplexity.score` and `GtmAssessmentQuestions.getQuestionnaire` now
+all take a required `offeringKey`, and an offering that resolves to no
+instrument scores **nothing** rather than falling back to Migration
+Accelerator's eight dimensions — deliberately, since a confident score against
+another offering's questions is worse than no score. So a D11 fix that wires
+`gtmConfigBooking` to collect and send real answers must also thread an
+offering key through. The good news is that it already has one available and
+needs no new plumbing: `gtmConfigBooking` is reached from a saved,
+offering-tagged engagement link, and `GtmAssessmentRequestController`'s
+existing `resolveConfigContext` → `resolveOfferingKey` path already reads
+`GTM_Saved_Configuration__c.Offering__c` and stamps
+`GTM_Assessment_Request__c.Offering_Key__c` on every submission. This is an
+assumption D11's implementer should **verify** rather than rediscover — not
+new work D11 inherits. See
+`docs/agent-artifacts/per-offering-instrument-plan.md` §6.
+
 **D12 — Industry Chooser's generic "Add section" path is now closed, and there
 is no purpose-built replacement.** Landed while implementing the Content
 Manager IA plan (`docs/agent-artifacts/content-manager-ia-plan.md` §3.5):
