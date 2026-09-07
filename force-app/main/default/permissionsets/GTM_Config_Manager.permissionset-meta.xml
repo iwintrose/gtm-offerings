@@ -152,6 +152,38 @@
         <object>GTM_Readout_Version__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
+    <!-- GTM_Readout_Version__c: object CRUD was granted above with no field
+         grants alongside it, so nothing could actually read a version
+         snapshot's content outside a compiled Apex class's own unenforced
+         SOQL - confirmed missing against gtm-dev. Readout__c is not among
+         these: it is the object's MasterDetail parent link, implicitly
+         required, and (like every other required field here) cannot take an
+         explicit fieldPermissions grant at all. -->
+    <fieldPermissions>
+        <field>GTM_Readout_Version__c.Change_Summary__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout_Version__c.Data_Snapshot__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout_Version__c.Snapshot__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout_Version__c.Status_At_Snapshot__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Readout_Version__c.Version_Number__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
     <fieldPermissions>
         <field>GTM_Saved_Configuration__c.Presentation_Stage__c</field>
         <readable>true</readable>
@@ -566,6 +598,19 @@
         <editable>true</editable>
         <field>GTM_Assessment_Request__c.Instrument_Max_Score__c</field>
         <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <!-- Not required (see the field's own header: an orphan readout with
+             no assessment link is a real, supported state, routed to
+             GTM_Readout_Triage) - so, unlike Offering_Key__c and Status__c,
+             it needs an explicit grant rather than getting implicit FLS from
+             being required. Confirmed missing against gtm-dev: rep-facing
+             reads of this field (anything not going through a compiled Apex
+             class's own unenforced SOQL) failed with "No such column" until
+             this was added. -->
+        <field>GTM_Readout__c.Assessment_Request__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
         <field>GTM_Readout__c.Opportunity__c</field>
