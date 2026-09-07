@@ -1,8 +1,15 @@
 /**
  * Apex backing for maStageActions LWC and the GTM_Config_Send_To_Client flow.
  *
- * Manages the Presentation_Stage__c lifecycle on GTM_Saved_Configuration__c
- * and sends the proposal email to the client when the rep triggers "Send".
+ * Manages the Presentation_Stage__c lifecycle on GTM_Saved_Configuration__c.
+ * advanceStage() only moves the stage; the proposal email to the client is
+ * sent exclusively by the org's "GTM Config — Send To Client" record-triggered
+ * flow, which fires on that same update and calls the sendProposalEmails
+ * invocable below. advanceStage() deliberately does NOT call the send path
+ * itself -- doing so alongside the flow would email the client twice for a
+ * single Send action. Keep this a single trigger point: if the send ever
+ * needs to move back into Apex, deactivate/remove the flow's action call in
+ * the same change rather than having both fire.
  *
  * Runs without sharing — config managers (internal users) need to read/write
  * client config records regardless of ownership. The entry points are narrow
@@ -71,8 +78,10 @@ public without sharing class GtmStageActionsController {
     }
 
     /**
-     * Advances the stage and, when transitioning to Sent, sends the proposal
-     * email to the requester.
+     * Advances the stage. Sending the proposal email on a transition to Sent
+     * is NOT done here -- see the class header. The
+     * GTM_Config_Send_To_Client flow reacts to this same `update` and owns
+     * the send.
      */
     @AuraEnabled
     public static void advanceStage(String configId, String newStage) {
@@ -93,13 +102,13 @@ public without sharing class GtmStageActionsController {
 
         cfg.Presentation_Stage__c = newStage;
         update cfg;
-
-        if ('Sent'.equals(newStage) && String.isNotBlank(cfg.Generated_URL__c)) {
-            sendProposalEmailIfPresent(resolvedId, cfg.Generated_URL__c);
-        }
     }
 
-    // ── Flow invocable (fallback / scheduled re-sends) ────────────────────────
+    // ── Flow invocable (sole trigger point for the proposal email) ────────────
+    // Called by the GTM_Config_Send_To_Client record-triggered flow only.
+    // Do not also call this (or sendProposalEmailIfPresent) directly from
+    // advanceStage() or anywhere else that flow already covers -- that is
+    // exactly the double-send bug this class' header warns about.
 
     public class SendEmailInput {
         @InvocableVariable(required=true label='Config Id')

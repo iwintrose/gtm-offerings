@@ -180,15 +180,13 @@ private class GtmStageActionsControllerTest {
         // Email Invocations check taken after it no longer reflects what
         // happened inside.
         //
-        // Two, not one: the record-triggered flow GTM_Config_Send_To_Client
-        // (RecordAfterSave on Presentation_Stage__c = Sent) fires on the
-        // `update cfg;` inside advanceStage() and calls the same
-        // sendProposalEmails invocable that advanceStage() also calls
-        // directly afterward -- so a rep advancing a config to Sent currently
-        // emails the client twice. That looks like an unintended duplicate
-        // send rather than the intended behavior; flagged in the delivery
-        // report rather than changed here per the "tests only" guardrail.
-        Assert.areEqual(2, Limits.getEmailInvocations(), 'Both the flow and advanceStage() attempt a send');
+        // Exactly one: advanceStage() no longer sends the email itself. The
+        // record-triggered flow GTM_Config_Send_To_Client (RecordAfterSave on
+        // Presentation_Stage__c = Sent) fires on the `update cfg;` inside
+        // advanceStage() and is the sole caller of the sendProposalEmails
+        // invocable. See the class header for why advanceStage() must never
+        // also call it directly.
+        Assert.areEqual(1, Limits.getEmailInvocations(), 'Only the flow should attempt a send');
         Test.stopTest();
 
         GTM_Saved_Configuration__c after = [
@@ -283,8 +281,8 @@ private class GtmStageActionsControllerTest {
         Test.startTest();
         GtmStageActionsController.advanceStage(cfg.Id, 'Sent');
         // See advanceStage_toSentWithRequesterEmail_sendsProposalEmail for why
-        // this is 2, not 1 (the Send_To_Client flow duplicates the send).
-        Assert.areEqual(2, Limits.getEmailInvocations(), 'A blank name/company should not block either send');
+        // this is 1 (the flow is the sole sender).
+        Assert.areEqual(1, Limits.getEmailInvocations(), 'A blank name/company should not block the flow-driven send');
         Test.stopTest();
     }
 
