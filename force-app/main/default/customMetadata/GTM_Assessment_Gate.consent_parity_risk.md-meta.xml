@@ -4,6 +4,10 @@
     <label>consent_parity_risk</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Key__c</field>
         <value xsi:type="xsd:string">consent_parity_risk</value>
     </values>

@@ -4,6 +4,10 @@
     <label>any_to_mcn_consent_portability</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Pair__c</field>
         <value xsi:type="xsd:string">any_to_mcn</value>
     </values>

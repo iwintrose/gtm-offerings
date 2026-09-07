@@ -4,6 +4,10 @@
     <label>hubspot_to_sfmc_complexity_busine_a49c24</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Pair__c</field>
         <value xsi:type="xsd:string">hubspot_to_sfmc</value>
     </values>
@@ -49,7 +53,7 @@
     </values>
     <values>
         <field>Rationale__c</field>
-        <value xsi:type="xsd:string">migration-accelerator/capabilities/platforms/hubspot.yaml — the tenancy nouns the object catalogue and infrastructure.tier_gating use (portals, and Enterprise-only business units), replacing the base wording&apos;s &quot;child accounts&quot;, which is not a HubSpot construct at all. LAYER 1: the bands are untouched (one / two to five / six or more) because the thing being counted is the same thing — separate brand containers, each of which becomes its own destination business unit and its own adapter run per docs/specs/tier-2/sfmc-target-adapter.md §7.1. This is the one complexity dimension with no readiness slot beside it, so there was nothing to disentangle; it needed HubSpot&apos;s vocabulary and nothing more. Distinct from the target_bu_structure supplement in migration-accelerator/instrument/supplements/sfmc_classic_readiness.yaml, which asks the opposite question about the DESTINATION tenant.</value>
+        <value xsi:type="xsd:string">migration-accelerator/capabilities/platforms/hubspot.yaml — the tenancy nouns the object catalogue and infrastructure.tier_gating use (portals, and Enterprise-only business units), replacing the base wording&apos;s &quot;child accounts&quot;, which is not a HubSpot construct at all. LAYER 1: the bands are untouched (one / two to five / six or more) because the thing being counted is the same thing — separate brand containers, each of which becomes its own destination business unit and its own adapter run per docs/specs/tier-2/sfmc-target-adapter.md §7.1. This is the one complexity dimension with no readiness slot beside it, so there was nothing to disentangle; it needed HubSpot&apos;s vocabulary and nothing more. Distinct from the target_bu_structure supplement in migration-accelerator/instrument/migration-accelerator/supplements/sfmc_classic_readiness.yaml, which asks the opposite question about the DESTINATION tenant.</value>
     </values>
     <values>
         <field>Active__c</field>

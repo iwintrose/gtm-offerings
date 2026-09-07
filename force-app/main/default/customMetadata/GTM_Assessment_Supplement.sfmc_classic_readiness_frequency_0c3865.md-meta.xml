@@ -4,6 +4,10 @@
     <label>sfmc_classic_readiness_frequency_0c3865</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Set_Key__c</field>
         <value xsi:type="xsd:string">sfmc_classic_readiness</value>
     </values>

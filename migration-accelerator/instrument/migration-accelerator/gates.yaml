@@ -60,9 +60,9 @@ gates:
       SKU / org-model dependencies called out under external dependencies.
       TARGET LIST NARROWED TO sfmc_next, and for two independent reasons, either of
       which alone would be enough. First the predicate: core_footprint is declared
-      only in migration-accelerator/instrument/supplements/mcn_readiness.yaml, and
+      only in migration-accelerator/instrument/migration-accelerator/supplements/mcn_readiness.yaml, and
       that set is fired only by packs whose target is sfmc_next
-      (migration-accelerator/instrument/pairs/any_to_mcn.yaml, hubspot_to_mcn.yaml,
+      (migration-accelerator/instrument/migration-accelerator/pairs/any_to_mcn.yaml, hubspot_to_mcn.yaml,
       sfmc_to_mcn.yaml). No classic-MCE pack fires it — eloqua_to_sfmc.yaml declares no
       supplement sets and hubspot_to_sfmc.yaml fires sfmc_classic_readiness plus
       hubspot_context — so on an sfmc target the clause could only ever be false and

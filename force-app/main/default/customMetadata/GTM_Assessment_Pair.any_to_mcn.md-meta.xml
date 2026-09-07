@@ -4,6 +4,10 @@
     <label>any_to_mcn</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Source_Key__c</field>
         <value xsi:type="xsd:string">*</value>
     </values>

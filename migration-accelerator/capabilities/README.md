@@ -143,7 +143,7 @@ not in the manifest.
 
 ## Related files
 
-- `migration-accelerator/instrument/supplements/hubspot_context.yaml` — the two
+- `migration-accelerator/instrument/migration-accelerator/supplements/hubspot_context.yaml` — the two
   unscored HubSpot scope probes in the assessment instrument (`sequences_ownership`,
   `reporting_signoff`). Both map to gap patterns in `hubspot.yaml`
   (`sequences_out_of_scope`, `reporting_no_port_path`) and are cross-referenced from

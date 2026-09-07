@@ -4,6 +4,10 @@
     <label>hubspot_context_cms_scope_expectation</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Set_Key__c</field>
         <value xsi:type="xsd:string">hubspot_context</value>
     </values>
@@ -37,7 +41,7 @@
     </values>
     <values>
         <field>Rationale__c</field>
-        <value xsi:type="xsd:string">migration-accelerator/instrument/pairs/hubspot_to_sfmc.yaml — slot 4, which was rescoped to marketing email templates and personalisation only, and this probe is where the other half went. HubL is HubSpot&apos;s templating language and custom modules are the blocks built from it, and they are used in two migrations, not one: marketing emails are rebuilt in Content Builder by this engagement, while landing pages, site pages, blog and HubDB-driven pages are HubSpot CMS, which a marketing-automation move to Marketing Cloud Engagement typically does not touch — the client keeps HubSpot CMS or moves the web estate as a separate programme with its own sponsor. Scoring readiness on that overstated the engagement, so the scored slot dropped it and this asks it instead. UNSCORED for the same reason forward_looking_ambitions in migration-accelerator/instrument/supplements/sfmc_classic_readiness.yaml is unscored, and the reason is the same sentence: it is a scope-boundary question, not a readiness measure. A 1-3 would state that keeping HubSpot CMS is a degree of unreadiness, when it is frequently the correct and cheapest answer. Its output is a verbatim note feeding the readout&apos;s scope section, and it is the answer the hubdb_dependency callout in migration-accelerator/instrument/pairs/hubspot_to_sfmc.yaml is now explicitly conditional on. Asked before contract because the failure mode is a client who assumed their website was coming along finding out in week three.</value>
+        <value xsi:type="xsd:string">migration-accelerator/instrument/migration-accelerator/pairs/hubspot_to_sfmc.yaml — slot 4, which was rescoped to marketing email templates and personalisation only, and this probe is where the other half went. HubL is HubSpot&apos;s templating language and custom modules are the blocks built from it, and they are used in two migrations, not one: marketing emails are rebuilt in Content Builder by this engagement, while landing pages, site pages, blog and HubDB-driven pages are HubSpot CMS, which a marketing-automation move to Marketing Cloud Engagement typically does not touch — the client keeps HubSpot CMS or moves the web estate as a separate programme with its own sponsor. Scoring readiness on that overstated the engagement, so the scored slot dropped it and this asks it instead. UNSCORED for the same reason forward_looking_ambitions in migration-accelerator/instrument/migration-accelerator/supplements/sfmc_classic_readiness.yaml is unscored, and the reason is the same sentence: it is a scope-boundary question, not a readiness measure. A 1-3 would state that keeping HubSpot CMS is a degree of unreadiness, when it is frequently the correct and cheapest answer. Its output is a verbatim note feeding the readout&apos;s scope section, and it is the answer the hubdb_dependency callout in migration-accelerator/instrument/migration-accelerator/pairs/hubspot_to_sfmc.yaml is now explicitly conditional on. Asked before contract because the failure mode is a client who assumed their website was coming along finding out in week three.</value>
     </values>
     <values>
         <field>Active__c</field>

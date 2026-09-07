@@ -2,16 +2,26 @@
 """
 Compiles the instrument authoring files into Salesforce custom metadata.
 
-    migration-accelerator/instrument/dimensions.yaml       the fixed 8-slot frame
-    migration-accelerator/instrument/complexity.yaml       the fixed 6-dimension frame
-    migration-accelerator/instrument/gates.yaml            tier qualifiers
-    migration-accelerator/instrument/supplements/*.yaml    layer-4 question sets
-    migration-accelerator/instrument/pairs/*.yaml          one file per pair
+    migration-accelerator/instrument/<offering-key>/dimensions.yaml    the 8-slot frame
+    migration-accelerator/instrument/<offering-key>/complexity.yaml    the 6-dimension frame
+    migration-accelerator/instrument/<offering-key>/gates.yaml         tier qualifiers
+    migration-accelerator/instrument/<offering-key>/supplements/*.yaml layer-4 question sets
+    migration-accelerator/instrument/<offering-key>/pairs/*.yaml       one file per pair
 
         ->  force-app/main/default/customMetadata/GTM_Assessment_Pair.*.md-meta.xml
             force-app/main/default/customMetadata/GTM_Assessment_Dimension_Override.*.md-meta.xml
             force-app/main/default/customMetadata/GTM_Assessment_Supplement.*.md-meta.xml
             force-app/main/default/customMetadata/GTM_Assessment_Gate.*.md-meta.xml
+
+ONE DIRECTORY PER OFFERING (ADR-0007). Every immediate subdirectory of
+`instrument/` that contains a dimensions.yaml is an INDEPENDENT offering: all
+14 rules below run WITHIN one offering directory and never across two, and
+every emitted record is stamped with Offering_Key__c = the directory name.
+A second offering's instrument therefore has to hold together on its own
+terms, and cannot be validated against -- or accidentally satisfied by --
+Migration Accelerator's content. An offering's pairs/ and supplements/
+directories are optional; an offering wanting no adaptive layer authors a
+single pairs/base.yaml (source "*", target "*") and nothing else.
 
 WHY A BUILD STEP AT ALL. The generated XML is what deploys, but nobody can
 review it: a pair is ~15 files of <values><field>...</field></values> and the
@@ -105,6 +115,29 @@ POSTURE_RANK = {"interview_only": 0, "assisted": 1, "instrumented": 2}
 LAYERS = ("reword", "recalibrate", "substitute")
 INSTRUMENT_READINESS = "Readiness"
 INSTRUMENT_COMPLEXITY = "Complexity"
+# ---------------------------------------------------------------------------
+# MIGRATION ACCELERATOR'S FRAME, STILL GLOBAL. See the "open call" in
+# docs/agent-artifacts/per-offering-instrument-plan.md section 1.2 and
+# ADR-0007 section 2 / Consequences.
+#
+# The four constants below -- and the literal 8 / 1-8 slot checks and the
+# expect_max=4 readiness scale in main()'s validation body -- are Migration
+# Accelerator's frame, not the framework's. They are STILL GLOBAL PYTHON
+# CONSTANTS after the per-offering split, applied identically to every
+# offering directory. That is correct today, because migration-accelerator is
+# the only offering that exists and its shape is exactly these numbers.
+#
+# A SECOND offering with a different slot count or answer scale needs them
+# read per-offering-directory instead -- most naturally from that offering's
+# own dimensions.yaml/complexity.yaml (the slots/dimensions list length, and
+# each option set's own expect_max, all already present in the YAML), with
+# GTM_Assessment_Frame__mdt as the actual source of truth once a record for
+# that offering exists. That generalisation was DELIBERATELY NOT attempted
+# here: doing it speculatively means guessing at a shape, where doing it when
+# a real second offering is authored means proving it against an actual case.
+# Whoever opens the second offering directory: this is the change, and this
+# is why it was left for you.
+# ---------------------------------------------------------------------------
 # The complexity scale, mirrored from GtmEstateComplexity. Typed here rather than
 # derived because this is the check: if the two disagree, one of them is wrong
 # and the build is the place to find out.
@@ -125,13 +158,36 @@ MAX_REACHABILITY_FIELDS = 6
 errors = []
 warnings = []
 
+# Which offering directory the validation body is currently inside. Prefixed
+# onto every fail()/warn() location so a failure is traceable to the right
+# offering without touching the ~120 call sites that pass a file-relative
+# `where`.
+_offering_prefix = ""
+
 
 def fail(where, msg):
-    errors.append("%s: %s" % (where, msg))
+    errors.append("%s%s: %s" % (_offering_prefix, where, msg))
 
 
 def warn(where, msg):
-    warnings.append("%s: %s" % (where, msg))
+    warnings.append("%s%s: %s" % (_offering_prefix, where, msg))
+
+
+def offering_dirs():
+    """Every immediate subdirectory of INSTRUMENT that is an offering.
+
+    Keyed on the presence of a dimensions.yaml rather than on "is a directory",
+    so a stray file or a non-offering folder left at the old flat location is
+    never mistaken for an offering and silently validated as an empty one.
+    """
+    out = []
+    if not os.path.isdir(INSTRUMENT):
+        return out
+    for name in sorted(os.listdir(INSTRUMENT)):
+        path = os.path.join(INSTRUMENT, name)
+        if os.path.isdir(path) and os.path.exists(os.path.join(path, "dimensions.yaml")):
+            out.append((name, path))
+    return out
 
 
 # --------------------------------------------------------------- source root
@@ -176,14 +232,23 @@ def load_yaml(path):
         return yaml.safe_load(fh) or {}
 
 
-def base_questions():
-    """The base slot wording, read from the committed GTM_Assessment_Question rows.
+def base_questions(offering_key):
+    """One offering's base slot wording, from the committed GTM_Assessment_Question rows.
 
     Base wording is NOT duplicated into the YAML: it stays in custom metadata so
     a consultant can still reword a base question in Setup and deploy nothing.
     This build step reads those rows so the option-shape rule (2) covers them
     too -- otherwise the one option set nobody authored in YAML is the one
     nobody validates.
+
+    These rows are hand-authored per offering (this script only ever READS
+    them; it does not own GTM_Assessment_Question__mdt and does not write it --
+    see ADR-0007's second open call). The Offering_Key__c filter is what keeps
+    one offering's frame from being validated against, or accidentally
+    satisfied by, another offering's question rows: a row with no
+    Offering_Key__c belongs to no offering and is deliberately invisible here,
+    which surfaces as "slot X has no GTM_Assessment_Question row behind it"
+    rather than as a silent cross-offering match.
     """
     out = {}
     for name in sorted(os.listdir(CMD_DIR)):
@@ -195,6 +260,8 @@ def base_questions():
             f = v.find("{%s}field" % NS).text
             node = v.find("{%s}value" % NS)
             vals[f] = None if node is None else node.text
+        if (vals.get("Offering_Key__c") or "").strip() != offering_key:
+            continue
         key = (vals.get("Dimension_Key__c") or "").strip()
         if key:
             vals["__file"] = name
@@ -490,19 +557,25 @@ def developer_name(where, name):
 
 # ---------------------------------------------------------------------- main
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--check", action="store_true", help="validate and diff only")
-    ap.add_argument("--allow-missing-source-root", action="store_true",
-                    help="skip rule 5 when no ma-migrator working copy is present")
-    args = ap.parse_args()
+def build_offering(offering_key, idir, args, root, out, owner):
+    """Validate ONE offering directory and emit its records into `out`.
 
-    root = source_root()
-    if root is None and not args.allow_missing_source_root:
-        print("note: no ma-migrator working copy found; rule 5 (cited paths exist) "
-              "cannot run. Set MA_MIGRATOR_ROOT or pass --allow-missing-source-root.")
+    Every one of the 14 rules runs inside this call, over this directory's YAML
+    and this offering's GTM_Assessment_Question rows only. Nothing here can see
+    another offering's content, which is the point: a second offering's
+    instrument has to hold together on its own terms rather than borrowing
+    Migration Accelerator's shape or being validated against it.
 
-    frame = load_yaml(os.path.join(INSTRUMENT, "dimensions.yaml"))
+    `out` and `owner` are shared across offerings only so that two offerings
+    emitting the same record filename is caught (see the emit section) rather
+    than one silently overwriting the other -- a real hazard, since a
+    CustomMetadata DeveloperName is unique org-wide, not per-offering.
+    """
+    global _offering_prefix
+    _offering_prefix = "%s/" % offering_key
+    before = len(errors)
+
+    frame = load_yaml(os.path.join(idir, "dimensions.yaml"))
     slots = frame.get("slots") or []
     if len(slots) != 8:
         fail("dimensions.yaml", "the frame declares %d slots; it must declare 8" % len(slots))
@@ -512,7 +585,7 @@ def main():
         fail("dimensions.yaml", "slot positions are %r; expected 1-8" % positions)
 
     # ---- the second frame. Same shape, same reasons -- see complexity.yaml.
-    cframe = load_yaml(os.path.join(INSTRUMENT, "complexity.yaml"))
+    cframe = load_yaml(os.path.join(idir, "complexity.yaml"))
     cdims = cframe.get("dimensions") or []
     if len(cdims) != COMPLEXITY_DIMENSION_COUNT:
         fail("complexity.yaml", "the frame declares %d dimensions; it must declare %d"
@@ -544,7 +617,7 @@ def main():
     check_rationale("complexity.yaml", cframe.get("rationale"), root,
                     args.allow_missing_source_root)
 
-    questions = base_questions()
+    questions = base_questions(offering_key)
     readiness_keys = {k for k, v in questions.items() if v.get("Instrument__c") == "Readiness"}
     complexity_keys = {k for k, v in questions.items() if v.get("Instrument__c") == "Complexity"}
 
@@ -595,7 +668,7 @@ def main():
                  % COMPLEXITY_MAX_ANSWER)
 
     # ---- supplements
-    supp_dir = os.path.join(INSTRUMENT, "supplements")
+    supp_dir = os.path.join(idir, "supplements")
     sets = {}
     supplement_keys = set()
     for name in sorted(os.listdir(supp_dir)) if os.path.isdir(supp_dir) else []:
@@ -632,8 +705,11 @@ def main():
 
     # ---- pairs
     pairs = {}
-    pair_dir = os.path.join(INSTRUMENT, "pairs")
-    for name in sorted(os.listdir(pair_dir)):
+    pair_dir = os.path.join(idir, "pairs")
+    # An offering may legitimately have no pairs/ at all -- it then resolves
+    # to the base frame with no adaptive layer, which is exactly what
+    # ADR-0007 section 2 means by "branching is offering-specific".
+    for name in sorted(os.listdir(pair_dir)) if os.path.isdir(pair_dir) else []:
         if not name.endswith((".yaml", ".yml")):
             continue
         doc = load_yaml(os.path.join(pair_dir, name))
@@ -998,7 +1074,7 @@ def main():
                             "like a question that works." % o.get("dimension"))
 
     # ---- gates (rule 7)
-    gates = load_yaml(os.path.join(INSTRUMENT, "gates.yaml")).get("gates") or []
+    gates = load_yaml(os.path.join(idir, "gates.yaml")).get("gates") or []
     declared = {"source", "target"} | all_slot_keys | supplement_keys
     for g in gates:
         gwhere = "gates.yaml[%s]" % g.get("key")
@@ -1020,18 +1096,34 @@ def main():
         check_typography(gwhere, g.get("readout_block"), "readout_block")
         check_typography(gwhere, g.get("tier_qualifier"), "tier_qualifier")
 
-    if errors:
-        print("INSTRUMENT BUILD FAILED\n")
-        for e in errors:
-            print("  x " + e)
-        for w in warnings:
-            print("  ! " + w)
-        return 1
+    # A directory that failed validation emits nothing: the emit path below
+    # assumes the rules held. Other offerings are still validated (the caller
+    # reports every offering's failures at once, not just the first).
+    if len(errors) > before:
+        return
 
     # ---- emit
-    out = {}
+    def emit(name, body):
+        """Register one record file, refusing a cross-offering name collision.
+
+        A CustomMetadata DeveloperName is unique ORG-WIDE, not per offering, so
+        two offerings that both author a pair called `base`, or a gate called
+        `no_core_platform`, would otherwise have one silently overwrite the
+        other -- and the loser's absence would look exactly like content nobody
+        had written yet.
+        """
+        if name in out and owner.get(name) != offering_key:
+            fail(name, "record name is already emitted by offering %r. A "
+                       "CustomMetadata DeveloperName is unique org-wide, so two "
+                       "offerings cannot both author it; give this one an "
+                       "offering-distinct key." % owner.get(name))
+            return
+        out[name] = body
+        owner[name] = offering_key
+
     for pname, (_, doc) in sorted(pairs.items()):
-        out["GTM_Assessment_Pair.%s.md-meta.xml" % pname] = record(pname, [
+        emit("GTM_Assessment_Pair.%s.md-meta.xml" % pname, record(pname, [
+            ("Offering_Key__c", offering_key),
             ("Source_Key__c", doc.get("source")),
             ("Target_Key__c", doc.get("target")),
             ("Specificity__c", doc.get("specificity")),
@@ -1045,7 +1137,7 @@ def main():
             ("Version__c", doc.get("version")),
             ("Rationale__c", squash(doc.get("rationale"))),
             ("Active__c", bool(doc.get("active", True))),
-        ])
+        ]))
         for o in doc.get("overrides") or []:
             # A slot may now carry a default row AND several branch variants, so
             # the DeveloperName has to name the variant too. The default keeps
@@ -1055,7 +1147,8 @@ def main():
             if o.get("show_when") is not None:
                 dev = "%s_%s" % (dev, o.get("variant_key"))
             dev = safe_dev_name(dev)
-            out["GTM_Assessment_Dimension_Override.%s.md-meta.xml" % dev] = record(dev, [
+            emit("GTM_Assessment_Dimension_Override.%s.md-meta.xml" % dev, record(dev, [
+                ("Offering_Key__c", offering_key),
                 ("Pair__c", pname),
                 ("Instrument__c", INSTRUMENT_READINESS),
                 ("Dimension__c", o["dimension"]),
@@ -1077,14 +1170,15 @@ def main():
                 ("Variant_Order__c", o.get("variant_order")),
                 ("Rationale__c", squash(o.get("rationale"))),
                 ("Active__c", bool(o.get("active", True))),
-            ])
+            ]))
         # Complexity overrides share the table, distinguished by Instrument__c
         # rather than by a second custom metadata type. One merge path in
         # GtmAssessmentInstrument, one authoring shape, one set of rules --
         # a parallel object would have been a second thing to keep in step.
         for o in doc.get("complexity_overrides") or []:
             dev = safe_dev_name("%s_complexity_%s" % (pname, o["dimension"]))
-            out["GTM_Assessment_Dimension_Override.%s.md-meta.xml" % dev] = record(dev, [
+            emit("GTM_Assessment_Dimension_Override.%s.md-meta.xml" % dev, record(dev, [
+                ("Offering_Key__c", offering_key),
                 ("Pair__c", pname),
                 ("Instrument__c", INSTRUMENT_COMPLEXITY),
                 ("Dimension__c", o["dimension"]),
@@ -1099,11 +1193,12 @@ def main():
                 ("Respondent_Hint__c", squash(o.get("respondent_hint"))),
                 ("Rationale__c", squash(o.get("rationale"))),
                 ("Active__c", bool(o.get("active", True))),
-            ])
+            ]))
     for set_key, doc in sorted(sets.items()):
         for q in doc.get("questions") or []:
             dev = safe_dev_name("%s_%s" % (set_key, q["key"]))
-            out["GTM_Assessment_Supplement.%s.md-meta.xml" % dev] = record(dev, [
+            emit("GTM_Assessment_Supplement.%s.md-meta.xml" % dev, record(dev, [
+                ("Offering_Key__c", offering_key),
                 ("Set_Key__c", set_key),
                 ("Sort_Order__c", q.get("sort_order")),
                 ("Key__c", q["key"]),
@@ -1115,9 +1210,10 @@ def main():
                 ("Horizon_Driver__c", bool(q.get("horizon_driver"))),
                 ("Rationale__c", squash(q.get("rationale"))),
                 ("Active__c", bool(q.get("active", True))),
-            ])
+            ]))
     for g in gates:
-        out["GTM_Assessment_Gate.%s.md-meta.xml" % g["key"]] = record(g["key"], [
+        emit("GTM_Assessment_Gate.%s.md-meta.xml" % g["key"], record(g["key"], [
+            ("Offering_Key__c", offering_key),
             ("Key__c", g["key"]),
             ("Predicate_JSON__c", json.dumps(g.get("predicate"), separators=(",", ":"))),
             ("Tier_Qualifier__c", squash(g.get("tier_qualifier"))),
@@ -1125,7 +1221,43 @@ def main():
             ("Severity__c", g.get("severity")),
             ("Rationale__c", squash(g.get("rationale"))),
             ("Active__c", bool(g.get("active", True))),
-        ])
+        ]))
+
+
+def main():
+    global _offering_prefix
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--check", action="store_true", help="validate and diff only")
+    ap.add_argument("--allow-missing-source-root", action="store_true",
+                    help="skip rule 5 when no ma-migrator working copy is present")
+    args = ap.parse_args()
+
+    root = source_root()
+    if root is None and not args.allow_missing_source_root:
+        print("note: no ma-migrator working copy found; rule 5 (cited paths exist) "
+              "cannot run. Set MA_MIGRATOR_ROOT or pass --allow-missing-source-root.")
+
+    offerings = offering_dirs()
+    if not offerings:
+        _offering_prefix = ""
+        fail("instrument/", "no offering directories found. Each offering is an "
+                            "immediate subdirectory of migration-accelerator/"
+                            "instrument/ containing a dimensions.yaml.")
+
+    # ---- validate and emit, one offering at a time, in its own scope.
+    out = {}
+    owner = {}
+    for offering_key, idir in offerings:
+        build_offering(offering_key, idir, args, root, out, owner)
+    _offering_prefix = ""
+
+    if errors:
+        print("INSTRUMENT BUILD FAILED\n")
+        for e in errors:
+            print("  x " + e)
+        for w in warnings:
+            print("  ! " + w)
+        return 1
 
     # ---- Rule 14, which can only run once there is something to measure.
     for name, body in sorted(out.items()):
@@ -1138,6 +1270,12 @@ def main():
             print("  ! " + w)
         return 1
 
+    # Stale-file cleanup spans ALL offerings deliberately: `out` is now every
+    # offering's emitted records together, so a file that no longer appears in
+    # it -- because its offering's YAML stopped emitting it, or because its
+    # whole offering directory was deleted -- is still correctly stale. Scoping
+    # this per offering would leave a deleted offering's records orphaned in
+    # source and deployed in the org forever.
     stale, written = [], []
     existing = {n for n in os.listdir(CMD_DIR)
                 if n.split(".")[0] in ("GTM_Assessment_Pair", "GTM_Assessment_Dimension_Override",
@@ -1165,10 +1303,14 @@ def main():
             for n in written + stale:
                 print("  - " + n)
             return 1
-        print("Instrument up to date: %d records, all 14 rules hold." % len(out))
+        print("Instrument up to date: %d records across %d offering(s) (%s), "
+              "all 14 rules hold."
+              % (len(out), len(offerings), ", ".join(k for k, _ in offerings)))
         return 0
-    print("Instrument built: %d records (%d written, %d removed). All 14 rules hold."
-          % (len(out), len(written), len(stale)))
+    print("Instrument built: %d records across %d offering(s) (%s); %d written, "
+          "%d removed. All 14 rules hold."
+          % (len(out), len(offerings), ", ".join(k for k, _ in offerings),
+             len(written), len(stale)))
     return 0
 
 

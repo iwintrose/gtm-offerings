@@ -19,7 +19,7 @@ lives here, one command away, rather than in a paragraph of a runbook.
 
 WHAT IT CHANGES
 ---------------
-  migration-accelerator/instrument/pairs/<a>__<b>.yaml
+  migration-accelerator/instrument/migration-accelerator/pairs/<a>__<b>.yaml
       -> pairs/<a>_to_<b>.yaml, and the `name:` line inside it, which is what
          build-instrument.py actually reads (the filename is only a filename)
   force-app/main/default/customMetadata/GTM_Migration_Pair.<a>__<b>.md-meta.xml

@@ -3,6 +3,10 @@
     <label>Integration Surface</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Instrument__c</field>
         <value xsi:type="xsd:string">Complexity</value>
     </values>

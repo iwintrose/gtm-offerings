@@ -4,6 +4,10 @@
     <label>hubspot_to_sfmc_integration_containment</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Pair__c</field>
         <value xsi:type="xsd:string">hubspot_to_sfmc</value>
     </values>
@@ -69,7 +73,7 @@
     </values>
     <values>
         <field>Rationale__c</field>
-        <value xsi:type="xsd:string">migration-accelerator/capabilities/platforms/hubspot.yaml — forms_and_ctas_rebuild, &quot;Major for both, and largely target-independent — the hard part is the customer&apos;s web estate, not the target platform&quot;, and operations_hub_custom_code and ads_audience_sync, all three of which are things wired INTO the platform by somebody else. skills/mce-mcn-helper/references/skills/10-roadmap.md — the external-dependency and risk-register framing, where integrations owned outside marketing set the roadmap&apos;s outer bound, which is the anchor this scale is now built on. RECALIBRATED FROM LAYER 1, and the reason is the second axis rather than the manifest. The base anchors counted integrations (&quot;many external systems&quot;, &quot;several known&quot;, &quot;a handful&quot;, &quot;one or two&quot;), and migration-accelerator/instrument/complexity.yaml&apos;s integration_surface dimension counts them too — so a respondent met the same question twice, six screens apart, and could reasonably conclude the form was not paying attention. The two axes are genuinely different and the questions now say so: complexity asks HOW MANY are wired in, readiness asks WHO OWNS THEM and whether cutover waits on somebody else. That is the blast-radius risk the slot&apos;s theme names, it is not a size measure, and it is the answer that sets the roadmap&apos;s outer bound. The named examples are unchanged; only the scale moved.</value>
+        <value xsi:type="xsd:string">migration-accelerator/capabilities/platforms/hubspot.yaml — forms_and_ctas_rebuild, &quot;Major for both, and largely target-independent — the hard part is the customer&apos;s web estate, not the target platform&quot;, and operations_hub_custom_code and ads_audience_sync, all three of which are things wired INTO the platform by somebody else. skills/mce-mcn-helper/references/skills/10-roadmap.md — the external-dependency and risk-register framing, where integrations owned outside marketing set the roadmap&apos;s outer bound, which is the anchor this scale is now built on. RECALIBRATED FROM LAYER 1, and the reason is the second axis rather than the manifest. The base anchors counted integrations (&quot;many external systems&quot;, &quot;several known&quot;, &quot;a handful&quot;, &quot;one or two&quot;), and migration-accelerator/instrument/migration-accelerator/complexity.yaml&apos;s integration_surface dimension counts them too — so a respondent met the same question twice, six screens apart, and could reasonably conclude the form was not paying attention. The two axes are genuinely different and the questions now say so: complexity asks HOW MANY are wired in, readiness asks WHO OWNS THEM and whether cutover waits on somebody else. That is the blast-radius risk the slot&apos;s theme names, it is not a size measure, and it is the answer that sets the roadmap&apos;s outer bound. The named examples are unchanged; only the scale moved.</value>
     </values>
     <values>
         <field>Active__c</field>

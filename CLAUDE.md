@@ -26,10 +26,15 @@ in — there is no staging environment to make a mistake in first.
   `lwc`, `applications`, `tabs`, `permissionsets`, `approvalProcesses`,
   `customMetadata`, `experiences` (the Experience Cloud site), `flows`,
   `triggers`, `queues`, `profiles`, and more.
-- `migration-accelerator/instrument/*.yaml` — the assessment instrument's
-  source of truth (questions, scoring, gates, branching pairs). **Author the
-  YAML, never hand-edit the generated `force-app/main/default/customMetadata/
-  GTM_Assessment_*` XML** — it's compiled by `scripts/build-instrument.py`.
+- `migration-accelerator/instrument/<offering-key>/*.yaml` — the assessment
+  instrument's source of truth (questions, scoring, gates, branching pairs),
+  **one directory per offering** since ADR-0007; `migration-accelerator/` is
+  the only one today. **Author the YAML, never hand-edit the generated
+  `force-app/main/default/customMetadata/GTM_Assessment_*` XML** — it's
+  compiled by `scripts/build-instrument.py`, which validates each offering
+  directory independently and stamps `Offering_Key__c` onto every record.
+  The one exception is the 14 hand-authored `GTM_Assessment_Question.*`
+  records, which the build script only reads (see §7).
 - `migration-accelerator/*.html`, `index.html` (repo root) — a pre-Salesforce
   static-HTML prototype, not deployed anywhere in the current app. Left as-is
   in this pass; their fate (delete vs. keep) is an open call for a human, not
