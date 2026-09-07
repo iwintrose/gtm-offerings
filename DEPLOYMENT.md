@@ -9,20 +9,16 @@ different org, or bringing it back after this Developer Edition org expires,
 is the same operation as every deploy already done tonight -- there's no
 separate "export" step.
 
-**Current status (D6 `MA_` → `GTM_` rename):** Stages 1-4 are complete and
-fully `GTM_`-only. Stage 5 (the last one, `Saved_Configuration__c`) is
-functionally done as of this commit -- schema, Apex, LWCs, the record page,
-and data are all repointed at `GTM_Saved_Configuration__c` -- but the repo
-still carries `MA_Saved_Configuration__c` itself, its flow
-(`MA_Config_Send_To_Client`), and the `scripts/data/migrate-saved-
-configuration-to-gtm.apex` migration script, kept deliberately for the
-handful of already-distributed guest URLs that predate the rename (handled
-by `GtmLegacyConfigId.resolve()`, not by keeping the old object's data
-live). A deploy from this repo right now reproduces that same transitional
-state faithfully in a fresh org, which is a legitimate thing to deploy --
-it is not the intended permanent end state. Deleting the old object,
-retiring its flow, and dropping the migration script is the remaining work
-before this repo is purely `GTM_`.
+**Current status (D6 `MA_` → `GTM_` rename):** Complete. All five stages are
+done and the repo is purely `GTM_`-only -- `MA_Saved_Configuration__c`, its
+flow, and every permission-set/profile reference to it have been deleted.
+The handful of already-distributed guest URLs that predate the rename keep
+working through `GtmLegacyConfigId.resolve()`, which falls back to a
+`Legacy_Id__c` lookup on `GTM_Saved_Configuration__c` -- it does not depend
+on the old object existing. `scripts/data/migrate-saved-configuration-to-
+gtm.apex` is kept as a historical record of the one-time data migration,
+matching the convention for every other stage's migration script; it is not
+part of a fresh-org deploy path and doesn't need to be run again.
 
 ## Quick start
 
