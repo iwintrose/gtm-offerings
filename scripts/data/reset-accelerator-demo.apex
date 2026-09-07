@@ -9,10 +9,14 @@
  * case this intentionally won't touch; check before running if that's a
  * concern). Nothing else in the org is touched.
  *
- * Then rebuilds a coherent set: four FICTIONAL clients across four
- * industries (no real company by these names is implied), each with a
- * contact, one opportunity named by GtmDealNaming, one engagement link, and
- * a submission run through this app's own real Apex entry points --
+ * Then rebuilds a coherent set: four wholly invented clients across four
+ * industries -- names chosen to not match any real company (MUCH Music, TD
+ * Bank, Medtronic and LA Metro, used in an earlier version of this script,
+ * are all real companies and should never have been demo data; if you
+ * recognize a name below as real, treat that as a bug and change it) --
+ * each with a contact, one opportunity named by GtmDealNaming, one
+ * engagement link, and a submission run through this app's own real Apex
+ * entry points --
  * GtmSavedConfigurationController.saveConfiguration and
  * GtmAssessmentRequestController.submitRequest, the same calls the LWCs
  * make -- so scoring, notification defaults, and FLS all behave exactly as
@@ -27,7 +31,7 @@
  */
 
 // ─── 1. what this app owns, by name ──────────────────────────────────────────
-Set<String> DEMO_NAMES = new Set<String>{ 'MUCH Music (Demo)', 'TD Bank (Demo)', 'Medtronic (Demo)', 'LA Metro (Demo)' };
+Set<String> DEMO_NAMES = new Set<String>{ 'Northlight Media Group (Demo)', 'Ashford Capital Bank (Demo)', 'Solara Health Systems (Demo)', 'Harborline Transit Authority (Demo)' };
 
 List<Account> existingAccts = [SELECT Id FROM Account WHERE Name IN :DEMO_NAMES];
 Set<Id> appAccts = new Set<Id>();
@@ -64,10 +68,10 @@ delete [SELECT Id FROM Account WHERE Id IN :appAccts];
 // ─── 2. the clients ──────────────────────────────────────────────────────────
 // company | industry key | source | target | first | last | email | readiness value (1-4) | complexity value (1-3)
 List<List<String>> spec = new List<List<String>>{
-    new List<String>{'MUCH Music (Demo)','media','Eloqua','Salesforce Marketing Cloud','Marcus','Rivera','marcus.rivera@much-demo.example','2','2'},
-    new List<String>{'TD Bank (Demo)','fintech','Marketo','Salesforce Marketing Cloud','Angela','Chen','angela.chen@td-demo.example','3','2'},
-    new List<String>{'Medtronic (Demo)','medtech','Braze','Salesforce Marketing Cloud Next','Priya','Sundaram','priya.sundaram@medtronic-demo.example','4','1'},
-    new List<String>{'LA Metro (Demo)','transport','HubSpot','Salesforce Marketing Cloud','Paul','Johns','paul.johns@lametro-demo.example','1','3'}
+    new List<String>{'Northlight Media Group (Demo)','media','Eloqua','Salesforce Marketing Cloud','Marcus','Rivera','marcus.rivera@northlight-demo.example','2','2'},
+    new List<String>{'Ashford Capital Bank (Demo)','fintech','Marketo','Salesforce Marketing Cloud','Angela','Chen','angela.chen@ashford-demo.example','3','2'},
+    new List<String>{'Solara Health Systems (Demo)','medtech','Braze','Salesforce Marketing Cloud Next','Priya','Sundaram','priya.sundaram@solara-demo.example','4','1'},
+    new List<String>{'Harborline Transit Authority (Demo)','transport','HubSpot','Salesforce Marketing Cloud','Paul','Johns','paul.johns@harborline-demo.example','1','3'}
 };
 // Three of the four convert; the fourth opens the link and never submits.
 // That is deliberate -- a real deal that has interaction events but no
