@@ -262,6 +262,27 @@ public without sharing class GtmPageContentController {
             out.add(o);
             known.add(key);
         }
+
+        // The name an offering goes by is the name on the tile it publishes
+        // about itself -- same lookup getHomeSummary() already does below,
+        // just missing here. Without it, any offering discovered above via
+        // the page-only fallback (which seeds label = key) showed its raw
+        // key ("data-cloud-accelorator") in this selector forever, never the
+        // real name, even after GTM_Offering__mdt's async deploy landed and
+        // fixed every other list on this exact same offering.
+        Map<String, OfferingOption> byKey = new Map<String, OfferingOption>();
+        for (OfferingOption o : out) byKey.put(o.offeringKey, o);
+        for (GTM_Page_Content__c rec : [
+            SELECT Offering_Key__c, Text_Value__c
+            FROM   GTM_Page_Content__c
+            WHERE  Template_Type__c = 'offerings-listing'
+            AND    Field_Key__c     = 'name'
+            AND    Active__c        = true
+            LIMIT  200
+        ]) {
+            OfferingOption o = byKey.get(rec.Offering_Key__c);
+            if (o != null && String.isNotBlank(rec.Text_Value__c)) o.label = rec.Text_Value__c;
+        }
         return out;
     }
 
