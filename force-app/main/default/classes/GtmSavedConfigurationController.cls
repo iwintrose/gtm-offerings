@@ -451,16 +451,18 @@ public with sharing class GtmSavedConfigurationController {
     }
 
     /**
-     * The site's own home page -- "Choose your industry" (see chooseIndustry
-     * LWC), not the configurator. Used by the standalone launcher (the
-     * Overview tab's "+ New Prospect Page" button) to send a rep through the
-     * same industry-first flow a client-shared link would start from,
-     * instead of dropping them straight onto an unpersonalized configurator.
+     * The "Choose your industry" page (see chooseIndustry LWC) -- not the
+     * site's bare home route, which is a separate page/view in Experience
+     * Builder and does not render chooseIndustry itself. Used by the
+     * standalone launcher (the Overview tab's "New engagement link" button)
+     * to send a rep through the same industry-first flow a client-shared
+     * link would start from, instead of dropping them straight onto an
+     * unpersonalized configurator.
      */
     @AuraEnabled(cacheable=true)
     public static String getSiteHomePageUrl() {
         String base = getSiteBaseUrl();
-        return base == null ? null : base + '/';
+        return base == null ? null : base + '/choose-industry';
     }
 
     private static String getSiteBaseUrl() {
