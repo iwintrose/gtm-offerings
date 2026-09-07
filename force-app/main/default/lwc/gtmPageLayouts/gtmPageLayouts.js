@@ -48,7 +48,7 @@ const LAYOUT_FIELDS = {
         text: ['defaultSourcePlatform', 'defaultTargetPlatform', 'defaultAssetCount',
                'defaultDependencyCount', 'defaultHealthScore', 'genericDemoRoot'],
         rich: [],
-        json: ['genericDemoDeps', 'genericChips', 'swatches']
+        json: ['genericDemoDeps', 'genericChips', 'swatches', 'sizePresets']
     },
     // The helper in the corner of a configurator: who it is and what it says
     // before anyone has typed. It lives on the offering's own configurator
@@ -57,7 +57,13 @@ const LAYOUT_FIELDS = {
     'assistant': {
         text: ['assistantName', 'assistantRole', 'fabLabel', 'greeting', 'inputPlaceholder'],
         rich: [],
-        json: []
+        json: [],
+        // A bounded choice, not free text: the content author picks one of a
+        // fixed set of pre-written tone sentences (c/GtmAgentTone.TONE_CLAUSES
+        // in Apex owns the actual wording; AGENT_TONE_OPTIONS below is the
+        // matching option list for the dropdown -- keep the two key sets in
+        // lockstep, see the comment on AGENT_TONE_OPTIONS).
+        enum: ['agentTone']
     },
     // The configurator's chapters. Each one is a beat of the page a BD sends a
     // prospect, and each was typed into the template until it became a
@@ -139,7 +145,7 @@ const LAYOUT_HINTS = {
     'offering-defaults': 'What a configurator shows before a rep customises it: platforms, counts, demo and colour swatches.',
     'industry-tile': 'One industry in the shared list: its name and the blurb on its card.',
     'industry-profile': 'What this offering says to one industry: their problem, the solution, the proof and the demo.',
-    'assistant': 'The helper in the corner of this page: its name, its role, the label on its button, the line it opens with and the prompt in its input.',
+    'assistant': 'The helper in the corner of this page: its name, its role, the label on its button, the line it opens with, the prompt in its input, and the tone it answers in.',
     'chapter-cards': 'A chapter: eyebrow, heading, a lede, and a row of cards.',
     'chapter-lede': 'A chapter that is just the eyebrow, heading and a lede.',
     'chapter-proof': 'The live proof panel and every word around it. The numbers come from the defaults or the saved link.',
@@ -156,7 +162,7 @@ function fieldsFor(layoutType) {
     const spec = LAYOUT_FIELDS[layoutType];
     if (!spec) return [];
     const out = [];
-    ['text', 'rich', 'json', 'icontext'].forEach((fieldType) => {
+    ['text', 'rich', 'json', 'icontext', 'enum'].forEach((fieldType) => {
         (spec[fieldType] || []).forEach((fieldKey) => {
             out.push({ fieldKey, fieldType, label: humaniseFieldKey(fieldKey) });
         });
@@ -248,6 +254,26 @@ function ctaGlyph(value) {
     const hit = CTA_ICONS.find((i) => i.value === value);
     return hit ? hit.glyph : '';
 }
+
+/**
+ * The bounded set of tones GUS can answer in, for the assistant::agentTone
+ * dropdown (c/gtmFieldEditor's lightning-combobox for fieldType 'enum').
+ *
+ * This is a menu of pre-written sentences, not a text field: a content
+ * author selects one of these keys, never supplies prompt wording of their
+ * own. c/GtmAgentTone.TONE_CLAUSES (Apex) owns the actual sentence text and
+ * is the real allow-list/safety backstop -- these labels are only what the
+ * dropdown shows. THE KEYS HERE MUST MATCH TONE_CLAUSES' KEYS EXACTLY; there
+ * is no shared source of truth across Apex/JS in this codebase (same as
+ * every other cross-language constant here), so keep the two lists in
+ * lockstep by hand.
+ */
+const AGENT_TONE_OPTIONS = [
+    { value: 'professional-concise', label: 'Professional & concise' },
+    { value: 'warm-consultative',    label: 'Warm & consultative' },
+    { value: 'direct-executive',     label: 'Direct & executive' },
+    { value: 'technical-precise',    label: 'Technical & precise' }
+];
 
 
 /**
@@ -385,6 +411,7 @@ export {
     starterFor,
     CTA_ICONS,
     ctaGlyph,
+    AGENT_TONE_OPTIONS,
     FRAME_LAYOUTS,
     TEMPLATE_LAYOUTS,
     LAYOUT_FIELDS,

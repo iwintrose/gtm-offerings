@@ -21,11 +21,18 @@ import { isHex6 } from 'c/gtmConfigData';
 // built in 30 seconds never looks unbranded.
 const PS_RED = 'E4002B';
 
-const SIZE_PRESETS = {
-    S: { label: 'Small', sub: 'Under 1,000 assets', assets: 800,   deps: 1400,  health: 78 },
-    M: { label: 'Medium', sub: '~4,000 assets',       assets: 4128,  deps: 9640,  health: 62 },
-    L: { label: 'Large', sub: '10,000+ assets',       assets: 12400, deps: 26800, health: 45 }
-};
+// Fallback only -- used until the offering's own 'defaults::sizePresets' CMS
+// content resolves (or when an offering hasn't authored any presets yet).
+// Shape matches the CMS JSON exactly (key/label/sub/assetCount/dependencyCount/
+// healthScore) so the resolved-array code below never has to branch on where
+// a preset came from. Values are Migration Accelerator's historical S/M/L
+// numbers, seeded verbatim as that offering's own 'defaults::sizePresets' row
+// -- this constant only matters for an offering that has none.
+const DEFAULT_SIZE_PRESETS = [
+    { key: 'S', label: 'Small',  sub: 'Under 1,000 assets', assetCount: 800,   dependencyCount: 1400,  healthScore: 78 },
+    { key: 'M', label: 'Medium', sub: '~4,000 assets',      assetCount: 4128,  dependencyCount: 9640,  healthScore: 62 },
+    { key: 'L', label: 'Large',  sub: '10,000+ assets',     assetCount: 12400, dependencyCount: 26800, healthScore: 45 }
+];
 
 const TOTAL_STEPS = 8;
 
@@ -163,6 +170,10 @@ export default class GtmConfigWizard extends LightningElement {
 
     @track _industries = [];
     @track _swatches = [];
+    // Seeded with the fallback so the Environment step always has cards to
+    // draw, even before getPageLayout resolves; overwritten in
+    // connectedCallback() with the offering's own CMS presets when it has any.
+    @track _sizePresets = DEFAULT_SIZE_PRESETS;
     _cmsDefaults = {};
 
     @track _selectedContact = null;
@@ -306,6 +317,16 @@ export default class GtmConfigWizard extends LightningElement {
                     SOURCE_PLATFORM: c['defaults::defaultSourcePlatform'],
                     TARGET_PLATFORM: c['defaults::defaultTargetPlatform']
                 };
+
+                // The Environment step's S/M/L presets, same reuse-the-JSON-
+                // editor pattern as swatches above. An offering that hasn't
+                // authored any yet (or a malformed value) falls back to the
+                // built-in defaults -- this offering's own historical numbers.
+                let sizePresets;
+                try { sizePresets = JSON.parse(c['defaults::sizePresets'] || '[]'); } catch (e) { sizePresets = []; }
+                this._sizePresets = (Array.isArray(sizePresets) && sizePresets.length)
+                    ? sizePresets
+                    : DEFAULT_SIZE_PRESETS;
             })
             // eslint-disable-next-line no-console
             .catch((err) => console.warn('[gtmConfigWizard] getPageLayout:', JSON.stringify(err)));
@@ -643,24 +664,25 @@ export default class GtmConfigWizard extends LightningElement {
     // ------------------------------------------------------------- proof
 
     get sizeCards() {
-        return Object.keys(SIZE_PRESETS).map((key) => ({
-            key,
-            letter: key,
-            label: SIZE_PRESETS[key].label,
-            sub: SIZE_PRESETS[key].sub,
-            cardClass: this._sizePreset === key ? 'mw-preset sel' : 'mw-preset'
+        return this._sizePresets.map((p) => ({
+            key: p.key,
+            letter: p.key,
+            label: p.label,
+            sub: p.sub,
+            cardClass: this._sizePreset === p.key ? 'mw-preset sel' : 'mw-preset'
         }));
     }
 
     handleSizePick(event) {
         const key = event.currentTarget.dataset.key;
         this._sizePreset = key;
-        const p = SIZE_PRESETS[key];
+        const p = this._sizePresets.find((sp) => sp.key === key);
+        if (!p) return;
         this._state = {
             ...this._state,
-            ASSET_COUNT: String(p.assets),
-            DEPENDENCY_COUNT: String(p.deps),
-            HEALTH_SCORE: String(p.health)
+            ASSET_COUNT: String(p.assetCount),
+            DEPENDENCY_COUNT: String(p.dependencyCount),
+            HEALTH_SCORE: String(p.healthScore)
         };
     }
 
@@ -907,14 +929,17 @@ export default class GtmConfigWizard extends LightningElement {
             this._saveError = 'Add a company name to continue.';
             return;
         }
-        // Defaults for everything the quick path skips.
-        const preset = SIZE_PRESETS.M;
+        // Defaults for everything the quick path skips: the medium preset
+        // from whichever list is resolved (CMS-or-fallback), falling back
+        // further to the first available preset if this offering's own list
+        // has no 'M' key.
+        const preset = this._sizePresets.find((p) => p.key === 'M') || this._sizePresets[0];
         this._state = {
             ...this._cmsDefaults,
             ...this._state,
-            ASSET_COUNT: this._state.ASSET_COUNT || String(preset.assets),
-            DEPENDENCY_COUNT: this._state.DEPENDENCY_COUNT || String(preset.deps),
-            HEALTH_SCORE: this._state.HEALTH_SCORE || String(preset.health)
+            ASSET_COUNT: this._state.ASSET_COUNT || String(preset.assetCount),
+            DEPENDENCY_COUNT: this._state.DEPENDENCY_COUNT || String(preset.dependencyCount),
+            HEALTH_SCORE: this._state.HEALTH_SCORE || String(preset.healthScore)
         };
         if (!isHex6(this._accent)) this._accent = PS_RED;
         this._ensureGeneratedPassword();

@@ -1,180 +1,188 @@
 /**
- * Wipe and rebuild the Migration Accelerator's demo data.
+ * Wipe and rebuild the Migration Accelerator's generic demo data.
  *
  * Deletes ONLY what this app created -- its engagement links, assessment
- * requests, link events, and the accounts, contacts and opportunities those
- * records point at. The Salesforce sample data (Edge Communications, Grand
- * Hotels, GenePoint and the rest) is left alone: nothing here touches a record
- * this app did not create.
+ * requests, readouts, link events, and the accounts, contacts and
+ * opportunities those records point at (matched by name against this
+ * script's own client list, not "every Account in the org" -- so a real
+ * client record with the bad luck to share one of these names is the one
+ * case this intentionally won't touch; check before running if that's a
+ * concern). Nothing else in the org is touched.
  *
- * Then rebuilds a coherent set: four clients across four industries, each with
- * a contact, one opportunity named by GtmDealNaming, one engagement link whose
- * payload holds every value (the accent included, so nothing lives only in a
- * URL), an assessment request, and the interaction events behind the overview.
+ * Then rebuilds a coherent set: four wholly invented clients across four
+ * industries -- names chosen to not match any real company (MUCH Music, TD
+ * Bank, Medtronic and LA Metro, used in an earlier version of this script,
+ * are all real companies and should never have been demo data; if you
+ * recognize a name below as real, treat that as a bug and change it) --
+ * each with a contact, one opportunity named by GtmDealNaming, one
+ * engagement link, and a submission run through this app's own real Apex
+ * entry points --
+ * GtmSavedConfigurationController.saveConfiguration and
+ * GtmAssessmentRequestController.submitRequest, the same calls the LWCs
+ * make -- so scoring, notification defaults, and FLS all behave exactly as
+ * they would for a real link, and this script can't drift out of sync with
+ * how the app actually validates and scores a submission.
  *
- * Run:  sf apex run --file scripts/data/reset-accelerator-demo.apex
+ * This is a safe-to-run, non-client-specific default. Keep it, edit the
+ * `spec` list below to match your own demo needs, or delete the records it
+ * creates -- none of it is real client data.
+ *
+ * Run:  sf apex run --file scripts/data/reset-accelerator-demo.apex --target-org <alias>
  */
 
-// ─── 1. what this app owns ───────────────────────────────────────────────────
-Set<Id> appAccts = new Set<Id>();
-Set<Id> appOpps  = new Set<Id>();
-Set<Id> appCons  = new Set<Id>();
-for (MA_Saved_Configuration__c c : [SELECT Account__c, Contact__c, Opportunity__c FROM MA_Saved_Configuration__c]) {
-    if (c.Account__c != null) appAccts.add(c.Account__c);
-    if (c.Contact__c != null) appCons.add(c.Contact__c);
-    if (c.Opportunity__c != null) appOpps.add(c.Opportunity__c);
-}
-for (MA_Assessment_Request__c r : [SELECT Account__c, Contact__c, Opportunity__c FROM MA_Assessment_Request__c]) {
-    if (r.Account__c != null) appAccts.add(r.Account__c);
-    if (r.Contact__c != null) appCons.add(r.Contact__c);
-    if (r.Opportunity__c != null) appOpps.add(r.Opportunity__c);
-}
-for (Opportunity o : [SELECT Id FROM Opportunity WHERE Name LIKE 'DELETE ME%']) appOpps.add(o.Id);
+// ─── 1. what this app owns, by name ──────────────────────────────────────────
+Set<String> DEMO_NAMES = new Set<String>{ 'Northlight Media Group (Demo)', 'Ashford Capital Bank (Demo)', 'Solara Health Systems (Demo)', 'Harborline Transit Authority (Demo)' };
 
-System.debug('deleting: links=' + [SELECT COUNT() FROM MA_Saved_Configuration__c]
-    + ' requests=' + [SELECT COUNT() FROM MA_Assessment_Request__c]
-    + ' events=' + [SELECT COUNT() FROM MA_Link_Event__c]
+List<Account> existingAccts = [SELECT Id FROM Account WHERE Name IN :DEMO_NAMES];
+Set<Id> appAccts = new Set<Id>();
+for (Account a : existingAccts) appAccts.add(a.Id);
+
+Set<Id> appOpps = new Set<Id>();
+Set<Id> appCons = new Set<Id>();
+for (Opportunity o : [SELECT Id FROM Opportunity WHERE AccountId IN :appAccts]) appOpps.add(o.Id);
+for (Contact c : [SELECT Id FROM Contact WHERE AccountId IN :appAccts]) appCons.add(c.Id);
+
+List<GTM_Saved_Configuration__c> existingLinks = [
+    SELECT Id FROM GTM_Saved_Configuration__c WHERE Account__c IN :appAccts
+];
+Set<Id> linkIds = new Set<Id>();
+for (GTM_Saved_Configuration__c l : existingLinks) linkIds.add(l.Id);
+
+List<GTM_Assessment_Request__c> existingReqs = [
+    SELECT Id FROM GTM_Assessment_Request__c WHERE Saved_Configuration__c IN :linkIds
+];
+Set<Id> reqIds = new Set<Id>();
+for (GTM_Assessment_Request__c r : existingReqs) reqIds.add(r.Id);
+
+System.debug('deleting: links=' + linkIds.size() + ' requests=' + reqIds.size()
     + ' accounts=' + appAccts.size() + ' contacts=' + appCons.size() + ' opps=' + appOpps.size());
 
-delete [SELECT Id FROM MA_Link_Event__c];
-delete [SELECT Id FROM MA_Assessment_Request__c];
-delete [SELECT Id FROM MA_Saved_Configuration__c];
+delete [SELECT Id FROM GTM_Link_Event__c WHERE Saved_Configuration__c IN :linkIds];
+delete [SELECT Id FROM GTM_Readout__c WHERE Assessment_Request__c IN :reqIds];
+delete [SELECT Id FROM GTM_Assessment_Request__c WHERE Id IN :reqIds];
+delete [SELECT Id FROM GTM_Saved_Configuration__c WHERE Id IN :linkIds];
 delete [SELECT Id FROM Opportunity WHERE Id IN :appOpps];
-delete [SELECT Id FROM Contact  WHERE Id IN :appCons];
-delete [SELECT Id FROM Account  WHERE Id IN :appAccts];
+delete [SELECT Id FROM Contact WHERE Id IN :appCons];
+delete [SELECT Id FROM Account WHERE Id IN :appAccts];
 
 // ─── 2. the clients ──────────────────────────────────────────────────────────
-// company | industry key | source | target | accent | assets | deps | health
+// company | industry key | source | target | first | last | email | readiness value (1-4) | complexity value (1-3)
 List<List<String>> spec = new List<List<String>>{
-    new List<String>{'MUCH Music','media','Eloqua','Salesforce Marketing Cloud','0B5FFF','4128','9640','62','Marcus Rivera','marcus.rivera@muchmusic.example'},
-    new List<String>{'TD Bank','fintech','Marketo','Salesforce Marketing Cloud','1B4F9C','12400','26800','45','Angela Chen','angela.chen@tdbank.example'},
-    new List<String>{'Medtronic','medtech','Braze','Salesforce Marketing Cloud Next','00857D','2128','12640','54','Priya Sundaram','priya.sundaram@medtronic.example'},
-    new List<String>{'LA Metro','transport','HubSpot','Salesforce Marketing Cloud','C2703A','8400','15200','71','Paul Johns','paul.johns@lametro.example'}
+    new List<String>{'Northlight Media Group (Demo)','media','Eloqua','Salesforce Marketing Cloud','Marcus','Rivera','marcus.rivera@northlight-demo.example','2','2'},
+    new List<String>{'Ashford Capital Bank (Demo)','fintech','Marketo','Salesforce Marketing Cloud','Angela','Chen','angela.chen@ashford-demo.example','3','2'},
+    new List<String>{'Solara Health Systems (Demo)','medtech','Braze','Salesforce Marketing Cloud Next','Priya','Sundaram','priya.sundaram@solara-demo.example','4','1'},
+    new List<String>{'Harborline Transit Authority (Demo)','transport','HubSpot','Salesforce Marketing Cloud','Paul','Johns','paul.johns@harborline-demo.example','1','3'}
 };
-
-List<Account> accounts = new List<Account>();
-for (List<String> s : spec) accounts.add(new Account(Name = s[0]));
-insert accounts;
-Map<String, Id> acctByName = new Map<String, Id>();
-for (Account a : accounts) acctByName.put(a.Name, a.Id);
-
-List<Contact> contacts = new List<Contact>();
-for (List<String> s : spec) {
-    List<String> parts = s[8].split(' ');
-    contacts.add(new Contact(
-        FirstName = parts[0], LastName = parts.size() > 1 ? parts[1] : parts[0],
-        Email = s[9], AccountId = acctByName.get(s[0])));
-}
-insert contacts;
-Map<String, Id> conByAcct = new Map<String, Id>();
-for (Contact c : contacts) conByAcct.put(String.valueOf(c.AccountId), c.Id);
-
-// ─── 3. one deal per client, named by the shared authority ───────────────────
-List<Opportunity> opps = new List<Opportunity>();
-for (List<String> s : spec) {
-    Id acct = acctByName.get(s[0]);
-    opps.add(new Opportunity(
-        Name = GtmDealNaming.nameFor(s[0], 'migration-accelerator', null),
-        AccountId = acct, StageName = 'Qualification',
-        CloseDate = Date.today().addDays(90)));
-}
-insert opps;
-Map<String, Id> oppByAcct = new Map<String, Id>();
-for (Opportunity o : opps) oppByAcct.put(String.valueOf(o.AccountId), o.Id);
-
-for (List<String> s : spec) {
-    Id acct = acctByName.get(s[0]);
-    insert new OpportunityContactRole(
-        OpportunityId = oppByAcct.get(String.valueOf(acct)),
-        ContactId = conByAcct.get(String.valueOf(acct)),
-        Role = 'Decision Maker', IsPrimary = true);
-}
-
-// ─── 4. the engagement links ─────────────────────────────────────────────────
-// Every value sits in the payload. Nothing lives only in a URL any more.
-String base = GtmSavedConfigurationController.getConfiguratorPageUrl();
-List<MA_Saved_Configuration__c> links = new List<MA_Saved_Configuration__c>();
-for (List<String> s : spec) {
-    Id acct = acctByName.get(s[0]);
-    links.add(new MA_Saved_Configuration__c(
-        Offering__c = 'migration-accelerator',
-        Company__c = s[0], Industry__c = s[1],
-        Account__c = acct, Contact__c = conByAcct.get(String.valueOf(acct)),
-        Opportunity__c = oppByAcct.get(String.valueOf(acct)),
-        Active__c = true,
-        Config_Payload__c = JSON.serialize(new Map<String, String>{
-            'SOURCE_PLATFORM' => s[2], 'TARGET_PLATFORM' => s[3],
-            'ACCENT' => s[4], 'ASSET_COUNT' => s[5],
-            'DEPENDENCY_COUNT' => s[6], 'HEALTH_SCORE' => s[7],
-            'CONTACT_NAME' => s[8], 'CONTACT_EMAIL' => s[9]
-        })));
-}
-insert links;
-for (MA_Saved_Configuration__c l : links) l.Generated_URL__c = base + '?cfgId=' + l.Id;
-update links;
-
-// ─── 5. requests and the interactions behind them ────────────────────────────
-//
-// Three of the four convert; the fourth opens the form and leaves. That is
-// deliberate, and it is the difference the overview has to be able to show: a
-// request is the record of an ask, a Form Submitted event is the record of the
-// click that made it, and a deal that has one without the other is either a
-// bug or a prospect worth chasing. Seeding a request for the client who
-// dropped off made every deal look identical and hid both.
+// Three of the four convert; the fourth opens the link and never submits.
+// That is deliberate -- a real deal that has interaction events but no
+// assessment request is a normal state the Overview needs to be able to
+// show, not a bug to seed away.
 Integer CONVERTED = 3;
 
-List<MA_Assessment_Request__c> reqs = new List<MA_Assessment_Request__c>();
+Database.DMLOptions dupOptions = new Database.DMLOptions();
+dupOptions.DuplicateRuleHeader.allowSave = true;
+
+Map<String, Id> acctByName = new Map<String, Id>();
+Map<String, Id> conByName = new Map<String, Id>();
+Map<String, Id> oppByName = new Map<String, Id>();
+Map<String, Id> linkByName = new Map<String, Id>();
+
+for (List<String> s : spec) {
+    Account acc = new Account(Name = s[0]);
+    Database.insert(acc, dupOptions);
+    acctByName.put(s[0], acc.Id);
+
+    Contact con = new Contact(FirstName = s[4], LastName = s[5], Email = s[6], AccountId = acc.Id);
+    Database.insert(con, dupOptions);
+    conByName.put(s[0], con.Id);
+
+    Opportunity opp = new Opportunity(
+        Name = GtmDealNaming.nameFor(s[0], 'migration-accelerator', null),
+        AccountId = acc.Id, StageName = 'Qualification',
+        CloseDate = Date.today().addDays(90));
+    insert opp;
+    oppByName.put(s[0], opp.Id);
+    insert new OpportunityContactRole(OpportunityId = opp.Id, ContactId = con.Id, Role = 'Decision Maker', IsPrimary = true);
+
+    GtmSavedConfigurationController.SaveInput saveInput = new GtmSavedConfigurationController.SaveInput();
+    saveInput.offering = 'migration-accelerator';
+    saveInput.industry = s[1];
+    saveInput.company = s[0];
+    saveInput.accountId = acc.Id;
+    saveInput.contactId = con.Id;
+    saveInput.opportunityId = opp.Id;
+    saveInput.clientContactName = s[4] + ' ' + s[5];
+    saveInput.clientContactEmail = s[6];
+    saveInput.accountIndustry = s[1];
+    saveInput.generatedUrl = GtmSavedConfigurationController.getConfiguratorPageUrl();
+    saveInput.configPayload = JSON.serialize(new Map<String, String>{
+        'SOURCE_PLATFORM' => s[2], 'TARGET_PLATFORM' => s[3]
+    });
+    Id linkId = GtmSavedConfigurationController.saveConfiguration(saveInput);
+    linkByName.put(s[0], linkId);
+
+    GTM_Saved_Configuration__c link = [SELECT Id, Generated_URL__c FROM GTM_Saved_Configuration__c WHERE Id = :linkId];
+    link.Generated_URL__c = GtmSavedConfigurationController.getConfiguratorPageUrl() + '?cfgId=' + linkId;
+    update link;
+}
+
+// ─── 3. requests and the interactions behind them ────────────────────────────
 Integer i = 0;
 for (List<String> s : spec) {
-    if (i >= CONVERTED) { i++; continue; }
-    Id acct = acctByName.get(s[0]);
-    reqs.add(new MA_Assessment_Request__c(
-        Requester_Name__c = s[8], Requester_Email__c = s[9],
-        Company__c = s[0], Status__c = (i == 0 ? 'Scheduled' : (i == 1 ? 'Contacted' : 'New')),
-        Account__c = acct, Contact__c = conByAcct.get(String.valueOf(acct)),
-        Opportunity__c = oppByAcct.get(String.valueOf(acct)),
-        Saved_Configuration__c = links[i].Id,
-        Current_Platform__c = s[2], Target_Platform__c = s[3],
-        Submitted_At__c = System.now().addDays(-i)));
+    Id linkId = linkByName.get(s[0]);
+    String session = 'demo-' + s[0].deleteWhitespace();
+
+    // Every client visits and opens the form.
+    GtmLinkEventController.logEvent(linkId, 'Page View', session, 'cover', null);
+    GtmLinkEventController.logEvent(linkId, 'Page View', session, 'proof', null);
+    GtmLinkEventController.logEvent(linkId, 'Form Opened', session, 'assessment', null);
+
+    if (i < CONVERTED) {
+        Integer readinessValue = Integer.valueOf(s[7]);
+        Integer complexityValue = Integer.valueOf(s[8]);
+        List<GtmAssessmentRequestController.AnswerInput> answers = new List<GtmAssessmentRequestController.AnswerInput>();
+        for (String dimension : GtmAssessmentScoring.DIMENSIONS) {
+            GtmAssessmentRequestController.AnswerInput a = new GtmAssessmentRequestController.AnswerInput();
+            a.dimension = dimension;
+            a.value = readinessValue;
+            answers.add(a);
+        }
+        for (String dimension : GtmEstateComplexity.DIMENSIONS) {
+            GtmAssessmentRequestController.AnswerInput a = new GtmAssessmentRequestController.AnswerInput();
+            a.dimension = dimension;
+            a.value = complexityValue;
+            answers.add(a);
+        }
+
+        GtmAssessmentRequestController.RequestInput req = new GtmAssessmentRequestController.RequestInput();
+        req.name = s[4] + ' ' + s[5];
+        req.email = s[6];
+        req.company = s[0];
+        req.currentPlatform = s[2];
+        req.targetPlatform = s[3];
+        req.savedRecordId = linkId;
+        req.answers = answers;
+        GtmAssessmentRequestController.RequestResult result = GtmAssessmentRequestController.submitRequest(req);
+
+        GtmLinkEventController.logEvent(linkId, 'Form Submitted', session, 'assessment', result.assessmentRequestId);
+    } else {
+        GtmLinkEventController.logEvent(linkId, 'Drop-off', session, 'assessment', null);
+    }
     i++;
 }
-insert reqs;
 
-List<MA_Link_Event__c> events = new List<MA_Link_Event__c>();
-for (Integer n = 0; n < links.size(); n++) {
-    String session = 'seed-' + n;
-    events.add(new MA_Link_Event__c(Saved_Configuration__c = links[n].Id,
-        Event_Type__c = 'Page View', Session_Id__c = session, Step__c = 'cover'));
-    events.add(new MA_Link_Event__c(Saved_Configuration__c = links[n].Id,
-        Event_Type__c = 'Page View', Session_Id__c = session, Step__c = 'proof'));
-    events.add(new MA_Link_Event__c(Saved_Configuration__c = links[n].Id,
-        Event_Type__c = 'Form Opened', Session_Id__c = session, Step__c = 'assessment'));
-    if (n < CONVERTED) {
-        events.add(new MA_Link_Event__c(Saved_Configuration__c = links[n].Id,
-            Assessment_Request__c = reqs[n].Id,
-            Event_Type__c = 'Form Submitted', Session_Id__c = session, Step__c = 'assessment'));
-    } else {
-        events.add(new MA_Link_Event__c(Saved_Configuration__c = links[n].Id,
-            Event_Type__c = 'Drop-off', Session_Id__c = session, Step__c = 'assessment'));
-    }
-}
-insert events;
-
-// ─── 6. what came out ────────────────────────────────────────────────────────
+// ─── 4. what came out ────────────────────────────────────────────────────────
 System.debug('=== rebuilt ===');
-for (MA_Saved_Configuration__c l : [
-    SELECT Name, Company__c, Industry__c, Generated_URL__c, Config_Payload__c,
+for (GTM_Saved_Configuration__c l : [
+    SELECT Name, Company__c, Industry__c, Generated_URL__c,
            Opportunity__r.Name, Contact__r.Name
-    FROM MA_Saved_Configuration__c ORDER BY Company__c
+    FROM GTM_Saved_Configuration__c WHERE Id IN :linkByName.values()
+    ORDER BY Company__c
 ]) {
-    System.debug(l.Name + ' | ' + l.Company__c + ' (' + l.Industry__c + ')');
+    System.debug(l.Company__c + ' (' + l.Industry__c + ')');
     System.debug('    deal    : ' + l.Opportunity__r.Name);
     System.debug('    contact : ' + l.Contact__r.Name);
     System.debug('    link    : ' + l.Generated_URL__c);
-    System.debug('    payload : ' + l.Config_Payload__c);
 }
-System.debug('requests=' + [SELECT COUNT() FROM MA_Assessment_Request__c]
-    + ' events=' + [SELECT COUNT() FROM MA_Link_Event__c]);
-System.debug('org totals now: accounts=' + [SELECT COUNT() FROM Account]
-    + ' opportunities=' + [SELECT COUNT() FROM Opportunity]
-    + ' contacts=' + [SELECT COUNT() FROM Contact]);
+System.debug('requests=' + [SELECT COUNT() FROM GTM_Assessment_Request__c WHERE Saved_Configuration__c IN :linkByName.values()]
+    + ' events=' + [SELECT COUNT() FROM GTM_Link_Event__c WHERE Saved_Configuration__c IN :linkByName.values()]);

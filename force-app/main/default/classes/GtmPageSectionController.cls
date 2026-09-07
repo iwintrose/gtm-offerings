@@ -465,7 +465,7 @@ public with sharing class GtmPageSectionController {
 
     /** The value columns a field can resolve from. */
     private static final Set<String> VALUE_TYPES = new Set<String>{
-        'text', 'rich', 'json', 'icontext'
+        'text', 'rich', 'json', 'icontext', 'enum'
     };
 
     private static Decimal nextFieldSortOrder(String offeringKey, String templateType, String sectionKey) {

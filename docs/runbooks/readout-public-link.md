@@ -1,5 +1,8 @@
 # Runbook — the public readout link (`/readout`)
 
+> This describes the `GTM_Accelerator1` site, which is not the currently-live
+> site (`GTM1`) — see ADR-0006 and `docs/backlog.md` D9.
+
 How a published `GTM_Readout__c` becomes a working link a BD rep can send a
 prospect, and what a human has to do in the org that source metadata cannot do
 for them.
