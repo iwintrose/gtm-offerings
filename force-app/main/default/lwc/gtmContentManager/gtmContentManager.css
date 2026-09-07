@@ -1,3 +1,5 @@
+@import 'c/gtmTokens';
+
 /* GTM Content Manager — Salesforce chrome around a live page preview.
    The chrome is deliberately SLDS-flavoured while the preview keeps the
    published page's own identity, so it stays obvious which is the tool and
@@ -9,8 +11,8 @@
     height: 100%;
     min-height: 640px;
     background: #f3f3f3;
-    color: #181818;
-    font-size: 13px;
+    color: var(--gtm-text);
+    font-size: var(--gtm-font-size-base);
 }
 
 /* ── toolbar ─────────────────────────────────────────────────────────────── */
@@ -19,19 +21,19 @@
     align-items: center;
     gap: 0.6rem;
     padding: 0.45rem 0.75rem;
-    background: #fff;
-    border-bottom: 1px solid #e5e5e5;
+    background: var(--gtm-bg-surface);
+    border-bottom: 1px solid var(--gtm-border);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
     flex: none;
 }
 .gcm-brand { display: flex; align-items: center; gap: 0.35rem; font-weight: 700; white-space: nowrap; }
-.gcm-sep { width: 1px; height: 20px; background: #e5e5e5; }
+.gcm-sep { width: 1px; height: 20px; background: var(--gtm-border); }
 .gcm-tmpl { width: 11rem; }
 .gcm-addr {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 11px; color: #747474;
-    background: #fafaf9; border: 1px solid #e5e5e5;
-    border-radius: 4px; padding: 0.1rem 0.4rem;
+    font-size: 11px; color: var(--gtm-text-muted);
+    background: var(--gtm-bg-hover); border: 1px solid var(--gtm-border);
+    border-radius: var(--gtm-radius); padding: 0.1rem 0.4rem;
 }
 .gcm-save { font-size: 11.5px; color: #2e844a; margin-left: 0.25rem; }
 .gcm-bar-right { margin-left: auto; display: flex; gap: 0.4rem; }
@@ -40,17 +42,17 @@
 .gcm-error {
     display: flex; align-items: center; gap: 0.5rem;
     margin: 0.5rem 0.75rem 0; padding: 0.5rem 0.7rem;
-    border: 1px solid #fe9339; border-left-width: 3px; border-radius: 4px;
+    border: 1px solid #fe9339; border-left-width: 3px; border-radius: var(--gtm-radius);
     background: #fef5ec; font-size: 12.5px;
 }
 .gcm-error-x {
     margin-left: auto; border: 0; background: none; cursor: pointer;
-    font-size: 16px; line-height: 1; color: #747474; padding: 0 0.2rem;
+    font-size: 16px; line-height: 1; color: var(--gtm-text-muted); padding: 0 0.2rem;
 }
 
 .gcm-loading { position: relative; min-height: 180px; }
 .gcm-empty { padding: 2rem; text-align: center; color: #444; }
-.gcm-empty-sub { color: #747474; font-size: 12px; max-width: 28rem; margin: 0.3rem auto 0; line-height: 1.5; }
+.gcm-empty-sub { color: var(--gtm-text-muted); font-size: 12px; max-width: 28rem; margin: 0.3rem auto 0; line-height: 1.5; }
 
 /* ── columns ─────────────────────────────────────────────────────────────── */
 .gcm-cols {
@@ -61,15 +63,15 @@
 }
 .gcm-rail, .gcm-fields {
     display: flex; flex-direction: column; min-height: 0;
-    background: #fff; border-right: 1px solid #e5e5e5;
+    background: var(--gtm-bg-surface); border-right: 1px solid var(--gtm-border);
 }
 .gcm-preview { min-height: 0; }
 
 .gcm-colhead {
     display: flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 0.7rem; border-bottom: 1px solid #e5e5e5;
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #747474; flex: none;
+    padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--gtm-border);
+    font-size: var(--gtm-font-size-label); font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--gtm-text-muted); flex: none;
 }
 .gcm-count { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 11px; }
 
@@ -79,11 +81,11 @@
 .gcm-rail-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0.3rem 0.3rem 0.6rem; }
 .sec {
     display: flex; align-items: center; gap: 0.4rem;
-    padding: 0.45rem 0.5rem; border-radius: 4px; cursor: pointer;
+    padding: 0.45rem 0.5rem; border-radius: var(--gtm-radius); cursor: pointer;
     border: 1px solid transparent;
 }
 .sec + .sec { margin-top: 1px; }
-.sec:hover { background: #fafaf9; }
+.sec:hover { background: var(--gtm-bg-hover); }
 .sec--active { background: #eef4ff; border-color: #0176d3; }
 .sec--active .sec-name { color: #014486; font-weight: 700; }
 .sec--off { opacity: 0.5; }
@@ -92,26 +94,26 @@
 .sec-name { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sec-meta {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 10.5px; color: #747474; margin-top: 1px;
+    font-size: var(--gtm-font-size-label); color: var(--gtm-text-muted); margin-top: 1px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .sec-dot { width: 6px; height: 6px; border-radius: 50%; background: #fe9339; flex: none; }
 .sec-move { margin-left: auto; display: flex; gap: 2px; flex: none; }
 .mv {
     width: 20px; height: 20px; border: 1px solid #c9c9c9; border-radius: 3px;
-    background: #fff; cursor: pointer; color: #444; font-size: 11px; line-height: 1; padding: 0;
+    background: var(--gtm-bg-surface); cursor: pointer; color: #444; font-size: 11px; line-height: 1; padding: 0;
 }
 .mv:hover:not(:disabled) { border-color: #0176d3; color: #0176d3; }
 .mv:disabled { opacity: 0.3; cursor: default; }
 .gcm-hint {
-    flex: none; padding: 0.5rem 0.6rem; border-top: 1px solid #e5e5e5;
-    font-size: 10.5px; color: #747474; line-height: 1.5; margin: 0;
+    flex: none; padding: 0.5rem 0.6rem; border-top: 1px solid var(--gtm-border);
+    font-size: var(--gtm-font-size-label); color: var(--gtm-text-muted); line-height: 1.5; margin: 0;
 }
 
 /* ── preview ─────────────────────────────────────────────────────────────── */
 .gcm-preview-body {
     flex: 1; min-height: 0; overflow: auto;
-    background: #fff; margin: 0.6rem 0.6rem 0; border: 1px solid #c9c9c9;
+    background: var(--gtm-bg-surface); margin: 0.6rem 0.6rem 0; border: 1px solid #c9c9c9;
     border-radius: 6px 6px 0 0;
     padding: 0.6rem;
     display: flex; justify-content: center;
@@ -131,7 +133,7 @@
     align-self: flex-start;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-    background: #fff;
+    background: var(--gtm-bg-surface);
 }
 .gcm-stage {
     width: 1280px;
@@ -145,7 +147,7 @@
     flex: none;
     display: flex; align-items: center; gap: 0.5rem;
     padding: 0.4rem 0.7rem 0.6rem;
-    font-size: 11px; color: #747474;
+    font-size: 11px; color: var(--gtm-text-muted);
 }
 .gcm-preview-foot a { margin-left: auto; color: #0176d3; font-weight: 600; text-decoration: none; }
 .gcm-preview-foot a:hover { text-decoration: underline; }
@@ -175,7 +177,7 @@
 .fld-help {
     margin: 0.25rem 0 0;
     font-size: 11px;
-    color: #747474;
+    color: var(--gtm-text-muted);
     line-height: 1.45;
 }
 /* Textareas were clipping their content at three lines. Let them grow, and
@@ -212,13 +214,13 @@
 .pg-card {
     display: flex; flex-direction: column; gap: .2rem; text-align: left;
     padding: .8rem .9rem; border: 1px solid #c9c9c9; border-radius: 6px;
-    background: #fff; cursor: pointer;
+    background: var(--gtm-bg-surface); cursor: pointer;
 }
 .pg-card:hover { border-color: #0176d3; background: #eef4ff; }
 .pg-name { font-size: 13.5px; font-weight: 700; }
-.pg-sum { font-size: 11.5px; color: #747474; }
-.pg-card--unbuilt { opacity: .6; cursor: not-allowed; background: #fafaf9; }
-.pg-card--unbuilt:hover { border-color: #c9c9c9; background: #fafaf9; }
+.pg-sum { font-size: 11.5px; color: var(--gtm-text-muted); }
+.pg-card--unbuilt { opacity: .6; cursor: not-allowed; background: var(--gtm-bg-hover); }
+.pg-card--unbuilt:hover { border-color: #c9c9c9; background: var(--gtm-bg-hover); }
 .pg-flag {
     margin-top: .3rem; align-self: flex-start;
     font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
@@ -232,15 +234,15 @@
 /* ── repeaters: structured lists, no JSON in the box ─────────────────────── */
 .rep { display: flex; flex-direction: column; gap: .4rem; }
 .rep-item {
-    border: 1px solid #e5e5e5; border-radius: 5px;
-    background: #fafaf9; padding: .45rem .55rem .6rem;
+    border: 1px solid var(--gtm-border); border-radius: 5px;
+    background: var(--gtm-bg-hover); padding: .45rem .55rem .6rem;
 }
-.rep-item:focus-within { border-color: #0176d3; background: #fff; }
+.rep-item:focus-within { border-color: #0176d3; background: var(--gtm-bg-surface); }
 .rep-head { display: flex; align-items: center; gap: .3rem; margin-bottom: .2rem; }
 .rep-n {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 10px; color: #747474; background: #fff;
-    border: 1px solid #e5e5e5; border-radius: 3px;
+    font-size: 10px; color: var(--gtm-text-muted); background: var(--gtm-bg-surface);
+    border: 1px solid var(--gtm-border); border-radius: 3px;
     min-width: 17px; text-align: center; padding: 0 .2rem;
 }
 .rep-acts { margin-left: auto; display: flex; gap: 2px; }
@@ -259,41 +261,41 @@
     background: rgba(20,20,24,.5); display: grid; place-items: center; padding: 1rem;
 }
 .modal {
-    width: min(30rem, 100%); background: #fff; border-radius: 8px;
+    width: min(30rem, 100%); background: var(--gtm-bg-surface); border-radius: 8px;
     box-shadow: 0 10px 34px rgba(0,0,0,.22); overflow: hidden;
 }
-.modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid #e5e5e5; }
+.modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid var(--gtm-border); }
 .modal-h h2 { margin: 0 0 .2rem; font-size: 16px; font-weight: 700; }
 .modal-h p { margin: 0; font-size: 12.5px; color: #444; }
 .modal-b { padding: .9rem 1.15rem; display: flex; flex-direction: column; gap: .7rem; }
 .modal-note { margin: 0; font-size: 12.5px; color: #444; line-height: 1.55; }
 /* Destructive actions read as destructive. Applied to lightning-button, so the
    colour has to reach the button element inside it. */
-.modal-danger { --slds-c-button-text-color: #ba0517; }
-.modal-danger button { color: #ba0517; }
+.modal-danger { --slds-c-button-text-color: var(--gtm-danger); }
+.modal-danger button { color: var(--gtm-danger); }
 .modal-f {
-    padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
+    padding: .8rem 1.15rem; border-top: 1px solid var(--gtm-border); background: var(--gtm-bg-hover);
     display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
 }
 
 /* ── add / delete sections ───────────────────────────────────────────────── */
 .gcm-rail-foot {
     flex: none;
-    border-top: 1px solid #e5e5e5;
+    border-top: 1px solid var(--gtm-border);
     padding: 0.4rem 0.5rem 0.5rem;
-    background: #fff;
+    background: var(--gtm-bg-surface);
 }
 .gcm-add {
     display: flex; align-items: center; gap: 0.4rem;
     width: 100%; padding: 0.4rem 0.5rem;
-    border: 1px dashed #c9c9c9; border-radius: 4px; background: #fff;
+    border: 1px dashed #c9c9c9; border-radius: var(--gtm-radius); background: var(--gtm-bg-surface);
     color: #0176d3; font-size: 12.5px; font-weight: 600; cursor: pointer;
 }
 .gcm-add:hover:not(:disabled) { border-color: #0176d3; background: #f3f8fd; }
 .gcm-add:disabled { color: #969696; cursor: default; }
 .gcm-add-plus { font-size: 15px; line-height: 1; }
 
-.mv--danger { color: #ba0517; }
+.mv--danger { color: var(--gtm-danger); }
 .mv--danger:hover:not(:disabled) { background: #fdf2f2; }
 
 /* Fields the layout supports but the section has no record for. Framed as a
@@ -309,8 +311,8 @@
 .gcm-missing-add {
     display: inline-flex; align-items: baseline; gap: 0.35rem;
     padding: 0.25rem 0.5rem;
-    border: 1px solid #c9c9c9; border-radius: 3px; background: #fff;
-    font-size: 12px; color: #181818; cursor: pointer;
+    border: 1px solid #c9c9c9; border-radius: 3px; background: var(--gtm-bg-surface);
+    font-size: 12px; color: var(--gtm-text); cursor: pointer;
 }
 .gcm-missing-add:hover:not(:disabled) { border-color: #0176d3; color: #0176d3; }
 .gcm-missing-add:disabled { color: #969696; cursor: default; }
@@ -322,7 +324,7 @@
 .modal-addr {
     margin: 0.5rem 0 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 10.5px; color: #747474;
+    font-size: var(--gtm-font-size-label); color: var(--gtm-text-muted);
     word-break: break-all;
 }
 
@@ -335,7 +337,7 @@
     border-radius: 3px; padding: 0 0.25rem;
 }
 .sec--doomed .sec-name { text-decoration: line-through; color: #969696; }
-.sec--doomed .sec-pending { color: #ba0517; background: #fdf2f2; border-color: #f2c2c2; }
+.sec--doomed .sec-pending { color: var(--gtm-danger); background: #fdf2f2; border-color: #f2c2c2; }
 .sec--pending { border-left: 2px solid #dd7a01; }
 .mv--undo { color: #0176d3; }
 .mv--undo:hover:not(:disabled) { background: #eef4ff; }
@@ -343,7 +345,7 @@
 
 /* ── column splitter ─────────────────────────────────────────────────────── */
 .gcm-split {
-    background: #e5e5e5; cursor: col-resize; position: relative; touch-action: none;
+    background: var(--gtm-border); cursor: col-resize; position: relative; touch-action: none;
 }
 /* A 6px target is hard to hit, so the grab area reaches past the visible line. */
 .gcm-split::before { content: ""; position: absolute; inset: 0 -4px; }
@@ -352,7 +354,7 @@
 /* ── save state ──────────────────────────────────────────────────────────── */
 .gcm-savestate {
     display: inline-flex; align-items: center; gap: 0.35rem;
-    font-size: 11.5px; color: #747474; margin-left: 0.4rem;
+    font-size: 11.5px; color: var(--gtm-text-muted); margin-left: 0.4rem;
 }
 .gcm-save-dot {
     width: 6px; height: 6px; border-radius: 50%; background: #2e844a;
@@ -371,15 +373,15 @@
 .card {
     display: flex; flex-direction: column; gap: 0.25rem; text-align: left;
     padding: 0.6rem 0.65rem; cursor: pointer;
-    border: 1px solid #e5e5e5; border-radius: 5px; background: #fff;
+    border: 1px solid var(--gtm-border); border-radius: 5px; background: var(--gtm-bg-surface);
 }
 .card:hover { border-color: #0176d3; }
 .card--on { border-color: #0176d3; background: #f3f8fd; box-shadow: inset 0 0 0 1px #0176d3; }
 .card-h {
     display: flex; align-items: center; gap: 0.35rem;
-    font-size: 12.5px; font-weight: 700; color: #181818;
+    font-size: 12.5px; font-weight: 700; color: var(--gtm-text);
 }
-.card-hint { font-size: 11px; color: #747474; line-height: 1.4; }
+.card-hint { font-size: 11px; color: var(--gtm-text-muted); line-height: 1.4; }
 .card-count {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 10px; color: #969696;
@@ -395,7 +397,7 @@
 .gcm-drafts {
     display: inline-flex; align-items: center; gap: 0.35rem;
     padding: 0.22rem 0.5rem;
-    border: 1px solid #f0d9a8; border-radius: 4px; background: #fef5e7;
+    border: 1px solid #f0d9a8; border-radius: var(--gtm-radius); background: #fef5e7;
     color: #8c4b02; font-size: 12px; font-weight: 600;
     cursor: pointer; white-space: nowrap;
     -webkit-font-smoothing: antialiased;
@@ -409,20 +411,20 @@
 .chgpop {
     position: absolute; top: calc(100% + 0.35rem); right: 0; z-index: 60;
     width: 20rem; max-height: 22rem; overflow-y: auto;
-    background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
+    background: var(--gtm-bg-surface); border: 1px solid var(--gtm-border); border-radius: 6px;
     box-shadow: 0 8px 24px rgba(0,0,0,.16);
 }
 .chgpop-h {
     display: flex; align-items: center;
-    padding: 0.45rem 0.6rem; border-bottom: 1px solid #e5e5e5;
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #747474;
+    padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--gtm-border);
+    font-size: var(--gtm-font-size-label); font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--gtm-text-muted);
 }
 .chgpop-x {
     margin-left: auto; border: 0; background: none; cursor: pointer;
     color: #969696; font-size: 14px; line-height: 1; padding: 0 0.15rem;
 }
-.chgpop-x:hover { color: #181818; }
+.chgpop-x:hover { color: var(--gtm-text); }
 .chgpop-list { margin: 0; padding: 0.25rem; list-style: none; }
 .chg {
     display: flex; flex-direction: column; gap: 0.1rem;
@@ -433,6 +435,6 @@
     font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
     color: #969696; font-weight: 600;
 }
-.chg-what { font-size: 12.5px; color: #181818; }
+.chg-what { font-size: 12.5px; color: var(--gtm-text); }
 .chg--structure .chg-what { color: #8c4b02; }
-.chg--doomed .chg-what { color: #ba0517; }
+.chg--doomed .chg-what { color: var(--gtm-danger); }

@@ -180,6 +180,11 @@ export default class GtmPagePreview extends LightningElement {
         if (this._resizeObs) { this._resizeObs.disconnect(); this._resizeObs = undefined; }
         clearTimeout(this._drivenTimer);
         clearTimeout(this._suppressTimer);
+        // A grip-drag left in progress when this component unmounts would
+        // otherwise leave these listening on window forever, each closing
+        // over stale DOM.
+        if (this._gripMove) window.removeEventListener('pointermove', this._gripMove);
+        if (this._gripUp) window.removeEventListener('pointerup', this._gripUp);
     }
 
     // ─── viewport grip ────────────────────────────────────────────────────────
@@ -203,7 +208,11 @@ export default class GtmPagePreview extends LightningElement {
         const up = () => {
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', up);
+            this._gripMove = undefined;
+            this._gripUp = undefined;
         };
+        this._gripMove = move;
+        this._gripUp = up;
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', up);
     }

@@ -23,6 +23,7 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track npTemplate = 'story';
     @track isLoading = false;
     @track loadError = '';
+    @track searchTerm = '';
 
     connectedCallback() { this.load(); }
 
@@ -83,6 +84,30 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
      * Page-level activity: what happened to a page, not which box someone
      * typed in. A publish is an event; an autosaved keystroke is not.
      */
+    // Substring match against the offering name/key and its page names, so
+    // typing "story" finds an offering by what it has, not just what it's
+    // called. There are only ever a handful of offerings each with four
+    // fixed pages, so this stays a plain client-side filter over data
+    // that's already loaded — no server round-trip needed.
+    get filteredCards() {
+        const q = (this.searchTerm || '').trim().toLowerCase();
+        if (!q) return this.cards;
+        return this.cards.filter((c) =>
+            c.label.toLowerCase().includes(q)
+            || c.key.toLowerCase().includes(q)
+            || c.pages.some((p) => p.label.toLowerCase().includes(q))
+        );
+    }
+
+    get hasFilteredCards() { return this.filteredCards.length > 0; }
+    get showNoSearchResults() {
+        return !this.isLoading && this.searchTerm.trim() && this.hasOfferings && !this.hasFilteredCards;
+    }
+
+    handleSearch(event) {
+        this.searchTerm = event.detail.value || '';
+    }
+
     get activityRows() {
         return this.activity.map((a, i) => ({
             id: `${a.offeringKey}-${a.templateType}-${i}`,

@@ -1,7 +1,11 @@
 <template>
   <div class="ov">
     <template if:true={loadError}>
-      <div class="ov-err">{loadError}</div>
+      <div class="ov-err" role="alert">
+        <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+        <span>{loadError}</span>
+        <button class="ov-err-x" onclick={handleDismissError} title="Dismiss" aria-label="Dismiss">&times;</button>
+      </div>
     </template>
 
     <div class="ov-cols">
@@ -43,17 +47,22 @@
       <!-- right: what a rep comes here to do -->
       <section class="ov-col ov-col--act">
         <h2 class="ov-h">Create</h2>
-        <button class="act" onclick={handleNewProspectPage} disabled={navBusy}>
-          <span class="act-plus">+</span>
+        <button class={actClass} onclick={handleNewProspectPage} disabled={navBusy}>
+          <template if:true={navBusy}>
+            <span class="act-spinner" aria-hidden="true"></span>
+          </template>
+          <template if:false={navBusy}>
+            <span class="act-plus">+</span>
+          </template>
           <span class="act-main">
-            <span class="act-label">New Prospect Page</span>
-            <span class="act-sub">Pick an industry and build a client configurator</span>
+            <span class="act-label">{newPageLabel}</span>
+            <span class="act-sub">{newPageSub}</span>
           </span>
         </button>
         <a class="act act--quiet" href={contentManagerUrl}>
           <span class="act-main">
             <span class="act-label">Open the Content Manager</span>
-            <span class="act-sub">Edit the pages behind these offerings</span>
+            <span class="act-sub">For editors: change the pages behind these offerings</span>
           </span>
         </a>
       </section>
@@ -82,7 +91,7 @@
         </template>
       </div>
       <template if:true={showEmptyOfferings}>
-        <p class="ov-empty">No offerings configured. Add an MA_Offering__mdt record to create one.</p>
+        <p class="ov-empty">No offerings set up yet — ask an admin to add one.</p>
       </template>
     </section>
 

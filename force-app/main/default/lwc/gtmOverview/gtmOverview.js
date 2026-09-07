@@ -33,6 +33,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     @track offeringsLoaded = false;
 
     @track navBusy = false;
+    @track navFailed = false;
 
     @wire(getSnapshot)
     wiredSnapshot({ data, error }) {
@@ -79,9 +80,17 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
         return getHomeSummary()
             .then((data) => {
                 this.offerings = ((data && data.offerings) || []).map((o) => {
-                    const built = (o.pages || []).filter((p) => (p.sectionCount || 0) > 0);
-                    const fields = (o.pages || []).reduce((n, p) => n + (p.fieldCount || 0), 0);
+                    const pages = o.pages || [];
+                    const built = pages.filter((p) => (p.sectionCount || 0) > 0);
                     const story = built.find((p) => p.templateType === 'story');
+                    // Business-facing readiness by named page, not a page/field
+                    // count only an admin would parse.
+                    const readiness = Object.keys(TEMPLATE_LABELS)
+                        .filter((type) => pages.some((p) => p.templateType === type))
+                        .map((type) => {
+                            const ready = pages.some((p) => p.templateType === type && (p.sectionCount || 0) > 0);
+                            return `${TEMPLATE_LABELS[type]} ${ready ? 'ready' : 'not started'}`;
+                        });
                     return {
                         offeringKey: o.offeringKey,
                         label: o.label,
@@ -90,9 +99,7 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                         // worse than no link.
                         hasStory: !!story && !!o.storyUrl,
                         storyUrl: o.storyUrl || '',
-                        summary: built.length
-                            ? `${built.length} page${built.length === 1 ? '' : 's'} built · ${fields} fields`
-                            : 'No pages modelled yet'
+                        summary: readiness.length ? readiness.join(' · ') : 'No pages started yet'
                     };
                 });
             })
@@ -133,6 +140,25 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
 
     get showEmptyOfferings() { return this.offeringsLoaded && !this.offerings.length; }
 
+    // A rep who just clicked this is mid-call or right after one — the label
+    // and sub-copy have to carry the button's state on their own, because a
+    // disabled attribute with no visual change reads as "did that even work?"
+    get newPageLabel() {
+        if (this.navBusy) return 'Opening…';
+        if (this.navFailed) return 'Try again';
+        return 'New Prospect Page';
+    }
+
+    get newPageSub() {
+        if (this.navBusy) return 'Opening the industry picker…';
+        if (this.navFailed) return 'That didn’t go through — click to retry';
+        return 'Pick an industry and build a client configurator';
+    }
+
+    get actClass() {
+        return this.navFailed ? 'act act--failed' : 'act';
+    }
+
     /**
      * The rep's entry point, and the reason this button is on this page: it
      * sends them to the site's own "Choose your industry" page with ?wizard=1,
@@ -143,10 +169,12 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     handleNewProspectPage() {
         if (this.navBusy) return;
         this.navBusy = true;
+        this.navFailed = false;
         getSiteHomePageUrl()
             .then((url) => {
                 if (!url) {
                     this.loadError = 'The Accelerator site could not be found, so the wizard cannot be opened.';
+                    this.navFailed = true;
                     return;
                 }
                 const sep = url.indexOf('?') > -1 ? '&' : '?';
@@ -157,8 +185,14 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
             })
             .catch((err) => {
                 this.loadError = this.messageFrom(err) || 'The wizard could not be opened.';
+                this.navFailed = true;
             })
             .finally(() => { this.navBusy = false; });
+    }
+
+    handleDismissError() {
+        this.loadError = '';
+        this.navFailed = false;
     }
 
     handleEditOffering(event) {

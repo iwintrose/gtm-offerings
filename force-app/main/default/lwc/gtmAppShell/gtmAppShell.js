@@ -5,9 +5,11 @@ export default class GtmAppShell extends LightningElement {
   @track selectedOffering = null;
   @track selectedIndustry = null;
 
+  _handleHashChange = this.handleRouting.bind(this);
+
   connectedCallback() {
     this.handleRouting();
-    window.addEventListener('hashchange', () => this.handleRouting());
+    window.addEventListener('hashchange', this._handleHashChange);
   }
 
   handleRouting() {
@@ -54,6 +56,6 @@ export default class GtmAppShell extends LightningElement {
   }
 
   disconnectedCallback() {
-    window.removeEventListener('hashchange', () => this.handleRouting());
+    window.removeEventListener('hashchange', this._handleHashChange);
   }
 }
