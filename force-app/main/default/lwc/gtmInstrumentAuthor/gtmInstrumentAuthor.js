@@ -45,6 +45,7 @@ import { resolveSlots, pointsFor, parse } from 'c/gtmPredicate';
 
 const VIEW_EDIT = 'edit';
 const VIEW_PREVIEW = 'preview';
+const ORIENTATION_KEY = 'gtmInstrumentAuthor.orientationCollapsed';
 
 export default class GtmInstrumentAuthor extends LightningElement {
     @api offeringKey = 'migration-accelerator';
@@ -58,6 +59,7 @@ export default class GtmInstrumentAuthor extends LightningElement {
     @track view = VIEW_EDIT;
     @track loading = true;
     @track error = '';
+    @track orientationCollapsed = false;
 
     /** Unsaved edits, keyed `${baseKey}::${variantKey}`. The pack is never mutated. */
     @track edits = {};
@@ -65,6 +67,11 @@ export default class GtmInstrumentAuthor extends LightningElement {
     @track previewAnswers = {};
 
     async connectedCallback() {
+        try {
+            this.orientationCollapsed = window.localStorage.getItem(ORIENTATION_KEY) === '1';
+        } catch (e) {
+            // Private browsing / storage blocked — default to shown.
+        }
         try {
             const [platforms, frame] = await Promise.all([getPlatforms(), getFrame()]);
             this.platforms = platforms || [];
@@ -74,6 +81,55 @@ export default class GtmInstrumentAuthor extends LightningElement {
         }
         await this.load();
         this.loading = false;
+    }
+
+    handleToggleOrientation() {
+        this.orientationCollapsed = !this.orientationCollapsed;
+        try {
+            window.localStorage.setItem(ORIENTATION_KEY, this.orientationCollapsed ? '1' : '0');
+        } catch (e) {
+            // Non-persistent this session; not worth failing over.
+        }
+    }
+
+    get offeringLabel() {
+        // No offering registry lookup exists on this screen today, and adding
+        // one is out of proportion to this fix — the raw key is honest and
+        // still answers "what offering is this" better than nothing.
+        return this.offeringKey || 'migration-accelerator';
+    }
+
+    get pairSummaryLabel() {
+        if (!this.pack) return '';
+        const src = this.sourceKey ? this.labelForKey(this.sourceKey) : 'Any source';
+        const tgt = this.targetKey ? this.labelForKey(this.targetKey) : 'Any target';
+        return `${src} → ${tgt}`;
+    }
+
+    labelForKey(key) {
+        const hit = this.platforms.find((p) => p.key === key);
+        return hit ? hit.label : key;
+    }
+
+    /**
+     * Static by design — this screen has no way to check live Network.Status
+     * from Apex without adding a new privileged method, which is out of
+     * proportion to an orientation fix. Kept as one line so it's cheap to
+     * delete the day gtmConfigBooking is rewired onto the real questionnaire,
+     * or the /assessment route is rebuilt on GTM1 — search this file for
+     * "reachabilityCaveat" when that happens.
+     */
+    get reachabilityCaveat() {
+        return 'the guest questionnaire that asks these questions live only on '
+            + 'the GTM Accelerator site, which is currently down for '
+            + 'maintenance. The live GTM1 site’s booking form does not yet '
+            + 'ask these questions, so editing a pack here does not change what '
+            + 'a real prospect sees today.';
+    }
+
+    get resolutionChainLabel() {
+        const chain = this.pack && this.pack.resolutionChain;
+        return chain && chain.length ? chain.join(' → ') : '';
     }
 
     async load() {

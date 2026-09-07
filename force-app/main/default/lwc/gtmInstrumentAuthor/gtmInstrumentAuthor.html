@@ -23,12 +23,60 @@
             </label>
             <template if:true={pack}>
                 <span class="ia-pack">pack: {pack.pairKey} · v{pack.version}</span>
+                <template if:true={resolutionChainLabel}>
+                    <span class="ia-chain" title="Least specific first; the last one shown is what actually won.">
+                        resolved via {resolutionChainLabel}
+                    </span>
+                </template>
+                <template if:true={pack.resolutionNote}>
+                    <span class="ia-chain ia-chain--note">{pack.resolutionNote}</span>
+                </template>
             </template>
             <div class="ia-tabs">
                 <button type="button" class={editTabClass} onclick={handleEdit}>Questions &amp; scores</button>
                 <button type="button" class={previewTabClass} onclick={handlePreview}>Preview</button>
             </div>
         </header>
+
+        <template if:false={orientationCollapsed}>
+            <div class="ia-orient">
+                <p class="ia-orient-line">
+                    <strong>What this is:</strong> the eight scored questions a prospect
+                    answers for the <strong>{offeringLabel}</strong> assessment, and the
+                    branches and per-option scoring that adapt them by source and target
+                    platform.
+                </p>
+                <p class="ia-orient-line">
+                    <strong>What "Any source / Any target" means:</strong> the base pack —
+                    every pair falls back to this when nothing more specific overrides it.
+                    It's the right view for auditing the whole instrument, but it is
+                    <em>not</em> what any real prospect is asked. Pick a pair above to see
+                    exactly what that pair's respondent sees.
+                </p>
+                <p class="ia-orient-line">
+                    <strong>How a pack gets chosen for a real submission:</strong> the
+                    prospect names their own source and target platform as the first
+                    question of the assessment itself — nothing a rep sets earlier
+                    carries into it. That answer resolves live, and is re-resolved,
+                    independently, on the server when they submit — never trusted from
+                    the browser. There is currently no field in the engagement-link
+                    customizer for a rep to set this per client.
+                </p>
+                <template if:true={reachabilityCaveat}>
+                    <p class="ia-orient-line ia-orient-warn">
+                        <strong>Heads up:</strong> {reachabilityCaveat}
+                    </p>
+                </template>
+                <button type="button" class="ia-orient-dismiss" onclick={handleToggleOrientation}>
+                    Got it — hide this
+                </button>
+            </div>
+        </template>
+        <template if:true={orientationCollapsed}>
+            <button type="button" class="ia-orient-reopen" onclick={handleToggleOrientation}>
+                What is this screen? · {pairSummaryLabel}
+            </button>
+        </template>
 
         <template if:true={error}>
             <p class="ia-error">{error}</p>

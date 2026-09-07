@@ -113,6 +113,7 @@ describe('c-gtm-instrument-author', () => {
     afterEach(() => {
         while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
         jest.clearAllMocks();
+        window.localStorage.clear();
     });
 
     it('lists all eight slots and marks the pinned ones', async () => {
@@ -234,5 +235,37 @@ describe('c-gtm-instrument-author', () => {
         expect(rows.length).toBe(8);
         expect(rows[6]).toContain('consent_owned_elsewhere');
         expect(rows[6]).toContain('consent_ownership_outside_platform');
+    });
+
+    it('shows the orientation panel expanded on first visit, and it persists dismissal via localStorage', async () => {
+        const el = await mount();
+        expect(one(el, '.ia-orient')).not.toBeNull();
+        expect(one(el, '.ia-orient-reopen')).toBeNull();
+        expect(one(el, '.ia-orient').textContent).toContain('down for');
+
+        one(el, '.ia-orient-dismiss').click();
+        await flush();
+        expect(one(el, '.ia-orient')).toBeNull();
+        expect(one(el, '.ia-orient-reopen')).not.toBeNull();
+        expect(window.localStorage.getItem('gtmInstrumentAuthor.orientationCollapsed')).toBe('1');
+
+        // Reload picks up the persisted dismissal.
+        document.body.removeChild(el);
+        const el2 = await mount();
+        expect(one(el2, '.ia-orient')).toBeNull();
+        expect(one(el2, '.ia-orient-reopen').textContent).toContain('Any source → Any target');
+    });
+
+    it('surfaces the resolution chain and note the pack response already carries', async () => {
+        getPack.mockResolvedValue({ ...pack(), resolutionChain: ['base', 'sfmc__mcn'], resolutionNote: null });
+        const el = await mount();
+        expect(one(el, '.ia-chain').textContent).toContain('base → sfmc__mcn');
+    });
+
+    it('shows the undecided-target note when the server returns one and no chain to render', async () => {
+        getPack.mockResolvedValue({ ...pack(), resolutionChain: [], resolutionNote: 'Target platform not yet chosen.' });
+        const el = await mount();
+        expect(one(el, '.ia-chain')).not.toBeNull();
+        expect(one(el, '.ia-chain--note').textContent).toBe('Target platform not yet chosen.');
     });
 });

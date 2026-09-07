@@ -44,6 +44,35 @@
 }
 .ia-tab--on { background: #eef4ff; border-color: #0176d3; color: #014486; font-weight: 700; }
 
+.ia-chain {
+    font-size: 11px; color: #747474;
+}
+.ia-chain--note { color: #8a6d00; }
+
+.ia-orient {
+    background: #fff9e6;
+    border-bottom: 1px solid #e8d98a;
+    padding: 0.6rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #3a3a2a;
+}
+.ia-orient-line { margin: 0; }
+.ia-orient-warn { color: #7a4b00; }
+.ia-orient-dismiss, .ia-orient-reopen {
+    align-self: flex-start;
+    font: inherit; font-size: 11.5px;
+    background: none; border: 1px solid #c9b968; border-radius: 4px;
+    padding: 0.15rem 0.5rem; color: #5a4a00; cursor: pointer;
+}
+.ia-orient-reopen {
+    margin: 0; border-radius: 0; border: none; border-bottom: 1px solid #e5e5e5;
+    background: #fafaf3; padding: 0.35rem 0.9rem; text-align: left; color: #6b5d1f;
+}
+
 .ia-error {
     margin: 0.5rem 0.75rem 0; padding: 0.5rem 0.7rem;
     border: 1px solid #fe9339; border-left-width: 3px; border-radius: 4px;
