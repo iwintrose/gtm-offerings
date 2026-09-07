@@ -208,8 +208,14 @@ public without sharing class GtmPageContentController {
      * The offerings this org knows about, from GTM_Offering__mdt. The editor
      * asks for these rather than assuming one, so adding an offering is a
      * metadata record and never a code change.
+     *
+     * cacheable=false, not true: this is called imperatively (never @wire'd),
+     * so cacheable bought nothing but a platform-cache staleness risk -- an
+     * offering created a moment ago missing from its own selector until the
+     * cache cleared, the same symptom getHomeSummary's own comments already
+     * document and fix the same way for the sibling read below.
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<OfferingOption> getOfferings() {
         List<OfferingOption> out = new List<OfferingOption>();
         String host = siteHost();

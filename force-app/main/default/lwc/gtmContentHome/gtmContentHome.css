@@ -56,12 +56,21 @@
    18rem track (the search bar was the only thing that landed in column 1's
    row), squeezing every offering card into a sliver on the right with a
    dead column of empty space to its left. Every child needs an explicit
-   column now that there are more of them than the grid declares. */
+   column now that there are more of them than the grid declares.
+   The row placement is explicit too, and deliberately does NOT use -1 for
+   the sidebar's end line: -1 addresses the *explicit* grid, and this grid
+   only ever declares columns, never grid-template-rows, so its rows are
+   entirely implicit. "1 / -1" collapsed back to just line 1, which pinned
+   the aside to row 1 and forced that row to grow to the sidebar's full
+   height (button + the whole Activity feed) -- exactly the tall grey gap
+   between the search bar and the cards this was meant to fix. Naming row 2
+   on both off-grid and the aside puts them side by side under the search
+   bar instead. */
 .home-body { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1rem; align-items: start; }
-.home-body > .home-search,
+.home-body > .home-search { grid-column: 1; grid-row: 1; }
 .home-body > .home-no-results,
-.home-body > .off-grid { grid-column: 1; }
-.home-body > .side { grid-column: 2; grid-row: 1 / -1; }
+.home-body > .off-grid { grid-column: 1; grid-row: 2; }
+.home-body > .side { grid-column: 2; grid-row: 2; }
 @media (max-width: 1100px) {
     .home-body { grid-template-columns: minmax(0, 1fr); }
     .home-body > .home-search,
