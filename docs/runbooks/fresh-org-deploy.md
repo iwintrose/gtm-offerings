@@ -477,6 +477,11 @@ published readout at the other.
 
 ## 11. Related runbooks
 
+- **`DEPLOYMENT.md` + `scripts/deploy.sh`** — the deploy path for an org that
+  already has its Experience Cloud sites and base setup in place (this is
+  what's actually been run against `gtm-dev`, and is battle-tested). Use
+  that path instead of this runbook unless you're genuinely starting from a
+  fresh org with none of this deployed yet.
 - `docs/runbooks/readout-public-link.md` — the readout link, the triage queue,
   the review Case, the approval process, the guest security posture, and the
   14-step public-link smoke test. **The authority on anything readout-specific**;

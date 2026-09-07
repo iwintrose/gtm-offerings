@@ -15,7 +15,7 @@ Two layers, doing two different jobs.
 | | Where | Written | Survives | Does not survive |
 |---|---|---|---|---|
 | **Fast path** | `localStorage`, keyed `ma-assessment-progress-v2:<savedRecordId or 'direct'>` | every change | refresh, browser restart, closed tab, flat battery | another device, another browser, cleared site data, private windows |
-| **Durable path** | `GTM_Assessment_Draft__c`, addressed by a 256-bit `Resume_Token__c` | each step transition, and on "Save my place" | everything above, plus another device from a link | its own 30-day expiry, and submission |
+| **Durable path** | `GTM_Form_Draft__c`, addressed by a 256-bit `Resume_Token__c` | each step transition, and on "Save my place" | everything above, plus another device from a link | its own 30-day expiry, and submission |
 
 Both restore **position in the flow**, not only the answer map. A form that hands
 back the answers but drops the respondent at step 1 has not resumed anything.
@@ -61,12 +61,12 @@ the facts:
 | Token is unguessable | `Crypto.getRandomBlob(32)`, base64url, padding stripped — 43 chars, the same generator as `GTM_Readout__c.Public_Link_Token__c` |
 | A token reaches only its own draft | every query filters `Resume_Token__c` **in the SOQL WHERE clause**, together with `Status__c = 'Open' AND Expires_At__c > now`. No method on `GtmAssessmentDraftController` accepts a record Id |
 | No existence leak | never-issued, expired, submitted and over-cap are **one** response: `resumeDraft` returns null, `saveDraft` throws one fixed message, `emailResumeLink` returns one fixed result |
-| Drafts cannot be mistaken for submissions | `GTM_Assessment_Draft__c` is a different object from `GTM_Assessment_Request__c`, so no list view, report or query over assessment requests can pick one up |
+| Drafts cannot be mistaken for submissions | `GTM_Form_Draft__c` is a different object from `GTM_Assessment_Request__c`, so no list view, report or query over assessment requests can pick one up |
 | Exactly one guest write path onto a submission | unchanged: `GtmAssessmentRequestController.submitRequest`. The draft controller cannot create, read or touch an `GTM_Assessment_Request__c` |
 | Invalidation on submit | `GtmAssessmentRequestController.closeDraft`, **in the submit transaction** — status to `Submitted` and `Resume_Token__c` nulled. If the submit rolls back so does the revocation |
 | Expiry | 30 days from creation, **not extended by saves**. Enforced in the WHERE clause, so a link dies on time whether or not a job ran |
 | Data actually goes away | `GtmAssessmentDraftPurge` deletes expired drafts and submitted ones past a 7-day grace. Object has search, feeds, history and reports **off** so no second copy outlives it |
-| No guest object permissions | `GTM_Assessment_Guest` grants **class access only**. `GTM_Assessment_Draft__c` object permissions are deliberately absent, like `GTM_Readout__c` and `Case` |
+| No guest object permissions | `GTM_Assessment_Guest` grants **class access only**. `GTM_Form_Draft__c` object permissions are deliberately absent, like `GTM_Readout__c` and `Case` |
 | Answers are not logged | no `System.debug` of the payload anywhere, no payload in an exception message, nothing but a URL in the email |
 | Not an open mail relay | fixed body, no caller-supplied content in it, base URL from configuration (never the browser), 2 sends per draft, address never stored, and minting itself throttled |
 
@@ -109,7 +109,7 @@ Token *enumeration* is not what any of this defends against — 256 bits of
 
    ```bash
    sf project deploy start \
-     -d force-app/main/default/objects/GTM_Assessment_Draft__c \
+     -d force-app/main/default/objects/GTM_Form_Draft__c \
      -d force-app/main/default/classes/GtmAssessmentDraftController.cls \
      -d force-app/main/default/classes/GtmAssessmentDraftPurge.cls \
      -d force-app/main/default/lwc/gtmAssessmentQuestionnaire \

@@ -5,6 +5,10 @@
 **Replaces:** `maConfigCustomize` form-based panel (v1)  
 **Requires:** Agentforce (Einstein Copilot Studio) provisioned on the GTM Offerings org
 
+> **Stale:** written before the `MA_`→`GTM_` rename (see `docs/backlog.md` D6);
+> verify current object/component names in code before treating this as
+> ground truth.
+
 ---
 
 ## 1. Problem statement

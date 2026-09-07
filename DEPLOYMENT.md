@@ -9,6 +9,12 @@ different org, or bringing it back after this Developer Edition org expires,
 is the same operation as every deploy already done tonight -- there's no
 separate "export" step.
 
+**This runbook covers an org that already has its Experience Cloud sites and
+base setup** — the path actually run against `gtm-dev` every time so far. For
+a genuinely from-zero org, see `docs/runbooks/fresh-org-deploy.md` instead —
+it's far more detailed, but less battle-tested; read its own caveat before
+relying on it.
+
 **Current status (D6 `MA_` → `GTM_` rename):** Complete. All five stages are
 done and the repo is purely `GTM_`-only -- `MA_Saved_Configuration__c`, its
 flow, and every permission-set/profile reference to it have been deleted.
@@ -122,8 +128,9 @@ app's own real Apex entry points (`saveConfiguration`, `submitRequest`) so
 they can't drift out of sync with real validation, scoring, or FLS:
 
 - **`scripts/data/reset-accelerator-demo.apex`** -- four fictional clients
-  (`MUCH Music (Demo)`, `TD Bank (Demo)`, `Medtronic (Demo)`, `LA Metro
-  (Demo)`, clearly labeled as such), spread across industries and source
+  (`Northlight Media Group (Demo)`, `Ashford Capital Bank (Demo)`, `Solara
+  Health Systems (Demo)`, `Harborline Transit Authority (Demo)`, clearly
+  labeled as such), spread across industries and source
   platforms, three converted to a scored assessment request and one that
   opened the link and dropped off -- a deliberately non-uniform, realistic
   spread rather than four identical "perfect" records. Safe to keep, edit
