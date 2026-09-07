@@ -3,6 +3,22 @@
         <header class="ia-bar">
             <span class="ia-brand">Instrument editor</span>
             <span class="ia-sep"></span>
+            <!-- Offering sits ABOVE the pair, because after ADR-0007 a pair
+                 only means anything inside one offering's instrument. Hidden
+                 when there is only one offering to choose, the same way the
+                 rest of this toolbar hides controls with nothing to control. -->
+            <template if:true={showOfferingPicker}>
+                <lightning-combobox
+                    label="Offering"
+                    variant="label-hidden"
+                    placeholder="Choose an offering"
+                    value={selectedOffering}
+                    options={offeringOptions}
+                    onchange={handleOfferingChange}
+                    class="ia-pick">
+                </lightning-combobox>
+                <span class="ia-sep"></span>
+            </template>
             <label class="ia-pick">
                 <span>From</span>
                 <select data-field="sourceKey" onchange={handlePair}>
@@ -80,6 +96,10 @@
 
         <template if:true={error}>
             <p class="ia-error">{error}</p>
+        </template>
+
+        <template if:false={hasOffering}>
+            <p class="ia-loading">Choose an offering to edit its instrument.</p>
         </template>
 
         <template if:true={loading}>

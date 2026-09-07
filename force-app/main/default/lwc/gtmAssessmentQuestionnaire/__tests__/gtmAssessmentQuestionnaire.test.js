@@ -706,8 +706,19 @@ describe('c-gtm-assessment-questionnaire', () => {
         await toReadiness(el);
         expect(one(el, '.q-question').textContent).toBe('Question 1?');
         expect(getPack).toHaveBeenCalledWith({
+            // Which offering's instrument these questions came from. Defaults
+            // to migration-accelerator until a page sets the @api property --
+            // see the property's own comment for why that default is honest
+            // rather than a guess.
+            offeringKey: 'migration-accelerator',
             sourceName: 'sfmc',
             targetName: 'sfmc_next'
+        });
+        // The base question set is offering-scoped too: GtmAssessmentQuestions
+        // filters its rows by Offering_Key__c, so an un-keyed call would serve
+        // whatever offering's questions happened to sort first.
+        expect(getQuestionnaire).toHaveBeenCalledWith({
+            offeringKey: 'migration-accelerator'
         });
     });
 });

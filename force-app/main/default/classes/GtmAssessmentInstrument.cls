@@ -104,11 +104,24 @@ public with sharing class GtmAssessmentInstrument {
 
     // -------------------------------------------------------------- caching
 
-    private static List<GTM_Assessment_Pair__mdt> cachedPairs;
-    private static List<GTM_Assessment_Dimension_Override__mdt> cachedOverrides;
-    private static List<GTM_Assessment_Supplement__mdt> cachedSupplements;
-    private static List<GTM_Assessment_Gate__mdt> cachedGates;
+    // Keyed by offering. A single guest or admin transaction should never need
+    // two offerings' rows, but keying by offering costs nothing and removes any
+    // chance of one offering's resolve() being served another's cached rows
+    // inside a batched admin preview.
+    private static Map<String, List<GTM_Assessment_Pair__mdt>> cachedPairs
+        = new Map<String, List<GTM_Assessment_Pair__mdt>>();
+    private static Map<String, List<GTM_Assessment_Dimension_Override__mdt>> cachedOverrides
+        = new Map<String, List<GTM_Assessment_Dimension_Override__mdt>>();
+    private static Map<String, List<GTM_Assessment_Supplement__mdt>> cachedSupplements
+        = new Map<String, List<GTM_Assessment_Supplement__mdt>>();
+    private static Map<String, List<GTM_Assessment_Gate__mdt>> cachedGates
+        = new Map<String, List<GTM_Assessment_Gate__mdt>>();
 
+    // The @TestVisible overrides stay FLAT, deliberately not offering-keyed: a
+    // test that sets one intends it to apply whichever offering key the test
+    // then calls resolve() with. This is test-fixture plumbing, not production
+    // behaviour, and keying it would only make every existing fixture say the
+    // same thing twice.
     @TestVisible private static List<GTM_Assessment_Pair__mdt> pairOverride;
     @TestVisible private static List<GTM_Assessment_Dimension_Override__mdt> overrideOverride;
     @TestVisible private static List<GTM_Assessment_Supplement__mdt> supplementOverride;
@@ -619,27 +632,36 @@ public with sharing class GtmAssessmentInstrument {
      * longer exists and ship it.
      */
     @AuraEnabled(cacheable=true)
-    public static Frame getFrame() {
+    public static Frame getFrame(String offeringKey) {
         Frame f          = new Frame();
-        f.slotCount      = GtmAssessmentScoring.DIMENSIONS.size();
-        f.minAnswerValue = GtmAssessmentScoring.MIN_ANSWER_VALUE;
-        f.maxAnswerValue = GtmAssessmentScoring.MAX_ANSWER_VALUE;
-        f.minTotal       = GtmAssessmentScoring.MIN_TOTAL_SCORE;
-        f.maxTotal       = GtmAssessmentScoring.MAX_TOTAL_SCORE;
-        f.bands          = GtmAssessmentScoring.bands();
+        List<Slot> slots = baseSlots(offeringKey);
+        List<GtmAssessmentScoring.Band> bands = GtmAssessmentScoring.bands(offeringKey);
+        f.slotCount      = slots.size();
+        f.bands          = bands;
+        // The totals come from the BANDS rather than being recomputed, so the
+        // preview cannot show an author a ceiling the scorer would not band to.
+        f.minTotal       = bands.isEmpty() ? null : bands[0].lowest;
+        f.maxTotal       = bands.isEmpty() ? null : bands[bands.size() - 1].highest;
+        f.minAnswerValue = slots.isEmpty() || f.minTotal == null
+            ? GtmAssessmentScoring.MIN_ANSWER_VALUE
+            : Integer.valueOf(f.minTotal / slots.size());
+        f.maxAnswerValue = slots.isEmpty() || f.maxTotal == null
+            ? GtmAssessmentScoring.MAX_ANSWER_VALUE
+            : Integer.valueOf(f.maxTotal / slots.size());
         return f;
     }
 
     /** Free-text platform names in, resolved pack out. */
     @AuraEnabled(cacheable=true)
-    public static Pack getPack(String sourceName, String targetName) {
+    public static Pack getPack(String offeringKey, String sourceName, String targetName) {
         try {
             return resolve(
+                offeringKey,
                 GtmMigrationPairs.resolvePlatformKey(sourceName),
                 GtmMigrationPairs.resolvePlatformKey(targetName)
             );
         } catch (Exception e) {
-            return basePack();
+            return basePack(offeringKey);
         }
     }
 
@@ -650,55 +672,68 @@ public with sharing class GtmAssessmentInstrument {
      * asked, and the recorded key plus its own two key columns is enough to
      * walk the same chain again.
      */
-    public static Pack resolveByPairKey(String pairKey) {
+    public static Pack resolveByPairKey(String offeringKey, String pairKey) {
         if (String.isBlank(pairKey)) {
-            return basePack();
+            return basePack(offeringKey);
         }
         try {
-            for (GTM_Assessment_Pair__mdt row : pairRows()) {
+            for (GTM_Assessment_Pair__mdt row : pairRows(offeringKey)) {
                 if (pairKey.equalsIgnoreCase(row.DeveloperName)) {
-                    return resolve(unwildcard(row.Source_Key__c), unwildcard(row.Target_Key__c));
+                    return resolve(
+                        offeringKey, unwildcard(row.Source_Key__c), unwildcard(row.Target_Key__c)
+                    );
                 }
             }
         } catch (Exception e) {
             // fall through
         }
-        return basePack();
+        return basePack(offeringKey);
     }
 
     /**
      * Canonical platform keys in, resolved pack out. Either may be null: a null
      * target is the "Not decided yet" case and resolves to base with a note.
      */
-    public static Pack resolve(String sourceKey, String targetKey) {
+    public static Pack resolve(String offeringKey, String sourceKey, String targetKey) {
         try {
-            return resolveInternal(sourceKey, targetKey);
+            return resolveInternal(offeringKey, sourceKey, targetKey);
         } catch (Exception e) {
             // Fails open. A pack that cannot be resolved must not take the
-            // questionnaire down with it -- the base eight are still the right
-            // eight, they just say less about this particular move.
-            Pack fallback = basePack();
+            // questionnaire down with it -- this offering's base slots are
+            // still the right slots, they just say less about this particular
+            // move.
+            Pack fallback = basePack(offeringKey);
             fallback.sourceKey = sourceKey;
             fallback.targetKey = targetKey;
             return fallback;
         }
     }
 
-    /** The frame with base wording and nothing overridden. */
+    /**
+     * Migration Accelerator's base pack, for a caller with no offering in hand.
+     * The one such caller is GtmAssessmentReadout.buildReadout's null-pack
+     * guard, which renders a stored readout; see the same named-default note on
+     * GtmAssessmentQuestions.dimensionNames().
+     */
     public static Pack basePack() {
+        return basePack(GtmAssessmentFrames.MIGRATION_ACCELERATOR);
+    }
+
+    /** One offering's frame with base wording and nothing overridden. */
+    public static Pack basePack(String offeringKey) {
         Pack out = new Pack();
-        out.slots            = baseSlots();
-        out.complexityDimensions = baseComplexity();
+        out.slots            = baseSlots(offeringKey);
+        out.complexityDimensions = baseComplexity(offeringKey);
         out.resolutionChain  = new List<String>();
         out.postureStatement = null;
         out.markProvenance();
         return out;
     }
 
-    private static Pack resolveInternal(String sourceKey, String targetKey) {
+    private static Pack resolveInternal(String offeringKey, String sourceKey, String targetKey) {
         Pack out       = new Pack();
-        out.slots      = baseSlots();
-        out.complexityDimensions = baseComplexity();
+        out.slots      = baseSlots(offeringKey);
+        out.complexityDimensions = baseComplexity(offeringKey);
         out.sourceKey  = sourceKey;
         out.targetKey  = targetKey;
 
@@ -707,7 +742,7 @@ public with sharing class GtmAssessmentInstrument {
         // Candidates, least specific first, so a more specific pack overwrites.
         List<GTM_Assessment_Pair__mdt> chain = new List<GTM_Assessment_Pair__mdt>();
         for (Integer specificity = 4; specificity >= 1; specificity--) {
-            for (GTM_Assessment_Pair__mdt row : pairRows()) {
+            for (GTM_Assessment_Pair__mdt row : pairRows(offeringKey)) {
                 if (row.Active__c == false || matchRank(row, sourceKey, targetKey, familyKey) != specificity) {
                     continue;
                 }
@@ -721,7 +756,8 @@ public with sharing class GtmAssessmentInstrument {
         }
 
         Map<String, Callout> calloutsByPattern = new Map<String, Callout>();
-        Map<String, List<GTM_Assessment_Dimension_Override__mdt>> byPair = overridesByPair();
+        Map<String, List<GTM_Assessment_Dimension_Override__mdt>> byPair =
+            overridesByPair(offeringKey);
         Set<String> supplementSets = new Set<String>();
         List<String> supplementOrder = new List<String>();
         // Conditional rows are held back rather than merged: a variant is a
@@ -781,8 +817,8 @@ public with sharing class GtmAssessmentInstrument {
         }
         out.markProvenance();
         out.callouts     = calloutsByPattern.values();
-        out.supplements  = supplementsFor(supplementOrder);
-        out.gates        = gates();
+        out.supplements  = supplementsFor(offeringKey, supplementOrder);
+        out.gates        = gates(offeringKey);
         if (String.isBlank(targetKey)) {
             out.resolutionNote = UNDECIDED_TARGET_NOTE;
         }
@@ -1065,14 +1101,21 @@ public with sharing class GtmAssessmentInstrument {
      * Positions come from GtmAssessmentScoring.DIMENSIONS, which stays the single
      * literal the whole instrument is measured against.
      */
-    private static List<Slot> baseSlots() {
+    private static List<Slot> baseSlots(String offeringKey) {
         Map<String, GtmAssessmentQuestions.Question> wording =
             new Map<String, GtmAssessmentQuestions.Question>();
+        List<String> authoredOrder = new List<String>();
         try {
-            for (GtmAssessmentQuestions.Question q :
-                    GtmAssessmentQuestions.questionsFor(GtmAssessmentQuestions.INSTRUMENT_READINESS)) {
-                if (String.isNotBlank(q.dimensionKey)) {
+            for (GtmAssessmentQuestions.Question q : GtmAssessmentQuestions.questionsFor(
+                    offeringKey, GtmAssessmentQuestions.INSTRUMENT_READINESS)) {
+                if (String.isNotBlank(q.dimensionKey) && !wording.containsKey(q.dimensionKey)) {
                     wording.put(q.dimensionKey, q);
+                    // Order is collected HERE rather than taken from
+                    // wording.keySet(): questionsFor() returns rows in
+                    // Sort_Order__c order, which is the order an author set and
+                    // the order a respondent sees, and an Apex Map's key order
+                    // is not contractually that.
+                    authoredOrder.add(q.dimensionKey);
                 }
             }
         } catch (Exception e) {
@@ -1082,7 +1125,16 @@ public with sharing class GtmAssessmentInstrument {
             // scorer is the half that must not be allowed to fail.
         }
 
-        List<String> dims = GtmAssessmentScoring.DIMENSIONS;
+        // ONE OFFERING's base keys. For migration-accelerator (and any
+        // offering with no frame record of its own) that is
+        // GtmAssessmentScoring.DIMENSIONS exactly as before; for an offering
+        // with its own instrument it is the keys ITS OWN question rows declare,
+        // in their own sort order, in whatever count that offering authored.
+        // Falling back to Migration Accelerator's eight for an unknown offering
+        // would be the single worst outcome here -- it is the leak the whole
+        // ADR exists to prevent -- so an offering with no question rows of its
+        // own gets an EMPTY frame and says nothing, rather than borrowing.
+        List<String> dims = baseKeysFor(offeringKey, authoredOrder, GtmAssessmentScoring.DIMENSIONS);
         List<Slot> slots = new List<Slot>();
         for (Integer i = 0; i < dims.size(); i++) {
             Slot s   = new Slot();
@@ -1116,14 +1168,16 @@ public with sharing class GtmAssessmentInstrument {
      * GtmAssessmentScoring.DIMENSIONS is for the first. A pair adapts the WORDS;
      * it never adds a seventh dimension or removes a sixth.
      */
-    private static List<ComplexityDimension> baseComplexity() {
+    private static List<ComplexityDimension> baseComplexity(String offeringKey) {
         Map<String, GtmAssessmentQuestions.Question> wording =
             new Map<String, GtmAssessmentQuestions.Question>();
+        List<String> authoredOrder = new List<String>();
         try {
-            for (GtmAssessmentQuestions.Question q :
-                    GtmAssessmentQuestions.questionsFor(GtmAssessmentQuestions.INSTRUMENT_COMPLEXITY)) {
-                if (String.isNotBlank(q.dimensionKey)) {
+            for (GtmAssessmentQuestions.Question q : GtmAssessmentQuestions.questionsFor(
+                    offeringKey, GtmAssessmentQuestions.INSTRUMENT_COMPLEXITY)) {
+                if (String.isNotBlank(q.dimensionKey) && !wording.containsKey(q.dimensionKey)) {
                     wording.put(q.dimensionKey, q);
+                    authoredOrder.add(q.dimensionKey);
                 }
             }
         } catch (Exception e) {
@@ -1131,7 +1185,7 @@ public with sharing class GtmAssessmentInstrument {
             // are simply absent. The scorer is the half that must not fail.
         }
 
-        List<String> dims = GtmEstateComplexity.DIMENSIONS;
+        List<String> dims = baseKeysFor(offeringKey, authoredOrder, GtmEstateComplexity.DIMENSIONS);
         List<ComplexityDimension> out = new List<ComplexityDimension>();
         for (Integer i = 0; i < dims.size(); i++) {
             ComplexityDimension d = new ComplexityDimension();
@@ -1154,12 +1208,12 @@ public with sharing class GtmAssessmentInstrument {
 
     // ------------------------------------------------------------ supplements
 
-    private static List<Supplement> supplementsFor(List<String> setKeys) {
+    private static List<Supplement> supplementsFor(String offeringKey, List<String> setKeys) {
         List<Supplement> out = new List<Supplement>();
         if (setKeys == null || setKeys.isEmpty()) {
             return out;
         }
-        List<GTM_Assessment_Supplement__mdt> rows = supplementRows();
+        List<GTM_Assessment_Supplement__mdt> rows = supplementRows(offeringKey);
         for (String setKey : setKeys) {
             for (GTM_Assessment_Supplement__mdt row : rows) {
                 if (row.Active__c == false || !setKey.equalsIgnoreCase(trimmed(row.Set_Key__c))) {
@@ -1183,9 +1237,9 @@ public with sharing class GtmAssessmentInstrument {
 
     // ----------------------------------------------------------------- gates
 
-    private static List<Gate> gates() {
+    private static List<Gate> gates(String offeringKey) {
         List<Gate> out = new List<Gate>();
-        for (GTM_Assessment_Gate__mdt row : gateRows()) {
+        for (GTM_Assessment_Gate__mdt row : gateRows(offeringKey)) {
             if (row.Active__c == false || String.isBlank(row.Key__c)) {
                 continue;
             }
@@ -1284,38 +1338,42 @@ public with sharing class GtmAssessmentInstrument {
 
     // ---------------------------------------------------------------- loading
 
-    private static List<GTM_Assessment_Pair__mdt> pairRows() {
-        if (cachedPairs == null) {
-            cachedPairs = pairOverride != null ? pairOverride : [
+    private static List<GTM_Assessment_Pair__mdt> pairRows(String offeringKey) {
+        String key = cacheKey(offeringKey);
+        if (!cachedPairs.containsKey(key)) {
+            cachedPairs.put(key, pairOverride != null ? pairOverride : [
                 SELECT DeveloperName, Source_Key__c, Target_Key__c, Specificity__c,
                        Capability_Posture__c, Source_Posture__c, Target_Posture__c,
                        Posture_Statement__c, Emphasis_Slots__c, Supplement_Set__c,
                        Callouts_JSON__c, Version__c, Active__c
                 FROM GTM_Assessment_Pair__mdt
-                WHERE Active__c = true
+                WHERE Active__c = true AND Offering_Key__c = :offeringKey
                 LIMIT 500
-            ];
+            ]);
         }
-        return cachedPairs;
+        return cachedPairs.get(key);
     }
 
-    private static Map<String, List<GTM_Assessment_Dimension_Override__mdt>> overridesByPair() {
-        if (cachedOverrides == null) {
-            cachedOverrides = overrideOverride != null ? overrideOverride : [
+    private static Map<String, List<GTM_Assessment_Dimension_Override__mdt>> overridesByPair(
+        String offeringKey
+    ) {
+        String ck = cacheKey(offeringKey);
+        if (!cachedOverrides.containsKey(ck)) {
+            cachedOverrides.put(ck, overrideOverride != null ? overrideOverride : [
                 SELECT Pair__c, Dimension__c, Layer__c, New_Key__c, Label__c, Question__c,
                        Options_JSON__c, Max_Attainable__c, Ceiling_Reason__c,
                        Measures__c, Evidence_Prompt__c, Respondent_Hint__c,
                        Instrument__c, Show_When_JSON__c, Variant_Key__c,
                        Variant_Order__c, Active__c
                 FROM GTM_Assessment_Dimension_Override__mdt
-                WHERE Active__c = true
+                WHERE Active__c = true AND Offering_Key__c = :offeringKey
                 ORDER BY Variant_Order__c NULLS FIRST, DeveloperName
                 LIMIT 2000
-            ];
+            ]);
         }
         Map<String, List<GTM_Assessment_Dimension_Override__mdt>> byPair =
             new Map<String, List<GTM_Assessment_Dimension_Override__mdt>>();
-        for (GTM_Assessment_Dimension_Override__mdt o : cachedOverrides) {
+        for (GTM_Assessment_Dimension_Override__mdt o : cachedOverrides.get(ck)) {
             String key = trimmed(o.Pair__c);
             if (String.isBlank(key)) {
                 continue;
@@ -1328,31 +1386,60 @@ public with sharing class GtmAssessmentInstrument {
         return byPair;
     }
 
-    private static List<GTM_Assessment_Supplement__mdt> supplementRows() {
-        if (cachedSupplements == null) {
-            cachedSupplements = supplementOverride != null ? supplementOverride : [
+    private static List<GTM_Assessment_Supplement__mdt> supplementRows(String offeringKey) {
+        String key = cacheKey(offeringKey);
+        if (!cachedSupplements.containsKey(key)) {
+            cachedSupplements.put(key, supplementOverride != null ? supplementOverride : [
                 SELECT Set_Key__c, Sort_Order__c, Key__c, Question__c, Options_JSON__c,
                        Scored__c, Index_Key__c, Horizon_Driver__c, Active__c
                 FROM GTM_Assessment_Supplement__mdt
-                WHERE Active__c = true
+                WHERE Active__c = true AND Offering_Key__c = :offeringKey
                 ORDER BY Sort_Order__c NULLS LAST, Key__c
                 LIMIT 500
-            ];
+            ]);
         }
-        return cachedSupplements;
+        return cachedSupplements.get(key);
     }
 
-    private static List<GTM_Assessment_Gate__mdt> gateRows() {
-        if (cachedGates == null) {
-            cachedGates = gateOverride != null ? gateOverride : [
+    private static List<GTM_Assessment_Gate__mdt> gateRows(String offeringKey) {
+        String key = cacheKey(offeringKey);
+        if (!cachedGates.containsKey(key)) {
+            cachedGates.put(key, gateOverride != null ? gateOverride : [
                 SELECT Key__c, Predicate_JSON__c, Tier_Qualifier__c, Readout_Block__c,
                        Severity__c, Active__c
                 FROM GTM_Assessment_Gate__mdt
-                WHERE Active__c = true
+                WHERE Active__c = true AND Offering_Key__c = :offeringKey
                 LIMIT 200
-            ];
+            ]);
         }
-        return cachedGates;
+        return cachedGates.get(key);
+    }
+
+    /** Cache key for an offering, normalising null/blank to one bucket. */
+    private static String cacheKey(String offeringKey) {
+        return String.isBlank(offeringKey) ? '' : offeringKey.trim().toLowerCase();
+    }
+
+    /**
+     * One offering's base dimension keys, in question sort order.
+     *
+     * `compiledFallback` is Migration Accelerator's compiled list, and it is
+     * used ONLY for migration-accelerator itself -- the offering those
+     * constants describe. Any other offering gets the keys its own question
+     * rows declare, or nothing at all. That asymmetry is the whole point: an
+     * offering with no content of its own must render an empty frame, not
+     * Migration Accelerator's eight dimensions wearing another offering's name,
+     * which is precisely the leak ADR-0007 exists to prevent and precisely what
+     * a "sensible default" here would reintroduce.
+     */
+    private static List<String> baseKeysFor(
+        String offeringKey,
+        List<String> authoredOrder,
+        List<String> compiledFallback
+    ) {
+        return GtmAssessmentFrames.MIGRATION_ACCELERATOR.equalsIgnoreCase(cacheKey(offeringKey))
+            ? compiledFallback
+            : authoredOrder;
     }
 
     // ---------------------------------------------------------------- helpers
@@ -1391,9 +1478,9 @@ public with sharing class GtmAssessmentInstrument {
     /** Clears the per-transaction caches. Test-only. */
     @TestVisible
     private static void resetCache() {
-        cachedPairs       = null;
-        cachedOverrides   = null;
-        cachedSupplements = null;
-        cachedGates       = null;
+        cachedPairs       = new Map<String, List<GTM_Assessment_Pair__mdt>>();
+        cachedOverrides   = new Map<String, List<GTM_Assessment_Dimension_Override__mdt>>();
+        cachedSupplements = new Map<String, List<GTM_Assessment_Supplement__mdt>>();
+        cachedGates       = new Map<String, List<GTM_Assessment_Gate__mdt>>();
     }
 }

@@ -120,6 +120,20 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
     @api prospect = '';
     @api industryLabel = '';
     @api prefillCompany = '';
+    /**
+     * Which offering's instrument this respondent is answering.
+     *
+     * Defaults to migration-accelerator because that is what every route on
+     * both existing sites is (ADR-0006 / backlog D9): this component's own
+     * route lives only on GTM_Accelerator1, which is down for maintenance, and
+     * the live GTM1 site's booking surface does not reach it at all. A page
+     * that does know its offering sets this property; until one does, the
+     * default is the honest answer rather than a guess -- migration-accelerator
+     * is the only offering that has ever been assessed. It is an @api property
+     * rather than a constant precisely so wiring a second offering's route is a
+     * page-builder change and not a code change.
+     */
+    @api offeringKey = 'migration-accelerator';
 
     @track pack = null;
     /**
@@ -180,7 +194,7 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
         try {
             const [platforms, questionnaire] = await Promise.all([
                 getPlatforms(),
-                getQuestionnaire()
+                getQuestionnaire({ offeringKey: this.offeringKey })
             ]);
             this.platforms = platforms || [];
             this.complexityQuestions = (questionnaire && questionnaire.complexity) || [];
@@ -266,6 +280,7 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
     async loadPack() {
         try {
             this.pack = await getPack({
+                offeringKey: this.offeringKey,
                 sourceName: this.routing.source,
                 targetName: this.routing.target === NOT_DECIDED ? '' : this.routing.target
             });

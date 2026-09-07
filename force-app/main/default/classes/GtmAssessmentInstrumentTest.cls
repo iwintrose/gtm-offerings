@@ -150,7 +150,7 @@ private class GtmAssessmentInstrumentTest {
         for (String target : new List<String>{ 'sfmc_next', 'nothing_configured', null }) {
             for (String source : new List<String>{ 'hubspot', 'marketo', 'eloqua', null }) {
                 GtmAssessmentInstrument.Pack pack =
-                    GtmAssessmentInstrument.resolve(source, target);
+                    GtmAssessmentInstrument.resolve('migration-accelerator', source, target);
                 System.assertEquals(
                     8, pack.slots.size(),
                     'The frame is eight slots for every pair; ' + source + '->' + target +
@@ -167,7 +167,7 @@ private class GtmAssessmentInstrumentTest {
     @IsTest
     static void slotsOneAndEightAreNotSubstitutable() {
         seedPacks();
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         System.assertEquals(false, pack.slots[0].substitutable,
             'Slot 1 is the invariant spine and must never be substitutable');
         System.assertEquals(false, pack.slots[7].substitutable,
@@ -188,7 +188,7 @@ private class GtmAssessmentInstrumentTest {
             new List<GTM_Assessment_Dimension_Override__mdt>{ bad };
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         System.assertEquals(
             GtmAssessmentScoring.DIMENSIONS[0], pack.slots[0].key,
             'A hand-edited metadata row must not be able to substitute a pinned slot; ' +
@@ -217,7 +217,7 @@ private class GtmAssessmentInstrumentTest {
             new List<GTM_Assessment_Dimension_Override__mdt>{ targetOnly, family, exact };
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         GtmAssessmentInstrument.Slot slot = pack.slotFor(dim);
         System.assertEquals('exact question', slot.question, 'Exact pair wins the question');
         System.assertEquals('recalibrate', slot.layer, 'Exact pair wins the layer');
@@ -244,7 +244,7 @@ private class GtmAssessmentInstrumentTest {
             new List<GTM_Assessment_Dimension_Override__mdt>{ family };
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('marketo', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'marketo', 'sfmc_next');
         System.assertEquals('family question', pack.slotFor(dim).question,
             'marketo shares the inbound_suite family, so the family pack applies');
         System.assertEquals('inbound__mcn', pack.pairKey);
@@ -253,7 +253,7 @@ private class GtmAssessmentInstrumentTest {
     @IsTest
     static void undecidedTargetResolvesToBaseWithANote() {
         seedPacks();
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', null);
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', null);
         System.assertEquals('base', pack.pairKey, 'No target named resolves to base');
         System.assert(String.isNotBlank(pack.resolutionNote),
             'A base resolution caused by an undecided target has to say so on the readout');
@@ -274,7 +274,7 @@ private class GtmAssessmentInstrumentTest {
         GtmAssessmentInstrument.resetCache();
 
         GtmAssessmentInstrument.Slot slot =
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next').slotFor(dim);
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next').slotFor(dim);
 
         System.assertEquals(4, slot.options.size(),
             'All four options still render -- a prospect must be able to SEE that a 4 ' +
@@ -297,7 +297,7 @@ private class GtmAssessmentInstrumentTest {
         GtmAssessmentInstrument.gateOverride = new List<GTM_Assessment_Gate__mdt>();
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         System.assertEquals(8, pack.slots.size(),
             'An unpopulated config table is a deployment state, not a product judgement');
         System.assertEquals(GtmAssessmentScoring.DIMENSIONS, pack.dimensionKeys());
@@ -314,7 +314,7 @@ private class GtmAssessmentInstrumentTest {
         GtmAssessmentInstrument.resetCache();
 
         GtmAssessmentInstrument.Slot slot =
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next').slotFor(dim);
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next').slotFor(dim);
         System.assertEquals(4, slot.options.size(),
             'A malformed override must not be able to empty a slot of its answers');
     }
@@ -336,7 +336,7 @@ private class GtmAssessmentInstrumentTest {
         GtmMigrationPairs.resetCache();
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('sfmc', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'sfmc', 'sfmc_next');
         System.assertEquals('interview_only', pack.posture,
             'The headline posture is the weaker end');
         System.assertEquals(
@@ -369,7 +369,7 @@ private class GtmAssessmentInstrumentTest {
         }
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         Map<String, GtmAssessmentInstrument.Callout> byPattern =
             new Map<String, GtmAssessmentInstrument.Callout>();
         for (GtmAssessmentInstrument.Callout c : pack.callouts) {
@@ -421,7 +421,7 @@ private class GtmAssessmentInstrumentTest {
 
         for (Integer answer = 1; answer <= 4; answer++) {
             GtmAssessmentInstrument.Pack pack =
-                GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+                GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
             pack = GtmAssessmentInstrument.applyBranches(
                 pack, new Map<String, Integer>{ earlier => answer }
             );
@@ -450,7 +450,7 @@ private class GtmAssessmentInstrumentTest {
         GtmAssessmentInstrument.resetCache();
 
         GtmAssessmentInstrument.Pack fired = GtmAssessmentInstrument.applyBranches(
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next'),
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next'),
             new Map<String, Integer>{ earlier => 1 }
         );
         System.assertEquals('owned_elsewhere', fired.slots[6].variantKey);
@@ -459,7 +459,7 @@ private class GtmAssessmentInstrumentTest {
         System.assertEquals('owned_elsewhere question?', fired.slots[6].question);
 
         GtmAssessmentInstrument.Pack notFired = GtmAssessmentInstrument.applyBranches(
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next'),
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next'),
             new Map<String, Integer>{ earlier => 4 }
         );
         System.assertEquals(GtmAssessmentInstrument.DEFAULT_VARIANT, notFired.slots[6].variantKey);
@@ -480,7 +480,7 @@ private class GtmAssessmentInstrumentTest {
         GtmAssessmentInstrument.resetCache();
 
         GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.applyBranches(
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next'),
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next'),
             new Map<String, Integer>()
         );
         System.assertEquals(GtmAssessmentInstrument.DEFAULT_VARIANT, pack.slots[6].variantKey,
@@ -507,7 +507,7 @@ private class GtmAssessmentInstrumentTest {
         GtmAssessmentInstrument.resetCache();
 
         GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.applyBranches(
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next'),
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next'),
             new Map<String, Integer>{ earlier => 1 }
         );
         System.assertEquals('narrow', pack.slots[6].variantKey,
@@ -529,7 +529,7 @@ private class GtmAssessmentInstrumentTest {
         GtmAssessmentInstrument.resetCache();
 
         GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.applyBranches(
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next'),
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next'),
             new Map<String, Integer>()
         );
         System.assertEquals(pinned, pack.slots[0].key,
@@ -549,7 +549,7 @@ private class GtmAssessmentInstrumentTest {
             new List<GTM_Assessment_Dimension_Override__mdt>{ v };
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         Map<String, Integer> answers = new Map<String, Integer>{ earlier => 1 };
         pack = GtmAssessmentInstrument.applyBranches(pack, answers);
         pack = GtmAssessmentInstrument.applyBranches(pack, answers);
@@ -571,7 +571,7 @@ private class GtmAssessmentInstrumentTest {
     @IsTest
     static void theDerivedMaximumIsTheFrameMaximum() {
         seedPacks();
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         System.assertEquals(
             GtmAssessmentScoring.MAX_TOTAL_SCORE, pack.maxTotal(),
             'Derived from the authored points, and it must come to the same 32 the ' +
@@ -591,7 +591,7 @@ private class GtmAssessmentInstrumentTest {
             new List<GTM_Assessment_Dimension_Override__mdt>{ capped };
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         System.assertEquals(
             GtmAssessmentScoring.MAX_TOTAL_SCORE, pack.maxTotal(),
             'A ceiling is a handicap on a hostile pair, not a smaller instrument. ' +
@@ -616,7 +616,7 @@ private class GtmAssessmentInstrumentTest {
         GtmAssessmentInstrument.resetCache();
 
         GtmAssessmentInstrument.Slot slot =
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next').slotFor(dim);
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next').slotFor(dim);
         System.assertEquals(1, slot.pointsForValue(2),
             'Non-linear points: "these two answers are equally bad" is a thing an ' +
             'author is allowed to say');
@@ -629,7 +629,7 @@ private class GtmAssessmentInstrumentTest {
     static void anOptionWithNoAuthoredPointsIsWorthItsValue() {
         seedPacks();
         GtmAssessmentInstrument.Slot slot =
-            GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next').slots[0];
+            GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next').slots[0];
         for (Integer v = 1; v <= 4; v++) {
             System.assertEquals(v, slot.pointsForValue(v),
                 'Existing content must score exactly as it did before points existed');
@@ -641,7 +641,7 @@ private class GtmAssessmentInstrumentTest {
     @IsTest
     static void everyPackResolvesToSixComplexityDimensions() {
         seedPacks();
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         System.assertEquals(
             GtmEstateComplexity.DIMENSIONS.size(), pack.complexityDimensions.size(),
             'Six, on every pair, for the same reason the readiness half is eight: ' +
@@ -674,7 +674,7 @@ private class GtmAssessmentInstrumentTest {
             new List<GTM_Assessment_Dimension_Override__mdt>{ row };
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         GtmAssessmentInstrument.ComplexityDimension d = pack.complexityDimensions[0];
         System.assertEquals('Workflow Footprint', d.label);
         System.assertEquals('How many workflows are switched on?', d.question);
@@ -706,7 +706,7 @@ private class GtmAssessmentInstrumentTest {
             new List<GTM_Assessment_Dimension_Override__mdt>{ stray };
         GtmAssessmentInstrument.resetCache();
 
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         System.assertNotEquals(
             'should reach nothing', pack.slotFor(readinessDim).question,
             'A row marked Complexity must not be merged onto a readiness slot'
@@ -722,7 +722,7 @@ private class GtmAssessmentInstrumentTest {
 
     @IsTest
     static void getFrameServesTheDerivedNumbersRatherThanTypedOnes() {
-        GtmAssessmentInstrument.Frame f = GtmAssessmentInstrument.getFrame();
+        GtmAssessmentInstrument.Frame f = GtmAssessmentInstrument.getFrame('migration-accelerator');
         System.assertEquals(GtmAssessmentScoring.MAX_TOTAL_SCORE, f.maxTotal);
         System.assertEquals(GtmAssessmentScoring.MIN_TOTAL_SCORE, f.minTotal);
         System.assertEquals(4, f.bands.size(), 'Four bands, and the client holds none of them');

@@ -146,7 +146,7 @@ public with sharing class GtmReadoutController {
                        Context__c, Urgency_Driver__c, Timeline__c,
                        Contact_Count__c, Monthly_Send_Volume__c,
                        Environment_Size__c, Internal_Team_Size__c,
-                       Key_Integrations__c,
+                       Key_Integrations__c, Offering_Key__c,
                        Saved_Configuration__r.Offering__c
                 FROM GTM_Assessment_Request__c
                 WHERE Id = :assessmentRequestId
@@ -182,10 +182,24 @@ public with sharing class GtmReadoutController {
                 return null;
             }
 
-            String offeringKey = req.Saved_Configuration__r != null
-                && String.isNotBlank(req.Saved_Configuration__r.Offering__c)
-                ? req.Saved_Configuration__r.Offering__c
-                : 'migration-accelerator';
+            // READ, no longer re-derived. The offering key is resolved once,
+            // server-side, at the point the assessment was actually scored
+            // (GtmAssessmentRequestController.recordAssessmentRequest) and
+            // stored on the request. Re-deriving it here from the linked
+            // configuration would be a second, independent answer to the same
+            // question -- and the two could genuinely disagree if a link's
+            // Offering__c were edited between submission and readout
+            // generation, which would render a readout against an instrument
+            // the assessment was never scored with. ADR-0007 section 3.
+            //
+            // The blank fallback is for rows submitted before Offering_Key__c
+            // existed. scripts/data/backfill-assessment-offering-key.apex fills
+            // those in, so this should never fire in gtm-dev -- it is the guard
+            // that keeps a pre-backfill or hand-created row rendering rather
+            // than failing.
+            String offeringKey = String.isNotBlank(req.Offering_Key__c)
+                ? req.Offering_Key__c
+                : GtmAssessmentFrames.MIGRATION_ACCELERATOR;
 
             // The two halves of a readout, written together and exactly once.
             // The snapshot is built FIRST because the prose template asks it

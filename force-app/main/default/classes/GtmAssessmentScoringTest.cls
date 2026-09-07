@@ -63,7 +63,7 @@ private class GtmAssessmentScoringTest {
 
     @isTest
     static void aPerfectQuestionnaireScoresThirtyTwoAndFastTracks() {
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4));
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4));
         Assert.areEqual(32, scored.total);
         Assert.areEqual(GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier);
         Assert.areEqual(8, scored.sectionScores.size());
@@ -73,7 +73,7 @@ private class GtmAssessmentScoringTest {
 
     @isTest
     static void aFloorQuestionnaireScoresEight() {
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(1));
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(1));
         Assert.areEqual(8, scored.total);
         Assert.areEqual(GtmAssessmentScoring.TIER_DISCOVERY_FIRST, scored.tier);
     }
@@ -129,7 +129,7 @@ private class GtmAssessmentScoringTest {
         // 4s everywhere except access. The total is 29 -- Fast-Track territory
         // -- and it must still come back Discovery First, because there is no
         // offering to run without an extract.
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             allAtExcept(4, new Map<String, Integer>{ 'source_access' => 1 })
         );
 
@@ -144,7 +144,7 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void theAccessGateFiresOnlyAtTheFloor() {
         for (Integer accessValue : new List<Integer>{ 2, 3, 4 }) {
-            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
                 allAtExcept(4, new Map<String, Integer>{ 'source_access' => accessValue })
             );
             Assert.isFalse(scored.cappedByAccessGate,
@@ -159,9 +159,9 @@ private class GtmAssessmentScoringTest {
         // not evidence that access is missing.
         Map<String, Integer> noAccessAnswer = allAt(4);
         noAccessAnswer.remove('source_access');
-        Assert.isFalse(GtmAssessmentScoring.score(noAccessAnswer).cappedByAccessGate);
+        Assert.isFalse(GtmAssessmentScoring.score('migration-accelerator', noAccessAnswer).cappedByAccessGate);
 
-        GtmAssessmentScoring.Score outOfRange = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score outOfRange = GtmAssessmentScoring.score('migration-accelerator', 
             allAtExcept(4, new Map<String, Integer>{ 'source_access' => 0 })
         );
         Assert.isFalse(outOfRange.cappedByAccessGate, 'A dropped 0 is not an answer of 1');
@@ -171,7 +171,7 @@ private class GtmAssessmentScoringTest {
 
     @isTest
     static void anUnsupportedPairSuppressesTheTierEntirely() {
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             allAt(4), unsupported('Adobe Campaign is not a source we can extract from.')
         );
 
@@ -185,7 +185,7 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void anUnsupportedPairBeatsTheAccessGateToo() {
         // Both overrides fire. Suppression wins: there is no band to cap.
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             allAtExcept(4, new Map<String, Integer>{ 'source_access' => 1 }),
             unsupported(null)
         );
@@ -199,7 +199,7 @@ private class GtmAssessmentScoringTest {
     static void anUnsupportedPairIsFlaggedEvenWhenNothingWasScored() {
         // Nothing to band, but a rep still has to be told not to scope it.
         GtmAssessmentScoring.Score scored =
-            GtmAssessmentScoring.score(new Map<String, Integer>(), unsupported('Nope.'));
+            GtmAssessmentScoring.score('migration-accelerator', new Map<String, Integer>(), unsupported('Nope.'));
         Assert.isFalse(scored.hasAnswers);
         Assert.isNull(scored.total);
         Assert.isTrue(scored.advisory);
@@ -213,7 +213,7 @@ private class GtmAssessmentScoringTest {
             new GtmAssessmentScoring.PairEligibility(),  // not evaluated
             supported()
         }) {
-            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4), pair);
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4), pair);
             Assert.isFalse(scored.advisory);
             Assert.areEqual(GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier);
             Assert.isNull(scored.advisoryReason);
@@ -226,7 +226,7 @@ private class GtmAssessmentScoringTest {
     static void bothPortabilityDimensionsAtTheFloorRaiseTheRebuildFlag() {
         // Deliberately at a HIGH total: the whole point of the annotation is
         // that it is true even when the headline number looks good.
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             allAtExcept(4, new Map<String, Integer>{
                 'orchestration_portability' => 1,
                 'content_portability'       => 1
@@ -245,7 +245,7 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void oneDimensionAtTheFloorIsNotEnoughToRaiseIt() {
         for (String only : new List<String>{ 'orchestration_portability', 'content_portability' }) {
-            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
                 allAtExcept(4, new Map<String, Integer>{ only => 1 })
             );
             Assert.areEqual(0, scored.annotations.size(), only + ' alone must not flag');
@@ -262,7 +262,7 @@ private class GtmAssessmentScoringTest {
         answers.put('another_one', 4);
         answers.put('estate_scale_bonus', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers);
 
         Assert.areEqual(8, scored.total, 'Only the eight real dimensions count');
         Assert.areEqual(8, scored.sectionScores.size());
@@ -283,7 +283,7 @@ private class GtmAssessmentScoringTest {
             'data_model_readiness'      => null
         };
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers);
 
         Assert.areEqual(4, scored.total, 'Only the one in-range answer scores');
         Assert.areEqual(1, scored.sectionScores.size());
@@ -292,7 +292,7 @@ private class GtmAssessmentScoringTest {
 
     @isTest
     static void aPartiallyAnsweredQuestionnaireScoresOnlyWhatWasAnswered() {
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             new Map<String, Integer>{ 'estate_scale' => 3, 'source_access' => 2 }
         );
         Assert.areEqual(5, scored.total);
@@ -310,7 +310,7 @@ private class GtmAssessmentScoringTest {
             new Map<String, Integer>(),
             new Map<String, Integer>{ 'not_a_dimension' => 4 }
         }) {
-            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(empty);
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', empty);
             Assert.isFalse(scored.hasAnswers);
             Assert.isNull(scored.total);
             Assert.isNull(scored.tier);
@@ -323,7 +323,7 @@ private class GtmAssessmentScoringTest {
     static void sectionScoresJsonIsParseableAndCarriesOnlyScoredDimensions() {
         // GtmReadoutController.sectionScoreLines parses this blob to build the
         // readout's breakdown, so it has to be real JSON.
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             new Map<String, Integer>{ 'estate_scale' => 3, 'source_access' => 2 }
         );
 
@@ -371,7 +371,7 @@ private class GtmAssessmentScoringTest {
         answers.remove('data_model_readiness');
         answers.put('crm_and_data_model_entanglement', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
 
         Assert.areEqual(25, scored.total, '7 x 3 + 4');
         Assert.areEqual(4, scored.sectionScores.get('crm_and_data_model_entanglement'));
@@ -399,7 +399,7 @@ private class GtmAssessmentScoringTest {
         for (GtmAssessmentInstrument.Slot slot : pack.slots) {
             answers.put(slot.key, 2);
         }
-        return GtmAssessmentScoring.score(answers, pack).sectionScores.keySet();
+        return GtmAssessmentScoring.score('migration-accelerator', answers, pack).sectionScores.keySet();
     }
 
     @isTest
@@ -409,7 +409,7 @@ private class GtmAssessmentScoringTest {
         Map<String, Integer> answers = allAt(3);
         answers.put('source_access', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
 
         Assert.isFalse(scored.sectionScores.containsKey('source_access'),
             'A 4 submitted to a slot the pair rendered as capped at 3 is a claim to an ' +
@@ -426,7 +426,7 @@ private class GtmAssessmentScoringTest {
     static void anAnswerAtTheCeilingIsAcceptedNormally() {
         GtmAssessmentInstrument.Pack pack = packWith(null, null, 'source_access', 3);
         Map<String, Integer> answers = allAt(3);
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
         Assert.areEqual(24, scored.total, '8 x 3 -- the ceiling is a maximum, not an exclusion');
         Assert.areEqual(3, scored.sectionScores.get('source_access'));
     }
@@ -439,7 +439,7 @@ private class GtmAssessmentScoringTest {
         only.baseKey = 'estate_scale';
         shortPack.slots.add(only);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4), shortPack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4), shortPack);
 
         Assert.areEqual(GtmAssessmentScoring.MAX_TOTAL_SCORE, scored.total,
             'A seven-slot pack that scored out of 28 while the readout printed ' +
@@ -452,7 +452,7 @@ private class GtmAssessmentScoringTest {
     static void aPackWithDuplicateKeysFallsBackToTheBaseEight() {
         GtmAssessmentInstrument.Pack dupes =
             packWith('orchestration_portability', 'content_portability', null, null);
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4), dupes);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4), dupes);
         Assert.areEqual(GtmAssessmentScoring.DIMENSIONS, scored.dimensionKeys,
             'Two slots collapsing into one key would silently halve a dimension\'s weight');
     }
@@ -464,7 +464,7 @@ private class GtmAssessmentScoringTest {
         answers.put('totally_made_up', 4);
         answers.put('another_invention', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
 
         Assert.areEqual(16, scored.total, '8 x 2 and nothing else');
         Assert.areEqual(8, scored.sectionScores.size(),
@@ -475,9 +475,9 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void theNullPackOverloadBehavesExactlyAsTheOldTwoArgumentCallDid() {
         Map<String, Integer> answers = allAt(3);
-        GtmAssessmentScoring.Score withoutPack = GtmAssessmentScoring.score(answers);
+        GtmAssessmentScoring.Score withoutPack = GtmAssessmentScoring.score('migration-accelerator', answers);
         GtmAssessmentScoring.Score withNullPack =
-            GtmAssessmentScoring.score(answers, null, null);
+            GtmAssessmentScoring.score('migration-accelerator', answers, null, null);
         Assert.areEqual(withoutPack.total, withNullPack.total);
         Assert.areEqual(withoutPack.tier, withNullPack.tier);
         Assert.areEqual(GtmAssessmentScoring.DIMENSIONS, withoutPack.dimensionKeys);
@@ -522,7 +522,7 @@ private class GtmAssessmentScoringTest {
             packWithPoints('orchestration_portability', new List<Integer>{ 1, 1, 3, 4 });
 
         GtmAssessmentScoring.Score scored =
-            GtmAssessmentScoring.score(allAtExcept(4, new Map<String, Integer>{
+            GtmAssessmentScoring.score('migration-accelerator', allAtExcept(4, new Map<String, Integer>{
                 'orchestration_portability' => 2
             }), pack);
 
@@ -547,14 +547,14 @@ private class GtmAssessmentScoringTest {
             packWithPoints('content_portability', new List<Integer>{ 1, 2, 3, 3 });
         Assert.areEqual(31, pack.maxTotal(), 'The pack as authored tops out at 31');
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4), pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4), pack);
         Assert.areEqual(32, scored.total,
             'The authored points are refused and the identity scale used instead, ' +
             'rather than quietly printing a total out of 31 against bands ' +
             'calibrated for 32');
         Assert.areEqual(GtmAssessmentScoring.MAX_TOTAL_SCORE, scored.maxTotal);
         Assert.areEqual(
-            GtmAssessmentScoring.MAX_TOTAL_SCORE, GtmAssessmentScoring.maxTotalFor(pack)
+            GtmAssessmentScoring.MAX_TOTAL_SCORE, GtmAssessmentScoring.maxTotalFor('migration-accelerator', pack)
         );
     }
 
@@ -566,7 +566,7 @@ private class GtmAssessmentScoringTest {
         GtmAssessmentInstrument.Pack pack =
             packWithPoints('consent_portability', new List<Integer>{ 1, 1, 3, 4 });
         GtmAssessmentScoring.Score scored =
-            GtmAssessmentScoring.score(allAtExcept(3, new Map<String, Integer>{
+            GtmAssessmentScoring.score('migration-accelerator', allAtExcept(3, new Map<String, Integer>{
                 'consent_portability' => 2
             }), pack);
         Assert.areEqual(22, scored.total, 'Seven at 3, one worth 1');
@@ -586,7 +586,7 @@ private class GtmAssessmentScoringTest {
         Map<String, Integer> answers = allAt(4);
         answers.put('invented_dimension', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
         Assert.areEqual(32, scored.total, 'An invented key adds nothing, as ever');
         Assert.isFalse(scored.sectionScores.containsKey('invented_dimension'));
     }
@@ -599,7 +599,7 @@ private class GtmAssessmentScoringTest {
         GtmAssessmentInstrument.Pack pack =
             packWithPoints('source_access', new List<Integer>{ 1, 1, 3, 4 });
         GtmAssessmentScoring.Score scored =
-            GtmAssessmentScoring.score(allAtExcept(4, new Map<String, Integer>{
+            GtmAssessmentScoring.score('migration-accelerator', allAtExcept(4, new Map<String, Integer>{
                 'source_access' => 1
             }), pack);
         Assert.isTrue(scored.cappedByAccessGate,
@@ -610,7 +610,7 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void theBranchPathIsRecordedForEverySlot() {
         GtmAssessmentInstrument.Pack pack = packWith(null, null, null, null);
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(3), pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(3), pack);
         Assert.areEqual(8, scored.branchPath.size(),
             'Every slot names the question that filled it, so a readout reopened ' +
             'later can say what was actually asked');

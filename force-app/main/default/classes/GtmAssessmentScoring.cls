@@ -69,6 +69,19 @@
  * Only supplements are genuinely additive, and they score into their own named
  * index in GtmAssessmentReadout, never into the 32.
  *
+ * THE FRAME IS PER-OFFERING NOW, AND THE CONSTANTS BELOW ARE MIGRATION
+ * ACCELERATOR'S. Everything from DIMENSIONS down to the band edges used to be
+ * "the frame"; since ADR-0007 it is "the migration-accelerator fallback frame".
+ * score() takes an offeringKey, reads that offering's GTM_Assessment_Frame__mdt
+ * through GtmAssessmentFrames, and falls back to these constants whenever no
+ * such record exists — which is every migration-accelerator submission, by
+ * design, so the fallback is the well-trodden path rather than an error branch.
+ * What did NOT change is any trust property above: the resolved keys are still
+ * an allowlist, still iterated rather than read from the caller's keySet, and a
+ * total is still measured against a maximum derived rather than typed. What
+ * changed is that WHICH maximum, and which band edges, are now a property of
+ * the offering being assessed instead of a property of the codebase.
+ *
  * WHERE THE WORDING LIVES — the dimension *keys* below are the base allowlist,
  * and they are code on purpose: a consultant editing a picklist
  * label must never be able to change what a guest-reachable endpoint will
@@ -91,10 +104,15 @@ public with sharing class GtmAssessmentScoring {
      * wrong thing entirely.
      */
     /**
-     * The BASE eight, and the fallback whenever a resolved pack is missing,
-     * short, or malformed. A pair pack may substitute a slot (see
-     * GtmAssessmentInstrument), which changes WHICH eight keys are scored but
-     * never how many.
+     * MIGRATION ACCELERATOR's base eight, and the fallback whenever a resolved
+     * pack is missing, short, or malformed. A pair pack may substitute a slot
+     * (see GtmAssessmentInstrument), which changes WHICH eight keys are scored
+     * but never how many.
+     *
+     * Not "the" eight any more: an offering with its own
+     * GTM_Assessment_Frame__mdt record scores against whatever its own pack
+     * resolves to, in whatever count that offering authored. This list is what
+     * an offering with no frame record of its own falls back to.
      */
     public static final List<String> DIMENSIONS = new List<String>{
         'estate_scale',
@@ -112,7 +130,12 @@ public with sharing class GtmAssessmentScoring {
     public static final String DIM_ORCHESTRATION   = 'orchestration_portability';
     public static final String DIM_CONTENT         = 'content_portability';
 
-    /** Lowest and highest value one scored answer may contribute. */
+    /**
+     * Lowest and highest value one scored answer may contribute — Migration
+     * Accelerator's scale, and the fallback for any offering with no
+     * GTM_Assessment_Frame__mdt record. An offering with one uses its own
+     * Min_Answer_Value__c / Max_Answer_Value__c instead.
+     */
     public static final Integer MIN_ANSWER_VALUE = 1;
     public static final Integer MAX_ANSWER_VALUE = 4;
 
@@ -190,7 +213,32 @@ public with sharing class GtmAssessmentScoring {
      * surface as an author confidently publishing a question they had previewed
      * against the wrong scale.
      */
+    public static List<Band> bands(String offeringKey) {
+        GTM_Assessment_Frame__mdt f = GtmAssessmentFrames.frameFor(offeringKey);
+        List<Band> authored = f == null
+            ? null
+            : GtmAssessmentFrames.parseBands(f.Bands_JSON__c);
+        return authored == null ? migrationAcceleratorBands() : authored;
+    }
+
+    /**
+     * Migration Accelerator's bands, for a caller with no offering in hand.
+     *
+     * Kept, rather than removed with the rest of the singleton, for the display
+     * callers ADR-0007's plan deliberately left un-threaded: GtmReadoutModel
+     * renders a band LADDER beside a stored score, and threading an offering
+     * key through the whole readout-rendering stack is a separate change with
+     * its own blast radius. Those callers show Migration Accelerator's ladder
+     * because every readout that exists today is Migration Accelerator's. This
+     * overload is where that assumption is written down, so it is one named,
+     * greppable place rather than an unstated default — and so a second
+     * offering's first readout has an obvious thing to fix.
+     */
     public static List<Band> bands() {
+        return migrationAcceleratorBands();
+    }
+
+    private static List<Band> migrationAcceleratorBands() {
         return new List<Band>{
             new Band(TIER_DISCOVERY_FIRST,   MIN_TOTAL_SCORE,             DISCOVERY_FIRST_MAX),
             new Band(TIER_PREP_REQUIRED,     DISCOVERY_FIRST_MAX + 1,     PREP_REQUIRED_MAX),
@@ -326,16 +374,82 @@ public with sharing class GtmAssessmentScoring {
         }
     }
 
+    // ----------------------------------------------------------- the frame
+
+    /**
+     * The frame ONE call to score() is measured against: the answer scale, the
+     * bands, and whether either came from an offering's own
+     * GTM_Assessment_Frame__mdt record or from the compiled Migration
+     * Accelerator constants.
+     *
+     * Resolved ONCE per score() call and passed down, rather than each helper
+     * re-reading it. Two helpers that resolved the frame independently could,
+     * in principle, disagree — and a submission scored against one scale and
+     * banded against another is the exact failure mode this whole class is
+     * built to make impossible.
+     */
+    private class ResolvedFrame {
+        Integer minAnswer;
+        Integer maxAnswer;
+        List<Band> bands;
+        /**
+         * True when a real frame record drove this. It is what decides whether
+         * the slot COUNT is also the offering's own business: with no record,
+         * the "exactly DIMENSIONS.size() slots or fall back to the literal"
+         * rule stays exactly as it was, because that rule is Migration
+         * Accelerator's frame asserting itself. With a record, the offering's
+         * own pack defines how many slots it has, and asserting 8 would be this
+         * codebase overruling the offering's authored instrument.
+         */
+        Boolean fromRecord;
+    }
+
+    private static ResolvedFrame frameFor(String offeringKey) {
+        ResolvedFrame rf = new ResolvedFrame();
+        rf.minAnswer  = MIN_ANSWER_VALUE;
+        rf.maxAnswer  = MAX_ANSWER_VALUE;
+        rf.bands      = migrationAcceleratorBands();
+        rf.fromRecord = false;
+
+        GTM_Assessment_Frame__mdt row = GtmAssessmentFrames.frameFor(offeringKey);
+        if (row == null) {
+            return rf;
+        }
+        // Every field is taken only when it is usable. A record with a good
+        // scale and unparseable bands keeps its scale and borrows Migration
+        // Accelerator's bands, rather than being discarded whole — the same
+        // per-field fail-open the instrument's own pack merge uses.
+        Integer minValue = intOf(row.Min_Answer_Value__c);
+        Integer maxValue = intOf(row.Max_Answer_Value__c);
+        if (minValue != null && maxValue != null && minValue >= 1 && maxValue > minValue) {
+            rf.minAnswer  = minValue;
+            rf.maxAnswer  = maxValue;
+            rf.fromRecord = true;
+        }
+        List<Band> authored = GtmAssessmentFrames.parseBands(row.Bands_JSON__c);
+        if (authored != null) {
+            rf.bands      = authored;
+            rf.fromRecord = true;
+        }
+        return rf;
+    }
+
+    private static Integer intOf(Decimal value) {
+        return value == null ? null : value.intValue();
+    }
+
     // --------------------------------------------------------------- scoring
 
     /** Scores with no pair information — the gate stays inert. */
-    public static Score score(Map<String, Integer> rawAnswers) {
-        return score(rawAnswers, null, null);
+    public static Score score(String offeringKey, Map<String, Integer> rawAnswers) {
+        return score(offeringKey, rawAnswers, null, null);
     }
 
     /** Scores against a resolved instrument pack, with no pair gate. */
-    public static Score score(Map<String, Integer> rawAnswers, GtmAssessmentInstrument.Pack pack) {
-        return score(rawAnswers, null, pack);
+    public static Score score(
+        String offeringKey, Map<String, Integer> rawAnswers, GtmAssessmentInstrument.Pack pack
+    ) {
+        return score(offeringKey, rawAnswers, null, pack);
     }
 
     /**
@@ -347,47 +461,56 @@ public with sharing class GtmAssessmentScoring {
      *
      *   1. ANNOTATIONS are collected from the raw answers. They never change
      *      the number or the band; they are things a rep has to say out loud.
+     *      Migration Accelerator only — see annotate().
      *
      *   2. The ACCESS GATE caps the tier at Discovery First when source_access
-     *      scored 1. Without an extract there is no offering to run, so no
-     *      total — however good — may promise otherwise. It caps rather than
-     *      suppresses: Discovery First is a real, sellable recommendation.
+     *      scored at the floor. Without an extract there is no offering to run,
+     *      so no total — however good — may promise otherwise. It caps rather
+     *      than suppresses: Discovery First is a real, sellable recommendation.
+     *      Migration Accelerator only, for the same reason as (1).
      *
      *   3. The UNSUPPORTED-PAIR GATE suppresses the tier entirely when the
      *      routing answer named a source or target the accelerator cannot
      *      process. Banding a migration-feasibility instrument for a pair the
      *      tool cannot handle is a false promise, so there is no band at all —
      *      the score and the breakdown survive as qualitative input for a
-     *      manual conversation, and Advisory_Reason__c carries the why.
+     *      manual conversation, and Advisory_Reason__c carries the why. The
+     *      caller decides whether this even applies; every offering that is not
+     *      a migration hands in a never-evaluated PairEligibility.
      */
-    public static Score score(Map<String, Integer> rawAnswers, PairEligibility pair) {
-        return score(rawAnswers, pair, null);
+    public static Score score(
+        String offeringKey, Map<String, Integer> rawAnswers, PairEligibility pair
+    ) {
+        return score(offeringKey, rawAnswers, pair, null);
     }
 
     /**
-     * The full form. `pack` supplies the resolved eight slot keys and any
-     * per-slot ceiling; null means the base eight with no ceilings, which is
-     * exactly what every caller got before the adaptive layer existed.
+     * The full form. `offeringKey` decides WHICH FRAME this is measured
+     * against; `pack` supplies the resolved slot keys and any per-slot ceiling.
+     * A null pack means the offering's base dimensions with no ceilings, which
+     * is exactly what every caller got before the adaptive layer existed.
      *
      * A ceiling is enforced HERE, not only in the UI, and it DROPS rather than
      * clamps -- the same rule the class already applied to any out-of-range
-     * value, for the same reason. A prospect who submits a 4 to a slot capped
-     * at 3 is claiming an answer that was rendered visibly unavailable to them;
-     * clamping it to 3 would invent an answer they did not give, and accepting
-     * it would let a guest-reachable endpoint score past a ceiling that exists
-     * because the capability does not.
+     * value, for the same reason. A prospect who submits a top answer to a slot
+     * capped below it is claiming an answer that was rendered visibly
+     * unavailable to them; clamping it would invent an answer they did not
+     * give, and accepting it would let a guest-reachable endpoint score past a
+     * ceiling that exists because the capability does not.
      */
     public static Score score(
+        String offeringKey,
         Map<String, Integer> rawAnswers,
         PairEligibility pair,
         GtmAssessmentInstrument.Pack pack
     ) {
+        ResolvedFrame frame = frameFor(offeringKey);
         Score out = new Score();
-        out.dimensionKeys = resolvedDimensions(pack);
+        out.dimensionKeys = resolvedDimensions(pack, frame);
         // Whether the authored points are trusted at all is decided ONCE, here,
         // before a single answer is read -- see maxTotalFor().
-        Boolean trustPoints = pointsAreTrustworthy(pack);
-        out.maxTotal = MAX_TOTAL_SCORE;
+        Boolean trustPoints = pointsAreTrustworthy(pack, frame);
+        out.maxTotal = frameMaxTotal(out.dimensionKeys, frame);
         if (pack != null) {
             out.instrumentPairKey = pack.pairKey;
             out.instrumentVersion = pack.version;
@@ -409,7 +532,7 @@ public with sharing class GtmAssessmentScoring {
             if (!rawAnswers.containsKey(dimension)) {
                 continue;
             }
-            Integer value = accepted(rawAnswers.get(dimension), ceilingFor(pack, dimension));
+            Integer value = accepted(rawAnswers.get(dimension), ceilingFor(pack, dimension), frame);
             if (value == null) {
                 continue;
             }
@@ -437,27 +560,42 @@ public with sharing class GtmAssessmentScoring {
         out.total             = total;
         out.sectionScoresJson = JSON.serialize(out.sectionScores);
 
-        annotate(out, pack);
+        annotate(out, pack, offeringKey, frame);
 
-        out.tier = tierFor(total);
-        // (2) Access gate. Only an *accepted* answer of 1 counts -- a dropped
+        out.tier = GtmAssessmentFrames.tierFor(frame.bands, total);
+        // (2) Access gate. MIGRATION ACCELERATOR ONLY, and deliberately not
+        // generalised: "no credentials to the source platform means you cannot
+        // responsibly be sold a migration" is a business judgement about
+        // migrations, not a framework rule, and an offering that is not a
+        // migration has no source platform to have access to. An offering
+        // wanting an equivalent already has the generic mechanism for it -- a
+        // GTM_Assessment_Gate__mdt row with a Predicate_JSON__c, which was
+        // built generic from the start for exactly this. See ADR-0007 6.
+        //
+        // Only an *accepted* answer at the floor counts -- a dropped
         // out-of-range value is unanswered, and an unanswered access question
         // is not evidence that access is missing. Keyed on the RESOLVED key for
         // the access slot, so a pair that rewords or recalibrates it (and every
-        // pair may) still trips the gate; a pair that substituted it away would
-        // not, which is one more reason substitution is the layer of last
-        // resort.
-        String accessKey = resolvedKeyFor(pack, DIM_SOURCE_ACCESS);
-        // Read against the ANSWER, not the points: "they picked the bottom
-        // option on access" is the fact the gate is about, and it must not stop
-        // being true because someone retuned what that option is worth.
-        if (out.answerValues.get(accessKey) == MIN_ANSWER_VALUE) {
-            out.cappedByAccessGate = true;
-            out.tier = TIER_DISCOVERY_FIRST;
+        // pair may) still trips the gate.
+        if (isMigrationAccelerator(offeringKey)) {
+            String accessKey = resolvedKeyFor(pack, DIM_SOURCE_ACCESS);
+            // Read against the ANSWER, not the points: "they picked the bottom
+            // option on access" is the fact the gate is about, and it must not
+            // stop being true because someone retuned what that option is worth.
+            if (out.answerValues.get(accessKey) == frame.minAnswer) {
+                out.cappedByAccessGate = true;
+                out.tier = TIER_DISCOVERY_FIRST;
+            }
         }
 
         applyPairGate(out, pair);
         return out;
+    }
+
+    /** Whether this offering is the one the compiled business rules belong to. */
+    private static Boolean isMigrationAccelerator(String offeringKey) {
+        return String.isNotBlank(offeringKey)
+            && GtmAssessmentFrames.MIGRATION_ACCELERATOR.equalsIgnoreCase(offeringKey.trim());
     }
 
     /**
@@ -482,14 +620,27 @@ public with sharing class GtmAssessmentScoring {
      * (1) Non-blocking observations. Deliberately additive and deliberately
      * separate from the total: an annotation that moved the score would be
      * double-counting answers that already scored.
+     *
+     * MIGRATION ACCELERATOR ONLY. "Both orchestration and content at the floor
+     * means most of the estate is rebuilt rather than moved" is genuine
+     * Migration Accelerator business judgement about migrations, not generic
+     * configuration, and it is keyed on three dimension names no other offering
+     * is required to have. It is NOT promoted to data (ADR-0007 6): an
+     * offering wanting its own "annotate without touching the number" writes a
+     * GTM_Assessment_Gate__mdt row, which is the generic mechanism that already
+     * exists for it.
      */
-    private static void annotate(Score out, GtmAssessmentInstrument.Pack pack) {
-        Integer orchestration = out.answerValues.get(resolvedKeyFor(pack, DIM_ORCHESTRATION));
-        Integer content       = out.answerValues.get(resolvedKeyFor(pack, DIM_CONTENT));
-        if (orchestration == MIN_ANSWER_VALUE && content == MIN_ANSWER_VALUE) {
-            out.annotations.add(
-                new Annotation(FLAG_HIGH_REBUILD_RATIO, HIGH_REBUILD_RATIO_MESSAGE)
-            );
+    private static void annotate(
+        Score out, GtmAssessmentInstrument.Pack pack, String offeringKey, ResolvedFrame frame
+    ) {
+        if (isMigrationAccelerator(offeringKey)) {
+            Integer orchestration = out.answerValues.get(resolvedKeyFor(pack, DIM_ORCHESTRATION));
+            Integer content       = out.answerValues.get(resolvedKeyFor(pack, DIM_CONTENT));
+            if (orchestration == frame.minAnswer && content == frame.minAnswer) {
+                out.annotations.add(
+                    new Annotation(FLAG_HIGH_REBUILD_RATIO, HIGH_REBUILD_RATIO_MESSAGE)
+                );
+            }
         }
         out.annotationsJson = out.annotations.isEmpty()
             ? null
@@ -497,49 +648,63 @@ public with sharing class GtmAssessmentScoring {
     }
 
     /**
-     * The tier band for a total, before either override. Public so the readout
-     * template and any future reporting read the bands from here rather than
-     * re-deriving them -- but note that this is the *band*, not necessarily the
-     * stored tier: score() may cap or suppress it.
+     * The tier band for a total against ONE OFFERING's bands, before either
+     * override. Public so the readout template and any future reporting read
+     * the bands from here rather than re-deriving them -- but note that this is
+     * the *band*, not necessarily the stored tier: score() may cap or suppress
+     * it.
      */
-    public static String tierFor(Decimal total) {
-        if (total == null) {
-            return null;
-        }
-        if (total <= DISCOVERY_FIRST_MAX) {
-            return TIER_DISCOVERY_FIRST;
-        }
-        if (total <= PREP_REQUIRED_MAX) {
-            return TIER_PREP_REQUIRED;
-        }
-        if (total <= ACCELERATOR_READY_MAX) {
-            return TIER_ACCELERATOR_READY;
-        }
-        return TIER_FAST_TRACK;
+    public static String tierFor(String offeringKey, Decimal total) {
+        return GtmAssessmentFrames.tierFor(bands(offeringKey), total);
     }
 
     /**
-     * The answer if it is in range, null if it is not. Out of range is dropped
-     * rather than clamped -- see the class header for why. `ceiling` is the
-     * slot's max_attainable for this pair, never above MAX_ANSWER_VALUE.
+     * Migration Accelerator's banding, for a caller with no offering in hand.
+     * Same deliberate, named default as the zero-arg bands() above; see its
+     * comment for which callers rely on it and why they were left un-threaded.
      */
-    private static Integer accepted(Integer value, Integer ceiling) {
-        Integer top = (ceiling == null || ceiling > MAX_ANSWER_VALUE) ? MAX_ANSWER_VALUE : ceiling;
-        if (value == null || value < MIN_ANSWER_VALUE || value > top) {
+    public static String tierFor(Decimal total) {
+        return GtmAssessmentFrames.tierFor(migrationAcceleratorBands(), total);
+    }
+
+    /**
+     * The answer if it is in range for this offering's scale, null if it is
+     * not. Out of range is dropped rather than clamped -- see the class header
+     * for why. `ceiling` is the slot's max_attainable for this pair, never
+     * above the frame's own maximum.
+     */
+    private static Integer accepted(Integer value, Integer ceiling, ResolvedFrame frame) {
+        Integer top = (ceiling == null || ceiling > frame.maxAnswer) ? frame.maxAnswer : ceiling;
+        if (value == null || value < frame.minAnswer || value > top) {
             return null;
         }
         return value;
     }
 
     /**
-     * The eight keys to score. A pack that is absent, or that does not resolve
-     * to exactly DIMENSIONS.size() distinct keys, is not trusted: the base
-     * literal is used instead. A short pack would otherwise produce a total out
-     * of 28 while the readout still printed "out of 32", which is the failure
-     * mode that looks most like a correct answer.
+     * The keys to score.
+     *
+     * With NO frame record (Migration Accelerator, and any offering yet to
+     * author one) this is exactly the rule it always was: a pack that is
+     * absent, or that does not resolve to exactly DIMENSIONS.size() distinct
+     * keys, is not trusted and the base literal is used instead. A short pack
+     * would otherwise produce a total out of 28 while the readout still printed
+     * "out of 32", which is the failure mode that looks most like a correct
+     * answer.
+     *
+     * WITH a frame record, the offering's own pack decides how many slots it
+     * has. Holding it to eight would be this codebase overruling an authored
+     * instrument -- the precise thing ADR-0007 exists to stop. The invariant
+     * that survives either way is the one that matters: no blanks, no
+     * duplicates, and a maximum derived from the same list that scored.
      */
-    private static List<String> resolvedDimensions(GtmAssessmentInstrument.Pack pack) {
-        if (pack == null || pack.slots == null || pack.slots.size() != DIMENSIONS.size()) {
+    private static List<String> resolvedDimensions(
+        GtmAssessmentInstrument.Pack pack, ResolvedFrame frame
+    ) {
+        if (pack == null || pack.slots == null || pack.slots.isEmpty()) {
+            return DIMENSIONS;
+        }
+        if (!frame.fromRecord && pack.slots.size() != DIMENSIONS.size()) {
             return DIMENSIONS;
         }
         List<String> keys = new List<String>();
@@ -588,40 +753,59 @@ public with sharing class GtmAssessmentScoring {
         return value;
     }
 
+    /** What a fully-answered submission against this frame is measured out of. */
+    private static Integer frameMaxTotal(List<String> dimensionKeys, ResolvedFrame frame) {
+        return frame.fromRecord
+            ? dimensionKeys.size() * frame.maxAnswer
+            : MAX_TOTAL_SCORE;
+    }
+
     /**
      * Whether the pack's AUTHORED POINTS may be used at all.
      *
      * This is the load-bearing guard on the whole feature. Points are editable
      * by a content author, and an author who sets a slot's top option to 3
      * points has quietly built an instrument scored out of 31 -- whose 24 is not
-     * the same 24 as everybody else's, and whose bands (14/20/26) were
-     * calibrated against a maximum it no longer has. The build script blocks
-     * that at authoring time (rule 10). This is the second lock, for the same
-     * reason the pinned-slot rule has two: a hand-edited custom metadata record
-     * never passes through the build script.
+     * the same 24 as everybody else's, and whose bands were calibrated against
+     * a maximum it no longer has. The build script blocks that at authoring
+     * time (rule 10). This is the second lock, for the same reason the
+     * pinned-slot rule has two: a hand-edited custom metadata record never
+     * passes through the build script.
      *
-     * When the derived maximum is anything but MAX_TOTAL_SCORE the authored
+     * When the derived maximum is anything but the FRAME's maximum the authored
      * points are refused wholesale and the identity scale is used instead --
      * fail to the frame, never to a private scale. It is the same "a short pack
-     * falls back to the base eight" instinct resolvedDimensions() already has.
+     * falls back to the base list" instinct resolvedDimensions() already has,
+     * and it is now measured against the offering's own maximum rather than
+     * always against 32.
      */
-    private static Boolean pointsAreTrustworthy(GtmAssessmentInstrument.Pack pack) {
-        if (pack == null || pack.slots == null || pack.slots.size() != DIMENSIONS.size()) {
+    private static Boolean pointsAreTrustworthy(
+        GtmAssessmentInstrument.Pack pack, ResolvedFrame frame
+    ) {
+        if (pack == null || pack.slots == null || pack.slots.isEmpty()) {
             return false;
         }
-        return pack.maxTotal() == MAX_TOTAL_SCORE;
+        if (!frame.fromRecord && pack.slots.size() != DIMENSIONS.size()) {
+            return false;
+        }
+        return pack.maxTotal() == frameMaxTotal(pack.dimensionKeys(), frame);
     }
 
     /**
      * The maximum a submission against this pack is scored out of. Derived from
-     * the pack when its authored points hold together, and MAX_TOTAL_SCORE --
-     * itself derived, never typed -- whenever they do not, which is the same
-     * number by definition. Exposed so the controller can persist it and a
-     * readout can print "18 out of N" from what it was actually measured
+     * the pack when its authored points hold together, and from the offering's
+     * own frame -- itself derived, never typed -- whenever they do not, which is
+     * the same number by definition. Exposed so the controller can persist it
+     * and a readout can print "18 out of N" from what it was actually measured
      * against rather than from today's configuration.
+     *
+     * Ceilings are deliberately NOT subtracted -- see Slot.topPoints().
      */
-    public static Integer maxTotalFor(GtmAssessmentInstrument.Pack pack) {
-        return pointsAreTrustworthy(pack) ? pack.maxTotal() : MAX_TOTAL_SCORE;
+    public static Integer maxTotalFor(String offeringKey, GtmAssessmentInstrument.Pack pack) {
+        ResolvedFrame frame = frameFor(offeringKey);
+        return pointsAreTrustworthy(pack, frame)
+            ? pack.maxTotal()
+            : frameMaxTotal(pack == null ? DIMENSIONS : pack.dimensionKeys(), frame);
     }
 
     /** The max_attainable for a resolved key, or null when uncapped. */

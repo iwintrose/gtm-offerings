@@ -37,6 +37,15 @@ public with sharing class GtmEstateComplexity {
      * there are and what they are called when nothing adapts them, and it is
      * what score() falls back to when no pack is supplied.
      */
+    /**
+     * PER-OFFERING SINCE ADR-0007: this list, the scale below it and the band
+     * edges below that are MIGRATION ACCELERATOR's complexity frame, and the
+     * fallback for any offering with no GTM_Assessment_Frame__mdt record of its
+     * own. An offering with one is scored against its Complexity_* fields and
+     * against whatever dimension count its own pack resolves to. Every trust
+     * property in the header survives either way -- the maximum is still
+     * DERIVED from the list that actually scored, never typed.
+     */
     public static final List<String> DIMENSIONS = new List<String>{
         'journey_footprint',
         'data_extension_complexity',
@@ -95,8 +104,8 @@ public with sharing class GtmEstateComplexity {
      * as a zero -- "complexity not estimated" and "complexity estimated as
      * light" are different claims and the readout says them differently.
      */
-    public static Complexity score(Map<String, Integer> rawAnswers) {
-        return score(rawAnswers, null);
+    public static Complexity score(String offeringKey, Map<String, Integer> rawAnswers) {
+        return score(offeringKey, rawAnswers, null);
     }
 
     /**
@@ -127,19 +136,22 @@ public with sharing class GtmEstateComplexity {
      * next to a basis that claims they are comparable with a post-scan
      * measurement, and they would not be.
      */
-    public static Complexity score(Map<String, Integer> rawAnswers, List<String> dimensionKeys) {
+    public static Complexity score(
+        String offeringKey, Map<String, Integer> rawAnswers, List<String> dimensionKeys
+    ) {
         Complexity out = new Complexity();
         if (rawAnswers == null || rawAnswers.isEmpty()) {
             return out;
         }
-        List<String> dimensions = acceptedDimensions(dimensionKeys);
+        ResolvedFrame frame = frameFor(offeringKey);
+        List<String> dimensions = acceptedDimensions(dimensionKeys, frame);
 
         Integer total = 0;
         for (String dimension : dimensions) {
             if (!rawAnswers.containsKey(dimension)) {
                 continue;
             }
-            Integer value = accepted(rawAnswers.get(dimension));
+            Integer value = accepted(rawAnswers.get(dimension), frame);
             if (value == null) {
                 continue;
             }
@@ -152,9 +164,75 @@ public with sharing class GtmEstateComplexity {
         }
         out.hasAnswers           = true;
         out.total                = total;
-        out.band                 = bandFor(total);
+        out.band                 = GtmAssessmentFrames.tierFor(frame.bands, total);
         out.dimensionScoresJson  = JSON.serialize(out.dimensionScores);
         return out;
+    }
+
+    // ----------------------------------------------------------- the frame
+
+    /**
+     * One call's complexity frame: the answer scale, the bands, and whether
+     * either came from an offering's own GTM_Assessment_Frame__mdt record or
+     * from the compiled Migration Accelerator constants above.
+     *
+     * Same shape and same reasoning as GtmAssessmentScoring.ResolvedFrame,
+     * reading the Complexity_* half of the same record. The two are separate
+     * structs rather than one shared type for the same reason
+     * ComplexityDimension is not a Slot: this axis is worth 1-3, carries no
+     * ceiling and never branches, and a shared struct would hand every reader
+     * of it fields that do not apply here.
+     *
+     * A blank Complexity_Min/Max on an offering's record means that offering
+     * has NO complexity axis at all -- there is then nothing offering-specific
+     * to read, and the compiled fallback is what a caller who scores complexity
+     * anyway gets, rather than a half-configured scale.
+     */
+    private class ResolvedFrame {
+        Integer minAnswer;
+        Integer maxAnswer;
+        List<GtmAssessmentScoring.Band> bands;
+        Boolean fromRecord;
+    }
+
+    private static ResolvedFrame frameFor(String offeringKey) {
+        ResolvedFrame rf = new ResolvedFrame();
+        rf.minAnswer  = MIN_ANSWER_VALUE;
+        rf.maxAnswer  = MAX_ANSWER_VALUE;
+        rf.bands      = migrationAcceleratorBands();
+        rf.fromRecord = false;
+
+        GTM_Assessment_Frame__mdt row = GtmAssessmentFrames.frameFor(offeringKey);
+        if (row == null) {
+            return rf;
+        }
+        Integer minValue = intOf(row.Complexity_Min_Answer_Value__c);
+        Integer maxValue = intOf(row.Complexity_Max_Answer_Value__c);
+        if (minValue != null && maxValue != null && minValue >= 1 && maxValue > minValue) {
+            rf.minAnswer  = minValue;
+            rf.maxAnswer  = maxValue;
+            rf.fromRecord = true;
+        }
+        List<GtmAssessmentScoring.Band> authored =
+            GtmAssessmentFrames.parseBands(row.Complexity_Bands_JSON__c);
+        if (authored != null) {
+            rf.bands      = authored;
+            rf.fromRecord = true;
+        }
+        return rf;
+    }
+
+    private static Integer intOf(Decimal value) {
+        return value == null ? null : value.intValue();
+    }
+
+    /** Migration Accelerator's Light / Moderate / Heavy edges, as bands. */
+    private static List<GtmAssessmentScoring.Band> migrationAcceleratorBands() {
+        return new List<GtmAssessmentScoring.Band>{
+            new GtmAssessmentScoring.Band(BAND_LIGHT,    MIN_TOTAL_SCORE,  LIGHT_MAX),
+            new GtmAssessmentScoring.Band(BAND_MODERATE, LIGHT_MAX + 1,    MODERATE_MAX),
+            new GtmAssessmentScoring.Band(BAND_HEAVY,    MODERATE_MAX + 1, MAX_TOTAL_SCORE)
+        };
     }
 
     /**
@@ -169,9 +247,27 @@ public with sharing class GtmEstateComplexity {
      * whole: a half-deployed pack should cost the adapted WORDING, not the
      * score.
      */
+    /**
+     * Test seam. ResolvedFrame is a private inner type a test cannot build, so
+     * the offering key -- which is what a caller actually has -- is the handle
+     * tests get, and the frame is resolved here exactly as score() resolves it.
+     */
     @TestVisible
-    private static List<String> acceptedDimensions(List<String> supplied) {
-        if (supplied == null || supplied.size() != DIMENSIONS.size()) {
+    private static List<String> acceptedDimensions(String offeringKey, List<String> supplied) {
+        return acceptedDimensions(supplied, frameFor(offeringKey));
+    }
+
+    private static List<String> acceptedDimensions(List<String> supplied, ResolvedFrame frame) {
+        if (supplied == null || supplied.isEmpty()) {
+            return DIMENSIONS;
+        }
+        // The count check is Migration Accelerator's frame asserting itself, so
+        // it applies only when Migration Accelerator's frame is the one in use.
+        // An offering with its own frame record has its own dimension count,
+        // and holding it to six would be this codebase overruling an authored
+        // instrument. The no-blanks / no-duplicates half applies always: a
+        // repeated key reads one submitted answer twice, whatever the frame.
+        if (!frame.fromRecord && supplied.size() != DIMENSIONS.size()) {
             return DIMENSIONS;
         }
         Set<String> seen = new Set<String>();
@@ -183,18 +279,21 @@ public with sharing class GtmEstateComplexity {
         return supplied;
     }
 
-    /** The band for a total. Public so the readout reads it from here. */
+    /** The band for a total against ONE OFFERING's complexity edges. */
+    public static String bandFor(String offeringKey, Decimal total) {
+        return GtmAssessmentFrames.tierFor(frameFor(offeringKey).bands, total);
+    }
+
+    /**
+     * Migration Accelerator's banding, for a caller with no offering in hand.
+     * The same deliberate, named default as GtmAssessmentScoring's zero-arg
+     * bands()/tierFor(): the readout-rendering callers were left un-threaded on
+     * purpose (ADR-0007's plan scopes them out), and every readout that exists
+     * today is Migration Accelerator's. Named here so the assumption is
+     * greppable rather than implicit.
+     */
     public static String bandFor(Decimal total) {
-        if (total == null) {
-            return null;
-        }
-        if (total <= LIGHT_MAX) {
-            return BAND_LIGHT;
-        }
-        if (total <= MODERATE_MAX) {
-            return BAND_MODERATE;
-        }
-        return BAND_HEAVY;
+        return GtmAssessmentFrames.tierFor(migrationAcceleratorBands(), total);
     }
 
     /**
@@ -216,8 +315,8 @@ public with sharing class GtmEstateComplexity {
         return null;
     }
 
-    private static Integer accepted(Integer value) {
-        if (value == null || value < MIN_ANSWER_VALUE || value > MAX_ANSWER_VALUE) {
+    private static Integer accepted(Integer value, ResolvedFrame frame) {
+        if (value == null || value < frame.minAnswer || value > frame.maxAnswer) {
             return null;
         }
         return value;

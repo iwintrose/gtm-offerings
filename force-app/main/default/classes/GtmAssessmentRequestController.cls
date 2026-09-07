@@ -29,6 +29,12 @@
  *     GtmMigrationPairs), not code -- see resolvePairEligibility below.
  */
 public without sharing class GtmAssessmentRequestController {
+    /**
+     * DeveloperName of the shared fallback config record. No longer how the
+     * fallback is FOUND -- loadConfig() now finds it by a blank Offering_Key__c,
+     * per ADR-0007 -- kept only so the record still has a name in this file for
+     * anyone tracing it back to Setup.
+     */
     private static final String DEFAULT_CONFIG = 'Default';
     private static final Integer MAX_SHORT = 255;
     private static final Integer MAX_LONG = 4000;
@@ -251,8 +257,14 @@ public without sharing class GtmAssessmentRequestController {
             throw new AuraHandledException('Please enter a valid work email.');
         }
 
-        GTM_Assessment_Config__mdt cfg = loadConfig();
         ConfigContext ctx = resolveConfigContext(input.savedRecordId);
+        // Resolved ONCE, here, and threaded everywhere below. Which offering
+        // this submission belongs to decides which instrument scores it, which
+        // config governs it, and what is stamped on the request -- so it is one
+        // decision made in one place rather than three independent derivations
+        // of "probably the same thing" (ADR-0007 section 3).
+        String offeringKey = resolveOfferingKey(ctx);
+        GTM_Assessment_Config__mdt cfg = loadConfig(offeringKey);
         validateTokenIfRequired(input.savedRecordId, input.submissionToken, ctx);
         // A company name is a company name wherever it shows up in this
         // flow -- it should resolve to a real Account, not sit as a bare
@@ -296,7 +308,7 @@ public without sharing class GtmAssessmentRequestController {
             if (sendEmail == true && String.isNotBlank(notifyEmail)) {
                 result.emailSent = notify(input, cleanName, cleanEmail, notifyEmail);
             }
-            recordAssessmentRequest(input, cleanName, cleanEmail, ctx, result);
+            recordAssessmentRequest(input, cleanName, cleanEmail, ctx, offeringKey, result);
             // INVALIDATION ON SUBMIT. In the same transaction as the request,
             // so a submitted assessment and a live resume link cannot coexist:
             // if this rolls back, so does the request. See closeDraft's own
@@ -478,6 +490,48 @@ public without sharing class GtmAssessmentRequestController {
     }
 
 
+    /**
+     * The Source__c display label for a request.
+     *
+     * A JUDGEMENT CALL flagged by ADR-0007's plan (2.5) rather than pre-decided
+     * there. Source__c is a display label saying where a request came from, and
+     * it was the hardcoded literal 'Migration Accelerator'. Left as that
+     * literal it would silently mislabel every future offering's submissions as
+     * Migration Accelerator's -- and Source__c is what a rep filters a list
+     * view by, so a wrong value there is not cosmetic, it hides work.
+     *
+     * Resolved from GTM_Offering__mdt.Label__c, the same table
+     * offeringAnnualTarget() below already reads, falling back to the old
+     * literal whenever the lookup yields nothing. Migration Accelerator's own
+     * rows therefore keep the exact string they have always had, and no
+     * existing row's value changes; a second offering gets its own name instead
+     * of a lie. This is copy, not schema, so the risk either way is low -- but
+     * only one of the two options is still correct after a second offering
+     * exists.
+     */
+    private static String sourceLabelFor(String offeringKey) {
+        if (String.isBlank(offeringKey)) {
+            return LEGACY_SOURCE_LABEL;
+        }
+        try {
+            List<GTM_Offering__mdt> rows = [
+                SELECT Label__c
+                FROM GTM_Offering__mdt
+                WHERE Offering_Key__c = :offeringKey
+                LIMIT 1
+            ];
+            if (!rows.isEmpty() && String.isNotBlank(rows[0].Label__c)) {
+                return rows[0].Label__c;
+            }
+        } catch (Exception e) {
+            // A missing or unreadable offering table must not cost the whole
+            // submission a label it can still supply from the old constant.
+        }
+        return LEGACY_SOURCE_LABEL;
+    }
+
+    private static final String LEGACY_SOURCE_LABEL = 'Migration Accelerator';
+
     private static Decimal offeringAnnualTarget(String offeringKey) {
         if (String.isBlank(offeringKey)) {
             return null;
@@ -507,6 +561,7 @@ public without sharing class GtmAssessmentRequestController {
         String cleanName,
         String cleanEmail,
         ConfigContext ctx,
+        String offeringKey,
         RequestResult result
     ) {
         try {
@@ -520,7 +575,7 @@ public without sharing class GtmAssessmentRequestController {
             // WHICH eight questions were asked is a property of the pair, so
             // it is resolved before scoring and recorded alongside the result.
             // Fails open to the base pack -- see GtmAssessmentInstrument.resolve.
-            GtmAssessmentInstrument.Pack pack = resolveInstrumentPack(input);
+            GtmAssessmentInstrument.Pack pack = resolveInstrumentPack(offeringKey, input);
 
             // ANSWER-DRIVEN BRANCHING, resolved on the server from the submitted
             // answers. The questionnaire resolved the same branches as the
@@ -534,8 +589,9 @@ public without sharing class GtmAssessmentRequestController {
             pack = GtmAssessmentInstrument.applyBranches(pack, readinessAnswers);
 
             GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+                offeringKey,
                 readinessAnswers,
-                resolvePairEligibility(input),
+                resolvePairEligibility(offeringKey, input),
                 pack
             );
 
@@ -559,6 +615,7 @@ public without sharing class GtmAssessmentRequestController {
             // not resolve are never read.
             GtmEstateComplexity.Complexity complexity =
                 GtmEstateComplexity.score(
+                    offeringKey,
                     answerMap(input.complexityAnswers),
                     pack == null ? null : pack.complexityKeys()
                 );
@@ -628,7 +685,10 @@ public without sharing class GtmAssessmentRequestController {
                 Branch_Platform__c      = trimTo(input.branchPlatform, MAX_SHORT),
                 Submitted_At__c         = DateTime.now(),
                 Status__c               = 'New',
-                Source__c               = 'Migration Accelerator'
+                // Which offering's instrument actually scored this. Set once,
+                // server-side, never client-supplied (ADR-0007 section 3).
+                Offering_Key__c         = trimTo(offeringKey, 80),
+                Source__c               = sourceLabelFor(offeringKey)
             );
             if (ctx.ownerId != null) {
                 req.OwnerId = ctx.ownerId;
@@ -726,14 +786,26 @@ public without sharing class GtmAssessmentRequestController {
 
     // ----------------------------------------------------------------- config
 
-    private static GTM_Assessment_Config__mdt loadConfig() {
+    /**
+     * This offering's config row, or the shared default.
+     *
+     * PRECEDENCE, mirroring GtmPageContentController.getPageContent's
+     * industry-then-default chain exactly, including the NULLS LAST idiom: a
+     * row naming this offering wins, and a row with a BLANK Offering_Key__c is
+     * the fallback for every offering that has none of its own. The fallback is
+     * now found by that blankness rather than by DeveloperName -- the existing
+     * `Default` record becomes the shared row purely by staying blank, and
+     * nothing about it had to be edited (ADR-0007 section 1).
+     */
+    private static GTM_Assessment_Config__mdt loadConfig(String offeringKey) {
         if (configOverride != null) {
             return configOverride;
         }
         List<GTM_Assessment_Config__mdt> rows = [
             SELECT Notify_Email__c, Create_Lead__c, Send_Email__c, Activity_Type__c
             FROM GTM_Assessment_Config__mdt
-            WHERE DeveloperName = :DEFAULT_CONFIG
+            WHERE Offering_Key__c = :offeringKey OR Offering_Key__c = null
+            ORDER BY Offering_Key__c NULLS LAST
             LIMIT 1
         ];
         if (!rows.isEmpty()) {
@@ -1128,7 +1200,21 @@ public without sharing class GtmAssessmentRequestController {
      * Branch_Platform__c because those are what actually name a source and a
      * target; the Q0 routing answer only says which question variant was shown.
      */
-    private static GtmAssessmentScoring.PairEligibility resolvePairEligibility(RequestInput input) {
+    private static GtmAssessmentScoring.PairEligibility resolvePairEligibility(
+        String offeringKey, RequestInput input
+    ) {
+        // MIGRATION ACCELERATOR ONLY, per ADR-0007 section 5. "Can the
+        // accelerator process this source-to-target platform move at all" is a
+        // migration business rule with no equivalent in an offering that is not
+        // a migration -- GTM_Migration_Platform__mdt / GTM_Migration_Pair__mdt
+        // are deliberately left unscoped rather than generalised into something
+        // nothing needs yet. Every other offering gets the same inert,
+        // never-evaluated verdict the whole system already fails open to when
+        // pair metadata is absent, so the gate simply does not apply.
+        if (!GtmAssessmentFrames.MIGRATION_ACCELERATOR.equalsIgnoreCase(
+                String.isBlank(offeringKey) ? '' : offeringKey.trim())) {
+            return new GtmAssessmentScoring.PairEligibility();
+        }
         try {
             return GtmMigrationPairs.evaluate(input.currentPlatform, input.targetPlatform);
         } catch (Exception e) {
@@ -1149,16 +1235,38 @@ public without sharing class GtmAssessmentRequestController {
      * score because a pack is missing would be strictly worse than one scored
      * against the base eight.
      */
-    private static GtmAssessmentInstrument.Pack resolveInstrumentPack(RequestInput input) {
+    private static GtmAssessmentInstrument.Pack resolveInstrumentPack(
+        String offeringKey, RequestInput input
+    ) {
         try {
-            return GtmAssessmentInstrument.getPack(input.currentPlatform, input.targetPlatform);
+            return GtmAssessmentInstrument.getPack(
+                offeringKey, input.currentPlatform, input.targetPlatform
+            );
         } catch (Exception e) {
             System.debug(
                 LoggingLevel.WARN,
                 'Instrument pack could not be resolved; falling back to base: ' + e.getTypeName()
             );
-            return GtmAssessmentInstrument.basePack();
+            return GtmAssessmentInstrument.basePack(offeringKey);
         }
+    }
+
+    /**
+     * Which offering this submission belongs to.
+     *
+     * The engagement link's own GTM_Saved_Configuration__c.Offering__c when
+     * there is one, and migration-accelerator for a direct booking with no
+     * linked configuration -- which is the only offering that has ever been
+     * assessed, so it is the honest answer rather than a guess. Factored out of
+     * the expression GtmReadoutController.generateDraftReadout used to compute
+     * independently; that method now READS the stored key instead, so the
+     * derivation happens once, at the point the assessment was actually scored.
+     */
+    @TestVisible
+    private static String resolveOfferingKey(ConfigContext ctx) {
+        return ctx != null && String.isNotBlank(ctx.offering)
+            ? ctx.offering.trim()
+            : GtmAssessmentFrames.MIGRATION_ACCELERATOR;
     }
 
     /**
