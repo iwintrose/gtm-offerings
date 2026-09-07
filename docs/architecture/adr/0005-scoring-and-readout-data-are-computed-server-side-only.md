@@ -9,7 +9,7 @@ guest — there is no session, no login, and no way to trust anything the
 client sends beyond input validation. `GtmAssessmentRequestController`
 already recomputes both scoring axes from the raw answers on submit and
 discards any client-supplied score, tier, or basis, including a client claim
-of `complexityBasis: "Measured"` (downgraded to `Self-Estimated"`, since
+of `complexityBasis: "Measured"` (downgraded to `"Self-Estimated"`, since
 `Measured` is only ever written when a real extract has actually been
 scanned server-side). See `docs/runbooks/assessment-instrument.md`, "Scoring
 is server-side, always."

@@ -86,7 +86,7 @@ none — don't assume a sub-agent roster like a sibling project might have).
    granted in a permission set — found and fixed multiple times on this
    project (`GTM_Saved_Configuration__c`, the `GTM_Content_Home` tab,
    `GTM_Readout__c`, `GTM_Readout_Version__c`, and a `GTM_Config_Manager`
-   grant gap on `Page_Content__c`/`Page_Section__c` found during the
+   grant gap on `GTM_Page_Content__c`/`GTM_Page_Section__c` found during the
    `MA_`→`GTM_` rename). **Granting the relevant permission set(s) is part
    of a field/object/tab's definition of done, not a follow-up.** See
    ADR-0002. Check `force-app/main/default/permissionsets/` — the five are
@@ -119,6 +119,36 @@ none — don't assume a sub-agent roster like a sibling project might have).
    `scripts/data/seed-cmc-sample.apex`'s use of the real Commercial Metals
    Company name — that's intentional, chosen by the user, and should not be
    "fixed" to a fictional name by an agent who doesn't know the history.
+   The seed script being fixed doesn't guarantee the org's current data is
+   clean — real-company Account names with no `(Demo)` suffix have shown up
+   in `gtm-dev` before, so check what's actually there rather than assuming.
+6. **`Network.allowInternalUserLogin` and who a site thinks is looking.**
+   This field controls whether a logged-in internal Salesforce user opening
+   a site URL is served the site's **rep** experience or its **guest**
+   experience — with it `false`, an internal user got the guest view (Gus
+   and the saved-links bar hidden, password prompts on their own links)
+   even while authenticated into the org. It's `true` on both sites today.
+   It's deliberately **not** in `force-app/` — a full `Network` metadata
+   file would overwrite live site settings on every future deploy — so a
+   regression here is invisible to any static check or `git diff`. Fix
+   pattern: `sf project retrieve start --metadata "Network:<site name>"
+   --target-metadata-dir /tmp/n`, edit `allowInternalUserLogin` in the
+   retrieved file, deploy that one file back. The code-side half is
+   `GtmViewerContext.isRep()` — `UserInfo.getUserType() == 'Standard'` — kept
+   in its own class specifically so guest Apex access to it doesn't have to
+   be granted through a class (`GtmSavedConfigurationController`) that would
+   also expose `saveConfiguration`/`deleteConfiguration`/`searchContacts`.
+7. **Route reachability is a property of the live site, not the source
+   tree.** A route/page existing under `force-app/main/default/experiences/`,
+   deploying cleanly, and passing `check-references.py` is not evidence a
+   real prospect can reach it — see **ADR-0006**. Right now `GTM1`
+   (`Network.Status = Live`) has only a `/configurator` route; the fuller
+   story/industry/assessment/readout build lives on `GTM_Accelerator1`,
+   which is `DownForMaintenance`. Before asserting a URL is live, check
+   `Network.Status` for the target site, not just that the route exists in
+   source. See `docs/architecture/overview.md`'s container diagram and
+   `docs/backlog.md` D9 for the concrete, currently-tracked instance of
+   this gap.
 
 ## 6. Packaging / distribution
 
@@ -146,7 +176,7 @@ can't `grep` for like Apex or LWC.
 | Feature specs | `docs/specs/` — pre-rename (`MA_`), verify names against code first |
 | Runbooks | `docs/runbooks/`: `assessment-instrument.md` (instrument content/scoring), `readout-public-link.md` (readout link, approval, guest security), `questionnaire-resume.md` (save/resume), `fresh-org-deploy.md` (from-zero deploy, unverified), `experience-site-lifecycle.md` (deleting a component a site still references) |
 | Decision log | `docs/backlog.md` — a jot pad, not architecture doc; updated every session |
-| Architecture | `docs/architecture/overview.md` + `docs/architecture/adr/0001`–`0005` |
+| Architecture | `docs/architecture/overview.md` + `docs/architecture/adr/0001`–`0006` |
 | Deploy | `DEPLOYMENT.md` first; `docs/runbooks/fresh-org-deploy.md` for the from-zero case |
 
 ## 9. Commands
@@ -187,5 +217,7 @@ python3 scripts/build-instrument.py --check
   one's intentional (§5.5).
 - Don't trust `docs/specs/*.md` symbol names without checking current code
   first — they predate the `MA_`→`GTM_` rename.
+- Don't claim a route/URL is "live" from source or a passing static check
+  alone — verify the target site's `Network.Status` first (§5.7, ADR-0006).
 - Don't treat `gtm-dev` as anything other than production — there is no
   separate prod org to make mistakes in first.

@@ -20,10 +20,19 @@ graph TB
         rep["BD rep / Content author"]
     end
 
-    subgraph site["Experience Cloud: GTM Accelerator site (gtmaccelerator/s)"]
-        story["Story / Industry / Configurator pages"]
-        questionnaire["gtmAssessmentQuestionnaire"]
-        readoutView["gtmReadoutView (published readout)"]
+    subgraph liveSite["GTM1 — LIVE site (Network.Status = Live, gtm/s)"]
+        cfgRoute["/configurator route\n(the ONLY route on this site\nbeyond Experience Cloud boilerplate)"]
+        cfgComponent["c:gtmConfigurator"]
+        inlineBooking["gtmConfigBooking\nembedded modal — assessment intake"]
+        inlineReadout["inline readout view\nembedded modal, calls getPublishedReadout directly"]
+    end
+
+    subgraph darkSite["GTM_Accelerator1 — NOT LIVE (DownForMaintenance, gtmaccelerator/s)"]
+        story["/story route"]
+        industry["/industry route"]
+        darkCfgRoute["/configurator route"]
+        assessmentRoute["/assessment route\ngtmAssessmentQuestionnaire\n(full branching instrument)"]
+        readoutRoute["/readout route\ngtmReadoutView"]
     end
 
     subgraph apps["Lightning apps (internal)"]
@@ -56,13 +65,20 @@ graph TB
         readout[("GTM_Readout__c /\nGTM_Readout_Version__c")]
     end
 
-    browser --> story
-    story --> questionnaire
-    story --> readoutView
-    questionnaire --> reqCtrl
-    questionnaire --> draftCtrl
-    readoutView --> pubCtrl
-    readoutView --> commentCtrl
+    browser --> cfgRoute
+    cfgRoute --> cfgComponent
+    cfgComponent --> inlineBooking
+    cfgComponent --> inlineReadout
+    inlineBooking --> reqCtrl
+    inlineReadout --> pubCtrl
+
+    browser -.->|not reachable today\nsite is DownForMaintenance| story
+    story --> assessmentRoute
+    story --> readoutRoute
+    assessmentRoute --> reqCtrl
+    assessmentRoute --> draftCtrl
+    readoutRoute --> pubCtrl
+    readoutRoute --> commentCtrl
 
     reqCtrl --> assessReq
     reqCtrl --> readout
@@ -82,7 +98,37 @@ graph TB
     scoring --> readout
     approval --> queue
     queue -.->|unclaimed readouts land here| readout
+
+    classDef notLive stroke-dasharray: 5 5,opacity:0.6
+    class darkSite,story,industry,darkCfgRoute,assessmentRoute,readoutRoute notLive
 ```
+
+**Reading the two site boxes.** `GTM1` is the only currently-`Live` guest
+site, and its only route is `/configurator`, rendering `c:gtmConfigurator`.
+That one component embeds, inline, both an assessment-intake modal
+(`gtmConfigBooking`, which calls `GtmAssessmentRequestController.submitRequest`
+directly) and a published-readout modal (calling
+`GtmReadoutPublicController.getPublishedReadout` directly) — there is no
+separate `/assessment` or `/readout` page on this site to navigate to.
+This is confirmed from source: `gtmConfigurator.js` has no navigation call
+to any other route, and no `/story`, `/industry`, `/assessment`, or
+`/readout` view exists under `GTM1`'s `ExperienceBundle`. It is **not**
+confirmed by actually loading the live page in a browser — browser
+automation is blocked in this environment, so treat "embedded and
+reachable in principle" as a source-level finding, not an end-to-end one.
+`GTM_Accelerator1` (dashed, above) is `DownForMaintenance` — its fuller,
+separately-routed story/industry/questionnaire/readout build exists in
+source and is deployed, but a real prospect cannot reach it today.
+
+**Known gap, already tracked.** This split — a fuller build sitting on a
+site that isn't live, versus a minimal live site — is not new information
+this documentation effort discovered; it is the same gap
+`docs/backlog.md` **D9** ("The Industry Chooser isn't reachable anywhere
+live... Not started") already tracks for the industry chooser specifically,
+generalized here to the rest of `GTM_Accelerator1`'s routes. See
+**ADR-0006** for the standing rule this gap motivated: route reachability
+has to be verified against the live site's `Network.Status`, not assumed
+from source or a passing static check.
 
 Guest traffic never reaches the rep-facing controllers (`GtmReadoutController`,
 `GtmSavedConfigurationController`) — Apex class access is granted per class in

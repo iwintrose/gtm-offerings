@@ -1,5 +1,8 @@
 # Runbook — saving and resuming a part-finished questionnaire
 
+> This describes the `GTM_Accelerator1` site, which is not the currently-live
+> site (`GTM1`) — see ADR-0006 and `docs/backlog.md` D9.
+
 How a respondent who walks away from `c/gtmAssessmentQuestionnaire` gets back to
 where they were, on this device or another one, and what a human has to do in
 the org that source metadata cannot do for them.
