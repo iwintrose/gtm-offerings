@@ -255,6 +255,23 @@
                     <input class="mw-input" value={_customPassword} oninput={handleCustomPasswordInput} autocomplete="off" />
                   </div>
                 </template>
+                <div class="mw-field">
+                  <label class="mw-label">Send assessment alerts to</label>
+                  <input
+                    type="email"
+                    class="mw-input"
+                    value={notifyEmailValue}
+                    oninput={handleNotifyEmailInput}
+                    placeholder="you@publicissapient.com"
+                    autocomplete="off"
+                  />
+                  <template if:true={notifyEmailInvalid}>
+                    <p class="mw-error">Enter a valid email, or clear this to use your own.</p>
+                  </template>
+                  <template if:false={notifyEmailInvalid}>
+                    <p class="mw-hint">Defaults to you. Change it to route this link's assessment requests to someone else.</p>
+                  </template>
+                </div>
               </div>
             </template>
 

@@ -57,6 +57,18 @@ export default class GtmConfigWizard extends LightningElement {
             if (this.state && Object.keys(this.state).length) {
                 this._state = { ...this.state, ...this._state };
             }
+            // The record's own stored override always wins here for an
+            // existing link -- an override a prior rep set must survive the
+            // next person opening this same link to edit something else, not
+            // get silently replaced by whoever that happens to be. Only a
+            // link saved before this field existed (nothing on file at all)
+            // falls back to the current viewer's own email. This is
+            // deliberately NOT folded into wiredUser()'s fill-if-blank
+            // default below -- that one is guarded off for a known record
+            // (see there) precisely so it can never race this seed.
+            if (!this._notifyEmail) {
+                this._notifyEmail = this.notifyEmail || (this._currentUser && this._currentUser.email) || '';
+            }
             this._seededFromRecord = true;
         }
         // Accent gets its own guard, checked independently on every open
@@ -92,6 +104,11 @@ export default class GtmConfigWizard extends LightningElement {
     @api industry = '';
     @api accent = '';
     @api state = {};
+    /** The record's currently stored notification override, as loaded by the
+     * parent via getConfiguration() -- read once, on open, same as company/
+     * industry/state above (see the isOpen setter). Blank for a link saved
+     * before Notify_Email__c existed and never resaved since. */
+    @api notifyEmail = '';
 
     /** True when launched from the GTM Offerings Overview tab (Lightning),
      * with no live prospect page rendered behind this panel. False when
@@ -201,6 +218,11 @@ export default class GtmConfigWizard extends LightningElement {
     @track _replacing = false;
     _siteBaseUrl = '';
     _currentUser = null;
+    /** "Notify me at" -- where THIS link's assessment-request alerts go.
+     * Defaulted below (new link: current user, via wiredUser; existing
+     * link: the record's own stored value, via the isOpen setter above),
+     * always rep-editable, sent to saveConfiguration as notifyEmail. */
+    @track _notifyEmail = '';
 
     @wire(getRecord, { recordId: USER_ID, fields: [USER_NAME_FIELD, USER_EMAIL_FIELD] })
     wiredUser({ data }) {
@@ -220,6 +242,13 @@ export default class GtmConfigWizard extends LightningElement {
             changed = true;
         }
         if (changed) this._state = next;
+        // New-link default only -- guarded off once a record id is known so
+        // this can never race the isOpen seed above, which is what must win
+        // for an EXISTING link (see the comment there). For a brand-new
+        // link there is nothing to race: _knownRecordId is not set yet.
+        if (!this._notifyEmail && !this._knownRecordId && this._currentUser.email) {
+            this._notifyEmail = this._currentUser.email;
+        }
     }
 
     /** Distance from the true page top to where normal content begins --
@@ -697,6 +726,26 @@ export default class GtmConfigWizard extends LightningElement {
         this._customPassword = event.currentTarget.value;
     }
 
+    // ---------------------------------------------------- notify email
+
+    /** Where THIS link's assessment-request alerts go. A future chat-driven
+     * (Gus) surface could set the same GTM_Saved_Configuration__c.
+     * Notify_Email__c field this writes to -- this plain input is the real,
+     * working mechanism today; it does not wait on or depend on that. */
+    get notifyEmailValue() { return this._notifyEmail || ''; }
+
+    handleNotifyEmailInput(event) {
+        this._notifyEmail = event.currentTarget.value;
+    }
+
+    /** Blank is fine -- saveConfiguration() defaults an empty override to
+     * the creating user's email server-side. Only a non-blank value that
+     * doesn't look like a real email blocks generating the link. */
+    get notifyEmailInvalid() {
+        const v = (this._notifyEmail || '').trim();
+        return !!v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+
     // -------------------------------------------------------------- nav
 
     /** Steps a rep has landed on, in either direction or via a direct jump
@@ -729,12 +778,14 @@ export default class GtmConfigWizard extends LightningElement {
     get canGenerateLink() {
         return !!(this._company || '').trim()
             && !!(this._state.CONTACT_NAME || '').trim()
-            && !!(this._state.CONTACT_EMAIL || '').trim();
+            && !!(this._state.CONTACT_EMAIL || '').trim()
+            && !this.notifyEmailInvalid;
     }
 
     get generateBlockedReason() {
         if (this.canGenerateLink) return '';
         if (!(this._company || '').trim()) return 'Add a company name (Step 1) before generating a link.';
+        if (this.notifyEmailInvalid) return 'Enter a valid notification email (Step 7), or clear it, before generating a link.';
         return 'Add your name and email (Step 6) before generating a link.';
     }
 
@@ -928,6 +979,11 @@ export default class GtmConfigWizard extends LightningElement {
                     opportunityId: this._dealId || null,
                     accountId: this._selectedContact ? this._selectedContact.accountId : null,
                     linkPassword,
+                    // Blank goes up as null, same as every other optional
+                    // field here -- saveConfiguration() defaults a blank
+                    // override to the creating user's email itself, so this
+                    // component doesn't need to know that rule.
+                    notifyEmail: (this._notifyEmail || '').trim() || null,
                     website: this._brandDomain || null,
                     accountIndustry: this._industry || null
                 }

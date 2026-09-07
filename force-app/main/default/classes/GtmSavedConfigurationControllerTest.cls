@@ -365,6 +365,131 @@ private class GtmSavedConfigurationControllerTest {
         Assert.areEqual('jordan.lee@acmebank.example.com', saved.Contact__r.Email);
     }
 
+    // --------------------------------------------------- notify email
+
+    @IsTest
+    static void newConfigurationDefaultsNotifyEmailToCreatingUser() {
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
+        input.offering = 'migration-accelerator';
+        input.company = 'Acme Bank';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+
+        Test.startTest();
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
+        Test.stopTest();
+
+        GTM_Saved_Configuration__c saved = [
+            SELECT Notify_Email__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.areEqual(
+            UserInfo.getUserEmail(),
+            saved.Notify_Email__c,
+            'No override supplied -- should default to the creating user\'s own email'
+        );
+    }
+
+    @IsTest
+    static void newConfigurationHonorsExplicitNotifyEmailOverride() {
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
+        input.offering = 'migration-accelerator';
+        input.company = 'Acme Bank';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+        input.notifyEmail = 'sales-ops@example.com';
+
+        Test.startTest();
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
+        Test.stopTest();
+
+        GTM_Saved_Configuration__c saved = [
+            SELECT Notify_Email__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.areEqual(
+            'sales-ops@example.com',
+            saved.Notify_Email__c,
+            'An explicit override should stick, not be replaced by the creating user\'s email'
+        );
+    }
+
+    @IsTest
+    static void resavingWithoutNotifyEmailDoesNotWipeOutAPriorOverride() {
+        GtmSavedConfigurationController.SaveInput first = new GtmSavedConfigurationController.SaveInput();
+        first.offering = 'migration-accelerator';
+        first.company = 'Acme Bank';
+        first.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+        first.notifyEmail = 'sales-ops@example.com';
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(first);
+
+        // Simulates an autosave/resave that doesn't carry the override
+        // forward -- the wizard always resends the current value, but the
+        // server-side rule must hold even if a caller doesn't.
+        GtmSavedConfigurationController.SaveInput second = new GtmSavedConfigurationController.SaveInput();
+        second.recordId = recordId;
+        second.offering = 'migration-accelerator';
+        second.company = 'Acme Bank';
+        second.generatedUrl = first.generatedUrl;
+
+        Test.startTest();
+        GtmSavedConfigurationController.saveConfiguration(second);
+        Test.stopTest();
+
+        GTM_Saved_Configuration__c saved = [
+            SELECT Notify_Email__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.areEqual(
+            'sales-ops@example.com',
+            saved.Notify_Email__c,
+            'A blank resend should not wipe out a previously set override'
+        );
+    }
+
+    @IsTest
+    static void resavingCanReplaceThePreviousNotifyEmailOverride() {
+        GtmSavedConfigurationController.SaveInput first = new GtmSavedConfigurationController.SaveInput();
+        first.offering = 'migration-accelerator';
+        first.company = 'Acme Bank';
+        first.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+        first.notifyEmail = 'sales-ops@example.com';
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(first);
+
+        GtmSavedConfigurationController.SaveInput second = new GtmSavedConfigurationController.SaveInput();
+        second.recordId = recordId;
+        second.offering = 'migration-accelerator';
+        second.company = 'Acme Bank';
+        second.generatedUrl = first.generatedUrl;
+        second.notifyEmail = 'other-team@example.com';
+
+        Test.startTest();
+        GtmSavedConfigurationController.saveConfiguration(second);
+        Test.stopTest();
+
+        GTM_Saved_Configuration__c saved = [
+            SELECT Notify_Email__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.areEqual('other-team@example.com', saved.Notify_Email__c);
+    }
+
+    @IsTest
+    static void malformedNotifyEmailOnNewRecordFallsBackToCreatingUser() {
+        GtmSavedConfigurationController.SaveInput input = new GtmSavedConfigurationController.SaveInput();
+        input.offering = 'migration-accelerator';
+        input.company = 'Acme Bank';
+        input.generatedUrl = 'https://example.my.site.com/gtmaccelerator/s/configurator?company=Acme';
+        input.notifyEmail = 'not-an-email';
+
+        Test.startTest();
+        Id recordId = GtmSavedConfigurationController.saveConfiguration(input);
+        Test.stopTest();
+
+        GTM_Saved_Configuration__c saved = [
+            SELECT Notify_Email__c FROM GTM_Saved_Configuration__c WHERE Id = :recordId
+        ];
+        Assert.areEqual(
+            UserInfo.getUserEmail(),
+            saved.Notify_Email__c,
+            'A malformed override should not be stored -- should fall back to the creating user'
+        );
+    }
+
     @IsTest
     static void wrapsDmlFailureOnSetActiveAsFriendlyError() {
         GTM_Saved_Configuration__c existing = new GTM_Saved_Configuration__c(
