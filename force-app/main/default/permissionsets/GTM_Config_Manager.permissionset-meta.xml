@@ -693,6 +693,11 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Assessment_Request__c.Offering_Key__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>GTM_Assessment_Request__c.Section_Scores__c</field>
         <readable>true</readable>
         <editable>false</editable>

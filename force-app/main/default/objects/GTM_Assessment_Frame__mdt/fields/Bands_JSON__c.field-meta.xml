@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Bands_JSON__c</fullName>
+    <label>Bands JSON</label>
+    <description>This offering&apos;s readiness tier bands, as a JSON array
+        [{&quot;tier&quot;:&quot;...&quot;,&quot;lowest&quot;:N,&quot;highest&quot;:N}, ...],
+        ascending and contiguous. Replaces GtmAssessmentScoring.bands(), which
+        stays as the fallback when no frame record exists or when this JSON is
+        unusable - a malformed value falls back rather than throwing, the same
+        fail-open discipline GtmAssessmentInstrument.resolve uses. Logically
+        required (an offering with a frame record must declare its bands), but
+        the platform forbids &lt;required&gt; on a LongTextArea, so the Apex
+        fail-open path in GtmAssessmentScoring enforces it instead.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>4096</length>
+    <visibleLines>8</visibleLines>
+</CustomField>

@@ -68,6 +68,19 @@
         <enabled>true</enabled>
         <name>GTM_Assessment_Gate__mdt</name>
     </customMetadataTypeAccesses>
+    <!-- GTM_Assessment_Frame__mdt IS read from the guest path, despite
+         ADR-0007's companion plan assuming otherwise: GtmAssessmentScoring and
+         GtmEstateComplexity resolve an offering's frame inside
+         GtmAssessmentRequestController.recordAssessmentRequest, which is the
+         guest submit endpoint. Without this grant a guest submission for a
+         non-migration-accelerator offering would silently fail open to
+         Migration Accelerator's compiled constants, exactly the FLS gap class
+         CLAUDE.md section 5.1 describes. Granted alongside its six sibling
+         instrument types for the same reason they are. -->
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Frame__mdt</name>
+    </customMetadataTypeAccesses>
     <customMetadataTypeAccesses>
         <enabled>true</enabled>
         <name>GTM_Migration_Pair__mdt</name>
