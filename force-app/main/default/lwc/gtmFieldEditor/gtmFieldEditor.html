@@ -49,6 +49,15 @@
                                 onchange={handleTextChange}></lightning-textarea>
           </template>
 
+          <!-- bounded choice: a closed dropdown over a fixed option list, never
+               free text -- the only way this value can change is to pick one
+               of the pre-written options rendered here -->
+          <template if:true={f.isEnum}>
+            <lightning-combobox variant="label-hidden" value={f.value} options={f.options}
+                                 data-id={f.id} data-column={f.column}
+                                 onchange={handleEnumChange}></lightning-combobox>
+          </template>
+
           <!-- rich text: markup never shows in the box, and the accent command
                is the page's own, which no stock editor offers -->
           <template if:true={f.isRich}>

@@ -3,7 +3,7 @@ import createField from '@salesforce/apex/GtmPageSectionController.createField';
 import deleteField from '@salesforce/apex/GtmPageSectionController.deleteField';
 import restoreField from '@salesforce/apex/GtmPageSectionController.restoreField';
 import saveFieldOrder from '@salesforce/apex/GtmPageSectionController.saveFieldOrder';
-import { fieldsFor, humaniseFieldKey, CTA_ICONS } from 'c/gtmPageLayouts';
+import { fieldsFor, humaniseFieldKey, CTA_ICONS, AGENT_TONE_OPTIONS } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
 // GtmPageContentController.resolveValue.
@@ -13,14 +13,26 @@ const COLUMN = {
     json: 'jsonValue',
     // A button is a label and an icon, so it needs somewhere to keep two
     // things: the JSON column, same as a list.
-    icontext: 'jsonValue'
+    icontext: 'jsonValue',
+    // A bounded choice is still a single string, same column as plain text —
+    // only the control drawn over it (a closed combobox, not a text input)
+    // and the fixed option list behind it differ.
+    enum: 'textValue'
 };
 
 const VALUE_COLUMN_LABEL = {
     text: 'Text_Value__c',
     rich: 'Rich_Value__c',
     json: 'JSON_Value__c',
-    icontext: 'JSON_Value__c'
+    icontext: 'JSON_Value__c',
+    enum: 'Text_Value__c'
+};
+
+// The option list for each known enum field key, keyed by fieldKey. Every
+// 'enum'-typed field the layout vocabulary declares needs an entry here or
+// it renders a combobox with nothing to pick.
+const ENUM_OPTIONS = {
+    agentTone: AGENT_TONE_OPTIONS
 };
 
 /**
@@ -114,11 +126,13 @@ export default class GtmFieldEditor extends LightningElement {
                     isTextShort: type === 'text' && r.renderLong !== true,
                     isRich: type === 'rich',
                     isJson: type === 'json',
+                    isEnum: type === 'enum',
                     statusClass: r.isDraft ? 'fld-status fld-status--draft' : 'fld-status',
                     statusLabel: r.isDraft ? 'Draft' : ''
                 };
                 if (base.isJson) base.items = this.buildItems(r.id, value);
                 if (base.isIconText) base.button = this.buildButton(value);
+                if (base.isEnum) base.options = ENUM_OPTIONS[r.fieldKey] || [];
                 return base;
             })
             .map((f, i, all) => ({
@@ -226,6 +240,14 @@ export default class GtmFieldEditor extends LightningElement {
 
     handleTextChange(event) {
         this.emitValue(event.currentTarget.dataset.id, event.target.value);
+    }
+
+    // lightning-combobox does not proxy .value onto event.target the way a
+    // plain input does -- the selected value comes back on event.detail
+    // (same pattern as every other lightning-combobox in this codebase, e.g.
+    // c/gtmContentHome's handleNpOffering/handleNpTemplate).
+    handleEnumChange(event) {
+        this.emitValue(event.currentTarget.dataset.id, event.detail.value);
     }
 
     // ─── rich text ────────────────────────────────────────────────────────────

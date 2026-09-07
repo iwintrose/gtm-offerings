@@ -4,6 +4,19 @@
  */
 public without sharing class GtmAgentGetConfigState {
 
+    // Industries are a shared taxonomy, not offering-specific copy: they live
+    // under the framework's own industry-chooser page (Offering_Key__c='gtm',
+    // Template_Type__c='industry-chooser'), one section per industry, keyed
+    // 'industry-<key>' -- exactly the pattern GtmPageContentReader.getIndustryProfiles
+    // already reads from. This used to hardcode Offering_Key__c='migration-accelerator'
+    // and Template_Type__c='story', which (a) reported one offering's industry set
+    // regardless of which offering a rep was actually configuring, once a second
+    // offering exists, and (b) was reading the wrong template type for the taxonomy
+    // in the first place. Reusing the framework key here, rather than any one
+    // offering's, is the fix for both at once -- there is no offering to "resolve"
+    // for a value that was never offering-scoped.
+    private static final String INDUSTRY_TEMPLATE = 'industry-chooser';
+
     public class Input {
         @InvocableVariable(required=false label='Config Id'
             description='GTM_Saved_Configuration__c Id (current- or legacy-format); blank for unsaved sessions')
@@ -70,19 +83,23 @@ public without sharing class GtmAgentGetConfigState {
             }
         }
 
-        // Collect unique industry keys from active content records
+        // Collect unique industry keys from the framework's industry-chooser
+        // taxonomy -- the one place industries live, whichever offering this
+        // GUS session is configuring.
         List<GTM_Page_Content__c> iRecs = [
-            SELECT Industry_Key__c
+            SELECT Section_Key__c
             FROM   GTM_Page_Content__c
-            WHERE  Offering_Key__c  = 'migration-accelerator'
-            AND    Template_Type__c = 'story'
-            AND    Industry_Key__c != null
+            WHERE  Offering_Key__c  = :GtmPageContentController.FRAMEWORK_KEY
+            AND    Template_Type__c = :INDUSTRY_TEMPLATE
+            AND    Section_Key__c LIKE 'industry-%'
             AND    Active__c = true
             LIMIT  200
         ];
         Set<String> seen = new Set<String>();
         for (GTM_Page_Content__c rec : iRecs) {
-            seen.add(rec.Industry_Key__c);
+            // 'industry-' is 9 characters; strip it to recover the key --
+            // same convention GtmPageContentReader.getIndustryProfiles uses.
+            seen.add(rec.Section_Key__c.substring(9));
         }
         out.availableIndustries = new List<String>(seen);
         out.availableIndustries.sort();

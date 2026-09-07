@@ -34,8 +34,14 @@ public without sharing class GtmAgentProxyController {
     static final Integer MAX_TOKENS      = 1024;
     static final Integer MAX_TOOL_ROUNDS = 5;
 
-    static final String CONFIG_SYSTEM_PROMPT =
-        'You are the GTM Configurator Assistant, embedded in a Publicis Sapient sales tool. ' +
+    /**
+     * Was a `static final String` constant. Now a method because the trailing
+     * TONE line is sourced from GtmAgentTone.clause(), which reads
+     * GTM_Page_Content__c via SOQL — not something a compile-time constant can
+     * do. Everything above TONE is unchanged, fixed developer-authored text.
+     */
+    private static String configSystemPrompt() {
+        return 'You are the GTM Configurator Assistant, embedded in a Publicis Sapient sales tool. ' +
         'You help PS sales reps personalize Migration Accelerator client presentations by reading ' +
         'the current page state and applying precise field updates based on what the rep tells you ' +
         'about their prospect.\n\n' +
@@ -50,7 +56,8 @@ public without sharing class GtmAgentProxyController {
         '3. After a successful apply, confirm which fields changed in plain English.\n' +
         '4. If apply returns success=false, quote the errorMessage and ask for a corrected value.\n' +
         '5. Stay in scope — only personalize the configurator page. Redirect other questions politely.\n\n' +
-        'TONE: Professional and concise. One or two sentences per response. The rep may be in a live meeting.';
+        'TONE: ' + GtmAgentTone.clause();
+    }
 
     // ── Tool definitions ──────────────────────────────────────────────────────
 
@@ -231,7 +238,7 @@ public without sharing class GtmAgentProxyController {
         private final String configId;
         ConfigSurface(String configId) { this.configId = configId; }
 
-        public String systemPrompt()      { return CONFIG_SYSTEM_PROMPT; }
+        public String systemPrompt()      { return configSystemPrompt(); }
         public Integer maxTokens()        { return MAX_TOKENS; }
         public List<Object> toolDefinitions() {
             return new List<Object>{ TOOL_GET_STATE, TOOL_APPLY_UPDATE };

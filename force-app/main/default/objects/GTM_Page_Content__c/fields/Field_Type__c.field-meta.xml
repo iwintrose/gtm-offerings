@@ -30,6 +30,11 @@
                 <default>false</default>
                 <label>Button (label + icon)</label>
             </value>
+            <value>
+                <fullName>enum</fullName>
+                <default>false</default>
+                <label>Choice (bounded set)</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

@@ -18,7 +18,7 @@ import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS
 
 // Which value column each field type resolves from. Mirrors
 // GtmPageContentController.resolveValue.
-const COLUMN = { text: 'textValue', rich: 'richValue', json: 'jsonValue' };
+const COLUMN = { text: 'textValue', rich: 'richValue', json: 'jsonValue', enum: 'textValue' };
 
 // The preview renders the real page component at a fixed desktop width and
 // scales the whole thing down to whatever the pane can give it. Scaling rather
