@@ -6,6 +6,7 @@ import getDeals from '@salesforce/apex/GtmHomeSnapshotController.getDeals';
 import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSummary';
 import getFeedbackFor from '@salesforce/apex/GtmFeedbackController.getFeedbackFor';
 import submitFeedback from '@salesforce/apex/GtmFeedbackController.submitFeedback';
+import getSiteHomePageUrl from '@salesforce/apex/GtmSavedConfigurationController.getSiteHomePageUrl';
 
 const TEMPLATE_LABELS = {
     story: 'Story',
@@ -17,11 +18,12 @@ const TEMPLATE_LABELS = {
 /**
  * The app's landing page.
  *
- * Three columns because the three things have different jobs: the numbers are
- * read down the left, the work waiting on someone sits in the middle, and the
- * one action you came here to start is on the right where it cannot be missed.
- * Offerings sit underneath, each linking to its own public story rather than
- * to an industry chooser — the story is what a colleague is actually sent.
+ * Two columns because the two things have different jobs: the numbers are
+ * read down the left, the work waiting on someone sits in the middle. The
+ * one action you came here to start lives in the page header instead of a
+ * third column of its own. Offerings sit underneath, each linking to its own
+ * public story rather than to an industry chooser — the story is what a
+ * colleague is actually sent.
  */
 export default class GtmOverview extends NavigationMixin(LightningElement) {
     @track snapshot;
@@ -362,7 +364,38 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
 
     get showEmptyOfferings() { return this.offeringsLoaded && !this.offerings.length; }
 
-    
+    /**
+     * The rep's entry point, and the reason this button is on this page: it
+     * sends them to the site's own "Choose your industry" page with ?wizard=1,
+     * so picking an industry drops them straight into the configurator wizard.
+     * Building a page for an offering is a different job for a different
+     * person, and lives in the Content Manager.
+     */
+    handleNewProspectPage() {
+        if (this.navBusy) return;
+        this.navBusy = true;
+        getSiteHomePageUrl()
+            .then((url) => {
+                if (!url) {
+                    this.loadError = 'The Accelerator site could not be found, so the wizard cannot be opened.';
+                    return;
+                }
+                const sep = url.indexOf('?') > -1 ? '&' : '?';
+                this[NavigationMixin.Navigate]({
+                    type: 'standard__webPage',
+                    attributes: { url: `${url}${sep}wizard=1` }
+                });
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The wizard could not be opened.';
+            })
+            .finally(() => { this.navBusy = false; });
+    }
+
+    handleDismissError() {
+        this.loadError = '';
+    }
+
     // Deep-links the editor rather than dropping you on its first page, which
     // is the "landed somewhere I did not choose" problem the home page exists
     /**

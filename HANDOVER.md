@@ -1,7 +1,69 @@
 # Claude Code Handover — Salesforce GTM Story & Accelerator Deployment
 
-**Session Date:** 2026-08-26
-**Status:** Active — day/night theme bug fixed, Salesforce CLI auth configured.
+**Session Date:** 2026-09-06 (latest — see below for the 2026-08-26 session that follows)
+**Status:** PR merged to `main`; **org deploy + browser verification still outstanding** (see "What's Still Outstanding" at the top).
+
+---
+
+## Session 2026-09-06 — GTM Offerings admin app audit & overhaul
+
+**What this was:** a full audit + fix pass on the internal "GTM Offerings" Lightning app —
+the admin/CMS tool (distinct from the public-facing Story/Accelerator/Configurator pages
+covered by the 2026-08-26 session below). Three tabs: **Overview** (`gtmOverview`),
+**Content Home** (`gtmContentHome`), **Content Manager** (`gtmContentManager` +
+`gtmFieldEditor` + `gtmPagePreview`), shared shell/tokens in `gtmAppShell`.
+
+**Branch:** `claude/gtm-offerings-audit-overhaul-amttpu` → merged to `main` via
+[PR #6](https://github.com/ps-salesforce/gtm-offerings/pull/6). Read the PR description for
+the full list of changes (real bugs fixed, cross-tab consistency, plain-language copy,
+rep-facing loading/retry feedback, Content Home search, an SLDS `lightning-badge` swap).
+
+**Process, if you need to trust-but-verify this work:** multi-persona audit (QA, functional
+trace, Business Partner, Sales/BD rep, CX, and a UI/UX pass grounded in outside research on
+Salesforce SLDS/CMS/sales-enablement conventions) → parallel implementation agents on
+non-overlapping files → a human-journey trace + research-grounded UI/UX pass to catch
+cross-agent drift → an adversarial code review of the full diff, which caught one real
+regression before merge (see below) → a focused confirmation pass on that fix → merge.
+
+**The one thing the review caught (now fixed, commit `ab70b91`):** the shared `--gtm-*`
+CSS custom properties (text/border/surface/danger/radius/font-size tokens) were originally
+defined only on `gtmAppShell`'s `:host`. But `gtmOverview`, `gtmContentHome`,
+`gtmContentManager`, `gtmFieldEditor`, and `gtmPagePreview` each live on their own
+Tab/FlexiPage in the org — they are **never** rendered as children of `gtmAppShell` (only
+`offeringChooser`/`chooseIndustry`/`maConfigurator` are). CSS custom properties don't cross
+separate shadow-DOM trees, so every `var(--gtm-*)` reference in those five components would
+have resolved to nothing in the live org. Fixed with a CSS-only LWC module
+(`force-app/main/default/lwc/gtmTokens/gtmTokens.css`, no `.js`/`.html`) that each component
+now pulls in via `@import 'c/gtmTokens';` as the first line of its `.css` file — the standard
+LWC pattern for sharing tokens across sibling component trees that aren't parent/child.
+**If you add a new component that needs these tokens, add the same `@import` line — don't
+redefine the hex values locally.**
+
+**What was explicitly NOT done, and why (don't redo this without re-reading the reasoning
+in the PR):**
+- No search/filter added to Content Manager's offering/page picker — it's a
+  `lightning-combobox` with at most 4 fixed template options, not a scrollable list.
+- Did not convert Content Home's page list to `lightning-datatable` — each offering always
+  renders exactly 4 fixed template rows grouped under its own card; datatable has no native
+  per-group headers, and converting would trade the "scan one offering's readiness at a
+  glance" layout (specifically praised by the Business Partner/CX review) for a generic flat
+  table with no benefit at this fixed, small row count.
+- No page-level published/draft status badge in Content Home's list — the backing Apex
+  (`MaPageContentController.getHomeSummary`, uses `COUNT(Id)` GROUP BY queries) doesn't
+  return that field today. Needs a backend change to `PageSummary`/`getHomeSummary` before
+  it can be surfaced — flagged, not guessed at.
+
+**What genuinely still needs a human (no Salesforce CLI/org auth was available in the
+session that did this work):**
+- Run `sf project deploy start --source-dir force-app/main/default/lwc` against a
+  sandbox/dev org and confirm it deploys clean.
+- Walk the PR's test plan checklist in-browser, in particular the CSS-token fix above (the
+  fix was verified by static review — token names matching, `@import` ordering, the LWC
+  reference-checker not flagging it as an orphan — but never actually rendered in a browser
+  against the real org, since this session couldn't do that).
+- If a page-level draft/published status badge is wanted later, that's a `backend-engineer`-
+  style task: add the field to `MaPageContentController.getHomeSummary`'s query/return shape
+  first, then surface it in `gtmContentHome.js`'s `cards` getter.
 
 ---
 

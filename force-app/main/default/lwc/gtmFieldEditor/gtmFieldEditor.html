@@ -16,18 +16,19 @@
             <span class={f.statusClass}>{f.statusLabel}</span>
             <span class="fld-acts">
               <button class={f.advClass} data-id={f.id} onclick={handleToggleAdv}
-                      title="Class, id and inline style for this field">&#9881;</button>
+                      title="Class, id and inline style for this field"
+                      aria-label="Class, id and inline style for this field">&#9881;</button>
               <button class="fa" data-id={f.id} onclick={handleFieldUp}
-                      disabled={f.isFirst} title="Move field up">&uarr;</button>
+                      disabled={f.isFirst} title="Move field up" aria-label="Move field up">&uarr;</button>
               <button class="fa" data-id={f.id} onclick={handleFieldDown}
-                      disabled={f.isLast} title="Move field down">&darr;</button>
+                      disabled={f.isLast} title="Move field down" aria-label="Move field down">&darr;</button>
               <template if:true={f.pendingDelete}>
                 <button class="fa fa--undo" data-id={f.id} onclick={handleFieldRestore}
-                        title="Undo the pending delete">&#8630;</button>
+                        title="Undo the pending delete" aria-label="Undo the pending delete">&#8630;</button>
               </template>
               <template if:false={f.pendingDelete}>
                 <button class="fa del" data-id={f.id} onclick={handleFieldDelete}
-                        title="Delete this field and its record">&times;</button>
+                        title="Delete this field and its record" aria-label="Delete this field and its record">&times;</button>
               </template>
             </span>
           </div>
@@ -54,23 +55,27 @@
             <div class="rt">
               <div class="rt-bar">
                 <button class="rt-b" data-id={f.id} data-cmd="bold"
-                        onmousedown={handleRtGuard} onclick={handleRtCommand} title="Bold"><b>B</b></button>
+                        onmousedown={handleRtGuard} onclick={handleRtCommand}
+                        title="Bold" aria-label="Bold"><b>B</b></button>
                 <button class="rt-b" data-id={f.id} data-cmd="italic"
-                        onmousedown={handleRtGuard} onclick={handleRtCommand} title="Italic"><i>I</i></button>
+                        onmousedown={handleRtGuard} onclick={handleRtCommand}
+                        title="Italic" aria-label="Italic"><i>I</i></button>
                 <span class="rt-sep"></span>
                 <button class="rt-b rt-b--accent" data-id={f.id} data-cmd="accent"
                         onmousedown={handleRtGuard} onclick={handleRtCommand}
-                        title="Tint the selection with the page accent colour">A</button>
+                        title="Tint the selection with the page accent colour"
+                        aria-label="Tint the selection with the page accent colour">A</button>
                 <button class="rt-b" data-id={f.id} data-cmd="br"
                         onmousedown={handleRtGuard} onclick={handleRtCommand}
-                        title="Insert a line break">&#8629;</button>
+                        title="Insert a line break" aria-label="Insert a line break">&#8629;</button>
                 <span class="rt-sep"></span>
                 <button class="rt-b" data-id={f.id} data-cmd="clear"
                         onmousedown={handleRtGuard} onclick={handleRtCommand}
-                        title="Strip all formatting">&#10005;</button>
+                        title="Strip all formatting" aria-label="Strip all formatting">&#10005;</button>
               </div>
               <div class="rt-in" contenteditable="true" data-id={f.id}
                    data-ph="Type here…" oninput={handleRichChange}
+                   role="textbox" aria-label="Field content"
                    lwc:dom="manual"></div>
             </div>
           </template>
@@ -88,7 +93,7 @@
                 <div class="pickrow">
                   <template for:each={f.button.icons} for:item="ic">
                     <button key={ic.value} class={ic.pickClass} data-id={f.id} data-icon={ic.value}
-                            onclick={handleButtonIcon} title={ic.label}>
+                            onclick={handleButtonIcon} title={ic.label} aria-label={ic.label}>
                       <template if:true={ic.isNone}><span class="none">none</span></template>
                       <template if:false={ic.isNone}>{ic.glyph}</template>
                     </button>
@@ -115,11 +120,13 @@
                     </template>
                     <span class="item-acts">
                       <button class="fa" data-id={item.recordId} data-index={item.index} data-dir="up"
-                              onclick={handleItemMove} disabled={item.isFirst} title="Move up">&uarr;</button>
+                              onclick={handleItemMove} disabled={item.isFirst}
+                              title="Move up" aria-label="Move item up">&uarr;</button>
                       <button class="fa" data-id={item.recordId} data-index={item.index} data-dir="down"
-                              onclick={handleItemMove} disabled={item.isLast} title="Move down">&darr;</button>
+                              onclick={handleItemMove} disabled={item.isLast}
+                              title="Move down" aria-label="Move item down">&darr;</button>
                       <button class="fa del" data-id={item.recordId} data-index={item.index}
-                              onclick={handleItemDelete} title="Delete this item">&times;</button>
+                              onclick={handleItemDelete} title="Delete this item" aria-label="Delete this item">&times;</button>
                     </span>
                   </div>
 

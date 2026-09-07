@@ -533,10 +533,12 @@ export default class GtmFieldEditor extends LightningElement {
         const reordered = [...inSection];
         reordered.splice(to, 0, reordered.splice(from, 1)[0]);
 
+        // busy and saveMessage belong to the parent (@api busy / its own
+        // saveMessage), not this component — announceChange is the existing
+        // event this component already uses to hand a result back to it.
         saveFieldOrder({ recordIds: reordered.map((r) => r.id) })
-            .then(() => { this.saveMessage = 'Field order saved'; })
-            .catch((err) => { this.raise(err, 'The field order could not be saved.'); })
-            .finally(() => { this.isSaving = false; });
+            .then(() => { this.announceChange('Field order saved'); })
+            .catch((err) => { this.raise(err, 'The field order could not be saved.'); });
     }
 
     handleFieldDelete(event) {

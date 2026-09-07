@@ -356,6 +356,10 @@ export default class GtmContentManager extends LightningElement {
     disconnectedCallback() {
         clearTimeout(this._saveTimer);
         clearTimeout(this._presentationTimer);
+        // A drag left in progress when this component unmounts would otherwise
+        // leave these listening on window forever, each closing over stale DOM.
+        if (this._splitMove) window.removeEventListener('pointermove', this._splitMove);
+        if (this._splitUp) window.removeEventListener('pointerup', this._splitUp);
     }
 
 
@@ -593,6 +597,11 @@ export default class GtmContentManager extends LightningElement {
             .finally(() => { this.isSaving = false; });
     }
 
+    handleRefresh() {
+        if (this.selectedTemplate) this.loadPage();
+        else if (this.selectedOffering) this.loadTemplates();
+    }
+
     handleDismissError() { this.loadError = ''; }
 
     // ─── add / delete sections ────────────────────────────────────────────────
@@ -805,7 +814,11 @@ export default class GtmContentManager extends LightningElement {
         const up = () => {
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', up);
+            this._splitMove = undefined;
+            this._splitUp = undefined;
         };
+        this._splitMove = move;
+        this._splitUp = up;
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', up);
     }

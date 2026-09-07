@@ -24,7 +24,7 @@
       <div class="home-error" role="alert">
         <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
         <span>{loadError}</span>
-        <button class="home-error-x" onclick={handleDismissError} title="Dismiss">&times;</button>
+        <button class="home-error-x" onclick={handleDismissError} title="Dismiss" aria-label="Dismiss">&times;</button>
       </div>
     </template>
 
@@ -44,11 +44,21 @@
     <template if:true={hasOfferings}>
       <div class="home-body">
 
+        <div class="home-search">
+          <lightning-input type="search" label="Search offerings and pages" variant="label-hidden"
+                            placeholder="Search offerings and pages…" value={searchTerm}
+                            onchange={handleSearch}></lightning-input>
+        </div>
+
+        <template if:true={showNoSearchResults}>
+          <p class="home-empty-sub home-no-results">Nothing matches "{searchTerm}".</p>
+        </template>
+
         <!-- Two columns. The framework holds the first cell because the pages
              it owns sit above every offering, so it is not one card among
              them; the offerings fill in after it. -->
         <div class="off-grid">
-          <template for:each={cards} for:item="o">
+          <template for:each={filteredCards} for:item="o">
             <article key={o.key} class={o.cardClass}>
 
               <div class="slds-card__header off-head">
@@ -132,6 +142,14 @@
         </div>
 
         <aside class="side">
+          <button class="side-new" onclick={handleOpenNewPage}>
+            <span class="side-new-plus">+</span>
+            <span class="side-new-main">
+              <span class="side-new-label">New Prospect Page</span>
+              <span class="side-new-sub">Build a page for an offering</span>
+            </span>
+          </button>
+
           <article class="slds-card side-card">
             <div class="slds-card__header">
               <header class="slds-media slds-media_center">
@@ -203,7 +221,7 @@
       <section role="dialog" aria-modal="true" aria-labelledby="npTitle" class="scrim">
         <div class="modal">
           <header class="modal-h">
-            <h2 id="npTitle">New page</h2>
+            <h2 id="npTitle">New Prospect Page</h2>
             <p>Pick the offering and which of its pages to build.</p>
           </header>
           <div class="modal-b">
