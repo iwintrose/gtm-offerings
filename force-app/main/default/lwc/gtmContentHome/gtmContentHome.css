@@ -49,8 +49,26 @@
 .home-empty { padding: 2.5rem 1rem; text-align: center; color: #444; }
 .home-empty-sub { color: #747474; font-size: 12px; max-width: 26rem; margin: .3rem auto 0; line-height: 1.5; }
 
+/* Grid auto-placement fills cells in source order regardless of how many
+   explicit columns are declared -- with 4 direct children here (search,
+   the conditional no-results line, off-grid, and the aside) and only 2
+   columns, the browser was placing off-grid itself into column 2's narrow
+   18rem track (the search bar was the only thing that landed in column 1's
+   row), squeezing every offering card into a sliver on the right with a
+   dead column of empty space to its left. Every child needs an explicit
+   column now that there are more of them than the grid declares. */
 .home-body { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1rem; align-items: start; }
-@media (max-width: 1100px) { .home-body { grid-template-columns: minmax(0, 1fr); } }
+.home-body > .home-search,
+.home-body > .home-no-results,
+.home-body > .off-grid { grid-column: 1; }
+.home-body > .side { grid-column: 2; grid-row: 1 / -1; }
+@media (max-width: 1100px) {
+    .home-body { grid-template-columns: minmax(0, 1fr); }
+    .home-body > .home-search,
+    .home-body > .home-no-results,
+    .home-body > .off-grid,
+    .home-body > .side { grid-column: 1; grid-row: auto; }
+}
 
 /* ── offering cards ──────────────────────────────────────────────────────────
    Two columns, so a second offering sits beside the first rather than below
