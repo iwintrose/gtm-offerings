@@ -472,6 +472,33 @@ depending on resolution order) — fixed before deploy. Dry-run + real
 deploy clean, `GTM` site republished, migration re-run confirmed
 idempotent, `check-all.sh` green, pushed (`78206c2`, `a4c4ab8`).
 
+**D11 — The live site's booking modal never sends real assessment answers, so a
+real submission today scores nothing.** Found while adding orientation copy to
+the Instrument Editor and tracing whether source/target platform selection
+actually reaches instrument-pack resolution. It does, correctly — server-side
+resolution in `GtmAssessmentInstrument.getPack()`/`GtmAssessmentRequestController`
+never trusts the client and re-resolves independently, and there's no bug in
+that path. The real problem is upstream: `gtmAssessmentQuestionnaire` — the
+only component that asks any of the eight scored questions — has its sole
+route on `GTM_Accelerator1`, which is `DownForMaintenance` (same site as D9).
+The live `GTM1` site's actual booking flow (`gtmConfigBooking`) is a simpler,
+different component: it has a hardcoded platform list and sends **no
+`answers` array at all**. So a real prospect submitting through the live site
+today produces a request with no scored dimensions — `Assessment_Score__c`
+and `Assessment_Tier__c` come back meaningless, and the readout that
+auto-generates from it has nothing real to narrate. This wasn't caught by
+tonight's earlier "the core prospect journey likely still works" read (ADR-0006)
+because that read confirmed `gtmConfigurator` doesn't *navigate* anywhere
+missing — it didn't check whether the component it *does* render actually
+sends what scoring needs. Same underlying class of gap as D9, more
+consequential: D9 is a missing page; this is the core product's central value
+prop (a real score, a real readout) silently not happening for anyone who
+uses the live link today. **Not fixed. Needs a real decision** — promote
+`GTM_Accelerator1` to live, port `gtmAssessmentQuestionnaire`'s route onto
+`GTM1`, or wire `gtmConfigBooking` to actually collect and send scored
+answers — each a different size of change, not this session's to pick
+unilaterally.
+
 ---
 
 ## Ready to build — no decision needed
