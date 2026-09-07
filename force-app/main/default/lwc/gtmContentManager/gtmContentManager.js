@@ -78,6 +78,10 @@ export default class GtmContentManager extends LightningElement {
     @track isSaving = false;
     @track loadError = '';
     @track saveMessage = '';
+    // One-time orientation nudge for a just-created offering — see
+    // capturePageRef() for how it's set and why it doesn't reappear on a
+    // later, unrelated navigation back to the same offering.
+    @track isNewOffering = false;
     @track reorderMode = false;
     @track exitOpen = false;
     @track dirtyKeys = [];
@@ -121,6 +125,14 @@ export default class GtmContentManager extends LightningElement {
 
         this._requestedOffering = offering;
         this._requestedTemplate = template;
+        // A one-time creation nudge, not a persistent "you haven't built
+        // Story yet" banner: only set when the home page's create flow
+        // stamped c__new on this navigation, and this whole handler only
+        // reacts when offering/template actually changed (guard above) — so
+        // switching away and back to the same offering without a fresh
+        // c__new never re-triggers it.
+        const isNew = ref.state.c__new === '1';
+        if (isNew) this.isNewOffering = true;
 
         // connectedCallback runs once. Coming back from the home page a second
         // time reuses this component, so only this wire fires -- and it used
@@ -603,6 +615,8 @@ export default class GtmContentManager extends LightningElement {
     }
 
     handleDismissError() { this.loadError = ''; }
+
+    handleDismissNewOfferingHint() { this.isNewOffering = false; }
 
     // ─── add / delete sections ────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 import { LightningElement, track } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import createPage from '@salesforce/apex/GtmPageSectionController.createPage';
 import { starterFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSummary';
@@ -280,14 +281,23 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
             .then((key) => {
                 this.newOfferingOpen = false;
                 this.newOfferingName = '';
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Offering created',
+                    message: `"${name}" is ready. Its Offerings Listing page already has a starting section.`,
+                    variant: 'success'
+                }));
                 // Straight into the new offering's own listing page, which is
-                // the only page it has and the one that needs writing.
-                this.openEditor(key, 'offerings-listing');
+                // the only page it has and the one that needs writing. Deferred
+                // a microtask past the modal-close writes above so the
+                // NavigationMixin dispatch doesn't land in the same tick as
+                // those reactive writes — the same shape handleGoToPage() below
+                // already uses (its Apex round-trip separates the two).
+                return Promise.resolve().then(() => this.openEditor(key, 'offerings-listing', /* isNew */ true));
             })
             .catch((err) => {
                 this.loadError = this.messageFrom(err) || 'The offering could not be created.';
-                this.isLoading = false;
-            });
+            })
+            .finally(() => { this.isLoading = false; });
     }
 
     handleOpenNewPage() {
@@ -346,9 +356,10 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
 
     // This page already lives in the Content Manager app, so the editor is a
     // tab away rather than an app away; navItemPage keeps the app shell.
-    openEditor(offeringKey, templateType) {
+    openEditor(offeringKey, templateType, isNew) {
         const state = { c__offering: offeringKey };
         if (templateType) state.c__template = templateType;
+        if (isNew) state.c__new = '1';
         this[NavigationMixin.Navigate]({
             type: 'standard__navItemPage',
             attributes: { apiName: 'GTM_Content_Manager' },

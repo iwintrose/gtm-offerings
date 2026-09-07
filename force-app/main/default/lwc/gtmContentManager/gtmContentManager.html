@@ -101,6 +101,14 @@
       </div>
     </template>
 
+    <template if:true={isNewOffering}>
+      <div class="gcm-new-hint" role="status">
+        <lightning-icon icon-name="utility:success" size="x-small" variant="success"></lightning-icon>
+        <span>Offering created. Its Offerings Listing page already has a starting section — start with the <b>Story</b> page next to give it a front door.</span>
+        <button class="gcm-new-hint-x" onclick={handleDismissNewOfferingHint} title="Dismiss" aria-label="Dismiss">&times;</button>
+      </div>
+    </template>
+
     <template if:true={isLoading}>
       <div class="gcm-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
     </template>

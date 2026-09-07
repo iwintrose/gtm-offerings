@@ -231,6 +231,31 @@ public without sharing class GtmPageContentController {
             o.publicUrl   = publicUrlFor(host, off.Site_Path__c);
             out.add(o);
         }
+
+        // An offering that has pages but no metadata row yet is a real
+        // offering: custom metadata only deploys asynchronously, so one
+        // created a moment ago would otherwise vanish from its own editor
+        // until the deployment landed. Mirrors the same fallback already in
+        // getHomeSummary() below — that method treats page-only offerings as
+        // real, this one didn't, and that asymmetry is what left the
+        // offering-selector dropdown unable to pre-select a freshly created
+        // offering.
+        Set<String> known = new Set<String>();
+        for (OfferingOption o : out) known.add(o.offeringKey);
+
+        for (AggregateResult ar : [
+            SELECT Offering_Key__c o FROM GTM_Page_Section__c
+            WHERE Active__c = true GROUP BY Offering_Key__c
+        ]) {
+            String key = (String) ar.get('o');
+            if (known.contains(key)) continue;
+            OfferingOption o = new OfferingOption();
+            o.offeringKey = key;
+            o.label       = key;      // same fallback-to-key convention getHomeSummary uses
+            o.publicUrl   = null;     // no Site_Path__c exists yet — leave blank, don't fabricate one
+            out.add(o);
+            known.add(key);
+        }
         return out;
     }
 
