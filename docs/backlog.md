@@ -499,6 +499,45 @@ uses the live link today. **Not fixed. Needs a real decision** — promote
 answers — each a different size of change, not this session's to pick
 unilaterally.
 
+**D12 — Industry Chooser's generic "Add section" path is now closed, and there
+is no purpose-built replacement.** Landed while implementing the Content
+Manager IA plan (`docs/agent-artifacts/content-manager-ia-plan.md` §3.5):
+`gtmPageLayouts.js`'s `TEMPLATE_LAYOUTS['industry-chooser']` is now `[]`, so
+the generic "Add section" modal on that page (any heading text, any layout,
+becomes the industry's `Section_Key__c` with none of a real "Add industry"
+form's validation — duplicate-name check, a real key rather than a slugified
+heading) is closed off, per the PO's own "I can click in, I can add — should
+not be able to." That generic modal was, until this change, the *only* way a
+new industry got created anywhere in the app. Existing `industry-tile`
+sections are untouched — still fully renameable, reorderable, hideable and
+deletable — only *creation* is blocked. **Not urgent** while Migration
+Accelerator is the only offering in the org (no second industry has needed
+adding), but this becomes a real, blocking gap the moment one does. Needs a
+purpose-built "Add industry" flow before then: validated key, a duplicate
+check against existing industries, and a seeded field set matching
+`industry-tile`'s layout — not a re-opening of the generic modal.
+
+**D13 — Per-offering "look and feel" (theming) — deferred, not decided
+against.** Raised in the same IA plan (§5): a content author cannot change
+the base visual system (`gtmStory.css`/`gtmConfigurator.css` — ~150-200 raw
+colour/`var()` declarations each, shared by every offering that renders
+through them) per offering today. The two levers that *do* exist —
+`Css_Class__c`/`Inline_Style__c`/`Html_Id__c` on `GTM_Page_Content__c`
+(per-field, already offering-scoped) and `swatches` under
+`offering-defaults` (the rep's link-wizard colour choices, already
+offering-scoped) — cover the specific "edit the accelerator one we've built
+so far" case today, without waiting on anything below. **Deliberately not
+built this pass:** a real per-offering theme/token layer is a cross-cutting
+CSS architecture change to the two largest, most heavily-styled components in
+the app — categorically bigger than an IA cleanup, and speculative while
+Migration Accelerator is the only offering built out (nothing to validate a
+theme system against yet). **The trigger, so this isn't silently dropped:**
+build it the moment a *second* offering is being onboarded with a genuinely
+different visual identity from Migration Accelerator's. The seam is already
+known — CSS custom properties at the top of both stylesheets, sourced from a
+new json field beside `swatches` in the customizer-settings surface (see
+D8/§1 above), applied per-offering the same way `Inline_Style__c` already is.
+
 ---
 
 ## Ready to build — no decision needed

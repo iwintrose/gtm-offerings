@@ -29,6 +29,12 @@ export default class GtmPagePreview extends LightningElement {
     @api pageUrl = '';
     @api hasDrafts = false;
 
+    // Set by c/gtmContentManager while its "Customizer settings" panel is
+    // open, so the note above the stage explains what this preview is
+    // showing instead of the ordinary configurator caption -- the fields
+    // being edited in that mode drive the rep's link wizard, not this page.
+    @api settingsMode = false;
+
     /** Which page is being edited. Decides which renderer to preview with. */
     @api templateType = 'story';
 
@@ -98,11 +104,16 @@ export default class GtmPagePreview extends LightningElement {
     }
 
     get previewNote() {
+        if (this.settingsMode && this.templateType === 'configurator') {
+            return 'These values configure the rep’s link wizard — they are not drawn on this page.';
+        }
         if (this.templateType === 'offerings-listing') {
             return 'Shown in place on the offerings page — the other tiles are live.';
         }
         if (this.templateType === 'configurator') {
-            return 'Shown as a prospect sees it, using the first industry on this page.';
+            return 'Shown as a prospect sees it, using the first industry on this page. '
+                 + 'The “Ask Gus” bubble is configured at the Framework level, not here — '
+                 + 'see the Framework card’s Settings to change its name, tone or opening line.';
         }
         return '';
     }

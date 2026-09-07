@@ -95,8 +95,11 @@
                       <p class="off-key off-rename-note">Renaming this changes the name on the offerings page too.</p>
                     </template>
                   </div>
-                  <div class="slds-no-flex">
+                  <div class="slds-no-flex off-headright">
                     <span class={o.badgeClass}>{o.summary}</span>
+                    <template if:true={o.nextStepHint}>
+                      <span class="off-nextstep">{o.nextStepHint}</span>
+                    </template>
                   </div>
                 </header>
               </div>
@@ -228,6 +231,7 @@
             <lightning-combobox label="Offering" value={npOffering} options={offeringOptions}
                                 onchange={handleNpOffering}></lightning-combobox>
             <lightning-combobox label="Page" value={npTemplate} options={templateOptions}
+                                disabled={templateOptionsEmpty}
                                 onchange={handleNpTemplate}></lightning-combobox>
             <p class="modal-note">{npHint}</p>
           </div>

@@ -204,7 +204,14 @@ const TEMPLATE_LAYOUTS = {
     // The offerings page draws its tiles from the offerings themselves, so
     // there is nothing to add to it beyond the chrome it already has.
     'offerings-page': [],
-    'industry-chooser': ['industry-tile'],
+    // Industries are managed by editing an existing industry-tile section,
+    // not by adding a new one through the generic "Add section" modal (any
+    // heading text, any layout) -- that path has no validation of its own
+    // (duplicate names, a real key rather than a slugified heading) and was
+    // the only route to a new industry, which is worse than no route at all.
+    // See docs/backlog.md for the resulting "no way to add a new industry"
+    // gap this closes off.
+    'industry-chooser': [],
     // Each app's help panel is one section, in the one layout that already
     // knows how to hold a list of questions and answers — no new layout type
     // needed for a shape the story page already draws.
@@ -274,6 +281,21 @@ const AGENT_TONE_OPTIONS = [
     { value: 'direct-executive',     label: 'Direct & executive' },
     { value: 'technical-precise',    label: 'Technical & precise' }
 ];
+
+/**
+ * JSON-array fields whose item list is locked to what already exists: an
+ * entry can be renamed, reordered or deleted, but c/gtmFieldEditor's generic
+ * "+ Add item" affordance is hidden for them. Keyed `${layoutType}::${fieldKey}`
+ * so a second field can join this set later without a new mechanism.
+ *
+ * FAQ entries are the first case: the content structure (which questions
+ * exist) is meant to stay fixed while their wording stays fully editable.
+ * There is no server-side backstop for this today -- handleItemAdd mutates
+ * the JSON blob client-side and saves through the ordinary saveDrafts path,
+ * which has no per-field-key gate -- so this is a UI-only guard. See
+ * docs/backlog.md.
+ */
+const LOCKED_JSON_ITEMS = new Set(['faq::items']);
 
 
 /**
@@ -412,6 +434,7 @@ export {
     CTA_ICONS,
     ctaGlyph,
     AGENT_TONE_OPTIONS,
+    LOCKED_JSON_ITEMS,
     FRAME_LAYOUTS,
     TEMPLATE_LAYOUTS,
     LAYOUT_FIELDS,

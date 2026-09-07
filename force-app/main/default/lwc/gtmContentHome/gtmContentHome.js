@@ -76,6 +76,20 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         return `Framework · ${offerings} ${noun} · ${pages} pages`;
     }
 
+    // What an offering still has left to build, named rather than counted.
+    // Mirrors the same templatesFor()/SETTINGS_TEMPLATES filter the pages
+    // list below uses, so "Still to build" can never name a page the card
+    // itself doesn't also list.
+    nextStepHintFor(offering) {
+        const byType = {};
+        (offering.pages || []).forEach((p) => { byType[p.templateType] = p; });
+        const unbuilt = templatesFor(offering.offeringKey)
+            .filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1)
+            .filter((t) => !(byType[t] && (byType[t].sectionCount || 0) > 0))
+            .map((t) => TEMPLATE_LABELS[t] || t);
+        return unbuilt.length ? `Still to build: ${unbuilt.join(', ')}.` : '';
+    }
+
     get cards() {
         return this.offerings.map((o) => {
             const built = o.pages.filter((p) => (p.sectionCount || 0) > 0);
@@ -123,6 +137,12 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                 summary: built.length === 1
                     ? '1 page ready to edit'
                     : `${built.length} pages ready to edit`,
+                // What's left, named rather than just counted -- so a card
+                // says what to do next, not only how much is done. Reads
+                // straight off the same pages list below, so it can never go
+                // stale relative to what the card actually shows; empty (and
+                // rendered as nothing) once every page is built.
+                nextStepHint: this.nextStepHintFor(o),
                 // Settings templateTypes (currently just 'assistant') are
                 // registered with templatesFor() so the editor and breadcrumb
                 // know what they are, but they are not a page in the sequence
@@ -234,15 +254,37 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     // from a starter shape, and a settings templateType is not one -- it has
     // exactly one instance, already migrated in, reachable through its own
     // Settings link rather than through "new".
+    //
+    // Filtered to genuinely creatable pages: a template this offering (or the
+    // Framework) has already built does not belong in a "New Offering Page"
+    // modal -- that is where you go to build something, not to reopen it.
+    // createPage itself already refuses to re-seed a page that has sections
+    // (GtmPageSectionController.createPage), so this is a UX filter on top of
+    // a real backend guard, not a substitute for one.
     get templateOptions() {
-        return this.pageTemplatesFor(this.npOffering).map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
+        const offering = this.offerings.find((o) => o.offeringKey === this.npOffering);
+        const builtTypes = new Set((offering && offering.pages || [])
+            .filter((p) => (p.sectionCount || 0) > 0)
+            .map((p) => p.templateType));
+        return this.pageTemplatesFor(this.npOffering)
+            .filter((t) => !builtTypes.has(t))
+            .map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
     }
+
+    get templateOptionsEmpty() { return this.templateOptions.length === 0; }
 
     pageTemplatesFor(offeringKey) {
         return templatesFor(offeringKey).filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1);
     }
 
-    get npDisabled() { return !this.npOffering || !this.npTemplate; }
+    offeringLabelFor(offeringKey) {
+        const o = this.offerings.find((x) => x.offeringKey === offeringKey);
+        return o ? o.label : offeringKey;
+    }
+
+    get npDisabled() {
+        return !this.npOffering || !this.npTemplate || this.templateOptionsEmpty;
+    }
 
 
     // ─── a new offering ───────────────────────────────────────────────────────
@@ -303,32 +345,33 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     handleOpenNewPage() {
         this.newPageOpen = true;
         this.npOffering = this.offerings.length === 1 ? this.offerings[0].offeringKey : '';
-        this.npTemplate = this.npOffering ? (this.pageTemplatesFor(this.npOffering)[0] || '') : 'story';
+        const options = this.templateOptions;
+        this.npTemplate = options.length ? options[0].value : '';
     }
 
     handleCloseNewPage() { this.newPageOpen = false; }
     handleNpOffering(event) {
         this.npOffering = event.detail.value;
-        // The framework and an offering own different pages, so a template
-        // chosen under one is not necessarily offered by the other.
-        const allowed = this.pageTemplatesFor(this.npOffering);
-        if (allowed.indexOf(this.npTemplate) === -1) this.npTemplate = allowed[0] || '';
+        // The framework and an offering own different pages, and the modal
+        // only ever offers what is not already built (see templateOptions),
+        // so the default/allowed set comes from there, not the raw page list.
+        const options = this.templateOptions;
+        if (!options.some((o) => o.value === this.npTemplate)) {
+            this.npTemplate = options.length ? options[0].value : '';
+        }
     }
     handleNpTemplate(event) { this.npTemplate = event.detail.value; }
 
-    // A page that already has sections is opened, not rebuilt. A page that
-    // does not is created first — otherwise "new page" meant "open the editor
-    // and hope", which is why every page but the story was empty.
-    get npIsExisting() {
-        const offering = this.offerings.find((o) => o.offeringKey === this.npOffering);
-        if (!offering) return false;
-        const page = (offering.pages || []).find((p) => p.templateType === this.npTemplate);
-        return !!(page && page.isBuilt);
-    }
-
+    // templateOptions never carries an already-built page, so every choice
+    // here is a genuine creation. A defensive createPage-refusal message can
+    // still surface through the .catch below -- the Apex guard
+    // (GtmPageSectionController.createPage) remains the real backstop.
     get npHint() {
-        if (this.npDisabled) return 'Both are needed to open the editor on the right page.';
-        if (this.npIsExisting) return 'This page already exists. The editor will open on it.';
+        if (!this.npOffering) return 'Choose an offering, then which of its pages to build.';
+        if (this.templateOptionsEmpty) {
+            return `${this.offeringLabelFor(this.npOffering)} has no pages left to create — every page it can have is already built.`;
+        }
+        if (!this.npTemplate) return 'Choose which page to build.';
         const n = starterFor(this.npTemplate).length;
         return n
             ? `Creates ${n} starting sections you can rename, reorder or remove. Nothing is public until you publish.`
@@ -340,11 +383,6 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         const offeringKey = this.npOffering;
         const templateType = this.npTemplate;
         this.newPageOpen = false;
-
-        if (this.npIsExisting) {
-            this.openEditor(offeringKey, templateType);
-            return;
-        }
         this.isLoading = true;
         createPage({ offeringKey, templateType, sections: starterFor(templateType) })
             .then(() => { this.openEditor(offeringKey, templateType); })
@@ -356,10 +394,15 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
 
     // This page already lives in the Content Manager app, so the editor is a
     // tab away rather than an app away; navItemPage keeps the app shell.
-    openEditor(offeringKey, templateType, isNew) {
+    // `panel` is a separate one-shot request from `isNew` (c__new is the
+    // post-creation welcome nudge; c__panel is which surface of the editor to
+    // land on, e.g. 'settings') -- kept as its own argument rather than
+    // reusing isNew's slot so the two don't collide.
+    openEditor(offeringKey, templateType, isNew, panel) {
         const state = { c__offering: offeringKey };
         if (templateType) state.c__template = templateType;
         if (isNew) state.c__new = '1';
+        if (panel) state.c__panel = panel;
         this[NavigationMixin.Navigate]({
             type: 'standard__navItemPage',
             attributes: { apiName: 'GTM_Content_Manager' },
@@ -410,16 +453,20 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         const key = event.currentTarget.dataset.key;
         this.newPageOpen = true;
         this.npOffering = key;
-        this.npTemplate = this.pageTemplatesFor(key)[0] || '';
+        const options = this.templateOptions;
+        this.npTemplate = options.length ? options[0].value : '';
     }
 
     // Straight into the settings templateType this card carries -- an
     // offering's Configurator "defaults" section, or the Framework's
     // assistant. Opens the same editor the pages list would, on a
-    // templateType that list deliberately does not show.
+    // templateType that list deliberately does not show, and asks the editor
+    // to land on its customizer-settings panel rather than the first section
+    // (c/gtmContentManager ignores the panel request when there is no such
+    // panel for this templateType, e.g. the Framework's 'assistant').
     handleOpenSettings(event) {
         const { key, template } = event.currentTarget.dataset;
-        this.openEditor(key, template);
+        this.openEditor(key, template, false, 'settings');
     }
 
     // Reads the org again. Page counts and the activity feed change when
