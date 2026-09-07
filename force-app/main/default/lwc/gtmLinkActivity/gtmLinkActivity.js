@@ -20,7 +20,7 @@ export default class GtmLinkActivity extends LightningElement {
     @api recordId;
 
     /** True when this instance sits on the Engagement Link
-     *  (MA_Saved_Configuration__c) record page, where recordId IS the
+     *  (GTM_Saved_Configuration__c) record page, where recordId IS the
      *  config id directly -- false (the original placement, on
      *  GTM_Assessment_Request__c) needs one hop through that record's own
      *  Saved_Configuration__c lookup to find it. Two different record
@@ -58,9 +58,9 @@ export default class GtmLinkActivity extends LightningElement {
 
     @wire(getRelatedListRecords, {
         parentRecordId: '$_configId',
-        // relationshipName was renamed to GTM_Link_Events to avoid colliding
-        // with MA_Saved_Configuration__c's own Link_Events relationship
-        // while both objects coexist during the D6 transition.
+        // relationshipName is GTM_Link_Events, not the default Link_Events,
+        // a leftover from the D6 rename avoiding a collision with the old
+        // MA_Saved_Configuration__c object's own Link_Events relationship.
         relatedListId: 'GTM_Link_Events__r',
         fields: [
             'GTM_Link_Event__c.Id',

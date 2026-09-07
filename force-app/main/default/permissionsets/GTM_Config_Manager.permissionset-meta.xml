@@ -338,6 +338,11 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Legacy_Id__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>Opportunity.Engagement_Link__c</field>
         <readable>true</readable>
         <editable>true</editable>

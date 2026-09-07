@@ -9,7 +9,6 @@
         <targetConfig targets="lightning__RecordPage">
             <objects>
                 <object>GTM_Assessment_Request__c</object>
-                <object>MA_Saved_Configuration__c</object>
                 <object>GTM_Saved_Configuration__c</object>
             </objects>
             <property name="parentIsSavedConfiguration" type="Boolean" default="false"
