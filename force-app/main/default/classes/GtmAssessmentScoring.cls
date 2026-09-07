@@ -402,6 +402,26 @@ public with sharing class GtmAssessmentScoring {
          * codebase overruling the offering's authored instrument.
          */
         Boolean fromRecord;
+        /**
+         * Whether the COMPILED DIMENSION LIST may be used as a fallback for
+         * this offering.
+         *
+         * True only for migration-accelerator itself, and for a blank key (the
+         * display-path callers). It is deliberately a separate flag from
+         * fromRecord: an offering can have no frame record -- so it borrows
+         * this class's SCALE and BANDS, which are neutral numbers -- while
+         * still having no business borrowing Migration Accelerator's eight
+         * DIMENSION KEYS, which are content.
+         *
+         * Found by running the ADR-0007 isolation proof against real deployed
+         * classes rather than by unit test: with an empty pack, resolvedDimensions
+         * fell back to DIMENSIONS for EVERY offering, so a second offering with
+         * no instrument deployed scored 32 out of 32 against Migration
+         * Accelerator's allowlist. That is the exact cross-offering leak the
+         * ADR exists to prevent, and it looked completely correct in a unit
+         * test that supplied a well-formed pack.
+         */
+        Boolean compiledApplies;
     }
 
     private static ResolvedFrame frameFor(String offeringKey) {
@@ -410,6 +430,8 @@ public with sharing class GtmAssessmentScoring {
         rf.maxAnswer  = MAX_ANSWER_VALUE;
         rf.bands      = migrationAcceleratorBands();
         rf.fromRecord = false;
+        rf.compiledApplies =
+            String.isBlank(offeringKey) || isMigrationAccelerator(offeringKey);
 
         GTM_Assessment_Frame__mdt row = GtmAssessmentFrames.frameFor(offeringKey);
         if (row == null) {
@@ -702,20 +724,41 @@ public with sharing class GtmAssessmentScoring {
         GtmAssessmentInstrument.Pack pack, ResolvedFrame frame
     ) {
         if (pack == null || pack.slots == null || pack.slots.isEmpty()) {
-            return DIMENSIONS;
+            return untrustedPackFallback(frame);
         }
-        if (!frame.fromRecord && pack.slots.size() != DIMENSIONS.size()) {
-            return DIMENSIONS;
+        if (!frame.fromRecord && frame.compiledApplies
+                && pack.slots.size() != DIMENSIONS.size()) {
+            return untrustedPackFallback(frame);
         }
         List<String> keys = new List<String>();
         Set<String> seen  = new Set<String>();
         for (GtmAssessmentInstrument.Slot slot : pack.slots) {
             if (String.isBlank(slot.key) || !seen.add(slot.key)) {
-                return DIMENSIONS;
+                return untrustedPackFallback(frame);
             }
             keys.add(slot.key);
         }
         return keys;
+    }
+
+    /**
+     * What to score against when the pack cannot be trusted.
+     *
+     * For Migration Accelerator: its own compiled eight, exactly as before --
+     * a half-deployed pack should cost the adapted wording, not the score.
+     *
+     * For ANY OTHER offering: NOTHING. An empty allowlist means no answer is
+     * read and the submission scores to nulls, which is the same shape an
+     * unscored submission has always produced and which the whole stack
+     * already renders as "not assessed". Borrowing Migration Accelerator's
+     * eight keys here would be worse than useless: it would produce a
+     * confident 32-out-of-32 for an offering whose instrument does not exist,
+     * against questions its respondent was never asked. "Not assessed" and
+     * "assessed against somebody else's instrument" are very different claims,
+     * and only one of them is true.
+     */
+    private static List<String> untrustedPackFallback(ResolvedFrame frame) {
+        return frame.compiledApplies ? DIMENSIONS : new List<String>();
     }
 
     /** The key a base slot resolved to for this pack, or the base key itself. */
@@ -785,7 +828,8 @@ public with sharing class GtmAssessmentScoring {
         if (pack == null || pack.slots == null || pack.slots.isEmpty()) {
             return false;
         }
-        if (!frame.fromRecord && pack.slots.size() != DIMENSIONS.size()) {
+        if (!frame.fromRecord && frame.compiledApplies
+                && pack.slots.size() != DIMENSIONS.size()) {
             return false;
         }
         return pack.maxTotal() == frameMaxTotal(pack.dimensionKeys(), frame);
@@ -805,7 +849,9 @@ public with sharing class GtmAssessmentScoring {
         ResolvedFrame frame = frameFor(offeringKey);
         return pointsAreTrustworthy(pack, frame)
             ? pack.maxTotal()
-            : frameMaxTotal(pack == null ? DIMENSIONS : pack.dimensionKeys(), frame);
+            : frameMaxTotal(
+                pack == null ? untrustedPackFallback(frame) : pack.dimensionKeys(), frame
+              );
     }
 
     /** The max_attainable for a resolved key, or null when uncapped. */

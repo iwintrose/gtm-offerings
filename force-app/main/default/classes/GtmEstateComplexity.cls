@@ -193,6 +193,15 @@ public with sharing class GtmEstateComplexity {
         Integer maxAnswer;
         List<GtmAssessmentScoring.Band> bands;
         Boolean fromRecord;
+        /**
+         * Whether the compiled DIMENSION list may be borrowed as a fallback.
+         * True only for migration-accelerator and for a blank key. Separate
+         * from fromRecord for the reason spelled out on the readiness axis:
+         * the scale and bands are neutral numbers an offering may borrow, the
+         * six dimension keys are Migration Accelerator's content and it may
+         * not. See GtmAssessmentScoring.ResolvedFrame.compiledApplies.
+         */
+        Boolean compiledApplies;
     }
 
     private static ResolvedFrame frameFor(String offeringKey) {
@@ -201,6 +210,8 @@ public with sharing class GtmEstateComplexity {
         rf.maxAnswer  = MAX_ANSWER_VALUE;
         rf.bands      = migrationAcceleratorBands();
         rf.fromRecord = false;
+        rf.compiledApplies = String.isBlank(offeringKey)
+            || GtmAssessmentFrames.MIGRATION_ACCELERATOR.equalsIgnoreCase(offeringKey.trim());
 
         GTM_Assessment_Frame__mdt row = GtmAssessmentFrames.frameFor(offeringKey);
         if (row == null) {
@@ -259,7 +270,7 @@ public with sharing class GtmEstateComplexity {
 
     private static List<String> acceptedDimensions(List<String> supplied, ResolvedFrame frame) {
         if (supplied == null || supplied.isEmpty()) {
-            return DIMENSIONS;
+            return frame.compiledApplies ? DIMENSIONS : new List<String>();
         }
         // The count check is Migration Accelerator's frame asserting itself, so
         // it applies only when Migration Accelerator's frame is the one in use.
@@ -267,13 +278,14 @@ public with sharing class GtmEstateComplexity {
         // and holding it to six would be this codebase overruling an authored
         // instrument. The no-blanks / no-duplicates half applies always: a
         // repeated key reads one submitted answer twice, whatever the frame.
-        if (!frame.fromRecord && supplied.size() != DIMENSIONS.size()) {
+        if (!frame.fromRecord && frame.compiledApplies
+                && supplied.size() != DIMENSIONS.size()) {
             return DIMENSIONS;
         }
         Set<String> seen = new Set<String>();
         for (String key : supplied) {
             if (String.isBlank(key) || !seen.add(key)) {
-                return DIMENSIONS;
+                return frame.compiledApplies ? DIMENSIONS : new List<String>();
             }
         }
         return supplied;
