@@ -82,6 +82,12 @@ public without sharing class GtmAssessmentRequestController {
         /** Populated when the link has Link_Password__c set; used by
          * validateTokenIfRequired() to re-derive the expected HMAC. */
         String linkPassword;
+        /** Per-link notification override (GTM_Saved_Configuration__c.
+         * Notify_Email__c). Preferred over the org-wide CMDT Notify_Email__c
+         * -- see the notifyEmail resolution in submitRequest() below. Blank
+         * only for a direct booking with no link, or a link saved before
+         * this field existed and never resaved since. */
+        String notifyEmail;
     }
 
     public class RequestResult {
@@ -150,7 +156,17 @@ public without sharing class GtmAssessmentRequestController {
         try {
             Boolean createContact = (Boolean) cfg.get('Create_Lead__c');
             Boolean sendEmail = (Boolean) cfg.get('Send_Email__c');
-            String notifyEmail = (String) cfg.get('Notify_Email__c');
+            // The link's own field wins when it has one -- which, going
+            // forward, is every link (GtmSavedConfigurationController
+            // resolves and stores it at creation time, defaulting to the
+            // creating rep). The org-wide CMDT value is only still consulted
+            // as a fallback for a direct booking (no engagement link at all)
+            // or a link saved before this field existed and never resaved.
+            // Send_Email__c on the CMDT record stays the one global
+            // kill-switch either way.
+            String notifyEmail = String.isNotBlank(ctx.notifyEmail)
+                ? ctx.notifyEmail
+                : (String) cfg.get('Notify_Email__c');
 
             if (createContact == true) {
                 applyContact(input, cleanName, cleanEmail, cfg, ctx, result);
@@ -164,7 +180,7 @@ public without sharing class GtmAssessmentRequestController {
             // to go find the Contact's own timeline.
             logActivity(ctx.contactId, ctx.opportunityId, input, cleanName, cleanEmail, cfg);
             if (sendEmail == true && String.isNotBlank(notifyEmail)) {
-                result.emailSent = notify(input, cleanName, cleanEmail, cfg);
+                result.emailSent = notify(input, cleanName, cleanEmail, notifyEmail);
             }
             recordAssessmentRequest(input, cleanName, cleanEmail, ctx, result);
             result.success = true;
@@ -198,7 +214,8 @@ public without sharing class GtmAssessmentRequestController {
         try {
             List<GTM_Saved_Configuration__c> rows = [
                 SELECT OwnerId, Opportunity__c, Account__c, Contact__c,
-                       Company__c, Offering__c, Estimated_Value__c, Link_Password__c
+                       Company__c, Offering__c, Estimated_Value__c, Link_Password__c,
+                       Notify_Email__c
                 FROM GTM_Saved_Configuration__c
                 WHERE Id = :configId
                 LIMIT 1
@@ -212,6 +229,7 @@ public without sharing class GtmAssessmentRequestController {
                 ctx.offering = rows[0].Offering__c;
                 ctx.estimatedValue = rows[0].Estimated_Value__c;
                 ctx.linkPassword = rows[0].Link_Password__c;
+                ctx.notifyEmail = rows[0].Notify_Email__c;
             }
         } catch (Exception e) {
             // Malformed id, or no read access -- proceed unlinked.
@@ -596,10 +614,9 @@ public without sharing class GtmAssessmentRequestController {
         RequestInput input,
         String cleanName,
         String cleanEmail,
-        GTM_Assessment_Config__mdt cfg
+        String notifyEmail
     ) {
         Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
-        String notifyEmail = (String) cfg.get('Notify_Email__c');
         msg.setToAddresses(new List<String>{ notifyEmail });
         msg.setSubject(
             'Assessment request — ' +

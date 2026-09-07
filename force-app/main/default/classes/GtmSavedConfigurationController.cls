@@ -58,6 +58,14 @@ public with sharing class GtmSavedConfigurationController {
          * left untouched in that case, never cleared. */
         @AuraEnabled
         public String linkPassword { get; set; }
+        /** Where assessment-request alerts for THIS link should go. Optional --
+         * a rep who leaves it blank gets it defaulted to their own email at
+         * creation time (see resolveNotifyEmail()). Set here, an existing value
+         * is only ever replaced by a new explicit override, never blanked out
+         * by an unrelated resave -- same "don't wipe what's already resolved"
+         * rule the rest of this method follows for accountId/contactId/value. */
+        @AuraEnabled
+        public String notifyEmail { get; set; }
         /** Brand / marketing website for the prospect's company -- used to
          * set Account.Website when the Account is newly created. */
         @AuraEnabled
@@ -284,6 +292,17 @@ public with sharing class GtmSavedConfigurationController {
         }
         if (String.isNotBlank(input.linkPassword)) {
             record.Link_Password__c = input.linkPassword.trim();
+        }
+        // Resolved once, here, rather than left blank and resolved lazily by
+        // the notification path later -- "who created this link" is a fact
+        // about the moment of creation, and the creating user is not
+        // necessarily who happens to be viewing/sending the notification
+        // later. isNewRecord is exactly "no recordId supplied": the same
+        // signal insert-vs-update already branches on below.
+        Boolean isNewRecord = String.isBlank(input.recordId);
+        String resolvedNotifyEmail = resolveNotifyEmail(input.notifyEmail, isNewRecord);
+        if (String.isNotBlank(resolvedNotifyEmail)) {
+            record.Notify_Email__c = resolvedNotifyEmail;
         }
 
         try {
@@ -528,7 +547,7 @@ public with sharing class GtmSavedConfigurationController {
 
         List<GTM_Saved_Configuration__c> rows = [
             SELECT Id, Company__c, Industry__c, Industry_Label__c, Offering__c,
-                   Config_Payload__c, Generated_URL__c, Active__c
+                   Config_Payload__c, Generated_URL__c, Active__c, Notify_Email__c
             FROM   GTM_Saved_Configuration__c
             WHERE  Id = :parsedId
             LIMIT  1
@@ -545,6 +564,11 @@ public with sharing class GtmSavedConfigurationController {
         v.configPayload = r.Config_Payload__c;
         v.generatedUrl  = r.Generated_URL__c;
         v.isActive      = r.Active__c;
+        // The wizard's "Notify me at" field re-reads this on reopen so an
+        // override a rep already set sticks -- without it, reopening the
+        // wizard would have nothing to seed from and would fall back to
+        // whichever rep happens to be looking at it right now.
+        v.notifyEmail   = r.Notify_Email__c;
         return v;
     }
 
@@ -557,6 +581,7 @@ public with sharing class GtmSavedConfigurationController {
         @AuraEnabled public String  configPayload { get; set; }
         @AuraEnabled public String  generatedUrl  { get; set; }
         @AuraEnabled public Boolean isActive      { get; set; }
+        @AuraEnabled public String  notifyEmail   { get; set; }
     }
 
     /** Returns true when the saved record currently has a password set.
@@ -644,6 +669,44 @@ public with sharing class GtmSavedConfigurationController {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.length() > maxLen ? trimmed.substring(0, maxLen) : trimmed;
+    }
+
+    /**
+     * The per-link notification override, or a sensible default.
+     *
+     * An explicit override (rep typed a real-looking email) always wins, on
+     * both create and edit -- the wizard validates the format client-side,
+     * but this is what actually stops a bad value from landing on the
+     * record regardless of caller.
+     *
+     * A brand-new record with no override gets the CREATING user's own
+     * email, captured right now rather than resolved later by whoever
+     * happens to open the notification path -- "who created this" is a fact
+     * about this moment, not a lookup to make lazily at send time. A resave
+     * of an EXISTING record with no override supplied returns null, which
+     * the caller already treats as "leave whatever is already stored
+     * alone" -- the same rule this method's caller applies to
+     * accountId/contactId/estimatedValue just above it.
+     */
+    private static String resolveNotifyEmail(String overrideEmail, Boolean isNewRecord) {
+        String trimmed = String.isNotBlank(overrideEmail) ? overrideEmail.trim() : null;
+        if (trimmed != null && isValidEmailFormat(trimmed)) {
+            return trimmed;
+        }
+        if (isNewRecord) {
+            String creatorEmail = UserInfo.getUserEmail();
+            return String.isNotBlank(creatorEmail) ? creatorEmail : null;
+        }
+        return null;
+    }
+
+    /** Loose but real format check -- same intent as the one in
+     *  GtmAssessmentRequestController, kept as its own copy rather than a
+     *  shared utility for the same reason the account-resolve helpers are:
+     *  each file in this feature already owns its own small helpers rather
+     *  than pulling in a shared library for one method. */
+    private static Boolean isValidEmailFormat(String value) {
+        return Pattern.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$', value);
     }
 
     /**

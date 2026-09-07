@@ -144,6 +144,97 @@ private class GtmAssessmentRequestControllerTest {
         Assert.isTrue(result.success, 'Submission should succeed with email on');
     }
 
+    // -------------------------------------------------- per-link notify email
+
+    @isTest
+    static void prefersLinkNotifyEmailOverCmdtWhenCmdtIsBlank() {
+        // The CMDT record has NO Notify_Email__c on file -- only the link
+        // does. Success here is only possible if notify() actually used the
+        // link's address, since there is no other address anywhere to use.
+        Account acc = new Account(Name = 'Northwind Retail');
+        insert acc;
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Account__c = acc.Id,
+            Notify_Email__c = 'link-owner@example.com',
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        GtmAssessmentRequestController.configOverride = new GTM_Assessment_Config__mdt(
+            Create_Lead__c = true,
+            Send_Email__c = true,
+            Notify_Email__c = null,
+            Activity_Type__c = 'Task'
+        );
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(
+            result.emailSent,
+            'The link\'s own Notify_Email__c should be used when the CMDT default is blank'
+        );
+    }
+
+    @isTest
+    static void sendEmailKillSwitchStillGatesEvenWithLinkNotifyEmailSet() {
+        // Send_Email__c = false must still block sending, even though the
+        // link carries a real, resolvable Notify_Email__c -- it stays the
+        // one global on/off switch.
+        Account acc = new Account(Name = 'Northwind Retail');
+        insert acc;
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Account__c = acc.Id,
+            Notify_Email__c = 'link-owner@example.com',
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isFalse(result.emailSent, 'Send_Email__c = false should suppress email regardless of the link');
+    }
+
+    @isTest
+    static void directBookingWithNoLinkAndNoCmdtDefaultSendsNoEmail() {
+        // No engagement link at all, and the CMDT default is blank -- there
+        // is nowhere to route the alert, so submission should still succeed
+        // but simply not send one, rather than erroring.
+        GtmAssessmentRequestController.configOverride = new GTM_Assessment_Config__mdt(
+            Create_Lead__c = true,
+            Send_Email__c = true,
+            Notify_Email__c = null,
+            Activity_Type__c = 'Task'
+        );
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = null;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'Submission should still succeed with nowhere to notify');
+        Assert.isFalse(result.emailSent, 'No address anywhere means no email, not an error');
+    }
+
     @isTest
     static void rejectsMissingName() {
         GtmAssessmentRequestController.configOverride = config(true, false, 'Task');

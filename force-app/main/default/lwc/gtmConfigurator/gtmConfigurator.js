@@ -123,6 +123,11 @@ export default class GtmConfigurator extends LightningElement {
     @track tokenState = {};
     @track company = '';
     @track industryKey = '';
+    /** The link's stored notification override, as loaded by
+     * loadSavedConfiguration() -- passed straight through to
+     * c-gtm-config-wizard so it can seed "Send assessment alerts to" on
+     * open instead of resetting to whichever rep is currently viewing it. */
+    @track notifyEmail = '';
     @track accent = '';
     @track theme = null;
     @track expired = false;
@@ -618,6 +623,7 @@ export default class GtmConfigurator extends LightningElement {
 
             if (rec.company) this.company = rec.company;
             if (rec.industry) this.industryKey = rec.industry;
+            if (rec.notifyEmail) this.notifyEmail = rec.notifyEmail;
 
             let saved = {};
             try { saved = JSON.parse(rec.configPayload || '{}'); } catch (e) { saved = {}; }
