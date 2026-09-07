@@ -125,6 +125,61 @@
         <editable>false</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Account__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Active__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Company__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Config_Payload__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Contact__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Estimated_Value__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Generated_URL__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Industry__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Industry_Label__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Link_Password__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Saved_Configuration__c.Opportunity__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>Opportunity.Engagement_Link__c</field>
         <readable>true</readable>
         <editable>true</editable>
