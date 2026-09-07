@@ -1,3 +1,5 @@
+@import 'c/gtmTokens';
+
 /* GTM Content Manager — Salesforce chrome around a live page preview.
    The chrome is deliberately SLDS-flavoured while the preview keeps the
    published page's own identity, so it stays obvious which is the tool and

@@ -1,3 +1,5 @@
+@import 'c/gtmTokens';
+
 /* Content Manager home. A landing view, not an editor: it exists so nobody
    arrives inside a page they did not choose. */
 

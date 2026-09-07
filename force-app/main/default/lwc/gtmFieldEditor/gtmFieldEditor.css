@@ -1,3 +1,4 @@
+@import 'c/gtmTokens';
 :host { display: block; min-height: 0; }
 .fe {
     display: flex; flex-direction: column; min-height: 0;
