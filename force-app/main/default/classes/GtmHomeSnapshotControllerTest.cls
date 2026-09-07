@@ -205,4 +205,158 @@ private class GtmHomeSnapshotControllerTest {
         }
         return le;
     }
+
+    private static SObject newStepEvent(
+        Id savedConfigId, String eventType, String step, String sessionId, Decimal dwellSeconds
+    ) {
+        SObject le = Schema.getGlobalDescribe().get('GTM_Link_Event__c').newSObject();
+        le.put('Saved_Configuration__c', savedConfigId);
+        le.put('Event_Type__c', eventType);
+        le.put('Step__c', step);
+        le.put('Session_Id__c', sessionId);
+        if (dwellSeconds != null) {
+            le.put('Dwell_Seconds__c', dwellSeconds);
+        }
+        return le;
+    }
+
+    private static GTM_Page_Section__c newSection(
+        String offeringKey, String sectionKey, String label, Integer sortOrder, String layoutType
+    ) {
+        return new GTM_Page_Section__c(
+            Offering_Key__c    = offeringKey,
+            Template_Type__c   = 'configurator',
+            Section_Key__c     = sectionKey,
+            Section_Address__c = offeringKey + '::configurator::' + sectionKey,
+            Label__c            = label,
+            Sort_Order__c       = sortOrder,
+            Layout_Type__c      = layoutType,
+            Active__c           = true,
+            Status__c           = 'Published'
+        );
+    }
+
+    // ── getLinkSitemap ───────────────────────────────────────────────────────
+
+    @IsTest
+    static void getLinkSitemap_blankConfigId_returnsEmptyList() {
+        Test.startTest();
+        List<GtmHomeSnapshotController.SitemapNode> nodes =
+            GtmHomeSnapshotController.getLinkSitemap('');
+        Test.stopTest();
+
+        Assert.areEqual(0, nodes.size());
+    }
+
+    @IsTest
+    static void getLinkSitemap_nonexistentConfig_returnsEmptyList() {
+        Test.startTest();
+        List<GtmHomeSnapshotController.SitemapNode> nodes =
+            GtmHomeSnapshotController.getLinkSitemap('a0HgK000000000AAA');
+        Test.stopTest();
+
+        Assert.areEqual(0, nodes.size(), 'A malformed/unresolvable id should not throw, just yield nothing');
+    }
+
+    @IsTest
+    static void getLinkSitemap_excludesControlSectionsAndOtherIndustries() {
+        GTM_Saved_Configuration__c cfg = new GTM_Saved_Configuration__c(
+            Offering__c = 'ma-sitemap-test', Industry__c = 'financial-services',
+            Company__c = 'Acme Bank', Generated_URL__c = 'https://example.com/a'
+        );
+        insert cfg;
+
+        insert new List<GTM_Page_Section__c>{
+            newSection('ma-sitemap-test', 'hero', 'Hero', 0, 'hero'),
+            newSection('ma-sitemap-test', 'assist', 'Assistant', 1, 'assistant'),
+            newSection('ma-sitemap-test', 'defaults', 'Defaults', 2, 'offering-defaults'),
+            newSection('ma-sitemap-test', 'industry-financial-services', 'Financial Services', 3, 'industry-profile'),
+            newSection('ma-sitemap-test', 'industry-retail', 'Retail', 4, 'industry-profile')
+        };
+
+        Test.startTest();
+        List<GtmHomeSnapshotController.SitemapNode> nodes =
+            GtmHomeSnapshotController.getLinkSitemap(cfg.Id);
+        Test.stopTest();
+
+        Set<String> keys = new Set<String>();
+        for (GtmHomeSnapshotController.SitemapNode n : nodes) keys.add(n.sectionKey);
+
+        Assert.isTrue(keys.contains('hero'), 'A normal beat should be included');
+        Assert.isFalse(keys.contains('assist'), 'The assistant control is not a readable beat');
+        Assert.isFalse(keys.contains('defaults'), 'Offering defaults are settings, not a beat');
+        Assert.isTrue(keys.contains('industry-financial-services'), 'The link\'s own industry cover is included');
+        Assert.isFalse(keys.contains('industry-retail'), 'A different industry\'s cover is structurally unreachable');
+
+        for (GtmHomeSnapshotController.SitemapNode n : nodes) {
+            if (n.sectionKey == 'industry-financial-services') {
+                Assert.isTrue(n.label.endsWith(' (cover)'), 'The own-industry cover section is labeled distinctly');
+            }
+        }
+    }
+
+    @IsTest
+    static void getLinkSitemap_aggregatesReadersDwellAndClicksPerStep() {
+        GTM_Saved_Configuration__c cfg = new GTM_Saved_Configuration__c(
+            Offering__c = 'ma-sitemap-agg', Company__c = 'Acme Bank',
+            Generated_URL__c = 'https://example.com/a'
+        );
+        insert cfg;
+
+        insert new List<GTM_Page_Section__c>{
+            newSection('ma-sitemap-agg', 'hero', 'Hero', 0, 'hero'),
+            newSection('ma-sitemap-agg', 'proof', 'Proof', 1, 'route-proof')
+        };
+
+        insert new List<SObject>{
+            newStepEvent(cfg.Id, 'Section Viewed', 'hero', 'sess-1', 10),
+            newStepEvent(cfg.Id, 'Section Viewed', 'hero', 'sess-2', 20),
+            newStepEvent(cfg.Id, 'CTA Clicked', 'hero', 'sess-1', null),
+            newStepEvent(cfg.Id, 'Section Viewed', 'proof', 'sess-1', 5)
+        };
+
+        Test.startTest();
+        List<GtmHomeSnapshotController.SitemapNode> nodes =
+            GtmHomeSnapshotController.getLinkSitemap(cfg.Id);
+        Test.stopTest();
+
+        Map<String, GtmHomeSnapshotController.SitemapNode> byKey =
+            new Map<String, GtmHomeSnapshotController.SitemapNode>();
+        for (GtmHomeSnapshotController.SitemapNode n : nodes) byKey.put(n.sectionKey, n);
+
+        GtmHomeSnapshotController.SitemapNode hero = byKey.get('hero');
+        Assert.areEqual(2, hero.readers, 'Two distinct sessions viewed hero');
+        Assert.areEqual(30, hero.totalDwell);
+        Assert.areEqual(15.0, hero.avgDwell);
+        Assert.areEqual(1, hero.clicks);
+
+        GtmHomeSnapshotController.SitemapNode proof = byKey.get('proof');
+        Assert.areEqual(1, proof.readers);
+        Assert.isFalse(proof.isLastSeen == null);
+
+        // The furthest section with any readers is the one marked last-seen.
+        Assert.isTrue(proof.isLastSeen, 'Proof is the furthest section actually reached');
+        Assert.isFalse(hero.isLastSeen, 'Hero was passed through, not where reading stopped');
+    }
+
+    @IsTest
+    static void getLinkSitemap_sectionsWithNoActivityReportZeroed() {
+        GTM_Saved_Configuration__c cfg = new GTM_Saved_Configuration__c(
+            Offering__c = 'ma-sitemap-empty', Company__c = 'Acme Bank',
+            Generated_URL__c = 'https://example.com/a'
+        );
+        insert cfg;
+        insert newSection('ma-sitemap-empty', 'hero', 'Hero', 0, 'hero');
+
+        Test.startTest();
+        List<GtmHomeSnapshotController.SitemapNode> nodes =
+            GtmHomeSnapshotController.getLinkSitemap(cfg.Id);
+        Test.stopTest();
+
+        Assert.areEqual(1, nodes.size());
+        GtmHomeSnapshotController.SitemapNode n = nodes[0];
+        Assert.areEqual(0, n.readers);
+        Assert.areEqual(0, n.clicks);
+        Assert.isFalse(n.isLastSeen, 'Nothing was read, so nothing is marked last-seen');
+    }
 }
