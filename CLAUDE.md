@@ -147,13 +147,19 @@ none — don't assume a sub-agent roster like a sibling project might have).
    tree.** A route/page existing under `force-app/main/default/experiences/`,
    deploying cleanly, and passing `check-references.py` is not evidence a
    real prospect can reach it — see **ADR-0006**. Right now `GTM1`
-   (`Network.Status = Live`) has only a `/configurator` route; the fuller
-   story/industry/assessment/readout build lives on `GTM_Accelerator1`,
-   which is `DownForMaintenance`. Before asserting a URL is live, check
+   (`Network.Status = Live`) has only a `/configurator` route; the
+   story/industry/readout routes live on `GTM_Accelerator1`, which is
+   `DownForMaintenance`. Before asserting a URL is live, check
    `Network.Status` for the target site, not just that the route exists in
    source. See `docs/architecture/overview.md`'s container diagram and
    `docs/backlog.md` D9 for the concrete, currently-tracked instance of
    this gap.
+   **The assessment is no longer part of that gap (ADR-0008 / D11, resolved).**
+   The single `/configurator` route is not a lesser experience: it hosts the
+   full branching, scored questionnaire in an overlay, so a real prospect on
+   the live link does get a real score. Don't read "only one route" as "the
+   live site cannot assess" — that was true until D11 was fixed and is the
+   inference that made the bug invisible for so long.
 
 ## 6. Packaging / distribution
 
@@ -167,6 +173,22 @@ would only move part of the solution. Full reasoning: ADR-0001.
 
 Shape: instrument authoring → branching questionnaire → server-side scoring
 → auto-generated readout → native Approval Process → guest-viewable publish.
+
+**Where the guest actually answers it (ADR-0008).** Inside `gtmConfigurator`'s
+overlay, on the live `/configurator` route — not on a page of its own. That is
+a rule, not an implementation detail: **any guest surface that writes a scored
+`GTM_Assessment_Request__c` must be hosted where the engagement link's
+`savedRecordId` is resolvable.** A standalone questionnaire route cannot see
+it, and a submission without it silently loses the Opportunity, the Account,
+the rep attribution and the `Link_Password__c` gate, and resolves the offering
+from a page property instead of the link — scoring against a pack the
+respondent was never asked. `gtmConfigBooking`, the short form that used to
+live in that overlay and sent no answers at all, is deleted. Two related
+invariants that came with it: **one submitted assessment per engagement link**,
+enforced in `submitRequest` before any DML (with a boolean-only guest mirror on
+`GtmConfigurationStatusController`), and the eleven BD-context fields the
+readout depends on are collected by the questionnaire but must **never** enter
+`answers`/`complexityAnswers`/`supplementAnswers`.
 
 **Per-offering since ADR-0007.** The instrument is no longer a global
 singleton hardcoded to Migration Accelerator. Every offering gets a fully

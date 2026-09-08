@@ -26,11 +26,26 @@ back the answers but drops the respondent at step 1 has not resumed anything.
 ## The link shape
 
 ```
-https://<site-domain>/gtmaccelerator/s/configurator?resume=<Resume_Token__c>
+https://<site-domain>/gtm/s/configurator?cfgId=<link id>&resume=<Resume_Token__c>
 ```
 
-The component also reads `?resume=` straight off `location.search`, so the page
-does not have to forward it into a component attribute.
+**Both parameters, and `cfgId` is not optional in practice.** Since ADR-0008 the
+questionnaire is hosted inside `gtmConfigurator` on the live `GTM` site's
+`/configurator` route, not on a standalone `/assessment` page on
+`gtmaccelerator` (that site is `DownForMaintenance`). A link carrying only
+`?resume=` lands on the configurator with **no `savedRecordId`** — so the
+respondent can still resume and finish, but the submission arrives *unlinked*:
+no Opportunity, no Account, no rep attribution, and scored against the default
+offering rather than the engagement link's own `Offering__c`. That is exactly
+the context loss ADR-0008 exists to prevent, arriving by the back door.
+
+So both the copyable link the form shows and the emailed one now carry `cfgId`:
+`gtmAssessmentQuestionnaire.resumeUrl` builds it client-side from
+`savedRecordId`, and `GtmAssessmentDraftController.emailResumeLink` builds it
+from the `Saved_Configuration__c` stored on the draft row (never from the
+caller). `gtmConfigurator.readUrlParams()` reads `?resume=`, auto-opens the
+overlay and passes the token down; the questionnaire also reads `?resume=`
+straight off `location.search` as a fallback, so the two agree.
 
 ## When the link exists, and why it is not gated on an email address
 
@@ -120,11 +135,29 @@ Token *enumeration* is not what any of this defends against — 256 bits of
    ```
 
 2. **Set `GTM_Assessment_Config.Default.Resume_Link_Base_URL__c`** to the
-   questionnaire page's URL, e.g.
-   `https://<site-domain>/gtmaccelerator/s/configurator`. It is blank in source
-   on purpose — a site URL is org state, not source. Until it is set the class
-   falls back to `Site.getBaseSecureUrl()`; if that is also blank it **declines
-   to send** rather than emailing a broken link.
+   **configurator** page's URL on the **live** site, e.g.
+   `https://<site-domain>/gtm/s/configurator`. Not `gtmaccelerator` — that was
+   the old standalone `/assessment` host and its site is `DownForMaintenance`.
+   Confirm the domain by query rather than guessing it:
+
+   ```bash
+   sf data query --target-org <org> -q "SELECT Generated_URL__c FROM GTM_Saved_Configuration__c LIMIT 1"
+   ```
+
+   In `gtm-dev` it is
+   `https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtm/s/configurator`.
+
+   The value is org state, not source, so it is **absent** from
+   `GTM_Assessment_Config.Default.md-meta.xml` rather than present-and-blank.
+   That distinction is load-bearing and was a real bug: the file used to carry
+   an explicit `<value xsi:nil="true"/>` for this field, and because a
+   custom-metadata deploy writes the fields it lists, every `./scripts/deploy.sh`
+   silently re-blanked the value an operator had just been told to set. Verified
+   against `gtm-dev` that deploying the record with the field omitted leaves the
+   org's value intact. **Do not add the field back with a nil value.**
+
+   Until it is set the class falls back to `Site.getBaseSecureUrl()`; if that is
+   also blank it **declines to send** rather than emailing a broken link.
 
 3. **Enable Guest User Rate Limits** (see above). Not optional.
 

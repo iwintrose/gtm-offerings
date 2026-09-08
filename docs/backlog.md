@@ -556,6 +556,58 @@ Full plan, file-by-file plus QA protocol:
 `docs/agent-artifacts/d11-resolution-plan.md`. Decision record:
 `docs/architecture/adr/0008-the-guest-assessment-is-hosted-by-the-engagement-link-not-by-a-standalone-route.md`.
 
+***RESOLVED*** *(ADR-0008 implemented, phases 1-7, deployed to `gtm-dev`).*
+The live `/configurator` overlay now renders `gtmAssessmentQuestionnaire`
+instead of `gtmConfigBooking`, so a real prospect submitting through the live
+engagement link answers the eight scored questions, the six complexity
+questions and the pair's supplements, and the request comes back with real
+`Section_Scores__c`. `gtmConfigBooking` is deleted. Zero files under
+`force-app/main/default/experiences/` changed; `GTM` is still `Live` and
+`GTM_Accelerator1` is still `DownForMaintenance`, both unchanged.
+
+What landed beyond the swap itself, each because leaving it out would have
+turned a fix into a different bug:
+
+- the recipient state-machine test lost in the `MA_`→`GTM_` port is restored
+  (`lwc/gtmConfigurator/__tests__/gtmConfigurator.readout.test.js`); all eight
+  recovered assertions passed against unmodified `gtmConfigurator`, so the port
+  dropped the test and not the behaviour;
+- the client now reads the **link's** `Offering__c` (`effectiveOfferingKey`)
+  rather than the Experience Builder page property, which could disagree with
+  what the server scores against and produce a confident-looking score that
+  resolved no dimension keys at all;
+- the eleven BD-context fields the readout depends on moved into the
+  questionnaire as one optional, chunked, skippable step, with a test asserting
+  no BD key ever reaches `answers` / `complexityAnswers` / `supplementAnswers`;
+- **one submitted assessment per engagement link** is now enforced server-side
+  in `submitRequest`, before any DML, with a guest-safe boolean mirror
+  (`GtmConfigurationStatusController.hasSubmittedAssessment`) so the submitted
+  state survives a new tab, a second device or a private window rather than
+  living only in `sessionStorage`;
+- the calendar CTA survives the retirement; the unguarded "Re-open the request"
+  path does not.
+
+Two things found while implementing, both fixed here and neither in the plan:
+
+1. `GTM_Assessment_Config.Default.md-meta.xml` carried an explicit
+   `<value xsi:nil="true"/>` for `Resume_Link_Base_URL__c` directly beneath a
+   comment telling operators to set that value in the org. A custom-metadata
+   deploy writes the fields it lists, so every `./scripts/deploy.sh` silently
+   re-blanked it and resume emails stopped going out with no error anywhere.
+   The field is now **absent** from the file rather than nil; verified against
+   `gtm-dev` that a deploy with it omitted leaves the org's value intact.
+   `Resume_Link_Base_URL__c` is set to
+   `https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtm/s/configurator`.
+2. `npm test` was collecting and running suites out of `.claude/worktrees/`,
+   so an abandoned agent checkout's failures were reported as failures of HEAD.
+   Jest now ignores that gitignored tree.
+
+Still open, deliberately, and named here so it is not lost:
+`GtmFormDraftController` and the existing `Draft_Type__c = 'Booking'` rows are
+untouched. The controller is still granted in `GTM_Story_Guest` and the rows
+are prospect data; it is now unused **by the configurator**, and retiring that
+path is a separate decision (plan open call 2).
+
 **D12 — Industry Chooser's generic "Add section" path is now closed, and there
 is no purpose-built replacement.** Landed while implementing the Content
 Manager IA plan (`docs/agent-artifacts/content-manager-ia-plan.md` §3.5):

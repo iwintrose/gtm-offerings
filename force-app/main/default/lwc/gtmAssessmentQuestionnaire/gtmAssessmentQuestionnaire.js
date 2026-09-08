@@ -1436,7 +1436,17 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
             const handle = await saveDraft({
                 resumeToken: this.draftToken || '',
                 payload: JSON.stringify(this.snapshot()),
-                pairKey: (this.pack && this.pack.pairKey) || ''
+                pairKey: (this.pack && this.pack.pairKey) || '',
+                // ADR-0008 phase 7.1. Stored on the draft row so the emailed
+                // resume link can carry ?cfgId= as well as the token -- without
+                // it, a respondent who resumes from their inbox and finishes
+                // produces an unlinked, unattributed request scored against the
+                // default offering. The server validates it and degrades an
+                // unusable value to null rather than failing the save.
+                configId: this.savedRecordId || '',
+                // So a resume can be tied back to the interaction trail that
+                // led to it, the way the Booking draft path already does.
+                sessionId: this.sessionId || ''
             });
             if (handle && handle.resumeToken) {
                 this.draftToken = handle.resumeToken;
@@ -1486,7 +1496,23 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
         }
         try {
             const { origin, pathname } = window.location;
-            return `${origin}${pathname}?resume=${this.draftToken}`;
+            // ADR-0008 phase 7.1. This used to be origin + pathname + the
+            // token, which threw the query string away -- and since the
+            // questionnaire moved behind /configurator, throwing the query
+            // string away throws away ?cfgId=, which is the engagement link.
+            // Following such a link and finishing produced an UNLINKED
+            // submission: no Opportunity, no Account, no rep attribution, and
+            // scored against the default offering rather than the link's own.
+            //
+            // Rebuilt from savedRecordId rather than by copying
+            // window.location.search wholesale, so the link a respondent hands
+            // to a colleague carries exactly two parameters and none of the
+            // incidental ones (?rep=, ?book=, ?note=, a stale ?readout=) that
+            // happen to be on the URL they are sitting on.
+            const link = this.savedRecordId
+                ? `cfgId=${encodeURIComponent(this.savedRecordId)}&`
+                : '';
+            return `${origin}${pathname}?${link}resume=${this.draftToken}`;
         } catch (e) {
             return '';
         }

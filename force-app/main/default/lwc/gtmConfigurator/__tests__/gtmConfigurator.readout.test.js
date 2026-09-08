@@ -318,6 +318,43 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
         expect(topCta(element).disabled).toBe(false);
     });
 
+    // ── emailed resume links (ADR-0008 phase 7.1) ───────────────────────────
+
+    it('auto-opens the assessment when the URL carries a resume token', async () => {
+        // The questionnaire lives behind /configurator now, so an emailed
+        // resume link lands here. Dropping the respondent on the story page
+        // with the form shut would be a resume link that does not resume.
+        window.history.pushState(
+            {}, '', '/configurator?cfgId=CFG-R&company=Northlight&resume=TOK-RESUME'
+        );
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        const child = element.shadowRoot.querySelector('c-gtm-assessment-questionnaire');
+        expect(child).not.toBeNull();
+        expect(child.resumeToken).toBe('TOK-RESUME');
+        // And the engagement link came with it, which is the whole point of
+        // carrying cfgId on the emailed URL.
+        expect(child.savedRecordId).toBe('CFG-R');
+    });
+
+    it('does not open the assessment without a resume token', async () => {
+        window.history.pushState({}, '', '/configurator?cfgId=CFG-R&company=Northlight');
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        // Closed until the CTA is clicked -- the questionnaire does real Apex
+        // work on mount and must not do it for every prospect who never opens
+        // the form.
+        expect(
+            element.shadowRoot.querySelector('c-gtm-assessment-questionnaire')
+        ).toBeNull();
+    });
+
     it('resolves a `readout` URL param via getPublishedReadout and shows the published gate', async () => {
         window.history.pushState({}, '', '/configurator?readout=tok1');
         getPublishedReadout.mockResolvedValue({

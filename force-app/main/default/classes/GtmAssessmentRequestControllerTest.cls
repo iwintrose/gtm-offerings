@@ -1123,7 +1123,7 @@ private class GtmAssessmentRequestControllerTest {
     @isTest
     static void submittingClosesTheLinkedDraftByAppendingNotUpdating() {
         GtmAssessmentDraftController.DraftHandle draft =
-            GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc');
+            GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc', null, null);
         Integer rowsBeforeSubmit = [
             SELECT COUNT() FROM GTM_Form_Draft__c WHERE Resume_Token__c = :draft.resumeToken
         ];

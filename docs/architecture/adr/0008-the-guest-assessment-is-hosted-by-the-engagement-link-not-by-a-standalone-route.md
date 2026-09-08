@@ -1,7 +1,21 @@
 # ADR-0008 — The guest assessment is hosted by the engagement link, not by a standalone route
 
-**Status:** Accepted — not yet implemented. Companion implementation plan:
-`docs/agent-artifacts/d11-resolution-plan.md`.
+**Status:** Accepted — **implemented and deployed to `gtm-dev`** (phases 1-7).
+Companion implementation plan: `docs/agent-artifacts/d11-resolution-plan.md`.
+
+Verified live after deploy, through the real production Apex entry point
+(`GtmAssessmentRequestController.submitRequest`) against a throwaway engagement
+link: eight populated `Section_Scores__c` keys whose values are the ones
+actually chosen, `Assessment_Score__c` equal to their sum and not to any
+uniform answer set, the matching `Assessment_Tier__c`, populated
+`Estate_Complexity_Score__c`/`_Band__c`, `Instrument_Pair__c = eloqua_to_sfmc`,
+`Offering_Key__c` taken from the link's own `Offering__c`, the BD-context
+sentinels stored, and `Saved_Configuration__c`/`Opportunity__c`/`Contact__c`/
+`Account__c` all populated — the engagement-link context §2 is about. A second
+submission against the same link was refused with nothing written, and
+`GtmConfigurationStatusController.hasSubmittedAssessment` returned true for it.
+Fixtures deleted afterwards. `GTM` remained `Live` and `GTM_Accelerator1`
+`DownForMaintenance` throughout; zero `experiences/` files changed.
 
 Relates to ADR-0005 (scoring is server-side only), ADR-0006 (route
 reachability is a property of the live site), ADR-0007 (the instrument is

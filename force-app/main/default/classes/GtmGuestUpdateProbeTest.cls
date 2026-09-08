@@ -180,10 +180,10 @@ private class GtmGuestUpdateProbeTest {
         System.runAs(guest) {
             try {
                 GtmAssessmentDraftController.DraftHandle first =
-                    GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc');
+                    GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc', null, null);
                 token = first.resumeToken;
 
-                GtmAssessmentDraftController.saveDraft(token, '{"q1":"a","q2":"b"}', 'hubspot__sfmc');
+                GtmAssessmentDraftController.saveDraft(token, '{"q1":"a","q2":"b"}', 'hubspot__sfmc', null, null);
                 secondSaveWorked = true;
             } catch (Exception e) {
                 secondSaveWorked = false;
@@ -223,7 +223,7 @@ private class GtmGuestUpdateProbeTest {
         Test.startTest();
         System.runAs(guest) {
             GtmAssessmentDraftController.DraftHandle h =
-                GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc');
+                GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc', null, null);
             token   = h.resumeToken;
             resumed = GtmAssessmentDraftController.resumeDraft(token);
         }

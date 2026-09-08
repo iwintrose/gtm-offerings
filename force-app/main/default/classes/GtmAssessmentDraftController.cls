@@ -42,7 +42,21 @@
  * grant. See docs/handoff/port-map-ma-to-gtm.md section E.
  *
  * THE WHOLE SURFACE IS THREE METHODS, AND ALL THREE ARE ADDRESSED BY TOKEN.
- * There is no method here that takes a record Id, and there must never be one.
+ * No method here is REACHED by a record Id, and there must never be one: a
+ * token is the only thing that selects which draft is read, appended to or
+ * emailed, so holding an engagement link's id gets you nothing.
+ *
+ * The one record Id in the signatures is saveDraft's `configId` (ADR-0008
+ * phase 7.1). It is written, never read from: it does not address anything, it
+ * does not widen what a caller can reach, and it is not returned by
+ * resumeDraft. It exists because the questionnaire now lives behind
+ * /configurator, so an emailed resume link carrying only a token would land
+ * with no engagement-link context and produce an unlinked, misattributed,
+ * wrongly-scored submission -- the exact loss ADR-0008 exists to prevent. It is
+ * validated to a well-formed GTM_Saved_Configuration__c Id by asConfigId() and
+ * degrades to null rather than throwing. See asConfigId and resumeUrlFor for
+ * the full reasoning, including what it does and does not do to the "the email
+ * body is fixed" property.
  *
  * ONE FAILURE, ONE RESPONSE. A token that never existed, a token that expired,
  * a token whose draft was submitted, and a token over its append cap are
@@ -154,6 +168,13 @@ public without sharing class GtmAssessmentDraftController {
         @AuraEnabled public String payload      { get; set; }
         @AuraEnabled public Datetime expiresAt  { get; set; }
         @AuraEnabled public Datetime lastSavedAt{ get; set; }
+        // DELIBERATELY NO configId AND NO sessionId. The draft row carries both
+        // since ADR-0008 phase 7.1, and neither is returned here. resumeDraft
+        // is reachable with nothing but a token, so anything it returns is
+        // readable by whoever holds that token; the engagement link's id is not
+        // part of what a resume needs (the URL already carries it) and handing
+        // it back would turn a resume token into a way to learn which link a
+        // draft belongs to. There is a test asserting this stays absent.
     }
 
     /**
@@ -189,7 +210,13 @@ public without sharing class GtmAssessmentDraftController {
      * data, and is trimmed to the field length rather than trusted.
      */
     @AuraEnabled
-    public static DraftHandle saveDraft(String resumeToken, String payload, String pairKey) {
+    public static DraftHandle saveDraft(
+        String resumeToken,
+        String payload,
+        String pairKey,
+        String configId,
+        String sessionId
+    ) {
         if (String.isBlank(payload)
                 || payload.length() > MAX_PAYLOAD
                 || !looksLikeJsonObject(payload)) {
@@ -199,27 +226,77 @@ public without sharing class GtmAssessmentDraftController {
         String cleanPair = String.isBlank(pairKey)
             ? null
             : (pairKey.length() > 80 ? pairKey.substring(0, 80) : pairKey);
+        Id cleanConfig = asConfigId(configId);
+        String cleanSession = String.isBlank(sessionId)
+            ? null
+            : (sessionId.length() > 80 ? sessionId.substring(0, 80) : sessionId);
 
         if (String.isBlank(resumeToken)) {
-            return mint(payload, cleanPair);
+            return mint(payload, cleanPair, cleanConfig, cleanSession);
         }
-        return append(resumeToken, payload, cleanPair);
+        return append(resumeToken, payload, cleanPair, cleanConfig, cleanSession);
     }
 
-    private static DraftHandle mint(String payload, String pairKey) {
+    /**
+     * The engagement link this draft was typed on, or null.
+     *
+     * ADR-0008 phase 7.1. Since the questionnaire moved behind /configurator,
+     * an emailed resume link that carries only the token lands on the page with
+     * no engagement-link context -- so a respondent who resumes from their
+     * inbox and finishes produces an UNLINKED request: no Opportunity, no
+     * Account, no rep attribution, and scored against the default offering
+     * instead of the link's own. That is precisely the context loss ADR-0008
+     * exists to prevent, arriving by the back door.
+     *
+     * VALIDATED, NOT TRUSTED. Anything that is not a well-formed Id of exactly
+     * GTM_Saved_Configuration__c becomes null. Two consequences, both wanted:
+     *   - a malformed value cannot reach the DML and turn a save into a
+     *     DmlException whose message might name a field value;
+     *   - and it DEGRADES rather than throws. Losing the cfgId costs the link
+     *     its context; it must never cost the respondent their answers.
+     *
+     * ON THE CALLER SUPPLYING IT AT ALL: this grants no read access and
+     * discloses nothing. The caller already knows this id -- it is the ?cfgId=
+     * in the URL they are sitting on -- and submitRequest has always taken the
+     * same id from the same client, gated by the same submission token. Storing
+     * it here adds no trust assumption that the submit path did not already
+     * make.
+     */
+    private static Id asConfigId(String raw) {
+        if (String.isBlank(raw)) {
+            return null;
+        }
+        try {
+            Id parsed = Id.valueOf(raw.trim());
+            return parsed.getSObjectType() == GTM_Saved_Configuration__c.SObjectType
+                ? parsed
+                : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static DraftHandle mint(
+        String payload,
+        String pairKey,
+        Id configId,
+        String sessionId
+    ) {
         if (mintThrottleTripped()) {
             throw new AuraHandledException(GENERIC_FAILURE);
         }
         String token = generateResumeToken();
         Datetime expiresAt = System.now().addDays(TTL_DAYS);
         GTM_Form_Draft__c draft = new GTM_Form_Draft__c(
-            Draft_Type__c    = 'Assessment',
-            Resume_Token__c  = token,
-            Draft_JSON__c    = payload,
-            Pair_Key__c      = pairKey,
-            Status__c        = 'Open',
-            Expires_At__c    = expiresAt,
-            Last_Saved_At__c = System.now()
+            Draft_Type__c           = 'Assessment',
+            Resume_Token__c         = token,
+            Draft_JSON__c           = payload,
+            Pair_Key__c             = pairKey,
+            Saved_Configuration__c  = configId,
+            Session_Id__c           = sessionId,
+            Status__c               = 'Open',
+            Expires_At__c           = expiresAt,
+            Last_Saved_At__c        = System.now()
         );
         try {
             insert draft;
@@ -237,7 +314,13 @@ public without sharing class GtmAssessmentDraftController {
         return out;
     }
 
-    private static DraftHandle append(String resumeToken, String payload, String pairKey) {
+    private static DraftHandle append(
+        String resumeToken,
+        String payload,
+        String pairKey,
+        Id configId,
+        String sessionId
+    ) {
         OpenDraft current = latestOpenRowFor(resumeToken);
         if (current == null || current.appendCount >= MAX_APPENDS) {
             throw new AuraHandledException(GENERIC_FAILURE);
@@ -248,6 +331,12 @@ public without sharing class GtmAssessmentDraftController {
             Resume_Token__c  = resumeToken,
             Draft_JSON__c    = payload,
             Pair_Key__c      = String.isNotBlank(pairKey) ? pairKey : current.pairKey,
+            // Carried forward from the existing row when this save does not
+            // supply one, the same way pairKey is: a respondent who resumes
+            // from a link that lost its ?cfgId= must not silently detach the
+            // draft from the engagement link it started on.
+            Saved_Configuration__c = configId != null ? configId : current.configId,
+            Session_Id__c    = String.isNotBlank(sessionId) ? sessionId : current.sessionId,
             Status__c        = 'Open',
             // Every appended row keeps the ORIGINAL expiry, not a fresh one --
             // see TTL_DAYS.
@@ -339,13 +428,15 @@ public without sharing class GtmAssessmentDraftController {
         // consume budget and be counted, not to record a new answer.
         try {
             insert new GTM_Form_Draft__c(
-                Draft_Type__c    = 'Assessment',
-                Resume_Token__c  = resumeToken,
-                Draft_JSON__c    = current.draftJson,
-                Pair_Key__c      = current.pairKey,
-                Status__c        = 'Open',
-                Expires_At__c    = current.originalExpiresAt,
-                Last_Saved_At__c = System.now()
+                Draft_Type__c          = 'Assessment',
+                Resume_Token__c        = resumeToken,
+                Draft_JSON__c          = current.draftJson,
+                Pair_Key__c            = current.pairKey,
+                Saved_Configuration__c = current.configId,
+                Session_Id__c          = current.sessionId,
+                Status__c              = 'Open',
+                Expires_At__c          = current.originalExpiresAt,
+                Last_Saved_At__c       = System.now()
             );
         } catch (Exception e) {
             return out;
@@ -357,7 +448,7 @@ public without sharing class GtmAssessmentDraftController {
         msg.setPlainTextBody(
             'You started a migration readiness assessment and asked us to save your place.\n\n'
             + 'Open this link to carry on from the step you were on:\n\n'
-            + base + (base.contains('?') ? '&' : '?') + 'resume=' + resumeToken + '\n\n'
+            + resumeUrlFor(base, current.configId, resumeToken) + '\n\n'
             + 'The link works on any device and expires '
             + current.originalExpiresAt.format('d MMMM yyyy') + '. '
             + 'It stops working as soon as you send the assessment.\n\n'
@@ -387,6 +478,10 @@ public without sharing class GtmAssessmentDraftController {
     private class OpenDraft {
         String draftJson;
         String pairKey;
+        // NOT exposed by resumeDraft. Internal only: it is carried forward on
+        // append and used to build the emailed resume URL. See DraftPayload.
+        Id configId;
+        String sessionId;
         Datetime originalExpiresAt;
         Datetime lastSavedAt;
         Integer appendCount;
@@ -409,7 +504,8 @@ public without sharing class GtmAssessmentDraftController {
             return null;
         }
         List<GTM_Form_Draft__c> rows = [
-            SELECT Draft_JSON__c, Pair_Key__c, Expires_At__c, Last_Saved_At__c,
+            SELECT Draft_JSON__c, Pair_Key__c, Saved_Configuration__c, Session_Id__c,
+                   Expires_At__c, Last_Saved_At__c,
                    Submitted_Request__c, CreatedDate
             FROM   GTM_Form_Draft__c
             WHERE  Draft_Type__c = 'Assessment'
@@ -433,6 +529,8 @@ public without sharing class GtmAssessmentDraftController {
         OpenDraft out = new OpenDraft();
         out.draftJson          = newest.Draft_JSON__c;
         out.pairKey             = newest.Pair_Key__c;
+        out.configId            = newest.Saved_Configuration__c;
+        out.sessionId           = newest.Session_Id__c;
         out.originalExpiresAt   = originalExpiresAt;
         out.lastSavedAt         = newest.Last_Saved_At__c;
         out.appendCount         = rows.size();
@@ -478,6 +576,39 @@ public without sharing class GtmAssessmentDraftController {
             AND CreatedDate > :since
         ];
         return recent >= maxMintsPerWindow;
+    }
+
+    /**
+     * The emailed resume URL: base, the engagement link, the token.
+     *
+     * ADR-0008 phase 7.1. `cfgId` is what stops a resumed-from-email
+     * submission arriving unlinked -- with only the token, the configurator has
+     * no savedRecordId, so the finished request would carry no Opportunity, no
+     * Account, no rep attribution, and would be scored against the default
+     * offering rather than the link's own.
+     *
+     * THE "BODY IS FIXED" INVARIANT, NARROWED PRECISELY AND ON PURPOSE. The
+     * class header says not one character of the email comes from the caller.
+     * That claim exists to make this endpoint useless as a spam or phishing
+     * relay: nothing a caller types can appear as free text in mail that looks
+     * like ours. It still cannot. The id below:
+     *   - is read from the STORED ROW, never from this method's parameters;
+     *   - was validated at save time by asConfigId() as a well-formed Id of
+     *     exactly GTM_Saved_Configuration__c, so it is 15 or 18 characters of
+     *     [a-zA-Z0-9] and can carry no text, no whitespace, no second URL and
+     *     no markup;
+     *   - and points at our own site either way, because `base` is still
+     *     configuration-or-site-only and is still never the caller's.
+     * So the property that matters is intact; what has changed is that one
+     * structurally-constrained identifier now appears in a URL on our own
+     * domain. Recorded here rather than left for a reader to re-derive.
+     */
+    private static String resumeUrlFor(String base, Id configId, String resumeToken) {
+        String url = base + (base.contains('?') ? '&' : '?');
+        if (configId != null) {
+            url += 'cfgId=' + String.valueOf(configId) + '&';
+        }
+        return url + 'resume=' + resumeToken;
     }
 
     /**

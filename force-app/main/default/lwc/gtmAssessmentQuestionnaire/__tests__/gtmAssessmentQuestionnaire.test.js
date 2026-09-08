@@ -722,6 +722,60 @@ describe('c-gtm-assessment-questionnaire', () => {
         });
     });
 
+    // ── the resume link keeps the engagement link (ADR-0008 phase 7.1) ──────
+
+    it('sends the engagement link and the session with every draft save', async () => {
+        // Stored on the draft row so the EMAILED resume link can carry ?cfgId=
+        // as well as the token. Without it, a respondent who resumes from their
+        // inbox and finishes produces an unlinked request: no Opportunity, no
+        // Account, no rep attribution, scored against the default offering.
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.savedRecordId = 'a0Bgk000000ABCDEAA';
+        el.sessionId = 'visit-123';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await toReadiness(el);
+
+        expect(saveDraft).toHaveBeenCalled();
+        const args = saveDraft.mock.calls[0][0];
+        expect(args.configId).toBe('a0Bgk000000ABCDEAA');
+        expect(args.sessionId).toBe('visit-123');
+    });
+
+    it('keeps the engagement link on the copyable resume URL', async () => {
+        // This used to be origin + pathname + the token, which threw the whole
+        // query string away -- and since the questionnaire moved behind
+        // /configurator, that means throwing away ?cfgId=.
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.savedRecordId = 'a0Bgk000000ABCDEAA';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await toReadiness(el);
+
+        const url = one(el, '.q-keep-url').value;
+        expect(url).toContain('cfgId=a0Bgk000000ABCDEAA');
+        expect(url).toContain('resume=TOKEN-AAA');
+        // Exactly two parameters: the incidental ones on the URL the respondent
+        // happens to be sitting on (?rep=, ?book=, a stale ?readout=) are not
+        // handed to whoever they forward this to.
+        expect(url.split('?')[1].split('&').length).toBe(2);
+    });
+
+    it('still builds a usable resume URL with no engagement link at all', async () => {
+        const el = await mount();
+        await toReadiness(el);
+
+        const url = one(el, '.q-keep-url').value;
+        expect(url).toContain('resume=TOKEN-AAA');
+        expect(url).not.toContain('cfgId=');
+    });
+
     // ── the BD-context step (ADR-0008 section 5) ────────────────────────────
 
     /** Walks to the first BD-context screen. */

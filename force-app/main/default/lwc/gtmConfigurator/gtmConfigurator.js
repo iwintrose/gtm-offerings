@@ -147,6 +147,17 @@ export default class GtmConfigurator extends LightningElement {
     @track inactive = false;
     @track isProspectLink = false;
 
+    /**
+     * A draft resume token from the URL (?resume=...), carried by the link
+     * GtmAssessmentDraftController emails. ADR-0008 phase 7.1.
+     *
+     * Passed down to the questionnaire and used to auto-open the overlay: a
+     * resume link that landed on the story page with the form shut would be a
+     * resume link that does not resume. The questionnaire also reads the same
+     * param off location.search itself as a fallback, so the two agree.
+     */
+    @track resumeToken = '';
+
     /** The engagement link's own Offering__c, once loadSavedConfiguration()
      *  has read it. Blank for a link-less direct visit. See
      *  effectiveOfferingKey and ADR-0008 section 3. */
@@ -628,6 +639,26 @@ export default class GtmConfigurator extends LightningElement {
         // restoreAssessmentState()'s sessionStorage-only path.
         const readoutParam = get('readout');
         if (readoutParam) this.checkReadoutToken(readoutParam);
+
+        // ADR-0008 phase 7.1. An emailed resume link lands here now that the
+        // questionnaire lives behind /configurator rather than on a route of
+        // its own. Opening the overlay is the whole point of following it -- a
+        // resume link that dropped the respondent on the story page with the
+        // form shut would be a resume link that does not resume.
+        //
+        // A resumed open is an open, so it logs the same Form Opened event
+        // handleOpenBooking does; without that, every resumed session would be
+        // a drop-off in the funnel.
+        const resumeParam = get('resume');
+        if (resumeParam) {
+            this.resumeToken = resumeParam;
+            this.bookingOpen = true;
+            if (!this._formOpened) {
+                this._formOpened = true;
+                this._logEvent('Form Opened');
+            }
+            this._track('Form Resumed', 'assessment');
+        }
 
         // Set from chooseIndustry's tiles (?wizard=1); consumed once
         // isConfigManager resolves -- see maybeAutoOpenWizard(). Never set
