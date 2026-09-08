@@ -250,13 +250,13 @@ describe('c-gtm-assessment-questionnaire', () => {
         // (deriving all the readiness steps from the resolved pack) made the
         // form appear to double in length the moment you answered the first
         // question, which is the opposite of what a progress bar is for.
-        expect(one(el, '.q-progress-label').textContent).toBe('Section 1 of 6');
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 1 of 9');
     });
 
     it('adds the supplement step once the pack says the pair has one', async () => {
         const el = await mount();
         await toReadiness(el);
-        expect(one(el, '.q-progress-label').textContent).toBe('Section 2 of 9');
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 2 of 12');
     });
 
     it('shows the posture statement exactly once, leading the first questions', async () => {
@@ -272,7 +272,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         expect(one(el, '.q-posture').textContent).toContain('We can read your current estate.');
         // And on no screen after it.
         let guard = 0;
-        while (!one(el, '.q-done') && guard < 12) {
+        while (!one(el, '.q-done') && guard < 16) {
             answerStep(el);
             const before = one(el, '.q-progress-label')
                 ? one(el, '.q-progress-label').textContent : null;
@@ -375,7 +375,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         const el = await mount();
         await toReadiness(el);
         let guard = 0;
-        while (!one(el, '.q-done') && guard < 12) {
+        while (!one(el, '.q-done') && guard < 16) {
             expect(q(el, 'fieldset').length).toBeLessThanOrEqual(4);
             answerStep(el);
             const before = one(el, '.q-progress-label').textContent;
@@ -440,7 +440,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         const el = await mount();
         await toReadiness(el);
         let guard = 0;
-        while (!one(el, '.q-aside-tag') && guard < 8) {
+        while (!one(el, '.q-aside-tag') && guard < 12) {
             answerStep(el);
             await next(el);
             guard += 1;
@@ -455,7 +455,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         const el = await mount();
         await toReadiness(el);
         let guard = 0;
-        while (!one(el, 'input[data-field="name"]') && guard < 9) {
+        while (!one(el, 'input[data-field="name"]') && guard < 14) {
             answerStep(el);
             await next(el);
             guard += 1;
@@ -483,7 +483,7 @@ describe('c-gtm-assessment-questionnaire', () => {
      * answer map that comes back but dumps the respondent at step 1 is not
      * resuming, it is asking them to find their place again. The old version of
      * this test asserted `not.toBe('Section 1 of 7')`, which a regression to
-     * "Section 1 of 6" would have passed.
+     * "Section 1 of 9" would have passed.
      */
     it('restores both the answers AND the step after a reload', async () => {
         const el = await mount();
@@ -493,7 +493,7 @@ describe('c-gtm-assessment-questionnaire', () => {
 
         getPack.mockResolvedValue(pack());
         const again = await mount();
-        expect(one(again, '.q-progress-label').textContent).toBe('Section 2 of 9');
+        expect(one(again, '.q-progress-label').textContent).toBe('Section 2 of 12');
         expect(one(again, '.q-title').textContent).toBe(
             'What you are moving, and whether we can read it'
         );
@@ -507,12 +507,12 @@ describe('c-gtm-assessment-questionnaire', () => {
         await next(el);
         answerStep(el);
         await next(el);
-        expect(one(el, '.q-progress-label').textContent).toBe('Section 4 of 9');
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 4 of 12');
         document.body.removeChild(el);
 
         getPack.mockResolvedValue(pack());
         const again = await mount();
-        expect(one(again, '.q-progress-label').textContent).toBe('Section 4 of 9');
+        expect(one(again, '.q-progress-label').textContent).toBe('Section 4 of 12');
     });
 
     /**
@@ -538,7 +538,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         document.body.appendChild(b);
         await flush();
         await flush();
-        expect(one(b, '.q-progress-label').textContent).toBe('Section 1 of 6');
+        expect(one(b, '.q-progress-label').textContent).toBe('Section 1 of 9');
         expect(q(b, '.q-opt--on').length).toBe(0);
     });
 
@@ -612,7 +612,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         await flush();
 
         expect(resumeDraft).toHaveBeenCalledWith({ resumeToken: 'TOKEN-BBB' });
-        expect(one(el, '.q-progress-label').textContent).toBe('Section 3 of 9');
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 3 of 12');
         expect(one(el, '.q-notice')).not.toBeNull();
     });
 
@@ -722,6 +722,178 @@ describe('c-gtm-assessment-questionnaire', () => {
         });
     });
 
+    // ── the BD-context step (ADR-0008 section 5) ────────────────────────────
+
+    /** Walks to the first BD-context screen. */
+    async function toBdContext(el) {
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, '.q-skip') && guard < 14) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        expect(one(el, '.q-skip')).not.toBeNull();
+    }
+
+    it('asks the BD-context fields as their own optional, chunked step', async () => {
+        const el = await mount();
+        await toBdContext(el);
+
+        expect(one(el, '.q-title').textContent).toBe('Anything else worth knowing');
+        // The file's own rule, which it has broken once before: never more than
+        // four questions on a screen. Eleven fields, chunked, is 4-4-3.
+        expect(q(el, 'fieldset').length).toBeLessThanOrEqual(4);
+        // Said in prose once, and per field where the decision is actually made.
+        expect(one(el, '.q-aside-tag').textContent).toBe('These do not affect your score');
+        expect(q(el, '.q-optional').length).toBe(q(el, 'fieldset').length);
+    });
+
+    it('blocks nothing on the BD-context step — every field is optional', async () => {
+        const el = await mount();
+        await toBdContext(el);
+        const before = one(el, '.q-progress-label').textContent;
+
+        // Nothing answered at all, straight to Continue.
+        await next(el);
+
+        expect(one(el, '.q-error')).toBeNull();
+        expect(one(el, '.q-progress-label').textContent).not.toBe(before);
+    });
+
+    it('skips the whole BD-context block in one click, not just one screen', async () => {
+        // A respondent who does not want to answer these does not want to be
+        // asked the same thing again on the next screen.
+        const el = await mount();
+        await toBdContext(el);
+
+        one(el, '.q-skip').click();
+        await flush();
+        await flush();
+
+        expect(one(el, 'input[data-field="name"]')).not.toBeNull();
+        expect(one(el, '.q-title').textContent).toBe('Where to send it');
+        expect(one(el, '.q-skip')).toBeNull();
+    });
+
+    it('carries all eleven BD-context fields on the payload', async () => {
+        const el = await mount();
+        await toBdContext(el);
+
+        const type = (key, value) => {
+            const node = one(el, `[data-key="${key}"]`);
+            expect(node).not.toBeNull();
+            node.value = value;
+            node.dispatchEvent(new CustomEvent('change'));
+        };
+        const VALUES = {
+            painPoints: 'Deliverability is poor',
+            migrationGoals: 'Real-time triggers',
+            keyIntegrations: 'Snowflake',
+            successCriteria: 'Sends land',
+            budgetRange: '$500K – $1M',
+            contactCount: '2500000',
+            monthlySendVolume: '5000000',
+            internalTeamSize: '2–5 people',
+            executiveSponsorship: 'Unknown',
+            decisionMakers: 'CMO',
+            urgencyDriver: 'Contract expires March 2026'
+        };
+        // Spread across the three chunked screens, so this also proves the
+        // values survive the step transitions between them.
+        let guard = 0;
+        while (one(el, '.q-skip') && guard < 6) {
+            Object.keys(VALUES).forEach((k) => {
+                if (one(el, `[data-key="${k}"]`)) type(k, VALUES[k]);
+            });
+            await flush();
+            await next(el);
+            guard += 1;
+        }
+
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+
+        const payload = submitRequest.mock.calls[0][0].input;
+        Object.keys(VALUES).forEach((k) => {
+            expect(payload[k]).toBe(VALUES[k]);
+        });
+        // targetPlatform is NOT a bdContext key -- routing already collects it,
+        // and collecting it twice would be two answers to one question.
+        expect(payload.targetPlatform).toBe('Marketing Cloud Next');
+    });
+
+    /**
+     * THE ISOLATION TEST. ADR-0008 section 5 and ADR-0007's hard boundary.
+     *
+     * These eleven are BD context, not instrument answers. answers,
+     * complexityAnswers and supplementAnswers are the only scoring inputs Apex
+     * trusts; a BD field that leaked into one of them would be scored as though
+     * it were a dimension the respondent had been asked about.
+     */
+    it('never lets a BD-context field into a scored answer map', async () => {
+        const el = await mount();
+        await toBdContext(el);
+
+        let guard = 0;
+        while (one(el, '.q-skip') && guard < 6) {
+            q(el, '[data-key]').forEach((node) => {
+                node.value = 'SENTINEL';
+                node.dispatchEvent(new CustomEvent('change'));
+            });
+            await flush();
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+
+        const payload = submitRequest.mock.calls[0][0].input;
+        const BD_KEYS = [
+            'painPoints', 'migrationGoals', 'keyIntegrations', 'successCriteria',
+            'budgetRange', 'contactCount', 'monthlySendVolume', 'internalTeamSize',
+            'executiveSponsorship', 'decisionMakers', 'urgencyDriver'
+        ];
+        const scoredDimensions = []
+            .concat(payload.answers, payload.complexityAnswers, payload.supplementAnswers)
+            .map((a) => a.dimension);
+
+        BD_KEYS.forEach((k) => {
+            expect(scoredDimensions).not.toContain(k);
+        });
+        // And the shape is undisturbed: still exactly eight scored slots.
+        expect(payload.answers.length).toBe(8);
+        expect(payload.complexityAnswers.length).toBe(6);
+    });
+
+    it('carries the BD-context answers through a draft round-trip', async () => {
+        const el = await mount();
+        await toBdContext(el);
+        const pain = one(el, '[data-key="painPoints"]');
+        pain.value = 'Deliverability is poor';
+        pain.dispatchEvent(new CustomEvent('change'));
+        await flush();
+
+        const stored = JSON.parse(
+            window.localStorage.getItem('ma-assessment-progress-v2:direct')
+        );
+        expect(stored.bdContext.painPoints).toBe('Deliverability is poor');
+
+        // And it comes back on a fresh mount, at the same step.
+        document.body.removeChild(el);
+        getPack.mockResolvedValue(pack());
+        const again = await mount();
+        expect(one(again, '[data-key="painPoints"]').value).toBe('Deliverability is poor');
+    });
+
     // ── hosted inside the configurator's overlay (ADR-0008) ─────────────────
 
     it('renders full-page chrome by default and drops it when embedded', async () => {
@@ -810,7 +982,7 @@ describe('c-gtm-assessment-questionnaire', () => {
 
         await toReadiness(el);
         let guard = 0;
-        while (!one(el, 'input[data-field="name"]') && guard < 9) {
+        while (!one(el, 'input[data-field="name"]') && guard < 14) {
             answerStep(el);
             await next(el);
             guard += 1;

@@ -160,8 +160,13 @@
     font-weight: 700;
     margin-bottom: 0.3rem;
 }
+/* .q-select / .q-input are the BD-context step's controls (ADR-0008 section 5).
+   They live inside .q-card rather than .q-field, so they are named into this
+   existing rule rather than given a second, drifting copy of it. */
 .q-field select,
 .q-field input,
+.q-select,
+.q-input,
 .q-textarea {
     width: 100%;
     font: inherit;
@@ -179,6 +184,8 @@
 }
 .q-field select:focus,
 .q-field input:focus,
+.q-select:focus,
+.q-input:focus,
 .q-textarea:focus,
 .q-opt-btn:focus-visible,
 .q-btn:focus-visible {
@@ -226,6 +233,27 @@
     margin: 0.35rem 0 0.85rem;
     font-size: 1.02rem;
     line-height: 1.45;
+}
+
+/* On the BD-context step every field is optional, and saying so beside each
+   question is what stops the block reading as eleven more things you have to
+   do. The aside at the top of the first screen says it once in prose; this says
+   it per field, where the decision to skip is actually made. */
+.q-optional {
+    margin-left: 0.4rem;
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    vertical-align: middle;
+}
+
+/* Sits beside the primary button rather than beside Back: it is an alternative
+   to Continue, not a way back. Quiet, because skipping is a fine answer but not
+   the one being recommended. */
+.q-skip {
+    margin-left: auto;
 }
 
 /* ── options ──────────────────────────────────────────────────────────── */

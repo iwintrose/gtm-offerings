@@ -237,6 +237,72 @@
                     </template>
                 </template>
 
+                <!-- ── BD context (ADR-0008 section 5) ─────────────────
+                     Eleven fields the readout depends on, carried over when
+                     gtmConfigBooking was retired. Every one optional, the whole
+                     block skippable in one click, and none of them scored. -->
+                <template if:true={isBdContext}>
+                    <template if:true={isFirstBdContextStep}>
+                        <div class="q-aside">
+                            <p class="q-aside-tag">These do not affect your score</p>
+                            <p class="q-aside-body">
+                                Every question here is optional and none of them is
+                                counted. They are what your readout quotes back to
+                                you in your own words rather than as a number, so
+                                anything you do answer makes it more useful — and
+                                skipping the lot costs you nothing.
+                            </p>
+                        </div>
+                    </template>
+                    <template for:each={currentBdContext} for:item="bd">
+                        <fieldset key={bd.key} class="q-card">
+                            <p class="q-question">
+                                {bd.question}
+                                <span class="q-optional">optional</span>
+                            </p>
+                            <template if:true={bd.isTextarea}>
+                                <textarea
+                                    class="q-textarea"
+                                    rows="3"
+                                    data-key={bd.key}
+                                    placeholder={bd.placeholder}
+                                    onchange={handleBdContext}
+                                >{bd.value}</textarea>
+                            </template>
+                            <template if:true={bd.isSelect}>
+                                <select class="q-select" data-key={bd.key} onchange={handleBdContext}>
+                                    <template for:each={bd.options} for:item="opt">
+                                        <option key={opt.key} value={opt.value} selected={opt.selected}>
+                                            {opt.label}
+                                        </option>
+                                    </template>
+                                </select>
+                            </template>
+                            <template if:true={bd.isNumber}>
+                                <input
+                                    class="q-input"
+                                    type="number"
+                                    min="0"
+                                    data-key={bd.key}
+                                    value={bd.value}
+                                    placeholder={bd.placeholder}
+                                    onchange={handleBdContext}
+                                />
+                            </template>
+                            <template if:true={bd.isText}>
+                                <input
+                                    class="q-input"
+                                    type="text"
+                                    data-key={bd.key}
+                                    value={bd.value}
+                                    placeholder={bd.placeholder}
+                                    onchange={handleBdContext}
+                                />
+                            </template>
+                        </fieldset>
+                    </template>
+                </template>
+
                 <!-- ── contact ─────────────────────────────────────────── -->
                 <template if:true={isContact}>
                     <div class="q-grid">
@@ -275,6 +341,18 @@
                             <span class="q-count">{runningTotalLabel}</span>
                         </template>
                     </div>
+                    <!-- Past the WHOLE optional block, not just this screen: a
+                         respondent who does not want to answer these does not
+                         want to be asked the same thing again on the next one. -->
+                    <template if:true={isBdContext}>
+                        <button
+                            type="button"
+                            class="q-btn q-btn--quiet q-skip"
+                            onclick={handleSkipBdContext}
+                        >
+                            Skip this
+                        </button>
+                    </template>
                     <button
                         type="button"
                         class="q-btn q-btn--go"
