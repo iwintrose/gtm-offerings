@@ -117,6 +117,32 @@
     padding: 3rem 0;
 }
 
+/* The calendar CTA on the confirmation panel, carried over from
+   gtmConfigBooking when it was retired. Same weight as .q-btn--go: it is the
+   one remaining action on the page, so it should not read as a footnote. */
+.q-cta {
+    display: inline-block;
+    margin-top: 1.5rem;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 0.7rem 1.4rem;
+    background: var(--ps-red);
+    color: var(--on-red);
+    border: 1px solid var(--ps-red);
+    border-radius: 0;
+}
+.q-cta:hover {
+    background: var(--ps-red-ink);
+    border-color: var(--ps-red-ink);
+    color: var(--on-red);
+}
+.q-cta:focus-visible {
+    outline: 2px solid var(--ps-red);
+    outline-offset: 2px;
+}
+
 /* ── progress ─────────────────────────────────────────────────────────── */
 .q-progress {
     display: flex;

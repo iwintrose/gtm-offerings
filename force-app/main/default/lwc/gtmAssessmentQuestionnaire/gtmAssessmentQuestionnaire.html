@@ -12,6 +12,24 @@
                     <p class="q-eyebrow">Assessment received</p>
                     <h1 class="q-title">Thank you</h1>
                     <p class="q-lede">{confirmMessage}</p>
+                    <!-- The "book an assessment" half of the CTA's promise.
+                         gtmConfigBooking's confirmation panel rendered this from
+                         the engagement link's ?book= parameter; carried across
+                         when that component was retired (ADR-0008 consequences).
+
+                         NOT carried across: gtmConfigBooking's "Didn't send?
+                         Re-open the request" link. That was the un-guarded
+                         resubmit path, and after the one-per-link server guard
+                         it would only offer a prospect a form the server will
+                         refuse. -->
+                    <template if:true={hasBookingUrl}>
+                        <a
+                            class="q-cta"
+                            href={bookingUrl}
+                            target="_blank"
+                            rel="noopener"
+                        >Pick a time in our calendar →</a>
+                    </template>
                 </section>
             </template>
 

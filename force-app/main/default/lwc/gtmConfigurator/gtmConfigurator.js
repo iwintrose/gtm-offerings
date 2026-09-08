@@ -1392,6 +1392,24 @@ export default class GtmConfigurator extends LightningElement {
         }
     }
 
+    /**
+     * The questionnaire could not submit.
+     *
+     * Usually an ordinary failure, in which case this does nothing and the
+     * respondent sees the message in the form's own error slot and can retry.
+     *
+     * But it is also how the page recovers from LOSING THE RACE: an assessment
+     * that already landed for this link in another tab or on another device
+     * means the server refuses this one (ADR-0008 section 4), and the honest
+     * state afterwards is "submitted" -- the request exists -- not "failed". So
+     * this re-asks the server. That is authoritative, needs no string-matching
+     * against the refusal message, and correctly leaves the CTA alone when the
+     * failure really was just a failure.
+     */
+    handleBookingFailed() {
+        this.checkSubmittedStatus();
+    }
+
     /** A resumed form is worth knowing about: it means the link did its job on
      *  a second visit, which a first-visit-only funnel would never show. */
     handleFormResumed() {

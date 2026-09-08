@@ -1261,6 +1261,22 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
             );
         } catch (error) {
             this.errorMessage = this.readError(error);
+            // ADR-0008 section 5.2. A submit can lose a race against a
+            // submission that already landed for this link -- another tab,
+            // another device -- and the server refuses it. The host has to be
+            // told, because the honest state of the page afterwards is
+            // "submitted" (the request exists), not "failed".
+            //
+            // Deliberately NOT detected by matching the server's message text:
+            // the host re-asks the server whether this link now has an
+            // assessment, which is authoritative, survives any rewording of
+            // that message, and correctly does nothing on an ordinary network
+            // failure. See gtmConfigurator.handleBookingFailed.
+            this.dispatchEvent(
+                new CustomEvent('submitfailed', {
+                    detail: { message: this.errorMessage }
+                })
+            );
         } finally {
             this.submitting = false;
         }
@@ -1271,6 +1287,11 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
         if (body && body.message) return body.message;
         if (Array.isArray(body) && body.length && body[0].message) return body[0].message;
         return 'We could not send that just now. Please try again in a moment.';
+    }
+
+    /** Whether the engagement link carried a ?book= calendar URL. */
+    get hasBookingUrl() {
+        return !!(this.bookingUrl || '').trim();
     }
 
     get confirmMessage() {

@@ -252,6 +252,52 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
         expect(hasSubmittedAssessment).not.toHaveBeenCalled();
     });
 
+    it('recovers to the submitted state when a submit loses the race', async () => {
+        // ADR-0008 phase 5.2. The server refused this submit because an
+        // assessment already landed for the link in another tab or on another
+        // device. The honest state afterwards is "submitted" -- the request
+        // exists -- not "failed". Recovered by re-asking the server, not by
+        // matching on the refusal message.
+        window.history.pushState({}, '', '/configurator?cfgId=CFG-RACE&company=Northlight');
+        hasSubmittedAssessment.mockResolvedValue(false);
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+        expect(topCtaText(element)).toContain('environment assessment →');
+
+        // The submit now races and loses; the server has the request.
+        hasSubmittedAssessment.mockResolvedValue(true);
+        const child = element.shadowRoot.querySelector('c-gtm-config-booking');
+        child.dispatchEvent(
+            new CustomEvent('submitfailed', { detail: { message: 'already been submitted' } })
+        );
+        await flushPromises();
+
+        expect(topCtaText(element)).toContain('in review');
+        expect(topCta(element).disabled).toBe(true);
+    });
+
+    it('leaves the CTA alone when a submit failure really was just a failure', async () => {
+        window.history.pushState({}, '', '/configurator?cfgId=CFG-NET&company=Northlight');
+        hasSubmittedAssessment.mockResolvedValue(false);
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        const child = element.shadowRoot.querySelector('c-gtm-config-booking');
+        child.dispatchEvent(
+            new CustomEvent('submitfailed', { detail: { message: 'Network error' } })
+        );
+        await flushPromises();
+
+        // Still open, so the respondent can retry rather than being told their
+        // assessment is in review when it is not.
+        expect(topCtaText(element)).toContain('environment assessment →');
+        expect(topCta(element).disabled).toBe(false);
+    });
+
     it('resolves a `readout` URL param via getPublishedReadout and shows the published gate', async () => {
         window.history.pushState({}, '', '/configurator?readout=tok1');
         getPublishedReadout.mockResolvedValue({

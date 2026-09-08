@@ -894,6 +894,92 @@ describe('c-gtm-assessment-questionnaire', () => {
         expect(one(again, '[data-key="painPoints"]').value).toBe('Deliverability is poor');
     });
 
+    // ── the confirmation panel (ADR-0008 phase 5.3) ─────────────────────────
+
+    /** Walks a mounted element all the way to a completed submission. */
+    async function submitFully(el) {
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, 'input[data-field="name"]') && guard < 14) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+    }
+
+    it('offers the calendar CTA on the confirmation panel when the link carried one', async () => {
+        // The "book an assessment" half of the CTA's promise. gtmConfigBooking's
+        // confirmation panel had this; the questionnaire's did not, and a
+        // straight swap would have dropped it.
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.bookingUrl = 'https://calendly.example.com/rep';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await submitFully(el);
+
+        expect(one(el, '.q-done')).not.toBeNull();
+        const cta = one(el, '.q-done .q-cta');
+        expect(cta).not.toBeNull();
+        expect(cta.textContent.trim()).toBe('Pick a time in our calendar →');
+        expect(cta.href).toBe('https://calendly.example.com/rep');
+        expect(cta.target).toBe('_blank');
+        expect(cta.rel).toBe('noopener');
+    });
+
+    it('shows no calendar CTA when the link carried no ?book= URL', async () => {
+        const el = await mount();
+        await submitFully(el);
+
+        expect(one(el, '.q-done')).not.toBeNull();
+        expect(one(el, '.q-done .q-cta')).toBeNull();
+    });
+
+    it('never offers a way to re-open the request after submitting', async () => {
+        // gtmConfigBooking's confirmation panel had "Didn't send? Re-open the
+        // request", which was the un-guarded resubmit path. After the
+        // one-per-link server guard it would only offer a prospect a form the
+        // server will refuse.
+        const el = await mount();
+        await submitFully(el);
+
+        const done = one(el, '.q-done');
+        expect(done.textContent).not.toContain('Re-open');
+        expect(done.textContent).not.toContain('re-open');
+        expect(one(el, '.q-btn--go')).toBeNull();
+        expect(one(el, 'input[data-field="name"]')).toBeNull();
+    });
+
+    it('tells the host when a submit fails, so a lost race can be recovered', async () => {
+        // The server refuses a duplicate (ADR-0008 section 4). The host re-asks
+        // the server whether the link is now submitted rather than matching on
+        // the refusal message -- so this event carries the message for display
+        // and nothing the host has to parse.
+        submitRequest.mockRejectedValue({
+            body: { message: 'An assessment has already been submitted for this link.' }
+        });
+        const el = await mount();
+        const failures = [];
+        el.addEventListener('submitfailed', (e) => failures.push(e.detail));
+
+        await submitFully(el);
+
+        expect(failures.length).toBe(1);
+        expect(failures[0].message).toContain('already been submitted');
+        // The respondent sees why, in the form's own error slot, and the form
+        // is still there rather than showing a false confirmation.
+        expect(one(el, '.q-error').textContent).toContain('already been submitted');
+        expect(one(el, '.q-done')).toBeNull();
+    });
+
     // ── hosted inside the configurator's overlay (ADR-0008) ─────────────────
 
     it('renders full-page chrome by default and drops it when embedded', async () => {
