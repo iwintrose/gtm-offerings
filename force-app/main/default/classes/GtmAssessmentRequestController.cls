@@ -266,6 +266,60 @@ public without sharing class GtmAssessmentRequestController {
         String offeringKey = resolveOfferingKey(ctx);
         GTM_Assessment_Config__mdt cfg = loadConfig(offeringKey);
         validateTokenIfRequired(input.savedRecordId, input.submissionToken, ctx);
+
+        // ONE SUBMITTED ASSESSMENT PER ENGAGEMENT LINK (ADR-0008 section 4).
+        //
+        // Placed AFTER resolveConfigContext and validateTokenIfRequired and
+        // BEFORE any DML, so a refused duplicate writes nothing at all -- not a
+        // Contact, not an Opportunity, not an activity -- and so a caller who
+        // has not passed the password gate is told about the gate rather than
+        // about somebody else's submission.
+        //
+        // The client mirrors this (gtmConfigurator.hasSubmittedAssessment, and
+        // the durable GtmConfigurationStatusController.hasSubmittedAssessment
+        // check behind it) so a respondent is not invited to re-answer fifteen
+        // minutes of questions. The client is a COURTESY; this is where the
+        // invariant is true.
+        //
+        // SCOPED TO LINKS ONLY. A direct booking with no savedRecordId has
+        // nothing to be a duplicate of, and refusing those would silently close
+        // the one path that has no link at all.
+        //
+        // EXISTENCE, NOT SCORE. Gated on a request existing, not on
+        // Assessment_Score__c being populated. Every pre-fix booking in this org
+        // is scoreless (that is the D11 bug), so gating on a score would leave
+        // exactly those links permanently re-submittable -- the bug wearing a
+        // hat.
+        //
+        // FAILS CLOSED, unlike resolveConfigContext which fails open by design.
+        // A failure to determine duplicate-ness must not admit a second scored
+        // request. GtmLegacyConfigId.resolve returning null is not a bypass: it
+        // means the id was unusable, the submission proceeds UNLINKED, and an
+        // unlinked request has no link to be a duplicate against.
+        if (String.isNotBlank(input.savedRecordId)) {
+            Id linkId = GtmLegacyConfigId.resolve(input.savedRecordId);
+            if (linkId != null) {
+                List<GTM_Assessment_Request__c> already = [
+                    SELECT Id
+                    FROM   GTM_Assessment_Request__c
+                    WHERE  Saved_Configuration__c = :linkId
+                    LIMIT  1
+                ];
+                if (!already.isEmpty()) {
+                    // AuraHandledException, not a silent success: the client has
+                    // to be able to tell this apart from a network failure so it
+                    // can render the "already submitted" state rather than
+                    // inviting a retry. The message names the recovery, so a
+                    // prospect who genuinely needs to redo it has a route rather
+                    // than a dead end.
+                    throw new AuraHandledException(
+                        'An assessment has already been submitted for this link. ' +
+                        'Your rep can send a new one if you need to start again.'
+                    );
+                }
+            }
+        }
+
         // A company name is a company name wherever it shows up in this
         // flow -- it should resolve to a real Account, not sit as a bare
         // string on the request. If a linked Engagement Link already

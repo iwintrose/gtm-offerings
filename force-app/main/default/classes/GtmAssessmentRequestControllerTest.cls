@@ -1366,4 +1366,236 @@ private class GtmAssessmentRequestControllerTest {
 
         Assert.areEqual('Migration Accelerator', source);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ONE SUBMITTED ASSESSMENT PER ENGAGEMENT LINK (ADR-0008 section 4)
+    //
+    // Before this, nothing at any layer prevented N scored requests against one
+    // link: closeDraft's terminal row revokes a RESUME LINK (a different
+    // problem, intact, and not touched here), and the only live-path guard was
+    // sessionStorage in one tab. The invariant is a SERVER rule; the client is a
+    // courtesy.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** A link with everything a real engagement link carries. */
+    private static GTM_Saved_Configuration__c engagementLinkFor(String company) {
+        Account acc = new Account(Name = company);
+        insert acc;
+        GTM_Saved_Configuration__c link = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Industry__c = 'Financial Services',
+            Company__c = company,
+            Generated_URL__c = 'https://example.com/configurator?company=' + company,
+            Account__c = acc.Id,
+            OwnerId = UserInfo.getUserId()
+        );
+        insert link;
+        return link;
+    }
+
+    private static Integer requestCountFor(Id linkId) {
+        return [
+            SELECT COUNT()
+            FROM GTM_Assessment_Request__c
+            WHERE Saved_Configuration__c = :linkId
+        ];
+    }
+
+    @isTest
+    static void refusesASecondSubmissionAgainstTheSameLink() {
+        GTM_Saved_Configuration__c link = engagementLinkFor('Northlight Media Group');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        GtmAssessmentRequestController.RequestInput first = sampleInput();
+        first.savedRecordId = link.Id;
+        GtmAssessmentRequestController.submitRequest(first);
+        Assert.areEqual(1, requestCountFor(link.Id), 'The first submission should land');
+
+        GtmAssessmentRequestController.RequestInput second = sampleInput();
+        second.savedRecordId = link.Id;
+        second.email = 'someone.else@example.com';
+
+        Boolean threw = false;
+        Test.startTest();
+        try {
+            GtmAssessmentRequestController.submitRequest(second);
+        } catch (Exception e) {
+            threw = true;
+        }
+        Test.stopTest();
+
+        Assert.isTrue(threw, 'A second submission against the same link must be refused');
+        // The assertion that actually matters. A thrown exception that still
+        // wrote the row would be a guard in name only.
+        Assert.areEqual(
+            1,
+            requestCountFor(link.Id),
+            'The refused submission must not have inserted a second request'
+        );
+    }
+
+    @isTest
+    static void theFirstSubmissionAgainstALinkStillSucceeds() {
+        // The guard must add no regression to the path everyone actually takes.
+        GTM_Saved_Configuration__c link = engagementLinkFor('Ashford Capital Bank');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = link.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'The first submission should succeed unchanged');
+        Assert.isNotNull(result.assessmentRequestId);
+        Assert.areEqual(1, requestCountFor(link.Id));
+    }
+
+    @isTest
+    static void aSecondDirectBookingWithNoLinkStillSucceeds() {
+        // SCOPED TO LINKS ONLY. A direct booking has no link to be a duplicate
+        // against, and refusing these would silently close the one path that has
+        // no engagement link at all.
+        //
+        // Contact creation is switched OFF here deliberately. With it on, the
+        // second submission inserts a second Contact with the same name at the
+        // same resolved Account and the org's standard DUPLICATE RULE rejects it
+        // (CLAUDE.md section 5.2) -- which would make this test fail for a
+        // reason that has nothing to do with the guard it is named after. What
+        // is under test is that the resubmit guard does not fire without a link.
+        GtmAssessmentRequestController.configOverride = config(false, false, 'Task');
+
+        GtmAssessmentRequestController.submitRequest(sampleInput());
+
+        GtmAssessmentRequestController.RequestInput second = sampleInput();
+        second.name = 'Dana Okonkwo';
+        second.email = 'second.person@example.com';
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(second);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'A second link-less booking must still be accepted');
+        Assert.areEqual(
+            2,
+            [SELECT COUNT() FROM GTM_Assessment_Request__c WHERE Saved_Configuration__c = null],
+            'Both link-less requests should exist'
+        );
+    }
+
+    @isTest
+    static void aDifferentLinkOnTheSameAccountStillSucceeds() {
+        // The invariant is PER LINK, not per Account. A rep who sends a second
+        // engagement link to the same client must get a second assessment.
+        Account acc = new Account(Name = 'Solara Health Systems');
+        insert acc;
+        List<GTM_Saved_Configuration__c> links = new List<GTM_Saved_Configuration__c>{
+            new GTM_Saved_Configuration__c(
+                Offering__c = 'migration-accelerator', Company__c = 'Solara Health Systems',
+                Generated_URL__c = 'https://example.com/a', Account__c = acc.Id,
+                OwnerId = UserInfo.getUserId()
+            ),
+            new GTM_Saved_Configuration__c(
+                Offering__c = 'migration-accelerator', Company__c = 'Solara Health Systems',
+                Generated_URL__c = 'https://example.com/b', Account__c = acc.Id,
+                OwnerId = UserInfo.getUserId()
+            )
+        };
+        insert links;
+
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput first = sampleInput();
+        first.savedRecordId = links[0].Id;
+        GtmAssessmentRequestController.submitRequest(first);
+
+        GtmAssessmentRequestController.RequestInput second = sampleInput();
+        second.savedRecordId = links[1].Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(second);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'A different link on the same Account must still be accepted');
+        Assert.areEqual(1, requestCountFor(links[0].Id));
+        Assert.areEqual(1, requestCountFor(links[1].Id));
+    }
+
+    @isTest
+    static void theRefusedSubmissionWritesNothingAtAll() {
+        // Placed before any DML on purpose: a refused duplicate must not leave a
+        // Contact, an Opportunity or an activity behind it. The guard is not
+        // just "no second request", it is "no side effects".
+        GTM_Saved_Configuration__c link = engagementLinkFor('Harborline Transit Authority');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        GtmAssessmentRequestController.RequestInput first = sampleInput();
+        first.savedRecordId = link.Id;
+        GtmAssessmentRequestController.submitRequest(first);
+
+        Integer contactsBefore = [SELECT COUNT() FROM Contact];
+        Integer tasksBefore    = [SELECT COUNT() FROM Task];
+        Integer oppsBefore     = [SELECT COUNT() FROM Opportunity];
+
+        GtmAssessmentRequestController.RequestInput second = sampleInput();
+        second.savedRecordId = link.Id;
+        second.name  = 'Someone Entirely New';
+        second.email = 'someone.entirely.new@example.com';
+
+        Test.startTest();
+        try {
+            GtmAssessmentRequestController.submitRequest(second);
+            Assert.fail('The duplicate should have been refused');
+        } catch (Exception e) {
+            // expected
+        }
+        Test.stopTest();
+
+        Assert.areEqual(contactsBefore, [SELECT COUNT() FROM Contact],
+            'A refused duplicate must not create a Contact');
+        Assert.areEqual(tasksBefore, [SELECT COUNT() FROM Task],
+            'A refused duplicate must not log an activity');
+        Assert.areEqual(oppsBefore, [SELECT COUNT() FROM Opportunity],
+            'A refused duplicate must not create an Opportunity');
+    }
+
+    // ── the guest-safe durable status check (ADR-0008 section 4, phase 4.3) ──
+
+    @isTest
+    static void statusControllerReportsWhetherALinkHasBeenSubmitted() {
+        GTM_Saved_Configuration__c link = engagementLinkFor('Northlight Media Group');
+
+        Assert.isFalse(
+            GtmConfigurationStatusController.hasSubmittedAssessment(link.Id),
+            'A fresh link has no assessment against it'
+        );
+
+        GtmAssessmentRequestController.configOverride = config(false, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = link.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(
+            GtmConfigurationStatusController.hasSubmittedAssessment(link.Id),
+            'The same link now reports as submitted -- this is what lets a fresh '
+                + 'browser with no sessionStorage land in the submitted state'
+        );
+    }
+
+    @isTest
+    static void statusControllerFailsSafeOnABlankOrUnresolvableId() {
+        // Fails to FALSE, deliberately: the client fails open on an errored
+        // check (an unknown link must not lock a prospect out of a form they
+        // have not filled in), and the SERVER is the enforcement point either
+        // way, so a false here costs nothing.
+        Assert.isFalse(GtmConfigurationStatusController.hasSubmittedAssessment(null));
+        Assert.isFalse(GtmConfigurationStatusController.hasSubmittedAssessment(''));
+        Assert.isFalse(GtmConfigurationStatusController.hasSubmittedAssessment('not-an-id'));
+    }
 }

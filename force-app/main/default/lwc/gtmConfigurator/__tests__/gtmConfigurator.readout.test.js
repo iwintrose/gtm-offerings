@@ -1,6 +1,7 @@
 import { createElement } from 'lwc';
 import GtmConfigurator from 'c/gtmConfigurator';
 import getPublishedReadout from '@salesforce/apex/GtmReadoutPublicController.getPublishedReadout';
+import hasSubmittedAssessment from '@salesforce/apex/GtmConfigurationStatusController.hasSubmittedAssessment';
 
 // Scoped to the recipient-facing readout state machine in gtmConfigurator
 // (Draft/Approved read as "in review"; Published replaces every prior section
@@ -31,6 +32,11 @@ import getPublishedReadout from '@salesforce/apex/GtmReadoutPublicController.get
 
 jest.mock(
     '@salesforce/apex/GtmReadoutPublicController.getPublishedReadout',
+    () => ({ default: jest.fn() }),
+    { virtual: true }
+);
+jest.mock(
+    '@salesforce/apex/GtmConfigurationStatusController.hasSubmittedAssessment',
     () => ({ default: jest.fn() }),
     { virtual: true }
 );
@@ -66,6 +72,7 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
         jest.spyOn(window.sessionStorage.__proto__, 'setItem')
             .mockImplementation((k, v) => { sessionStore[k] = v; });
         getPublishedReadout.mockResolvedValue(null);
+        hasSubmittedAssessment.mockResolvedValue(false);
     });
 
     afterEach(() => {
@@ -165,6 +172,84 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
         await flushPromises();
 
         expect(topCtaText(element2)).toContain('in review');
+    });
+
+    // ── the submitted state survives a new browser (ADR-0008 section 4) ─────
+    //
+    // sessionStorage survives a refresh in the same tab and nothing else. A
+    // prospect who submitted yesterday on their laptop was shown the open CTA
+    // again on their phone, and could burn fifteen minutes re-answering a form
+    // the server would now refuse. These cover the durable half.
+
+    it('lands in the submitted state on first load in a fresh browser', async () => {
+        // No sessionStorage at all -- exactly a new tab, a second device, or a
+        // private window.
+        window.history.pushState({}, '', '/configurator?cfgId=CFG-DONE&company=Northlight');
+        hasSubmittedAssessment.mockResolvedValue(true);
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        expect(hasSubmittedAssessment).toHaveBeenCalledWith({ recordId: 'CFG-DONE' });
+        expect(topCtaText(element)).toContain('in review');
+        expect(topCta(element).disabled).toBe(true);
+        expect(
+            element.shadowRoot.querySelector('[data-section="closing"]').textContent
+        ).toContain('Your request has been submitted.');
+    });
+
+    it('leaves the CTA open when the durable check says no', async () => {
+        window.history.pushState({}, '', '/configurator?cfgId=CFG-OPEN&company=Northlight');
+        hasSubmittedAssessment.mockResolvedValue(false);
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        expect(topCtaText(element)).toContain('environment assessment →');
+        expect(topCta(element).disabled).toBe(false);
+    });
+
+    it('fails OPEN when the durable check errors', async () => {
+        // The server is the enforcement point. A status-check blip must never
+        // lock a prospect out of a form they have not yet filled in -- the same
+        // reasoning checkActiveStatus states for itself.
+        window.history.pushState({}, '', '/configurator?cfgId=CFG-ERR&company=Northlight');
+        hasSubmittedAssessment.mockRejectedValue(new Error('boom'));
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        expect(topCtaText(element)).toContain('environment assessment →');
+        expect(topCta(element).disabled).toBe(false);
+    });
+
+    it('never asks the server about a link it does not have', async () => {
+        window.history.pushState({}, '', '/configurator');
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        expect(hasSubmittedAssessment).not.toHaveBeenCalled();
+    });
+
+    it('lets the locally-known request id win over the bare boolean', async () => {
+        // sessionStorage carries the actual assessmentRequestId; the durable
+        // check only knows "yes". The specific answer must not be overwritten
+        // by the vague one.
+        window.history.pushState({}, '', '/configurator?cfgId=CFG1');
+        sessionStore['ma-assessment-CFG1'] = 'AR-REAL';
+        hasSubmittedAssessment.mockResolvedValue(true);
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        expect(topCtaText(element)).toContain('in review');
+        // Not called at all: the local answer was already known and is better.
+        expect(hasSubmittedAssessment).not.toHaveBeenCalled();
     });
 
     it('resolves a `readout` URL param via getPublishedReadout and shows the published gate', async () => {

@@ -2,6 +2,12 @@ import { LightningElement, api, track, wire } from 'lwc';
 import isRep from '@salesforce/apex/GtmViewerContext.isRep';
 import getConfigurationCrmData from '@salesforce/apex/GtmSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/GtmConfigurationStatusController.isActive';
+// The durable half of "one submitted assessment per engagement link"
+// (ADR-0008 section 4). A boolean and nothing else, from the same tiny
+// guest-safe class isActive comes from. sessionStorage is the fast path; this
+// is what makes the submitted state survive a new tab, a second device, a
+// private window, or storage that is blocked outright.
+import hasSubmittedAssessmentApex from '@salesforce/apex/GtmConfigurationStatusController.hasSubmittedAssessment';
 import getConfiguration from '@salesforce/apex/GtmSavedConfigurationController.getConfiguration';
 import getPublicConfiguration from '@salesforce/apex/GtmConfigurationReader.getPublicConfiguration';
 import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
@@ -322,6 +328,15 @@ export default class GtmConfigurator extends LightningElement {
         // assessment state (scoped to it, same as the ma-auth- session key)
         // can be restored on this same pass.
         this.restoreAssessmentState();
+        // ADR-0008 section 4, and deliberately AFTER restoreAssessmentState.
+        // sessionStorage is the fast path and, when it has an answer, the
+        // better one -- it carries the actual assessmentRequestId, where the
+        // server call can only return a boolean. Asking second means a repeat
+        // visit in the same tab makes no round trip at all, and a fresh browser
+        // (new tab, second device, private window, blocked storage) still lands
+        // in the submitted state on FIRST load rather than being invited to
+        // re-answer a form the server would refuse.
+        this.checkSubmittedStatus();
 
         // In preview the parent owns the copy, so fetching would replace the
         // draft with what is published.
@@ -709,6 +724,42 @@ export default class GtmConfigurator extends LightningElement {
         } catch (e) {
             // Fails open: a status-check error should never itself block a
             // client from seeing an otherwise-working link.
+        }
+    }
+
+    /**
+     * Has this link already had an assessment submitted against it?
+     *
+     * ADR-0008 section 4. restoreAssessmentState() answers this from
+     * sessionStorage, which survives a refresh in the same tab and nothing
+     * else -- not a new tab, not a second device, not a private window, not
+     * storage that is blocked. So a prospect who submitted yesterday on their
+     * laptop was shown the open CTA again on their phone, and could burn
+     * fifteen minutes re-answering a form the server would now refuse.
+     *
+     * This is the durable half. It only ever turns the flag ON: the local
+     * assessmentRequestId, when there is one, is the more specific answer (it
+     * is the actual id) and must not be overwritten by a bare boolean.
+     *
+     * FAILS OPEN, exactly as checkActiveStatus above states for itself: an
+     * errored check leaves the CTA available. The server is the enforcement
+     * point, and a status-check blip must never lock a prospect out of a form
+     * they have not yet filled in.
+     */
+    async checkSubmittedStatus() {
+        if (!this.savedRecordId || this.assessmentRequestId) return;
+        try {
+            const submitted = await hasSubmittedAssessmentApex({
+                recordId: this.savedRecordId
+            });
+            // 'linked' is the same sentinel checkReadoutToken uses for "we know
+            // an assessment exists but not which one" -- there is deliberately
+            // no guest method that would tell us the id.
+            if (submitted && !this.assessmentRequestId) {
+                this.assessmentRequestId = 'linked';
+            }
+        } catch (e) {
+            // Fails open. See the doc comment.
         }
     }
 
@@ -1299,6 +1350,12 @@ export default class GtmConfigurator extends LightningElement {
     handleOpenBooking() {
         const modal = this.template.querySelector('c-gtm-config-booking');
         if (modal) modal.reset();
+        // Re-checked on open as well as on load (ADR-0008 section 4): the load
+        // check may still have been in flight when this was clicked. It does not
+        // block the open -- the server refuses a duplicate with a message the
+        // questionnaire renders, and blocking on a round trip here would make
+        // the one button this page is for feel broken.
+        this.checkSubmittedStatus();
         this.bookingOpen = true;
         if (!this._formOpened) {
             this._formOpened = true;
