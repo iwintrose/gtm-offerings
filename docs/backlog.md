@@ -518,6 +518,44 @@ assumption D11's implementer should **verify** rather than rediscover — not
 new work D11 inherits. See
 `docs/agent-artifacts/per-offering-instrument-plan.md` §6.
 
+*Update (decided, planned, not yet implemented — ADR-0008):* the "needs a
+real decision" above is closed. **The live surface adopts the questionnaire,
+inside `gtmConfigurator`, on the existing `/configurator` route.**
+`gtmConfigBooking` is retired; no route moves, no `Network.Status` changes,
+`GTM_Accelerator1` stays down. Git history settles it: `dc4ad5d`'s own
+commit message ("The long form was never going to be filled in. This is the
+same instrument in digestible steps") shows `gtmAssessmentQuestionnaire` was
+built as the **replacement** for the booking modal's long "rich assessment"
+form (`552dfb1`) — the swap on the live surface was simply never done. The
+other two options were rejected for a concrete reason, not a size one: both
+put the questionnaire on a standalone page, whose `savedRecordId` /
+`submissionToken` / `offeringKey` are `@api` properties absent from its
+`targetConfigs` and unreachable from any URL param, so a submission from
+there resolves an empty `ConfigContext` — no Opportunity, no Account, no rep
+attribution, no `Link_Password__c` gate, and `resolveOfferingKey` falling to
+the hardcoded default instead of reading the link's `Offering__c`. That
+trades "scores nothing" for "scores something, attributed to nobody, against
+a guessed offering," which ADR-0007's hard boundary already forbids.
+
+Two things the same investigation found, both of which the fix has to carry:
+the **resubmit guard** is degraded rather than lost — the durable half
+(`closeDraft` appending a terminal `GTM_Form_Draft__c` row with
+`Submitted_Request__c`, refused by `GtmAssessmentDraftController.
+latestOpenRowFor`) is intact but only revokes a *resume link*, and
+`gtmConfigBooking` never sends a `draftToken` so it never fires; the live
+path has only `sessionStorage`, `gtmConfigBooking.handleReopen()` is an
+unguarded re-open, and `submitRequest` has no duplicate check at all. And
+the **button flip** (`hasSubmittedAssessment` → disabled "Your assessment is
+in review" → "View your assessment", plus the closing-card flip) is present
+and live — but its regression test,
+`lwc/maConfigurator/__tests__/maConfigurator.readout.test.js` (`c8945b8`,
+extended `b1e2e80`), was dropped when `a2fc262` ported the state machine
+into this branch, so it is unprotected today. Restoring it is phase 1.
+
+Full plan, file-by-file plus QA protocol:
+`docs/agent-artifacts/d11-resolution-plan.md`. Decision record:
+`docs/architecture/adr/0008-the-guest-assessment-is-hosted-by-the-engagement-link-not-by-a-standalone-route.md`.
+
 **D12 — Industry Chooser's generic "Add section" path is now closed, and there
 is no purpose-built replacement.** Landed while implementing the Content
 Manager IA plan (`docs/agent-artifacts/content-manager-ia-plan.md` §3.5):
