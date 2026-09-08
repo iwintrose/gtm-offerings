@@ -74,15 +74,24 @@ public with sharing class GtmAssessmentQuestions {
     public class Questionnaire {
         @AuraEnabled public List<Question> readiness;
         @AuraEnabled public List<Question> complexity;
-        /** Maximums, so the client prints "18 out of 32" from the server. */
+        /**
+         * Maximums, so the client prints "18 out of 32" from the server.
+         *
+         * Left NULL by the constructor on purpose. They are ONE OFFERING's
+         * maximums, not the app's, and the constructor has no offering to
+         * derive them from -- it used to fill them with Migration
+         * Accelerator's compiled 32/18, which is the right answer for exactly
+         * one offering and a borrowed denominator for every other. The single
+         * call site (getQuestionnaire, below) sets the real per-offering values
+         * immediately after construction, and null is the honest value for an
+         * offering that has no instrument to be measured against.
+         */
         @AuraEnabled public Integer readinessMaxScore;
         @AuraEnabled public Integer complexityMaxScore;
 
         public Questionnaire() {
-            this.readiness          = new List<Question>();
-            this.complexity         = new List<Question>();
-            this.readinessMaxScore  = GtmAssessmentScoring.MAX_TOTAL_SCORE;
-            this.complexityMaxScore = GtmEstateComplexity.MAX_TOTAL_SCORE;
+            this.readiness  = new List<Question>();
+            this.complexity = new List<Question>();
         }
     }
 
@@ -102,6 +111,14 @@ public with sharing class GtmAssessmentQuestions {
         for (Question q : questionsFor(offeringKey, INSTRUMENT_COMPLEXITY)) {
             out.complexity.add(q);
         }
+        // Both maximums are derived from THIS offering's frame, by the same two
+        // methods that will later score the submission -- so the denominator
+        // the questionnaire promises and the denominator the score is measured
+        // against cannot drift apart. Null for an offering with no instrument:
+        // zero questions scored out of 32 was the same borrowed-denominator
+        // claim on a guest-reachable endpoint.
+        out.readinessMaxScore  = GtmAssessmentScoring.maxTotalFor(offeringKey, null);
+        out.complexityMaxScore = GtmEstateComplexity.maxTotalFor(offeringKey);
         return out;
     }
 

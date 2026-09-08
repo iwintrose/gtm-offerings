@@ -1260,4 +1260,110 @@ private class GtmAssessmentRequestControllerTest {
             'The migration pair gate must not fire for a non-migration offering');
         Assert.isNull(reqs[0].Advisory_Reason__c);
     }
+
+    // ------------------------------------------------- Source__c resolution
+    //
+    // QA round 1, Finding 1: sourceLabelFor() resolved ONLY GTM_Offering__mdt,
+    // so the two offerings that actually exist in gtm-dev -- both of which have
+    // page content but no custom metadata row yet -- were stamped 'Migration
+    // Accelerator'. sourceLabelFor is private, so each tier is driven through
+    // the real submitRequest path and asserted on the persisted field, which is
+    // also what proves the tier is reachable from a guest submission at all.
+
+    private static GTM_Page_Content__c listingName(String offeringKey, String name) {
+        return new GTM_Page_Content__c(
+            Offering_Key__c  = offeringKey,
+            Template_Type__c = 'offerings-listing',
+            Section_Key__c   = 'card',
+            Field_Key__c     = 'name',
+            Field_Type__c    = 'text',
+            Text_Value__c    = name,
+            Active__c        = true
+        );
+    }
+
+    private static GTM_Page_Section__c anySection(String offeringKey) {
+        return new GTM_Page_Section__c(
+            Section_Address__c = offeringKey + '::story::hero',
+            Offering_Key__c    = offeringKey,
+            Template_Type__c   = 'story',
+            Section_Key__c     = 'hero',
+            Label__c           = 'Hero',
+            Layout_Type__c     = 'hero',
+            Width__c           = 'standard',
+            Sort_Order__c      = 10,
+            Active__c          = true
+        );
+    }
+
+    private static String submittedSourceFor(String offeringKey) {
+        GTM_Saved_Configuration__c cfg = linkFor(offeringKey);
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = cfg.Id;
+
+        GtmAssessmentRequestController.submitRequest(input);
+
+        List<GTM_Assessment_Request__c> reqs = [
+            SELECT Offering_Key__c, Source__c FROM GTM_Assessment_Request__c
+        ];
+        Assert.areEqual(1, reqs.size());
+        Assert.areEqual(offeringKey, reqs[0].Offering_Key__c);
+        return reqs[0].Source__c;
+    }
+
+    @isTest
+    static void tierOneMigrationAcceleratorKeepsTheExactLegacyLiteral() {
+        // The no-regression half: GTM_Offering__mdt carries this offering, and
+        // its Label__c is byte-identical to the constant the field used to be
+        // hardcoded to, so no existing row's value changes.
+        Test.startTest();
+        String source = submittedSourceFor('migration-accelerator');
+        Test.stopTest();
+
+        Assert.areEqual('Migration Accelerator', source);
+    }
+
+    @isTest
+    static void tierTwoAnOfferingWithOnlyPageContentGetsItsOwnAuthoredName() {
+        // The live case: my-test-offering and data-cloud-accelorator are both
+        // in exactly this state in gtm-dev today -- a name on their own
+        // offerings-listing tile, no custom metadata row.
+        insert listingName('page-only-offering', 'Page Only Offering');
+
+        Test.startTest();
+        String source = submittedSourceFor('page-only-offering');
+        Test.stopTest();
+
+        Assert.areEqual('Page Only Offering', source,
+            'The name on an offering\'s own listing tile is the name its requests carry');
+        Assert.areNotEqual('Migration Accelerator', source);
+    }
+
+    @isTest
+    static void tierThreeARealButUnnamedOfferingGetsItsKeyNotAnotherOfferingsName() {
+        // Sections but no authored name anywhere. Showing the raw key is the
+        // same fallback getOfferings()/getHomeSummary() use, and it is honest;
+        // showing 'Migration Accelerator' would not be.
+        insert anySection('unnamed-offering');
+
+        Test.startTest();
+        String source = submittedSourceFor('unnamed-offering');
+        Test.stopTest();
+
+        Assert.areEqual('unnamed-offering', source);
+        Assert.areNotEqual('Migration Accelerator', source);
+    }
+
+    @isTest
+    static void tierFourAGenuinelyUnknownOfferingStillFallsBackToTheLegacyLiteral() {
+        // Nothing in any of the three tables. There is no truthful name to
+        // give, so the historical literal stands -- the documented limit of
+        // this resolution, asserted so a future change to it is deliberate.
+        Test.startTest();
+        String source = submittedSourceFor('no-such-offering-anywhere');
+        Test.stopTest();
+
+        Assert.areEqual('Migration Accelerator', source);
+    }
 }

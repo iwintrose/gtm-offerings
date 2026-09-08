@@ -171,6 +171,29 @@ private class GtmEstateComplexityTest {
     }
 
     @isTest
+    static void theComplexityMaximumIsPerOfferingAndNullWhereThereIsNoInstrument() {
+        // QA round 1, Finding 3. This method is new: nothing exposed the
+        // complexity MAXIMUM to a caller holding only an offering key, so the
+        // guest questionnaire endpoint -- which needs it before any answer
+        // exists -- printed the compiled 18 for every offering alive.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        Assert.areEqual(
+            18, GtmEstateComplexity.maxTotalFor('migration-accelerator'),
+            'Migration Accelerator is still measured out of its own six dimensions'
+        );
+        Assert.areEqual(
+            18, GtmEstateComplexity.maxTotalFor(null),
+            'and a blank key still means Migration Accelerator'
+        );
+        Assert.isNull(
+            GtmEstateComplexity.maxTotalFor('an-offering-with-no-instrument'),
+            'LEAK: an offering with no complexity axis was measured out of somebody else\'s 18'
+        );
+    }
+
+    @isTest
     static void onlyTheTwoRecognisedBasesAreAccepted() {
         Assert.areEqual('Self-Estimated', GtmEstateComplexity.acceptedBasis('self-estimated'));
         Assert.areEqual('Measured', GtmEstateComplexity.acceptedBasis('  MEASURED '));

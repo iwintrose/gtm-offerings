@@ -883,6 +883,31 @@ private class GtmAssessmentScoringTest {
     }
 
     @isTest
+    static void theDenominatorLeaksNoFurtherThanTheNumeratorDid() {
+        // QA round 1, Finding 2. frameMaxTotal() was gated on fromRecord alone,
+        // so the offering above -- whose score is correctly null -- was still
+        // persisted as "measured out of 32", Migration Accelerator's
+        // denominator. The numerator was safe and the denominator was not,
+        // which is the harder half to notice: a null score out of 32 reads like
+        // an unfinished assessment rather than a borrowed instrument.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        Assert.isNull(
+            GtmAssessmentScoring.maxTotalFor('an-offering-with-no-instrument', null),
+            'LEAK: an offering with no instrument was measured out of somebody else\'s 32'
+        );
+        Assert.areEqual(
+            32, GtmAssessmentScoring.maxTotalFor('migration-accelerator', null),
+            'Migration Accelerator, with no pack in hand, is still measured out of its own 32'
+        );
+        Assert.areEqual(
+            32, GtmAssessmentScoring.maxTotalFor(null, null),
+            'A blank key is Migration Accelerator\'s historical meaning and keeps it'
+        );
+    }
+
+    @isTest
     static void theComplexityAxisHasTheSameBoundary() {
         Assert.isFalse(
             GtmEstateComplexity.score('an-offering-with-no-instrument',

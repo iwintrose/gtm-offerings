@@ -796,11 +796,23 @@ public with sharing class GtmAssessmentScoring {
         return value;
     }
 
-    /** What a fully-answered submission against this frame is measured out of. */
+    /**
+     * What a fully-answered submission against this frame is measured out of,
+     * or NULL when this offering has no maximum to speak of.
+     *
+     * Gated on compiledApplies as well as fromRecord, for exactly the reason
+     * untrustedPackFallback() above is: the compiled 32 is Migration
+     * Accelerator's denominator, not a universal one. Handing it to an offering
+     * with no instrument writes "scored out of 32" onto a row whose score is
+     * correctly null -- the same borrowed-instrument lie as a confident 32/32,
+     * one layer out, and the milder form is the harder one to notice. An
+     * offering that is measured against nothing is measured out of nothing.
+     */
     private static Integer frameMaxTotal(List<String> dimensionKeys, ResolvedFrame frame) {
-        return frame.fromRecord
-            ? dimensionKeys.size() * frame.maxAnswer
-            : MAX_TOTAL_SCORE;
+        if (frame.fromRecord) {
+            return dimensionKeys.size() * frame.maxAnswer;
+        }
+        return frame.compiledApplies ? MAX_TOTAL_SCORE : null;
     }
 
     /**

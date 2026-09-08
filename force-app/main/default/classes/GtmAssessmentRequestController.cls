@@ -500,14 +500,38 @@ public without sharing class GtmAssessmentRequestController {
      * Migration Accelerator's -- and Source__c is what a rep filters a list
      * view by, so a wrong value there is not cosmetic, it hides work.
      *
-     * Resolved from GTM_Offering__mdt.Label__c, the same table
-     * offeringAnnualTarget() below already reads, falling back to the old
-     * literal whenever the lookup yields nothing. Migration Accelerator's own
-     * rows therefore keep the exact string they have always had, and no
-     * existing row's value changes; a second offering gets its own name instead
-     * of a lie. This is copy, not schema, so the risk either way is low -- but
-     * only one of the two options is still correct after a second offering
-     * exists.
+     * Resolved in the SAME three tiers, in the same order, that
+     * GtmPageContentController.getOfferings() already resolves an offering's
+     * display name in -- deliberately mirroring it rather than inventing a
+     * fourth lookup strategy, because an offering that shows one name in the
+     * offering picker and a different one on the request it produced is its
+     * own bug:
+     *
+     *   1. GTM_Offering__mdt.Label__c -- the same table offeringAnnualTarget()
+     *      below reads. Migration Accelerator has such a row, and its label is
+     *      byte-identical to LEGACY_SOURCE_LABEL, so its rows keep the exact
+     *      string they have always had and no existing row's value changes.
+     *   2. The name on the offering's own offerings-listing tile
+     *      (GTM_Page_Content__c). Custom metadata deploys asynchronously and an
+     *      offering created through the Content Manager has page content long
+     *      before it has a CMDT row -- today BOTH of gtm-dev's non-Migration-
+     *      Accelerator offerings are in exactly that state, so without this
+     *      tier they are stamped 'Migration Accelerator', which is the
+     *      mislabelling this method exists to prevent.
+     *   3. A GTM_Page_Section__c row proves the offering is REAL even when
+     *      nobody has authored a name for it anywhere. It then gets its own raw
+     *      key -- the same label = key convention getOfferings() and
+     *      getHomeSummary() both fall back to. A real offering showing its key
+     *      is honest; showing another offering's name is not.
+     *
+     * LEGACY_SOURCE_LABEL is the terminal fallback ONLY: a blank key, or a key
+     * that resolves to nothing in all three tables (a typo, a synthetic test
+     * key -- a genuinely unknown offering). Such a key is NOT given a truthful
+     * name by this method, because none exists to give; it keeps the historical
+     * literal. That is a deliberate limit of this fix, not an oversight.
+     *
+     * This is copy, not schema, so the risk either way is low -- but only one
+     * of the options is still correct after a second offering exists.
      */
     private static String sourceLabelFor(String offeringKey) {
         if (String.isBlank(offeringKey)) {
@@ -525,7 +549,38 @@ public without sharing class GtmAssessmentRequestController {
             }
         } catch (Exception e) {
             // A missing or unreadable offering table must not cost the whole
-            // submission a label it can still supply from the old constant.
+            // submission a label it can still supply from a later tier.
+        }
+        try {
+            List<GTM_Page_Content__c> named = [
+                SELECT Text_Value__c
+                FROM   GTM_Page_Content__c
+                WHERE  Template_Type__c = 'offerings-listing'
+                AND    Field_Key__c     = 'name'
+                AND    Offering_Key__c  = :offeringKey
+                AND    Active__c        = true
+                LIMIT  1
+            ];
+            if (!named.isEmpty() && String.isNotBlank(named[0].Text_Value__c)) {
+                return named[0].Text_Value__c;
+            }
+        } catch (Exception e) {
+            // Same reasoning as above: an unreadable content table costs the
+            // label a tier, never the submission.
+        }
+        try {
+            List<GTM_Page_Section__c> real = [
+                SELECT Id
+                FROM   GTM_Page_Section__c
+                WHERE  Offering_Key__c = :offeringKey
+                AND    Active__c       = true
+                LIMIT  1
+            ];
+            if (!real.isEmpty()) {
+                return offeringKey;
+            }
+        } catch (Exception e) {
+            // Ditto.
         }
         return LEGACY_SOURCE_LABEL;
     }

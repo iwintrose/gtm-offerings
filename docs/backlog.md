@@ -597,6 +597,36 @@ B5, feedback card padding · B1, the CMS-editable FAQ widget on both apps ·
 B4, the retired CMS content (records deleted by Don, the 5 dead
 managedContentType definitions removed).
 
+**D14 — The Instrument Editor still previews Migration Accelerator's band
+ladder for an offering that has no instrument.** The one residual from QA
+round 1 on ADR-0007 deliberately left out of that round's fix list. Three
+sibling leaks were closed (`Source__c` now resolves through the same
+GTM_Offering__mdt → GTM_Page_Content__c → GTM_Page_Section__c tiers
+`getOfferings()` uses; `GtmAssessmentScoring.frameMaxTotal()` and the new
+`GtmEstateComplexity.maxTotalFor()` return `null` rather than 32/18 for an
+offering the compiled constants don't apply to; `getQuestionnaire()` derives
+both maxima per offering). This fourth one is a different site and was not in
+the endorsed fix list: `GtmAssessmentInstrument.getFrame()` takes its bands
+from `GtmAssessmentScoring.bands(offeringKey)`, whose no-frame-record
+fail-open hands back Migration Accelerator's four-band ladder. Verified still
+present against live `gtm-dev` after the round-1 fixes:
+
+```
+CHECK6 [migration-accelerator] slotCount=8 maxTotal=32 bands=[Discovery First 8-14]…[Fast-Track 27-32]
+CHECK6 [my-test-offering]      slotCount=0 maxTotal=32 bands=[Discovery First 8-14]…[Fast-Track 27-32]
+CHECK6 [data-cloud-accelorator] slotCount=0 maxTotal=32 bands=[Discovery First 8-14]…[Fast-Track 27-32]
+```
+
+So an author opening a brand-new offering in the Instrument Editor is shown
+another offering's band edges next to a slot count of 0, as if they were
+theirs. Lower stakes than the three that were fixed — this is an authoring
+preview, not a persisted field or a guest endpoint, and nothing scores off it
+— but it is the same borrowed-instrument shape, and the fail-open that
+produces it is deliberate (a missing frame record is the path every
+Migration Accelerator assessment takes today), so closing it means deciding
+what an offering with no frame *should* preview rather than just removing the
+fallback. Named here rather than fixed silently.
+
 **D9 — The Industry Chooser isn't reachable anywhere live.** Found while
 trying to screenshot it: `chooseIndustry` (LWC, `gtm::industry-chooser`
 content) only exists as a page/route inside `GTM_Accelerator1` — the

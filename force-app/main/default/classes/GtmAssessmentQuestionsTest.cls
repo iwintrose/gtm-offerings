@@ -49,6 +49,32 @@ private class GtmAssessmentQuestionsTest {
     }
 
     @isTest
+    static void anOfferingWithNoInstrumentIsOfferedNoQuestionsAndNoDenominator() {
+        // QA round 1, Finding 3. Phase 5 threaded offeringKey into the SOQL
+        // under this endpoint but left the two maxima as compiled constants, so
+        // a second offering was handed zero questions and told they were worth
+        // 32 and 18 -- on a guest-reachable, cacheable endpoint. Both halves are
+        // asserted here: the emptiness AND the absence of a denominator, since
+        // the emptiness alone passed before the fix.
+        // Deliberately NOT seedFullSet(): rowOverride bypasses the offering
+        // filter, so the real SOQL is what has to run here for the emptiness to
+        // mean anything. No GTM_Assessment_Question__mdt row carries this key.
+        GtmAssessmentQuestions.resetCache();
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        GtmAssessmentQuestions.Questionnaire q =
+            GtmAssessmentQuestions.getQuestionnaire('an-offering-with-no-instrument');
+
+        Assert.areEqual(0, q.readiness.size());
+        Assert.areEqual(0, q.complexity.size());
+        Assert.isNull(q.readinessMaxScore,
+            'LEAK: zero questions were advertised as being scored out of 32');
+        Assert.isNull(q.complexityMaxScore,
+            'LEAK: zero questions were advertised as being scored out of 18');
+    }
+
+    @isTest
     static void wordingComesFromMetadataAndTheOrderIsWhatWasConfigured() {
         seedFullSet();
         List<GtmAssessmentQuestions.Question> readiness =

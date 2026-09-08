@@ -291,6 +291,30 @@ public with sharing class GtmEstateComplexity {
         return supplied;
     }
 
+    /**
+     * What a fully-answered complexity submission for ONE OFFERING is measured
+     * out of, or NULL when that offering has no complexity axis at all.
+     *
+     * The complexity-axis twin of GtmAssessmentScoring.maxTotalFor(), and gated
+     * the same way for the same reason: the compiled 18 is Migration
+     * Accelerator's denominator. An offering with no instrument is measured
+     * against nothing, so it is measured out of nothing -- printing "out of 18"
+     * next to a null score borrows somebody else's six dimensions to describe a
+     * submission that answered none of them.
+     *
+     * Exists because a caller may have an offering key and no pack -- the guest
+     * questionnaire endpoint needs the maximum BEFORE any answer is given, and
+     * score() only ever exposed the maximum implicitly, through its bands.
+     */
+    public static Integer maxTotalFor(String offeringKey) {
+        ResolvedFrame frame = frameFor(offeringKey);
+        List<String> dims = acceptedDimensions((List<String>) null, frame);
+        if (frame.fromRecord) {
+            return dims.size() * frame.maxAnswer;
+        }
+        return frame.compiledApplies ? MAX_TOTAL_SCORE : null;
+    }
+
     /** The band for a total against ONE OFFERING's complexity edges. */
     public static String bandFor(String offeringKey, Decimal total) {
         return GtmAssessmentFrames.tierFor(frameFor(offeringKey).bands, total);
