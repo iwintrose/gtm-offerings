@@ -141,6 +141,11 @@ export default class GtmConfigurator extends LightningElement {
     @track inactive = false;
     @track isProspectLink = false;
 
+    /** The engagement link's own Offering__c, once loadSavedConfiguration()
+     *  has read it. Blank for a link-less direct visit. See
+     *  effectiveOfferingKey and ADR-0008 section 3. */
+    @track linkOfferingKey = '';
+
     @track customizeOpen = false;
     @track bookingOpen = false;
     @track isConfigManager = false;
@@ -659,6 +664,18 @@ export default class GtmConfigurator extends LightningElement {
             if (rec.industry) this.industryKey = rec.industry;
             if (rec.notifyEmail) this.notifyEmail = rec.notifyEmail;
 
+            // ADR-0008 section 3. The SERVER resolves the offering from this
+            // same record's Offering__c
+            // (GtmAssessmentRequestController.resolveOfferingKey). The
+            // `offeringKey` page property below is an Experience Builder
+            // default and can disagree with it; if it does, the questionnaire
+            // renders one offering's questions and the server scores them
+            // against another's pack, resolving none of the submitted dimension
+            // keys and scoring nothing while looking like it scored (ADR-0007's
+            // hard boundary). Reading it here is what makes the two
+            // derivations one.
+            if (rec.offering) this.linkOfferingKey = rec.offering;
+
             let saved = {};
             try { saved = JSON.parse(rec.configPayload || '{}'); } catch (e) { saved = {}; }
             if (rec.industryLabel && !this.industryKey) this.industryKey = rec.industry;
@@ -875,6 +892,20 @@ export default class GtmConfigurator extends LightningElement {
 
     get bookingUrl() {
         return this.tokenValue('BOOKING_URL');
+    }
+
+    /**
+     * What the questionnaire is actually answering.
+     *
+     * The link wins; the `offeringKey` page property is only the answer for a
+     * direct visit with no link. Deliberately NOT assigned back over
+     * this.offeringKey: getIndustryProfiles and the getPageLayout calls key off
+     * the page property and must keep doing so -- this page's *content* is
+     * chosen by the page it is, while the *instrument* is chosen by the link.
+     * Only the assessment path reads this. ADR-0008 section 3.
+     */
+    get effectiveOfferingKey() {
+        return this.linkOfferingKey || this.offeringKey;
     }
 
     // ---------------------------------------------------------- the assistant

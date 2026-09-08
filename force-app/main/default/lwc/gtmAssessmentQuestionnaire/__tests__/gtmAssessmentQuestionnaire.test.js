@@ -721,4 +721,110 @@ describe('c-gtm-assessment-questionnaire', () => {
             offeringKey: 'migration-accelerator'
         });
     });
+
+    // ── hosted inside the configurator's overlay (ADR-0008) ─────────────────
+
+    it('renders full-page chrome by default and drops it when embedded', async () => {
+        const standalone = await mount();
+        expect(one(standalone, '.q-root')).not.toBeNull();
+        expect(one(standalone, '.q-root--embedded')).toBeNull();
+
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.embedded = true;
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        // Both classes: the modifier only undoes the page-level box, so every
+        // rule that hangs off .q-root must still apply.
+        expect(one(el, '.q-root.q-root--embedded')).not.toBeNull();
+    });
+
+    it('is embeddable without changing a single question, step or branch', async () => {
+        // The whole safety argument for the D11 swap is that `embedded` is
+        // chrome and nothing else. Asserted by walking the same form twice.
+        const plain = await mount();
+        await toReadiness(plain);
+        const plainTitle = one(plain, '.q-title').textContent;
+        const plainLabel = one(plain, '.q-progress-label').textContent;
+        const plainQuestions = Array.from(q(plain, '.q-question')).map((n) => n.textContent);
+        document.body.removeChild(plain);
+        window.localStorage.clear();
+
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.embedded = true;
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await toReadiness(el);
+
+        expect(one(el, '.q-title').textContent).toBe(plainTitle);
+        expect(one(el, '.q-progress-label').textContent).toBe(plainLabel);
+        expect(Array.from(q(el, '.q-question')).map((n) => n.textContent))
+            .toEqual(plainQuestions);
+    });
+
+    it('asks the offering it was given, not the built-in default', async () => {
+        // ADR-0008 section 3. gtmConfigurator passes the ENGAGEMENT LINK's own
+        // Offering__c down here -- the same field
+        // GtmAssessmentRequestController.resolveOfferingKey scores against. If
+        // this property were ignored, the client would render one offering's
+        // questions and the server would score them against another's pack,
+        // resolving none of the submitted dimension keys and scoring nothing
+        // while looking like it scored.
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.offeringKey = 'commerce-accelerator';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+
+        expect(getQuestionnaire).toHaveBeenCalledWith({
+            offeringKey: 'commerce-accelerator'
+        });
+
+        await toReadiness(el);
+        expect(getPack).toHaveBeenCalledWith({
+            offeringKey: 'commerce-accelerator',
+            sourceName: 'sfmc',
+            targetName: 'sfmc_next'
+        });
+    });
+
+    it('carries contactId on the submitted event so the reading trail stays attributable', async () => {
+        // gtmConfigurator.handleBookingSubmitted calls identifySession with
+        // this, which attributes the whole anonymous reading trail to the
+        // person who left it. gtmConfigBooking's event carried it; losing it in
+        // the swap would have been a silent regression.
+        submitRequest.mockResolvedValue({
+            assessmentRequestId: 'AR-9',
+            contactId: '003000000000001'
+        });
+        const el = await mount();
+        const seen = [];
+        el.addEventListener('submitted', (e) => seen.push(e.detail));
+
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, 'input[data-field="name"]') && guard < 9) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+
+        expect(seen.length).toBe(1);
+        expect(seen[0].assessmentRequestId).toBe('AR-9');
+        expect(seen[0].contactId).toBe('003000000000001');
+        expect(seen[0].email).toBe('ada@example.com');
+    });
 });

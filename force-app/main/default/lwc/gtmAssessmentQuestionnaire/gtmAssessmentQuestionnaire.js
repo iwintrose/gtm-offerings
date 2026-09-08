@@ -135,6 +135,41 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
      */
     @api offeringKey = 'migration-accelerator';
 
+    /**
+     * Rendered inside the configurator's overlay rather than as a page of its
+     * own. Only affects chrome: no step, question, branch or score differs.
+     *
+     * See ADR-0008 -- the overlay is the only host that has the engagement
+     * link's context (savedRecordId, submissionToken, the link's own
+     * Offering__c), so `embedded` is the normal case and standalone is the
+     * exception.
+     */
+    @api embedded = false;
+
+    /**
+     * The rep's calendar link, from the engagement link's ?book= parameter.
+     * Carried through to the confirmation panel so the "book an assessment"
+     * half of the CTA's promise survives gtmConfigBooking's retirement.
+     * Empty on a standalone visit, which simply renders no calendar CTA.
+     */
+    @api bookingUrl = '';
+
+    /**
+     * The host page's visit id, so a draft written during this visit ties back
+     * to the trail of what was read before it. Passed down by gtmConfigurator
+     * (visitSessionId); empty standalone.
+     */
+    @api sessionId = '';
+
+    /**
+     * The root element's class. `embedded` swaps in a modifier that undoes the
+     * full-page assumptions (viewport height, max-width, centring, padding,
+     * paper background) -- the overlay card supplies all five.
+     */
+    get rootClass() {
+        return this.embedded ? 'q-root q-root--embedded' : 'q-root';
+    }
+
     @track pack = null;
     /**
      * The unadapted six, from GTM_Assessment_Question__mdt. Only a FALLBACK now:
@@ -973,7 +1008,15 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
                 new CustomEvent('submitted', {
                     detail: {
                         email: this.contact.email.trim(),
-                        assessmentRequestId: result ? result.assessmentRequestId : null
+                        assessmentRequestId: result ? result.assessmentRequestId : null,
+                        // gtmConfigBooking's submitted event carried this and
+                        // gtmConfigurator.handleBookingSubmitted uses it to call
+                        // identifySession -- which attributes the whole
+                        // anonymous reading trail that led here to the person
+                        // who left it. Omitting it would have made the D11 swap
+                        // silently lose session identification. RequestResult
+                        // has always returned it; nothing else was needed.
+                        contactId: result ? result.contactId : null
                     }
                 })
             );

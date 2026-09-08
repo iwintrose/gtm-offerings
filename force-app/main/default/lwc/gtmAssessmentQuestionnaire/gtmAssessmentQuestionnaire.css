@@ -43,6 +43,26 @@
     line-height: 1.55;
 }
 
+/* Hosted inside gtmConfigurator's overlay: the card supplies the frame, the
+   scroll and the padding, so the full-page assumptions come off. The .q-root
+   block above is deliberately left untouched -- the standalone page must keep
+   rendering byte-identically (ADR-0008 / D11 plan 2.2).
+
+   `color-scheme: light` above is NOT undone here, on purpose. It exists so the
+   native selects, inputs and textareas are legible; the configurator has a
+   dark-theme toggle, so in dark mode this card is a light-schemed form inside a
+   dark page. That is the lesser failure of the two -- a half-styled native
+   <select> is exactly what the declaration was added to prevent -- but it is a
+   visible seam and a human should decide whether it needs more than leaving
+   alone. Flagged in the Dev report; see the plan's open call 3. */
+.q-root--embedded {
+    min-height: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
 @media (prefers-color-scheme: dark) {
     .q-root {
         --ps-red: #ff405f;
