@@ -254,7 +254,17 @@ describe('c-gtm-instrument-author', () => {
         const el = await mount();
         expect(one(el, '.ia-orient')).not.toBeNull();
         expect(one(el, '.ia-orient-reopen')).toBeNull();
-        expect(one(el, '.ia-orient').textContent).toContain('down for');
+        expect(one(el, '.ia-orient').textContent).toContain('What this is');
+        // The reachability caveat ("the live GTM1 site's booking form does not
+        // yet ask these questions, so editing a pack here does not change what
+        // a real prospect sees today") is deliberately GONE as of ADR-0008 /
+        // backlog D11: the live /configurator route now hosts the real
+        // questionnaire, so a pack edited here DOES change what a real prospect
+        // is asked. Asserted as an absence so the banner cannot come back
+        // untruthfully by accident.
+        expect(one(el, '.ia-orient').textContent).not.toContain('down for');
+        expect(one(el, '.ia-orient').textContent).not.toContain('Heads up');
+        expect(one(el, '.ia-orient-warn')).toBeNull();
 
         one(el, '.ia-orient-dismiss').click();
         await flush();

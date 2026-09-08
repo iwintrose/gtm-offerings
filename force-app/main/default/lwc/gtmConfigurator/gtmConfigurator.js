@@ -1348,8 +1348,10 @@ export default class GtmConfigurator extends LightningElement {
     // -------------------------------------------------------- booking events
 
     handleOpenBooking() {
-        const modal = this.template.querySelector('c-gtm-config-booking');
-        if (modal) modal.reset();
+        // No reset() call any more: there is no longer a persistent child to
+        // reset, because the questionnaire is rendered behind if:true={bookingOpen}
+        // and a fresh mount IS the reset (ADR-0008 phase 6.2).
+        //
         // Re-checked on open as well as on load (ADR-0008 section 4): the load
         // check may still have been in flight when this was clicked. It does not
         // block the open -- the server refuses a duplicate with a message the
@@ -1366,6 +1368,17 @@ export default class GtmConfigurator extends LightningElement {
 
     handleCloseBooking() {
         this.bookingOpen = false;
+    }
+
+    /**
+     * Click the scrim, not the card, to close. Lifted from gtmConfigBooking
+     * along with the rest of the modal chrome when that component was retired
+     * (ADR-0008 phase 6.1) -- the frame outlives the component that owned it.
+     */
+    handleOverlayClick(event) {
+        if (event.target === event.currentTarget) {
+            this.handleCloseBooking();
+        }
     }
 
     handleBookingSubmitted(event) {

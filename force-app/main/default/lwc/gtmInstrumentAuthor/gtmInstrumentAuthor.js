@@ -182,20 +182,21 @@ export default class GtmInstrumentAuthor extends LightningElement {
     }
 
     /**
-     * Static by design — this screen has no way to check live Network.Status
-     * from Apex without adding a new privileged method, which is out of
-     * proportion to an orientation fix. Kept as one line so it's cheap to
-     * delete the day gtmConfigBooking is rewired onto the real questionnaire,
-     * or the /assessment route is rebuilt on GTM1 — search this file for
-     * "reachabilityCaveat" when that happens.
+     * The reachability caveat is GONE, and that is the point.
+     *
+     * It used to tell an author: "the live GTM1 site's booking form does not
+     * yet ask these questions, so editing a pack here does not change what a
+     * real prospect sees today." Its own comment said to delete it "the day
+     * gtmConfigBooking is rewired onto the real questionnaire". That is this
+     * change (ADR-0008 / backlog D11): the live /configurator route now hosts
+     * the real questionnaire, so a pack edited here DOES change what a real
+     * prospect is asked. Leaving the banner up would now be actively
+     * misleading -- it would tell an author their work does not matter when it
+     * does.
+     *
+     * If a future change ever puts the authoring screen and the live guest
+     * surface out of step again, this is where that warning goes back.
      */
-    get reachabilityCaveat() {
-        return 'the guest questionnaire that asks these questions live only on '
-            + 'the GTM Accelerator site, which is currently down for '
-            + 'maintenance. The live GTM1 site’s booking form does not yet '
-            + 'ask these questions, so editing a pack here does not change what '
-            + 'a real prospect sees today.';
-    }
 
     get resolutionChainLabel() {
         const chain = this.pack && this.pack.resolutionChain;

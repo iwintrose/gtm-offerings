@@ -1422,3 +1422,80 @@ b {
     display: flex;
     justify-content: flex-end;
 }
+
+/* ── the assessment overlay ────────────────────────────────────────────────
+   Lifted from gtmConfigBooking.css when that component was retired (ADR-0008 /
+   backlog D11). The overlay is now this component's own chrome, wrapping
+   c-gtm-assessment-questionnaire, so the modal frame outlives the component
+   that used to own it. Rules kept byte-compatible with the originals so the
+   scrim, the card and the close affordance look exactly as they always have. */
+.bk {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(23, 20, 15, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+}
+.bk.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+.bk-card {
+    position: relative;
+    background: var(--paper, #fff);
+    border: 1px solid var(--line, #e7e2db);
+    border-radius: 16px;
+    box-shadow: var(--shadow, 0 20px 50px -24px rgba(23, 20, 15, 0.3));
+    width: min(560px, 100%);
+    max-height: 92vh;
+    overflow-y: auto;
+    color: var(--ink, #17140f);
+}
+.bk-x {
+    position: absolute;
+    top: 0.9rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--ink-faint, #8b857d);
+    cursor: pointer;
+    z-index: 1;
+}
+.bk-x:hover {
+    color: var(--ink, #17140f);
+}
+
+/* The assessment is a much taller thing than the booking form was: fourteen
+   questions over a dozen steps rather than one screen. Wider, and it scrolls
+   INSIDE the card (max-height + overflow-y above) rather than letting the form
+   push past the viewport with the page scrolling behind it. The padding is the
+   card's job now -- .q-root--embedded takes its own off precisely so that this
+   one frame owns the box. */
+.bk-card--assessment {
+    width: min(680px, 100%);
+    padding: 1.6rem 1.5rem 1.75rem;
+}
+
+/* On a phone the card is the screen. A rounded, inset, 92vh-capped box on a
+   375px viewport wastes the only space a fourteen-question form has. */
+@media (max-width: 640px) {
+    .bk {
+        padding: 0;
+    }
+    .bk-card--assessment {
+        width: 100%;
+        max-height: 100vh;
+        min-height: 100vh;
+        border: none;
+        border-radius: 0;
+        padding: 1.25rem 1.1rem 2rem;
+    }
+}

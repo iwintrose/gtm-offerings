@@ -55,10 +55,30 @@ function topCtaText(element) {
     return btn ? btn.textContent.replace(/\s+/g, ' ').trim() : '';
 }
 
-/** The submitted event the assessment child raises on a successful submit. */
-function dispatchSubmitted(element, detail) {
-    const child = element.shadowRoot.querySelector('c-gtm-config-booking');
+/**
+ * The assessment child, opening the overlay first if it is not already open.
+ *
+ * Since ADR-0008 the questionnaire is rendered behind if:true={bookingOpen}
+ * rather than always-mounted, so there is no child to talk to until the CTA has
+ * been clicked. That is deliberate -- the questionnaire does real Apex work in
+ * connectedCallback and must not do it for every prospect who never opens the
+ * form -- and it means these tests exercise the real path a respondent takes.
+ */
+async function openAssessment(element) {
+    if (!element.shadowRoot.querySelector('c-gtm-assessment-questionnaire')) {
+        const cta = element.shadowRoot.querySelector('.psbar .bar-right button.cta');
+        expect(cta).not.toBeNull();
+        cta.click();
+        await flushPromises();
+    }
+    const child = element.shadowRoot.querySelector('c-gtm-assessment-questionnaire');
     expect(child).not.toBeNull();
+    return child;
+}
+
+/** The submitted event the assessment child raises on a successful submit. */
+async function dispatchSubmitted(element, detail) {
+    const child = await openAssessment(element);
     child.dispatchEvent(new CustomEvent('submitted', { detail }));
 }
 
@@ -120,7 +140,7 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
         document.body.appendChild(element);
         await flushPromises();
 
-        dispatchSubmitted(element, { assessmentRequestId: 'AR001' });
+        await dispatchSubmitted(element, { assessmentRequestId: 'AR001' });
         await flushPromises();
 
         const cta = topCta(element);
@@ -143,7 +163,7 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
         const before = element.shadowRoot.querySelector('[data-section="closing"]');
         expect(before.textContent).not.toContain('Your request has been submitted.');
 
-        dispatchSubmitted(element, { assessmentRequestId: 'AR003' });
+        await dispatchSubmitted(element, { assessmentRequestId: 'AR003' });
         await flushPromises();
 
         const after = element.shadowRoot.querySelector('[data-section="closing"]');
@@ -160,7 +180,7 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
         const element1 = createElement('c-gtm-configurator', { is: GtmConfigurator });
         document.body.appendChild(element1);
         await flushPromises();
-        dispatchSubmitted(element1, { assessmentRequestId: 'AR002' });
+        await dispatchSubmitted(element1, { assessmentRequestId: 'AR002' });
         await flushPromises();
         document.body.removeChild(element1);
 
@@ -268,7 +288,7 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
 
         // The submit now races and loses; the server has the request.
         hasSubmittedAssessment.mockResolvedValue(true);
-        const child = element.shadowRoot.querySelector('c-gtm-config-booking');
+        const child = await openAssessment(element);
         child.dispatchEvent(
             new CustomEvent('submitfailed', { detail: { message: 'already been submitted' } })
         );
@@ -286,7 +306,7 @@ describe('c-gtm-configurator — recipient readout state machine', () => {
         document.body.appendChild(element);
         await flushPromises();
 
-        const child = element.shadowRoot.querySelector('c-gtm-config-booking');
+        const child = await openAssessment(element);
         child.dispatchEvent(
             new CustomEvent('submitfailed', { detail: { message: 'Network error' } })
         );
