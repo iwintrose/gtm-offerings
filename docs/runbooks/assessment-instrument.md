@@ -50,7 +50,7 @@ high total, because it is true regardless of the headline number.
 | A question, an answer option, a dimension's display name | `GTM_Assessment_Question__mdt` records (Setup → Custom Metadata Types) | No — metadata only |
 | Which source/target pairs are supported, or their "why not" wording | `GTM_Migration_Pair__mdt` | No |
 | Platform spellings that free-text answers should resolve to | `GTM_Migration_Platform__mdt` → `Aliases__c` (semicolon-separated) | No |
-| What each answer option is **worth**, and **which** question a branch asks | `migration-accelerator/instrument/migration-accelerator/pairs/*.yaml`, then `python3 scripts/build-instrument.py` — authored through the **Instrument Editor** tab in the GTM Content Manager app. See *Branches and scores* below | No Apex; the generated metadata deploys |
+| What each answer option is **worth**, and **which** question a branch asks | `instrument/migration-accelerator/pairs/*.yaml`, then `python3 scripts/build-instrument.py` — authored through the **Instrument Editor** tab in the GTM Content Manager app. See *Branches and scores* below | No Apex; the generated metadata deploys |
 | The respondent-facing form itself — steps, grouping, progress | `gtmAssessmentQuestionnaire` (guest-accessible, `/assessment` on the Experience Cloud site) | Yes — LWC |
 | The set of dimension **keys**, the scales, the band edges, the override rules | `GtmAssessmentScoring.cls` / `GtmEstateComplexity.cls` | Yes — Apex |
 
@@ -360,7 +360,7 @@ respondent, and it shows:
 
 ## Adding a pair — the whole procedure
 
-1. `migration-accelerator/instrument/migration-accelerator/pairs/<source>__<target>.yaml`. Copy
+1. `instrument/migration-accelerator/pairs/<source>__<target>.yaml`. Copy
    `hubspot__mcn.yaml`; it exercises every layer.
 2. Declare `source`, `target` (canonical `Platform_Key__c` values, or `*`),
    `specificity`, the three postures, and a `posture_statement`.

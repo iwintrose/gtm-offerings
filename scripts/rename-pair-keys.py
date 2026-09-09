@@ -19,7 +19,7 @@ lives here, one command away, rather than in a paragraph of a runbook.
 
 WHAT IT CHANGES
 ---------------
-  migration-accelerator/instrument/migration-accelerator/pairs/<a>__<b>.yaml
+  instrument/<offering-key>/pairs/<a>__<b>.yaml
       -> pairs/<a>_to_<b>.yaml, and the `name:` line inside it, which is what
          build-instrument.py actually reads (the filename is only a filename)
   force-app/main/default/customMetadata/GTM_Migration_Pair.<a>__<b>.md-meta.xml
@@ -64,22 +64,43 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PAIRS = os.path.join(ROOT, "migration-accelerator", "instrument", "pairs")
+INSTRUMENT = os.path.join(ROOT, "instrument")
 CMDT = os.path.join(ROOT, "force-app", "main", "default", "customMetadata")
+
+
+def pair_dirs():
+    """Every offering's pairs/ directory (ADR-0007 / ADR-0009).
+
+    There is no single flat pairs/ directory and there has not been one since
+    ADR-0007 split the instrument per offering: pairs live at
+    instrument/<offering-key>/pairs/. This used to be hardcoded to one
+    non-existent flat path, which plan()'s isdir guard turned into a silent
+    "nothing to rename" -- the tool reported success while scanning nothing.
+    Iterating the offering directories keeps it correct as offerings are added.
+    """
+    out = []
+    if not os.path.isdir(INSTRUMENT):
+        return out
+    for name in sorted(os.listdir(INSTRUMENT)):
+        pairs = os.path.join(INSTRUMENT, name, "pairs")
+        if os.path.isdir(pairs):
+            out.append(pairs)
+    return out
 
 
 def plan(sep):
     """Every rename this would do, as (old path, new path, old key, new key)."""
     moves = []
-    for f in sorted(os.listdir(PAIRS)) if os.path.isdir(PAIRS) else []:
-        if not f.endswith(".yaml"):
-            continue
-        key = f[:-5]
-        if "__" not in key:
-            continue
-        new = key.replace("__", sep)
-        moves.append((os.path.join(PAIRS, f), os.path.join(PAIRS, new + ".yaml"),
-                      key, new))
+    for pairs in pair_dirs():
+        for f in sorted(os.listdir(pairs)):
+            if not f.endswith(".yaml"):
+                continue
+            key = f[:-5]
+            if "__" not in key:
+                continue
+            new = key.replace("__", sep)
+            moves.append((os.path.join(pairs, f),
+                          os.path.join(pairs, new + ".yaml"), key, new))
     for f in sorted(os.listdir(CMDT)) if os.path.isdir(CMDT) else []:
         if not f.endswith(".md-meta.xml"):
             continue

@@ -31,7 +31,8 @@ GTM Offerings is a Salesforce Lightning/Apex application built to simplify, stan
 ### Core Directories
 
 - `force-app/main/default/`: The standard SFDX source tree containing metadata (objects, classes, LWCs, experiences, flows, triggers, profiles).
-- `migration-accelerator/instrument/<offering-key>/`: The single source of truth for assessment instruments (YAML files defining questions, scoring, gates, and branching).
+- `instrument/<offering-key>/`: The single source of truth for assessment instruments (YAML files defining questions, scoring, gates, and branching). One directory per offering; the root is framework-level, not any one offering's (ADR-0009).
+- `reference/ma-migrator-capabilities/`: Capability manifests for the separate `ma-migrator` repo. Reference material only — non-deployable, loaded by no running code, pending the `ma-migrator` handoff (ADR-0009).
 - `scripts/`: Local utility files including `deploy.sh`, `deploy-fresh-org.sh`, `build-instrument.py`, and `check-references.py`.
 - `data/seed/`: Initial database records stored in standard `sf data tree` JSON format.
 - `docs/`: System documentation sub-divided into `architecture/` (ADRs), `specs/` (features), `runbooks/` (ops workflows), and `backlog.md` (living work sessions decision log).
@@ -39,7 +40,7 @@ GTM Offerings is a Salesforce Lightning/Apex application built to simplify, stan
 
 ### Layout Constraints
 
-- **YAML Is Truth:** Always author instrument changes in the `migration-accelerator/` YAML directories.
+- **YAML Is Truth:** Always author instrument changes in the `instrument/<offering-key>/` YAML directories. Capability manifests live separately under `reference/ma-migrator-capabilities/` and are not offering data.
 - **Do Not Hand-Edit Metadata:** Never manually edit the generated `force-app/main/default/customMetadata/GTM_Assessment_*` XML files. They are auto-compiled, validated, and stamped via `scripts/build-instrument.py`.
 - _Exception:_ The 14 core hand-authored `GTM_Assessment_Question.*` metadata records are read-only for the build script and can be safely modified.
 
