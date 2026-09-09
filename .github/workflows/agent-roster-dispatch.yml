@@ -19,6 +19,24 @@ name: Agent Roster Dispatch
 #      from merging the opened PR into `main` without review -- that still
 #      depends on who has push access to this repo being trusted to review
 #      before merging, same as any other PR today.
+#   4. NOT ACTIVE, despite appearances: the `agent-core` Environment below
+#      holds ANTHROPIC_API_KEY as an environment secret, but its intended
+#      required-reviewer approval pause could NOT be configured --
+#      confirmed via the GitHub API (422: "Please ensure the billing plan
+#      supports the required reviewers protection rule"). Same story as
+#      classic branch protection on `main`: unavailable on this plan for a
+#      private repo. So there is currently NO pause between "agent-ready"
+#      label applied and the job running to completion.
+#
+#      Accepted risk (deliberate call, not an oversight): guardrail #1 (a
+#      human must apply the label) is the only enforced gate today.
+#      Everything past that runs fully unattended to a PR. Mitigate by
+#      treating every PR this workflow opens as requiring the same review
+#      a human contributor's PR would get -- nothing here should ever be
+#      merged on the assumption that an approval gate already vetted it.
+#      Revisit guardrail #3 if the GitHub plan is ever upgraded (Team org /
+#      Pro repo owner unlocks both branch protection and environment
+#      required-reviewers).
 
 on:
   issues:

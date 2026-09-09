@@ -59,14 +59,19 @@ cmd_create() {
     echo "linked $REPO_ROOT/.env -> $dir/.env"
   fi
 
-  cat > "$dir/CLAUDE.md" <<EOF
-# CLAUDE.md — agent worktree constraint (issue-$id)
+  # Deliberately NOT named CLAUDE.md: this worktree is a full checkout of
+  # $BASE_BRANCH and already has the real, tracked CLAUDE.md in it. Writing
+  # to that filename here would clobber it (found by the roster's own QA
+  # step during the issue-13 test run -- see git log for the incident).
+  cat > "$dir/WORKTREE_SCOPE.md" <<EOF
+# WORKTREE_SCOPE.md — agent worktree constraint (issue-$id)
 
 This worktree is scoped to issue **$id** only. Before writing any code:
 
-- Read \`TASK_SCOPE.md\` at this worktree's root (written by the BA agent) —
-  it is the boundary of what this issue covers. Work outside that scope
-  belongs to a different issue/worktree, not this one.
+- Read \`TASK_SCOPE.md\` at this worktree's root (copied in below from the
+  BA agent's version, not the branch's stale one) — it is the boundary of
+  what this issue covers. Work outside that scope belongs to a different
+  issue/worktree, not this one.
 - Follow the main repo's \`CLAUDE.md\` and \`AGENTS.md\` (§2) for working
   rules, GUS's tool-surface contract, and the roster hand-off protocol —
   this file only adds the scope constraint above, it doesn't replace those.
@@ -74,8 +79,21 @@ This worktree is scoped to issue **$id** only. Before writing any code:
   \`$REPO_ROOT/scripts/agent-workspace.sh complete $id\`
 EOF
 
+  # TASK_SCOPE.md lives at the repo root and is NOT carried into a new
+  # worktree by `git worktree add` unless it was already committed on
+  # $BASE_BRANCH -- a worktree branches from the committed tree, not from
+  # whatever the BA agent just wrote uncommitted in this checkout. Copy the
+  # live version in explicitly rather than relying on the Architect step to
+  # remember to (found missing in the issue-13 test run).
+  if [[ -f "$REPO_ROOT/TASK_SCOPE.md" ]]; then
+    cp "$REPO_ROOT/TASK_SCOPE.md" "$dir/TASK_SCOPE.md"
+    echo "copied current TASK_SCOPE.md into $dir"
+  else
+    echo "warning: no TASK_SCOPE.md at $REPO_ROOT -- BA step must write one before this worktree is used" >&2
+  fi
+
   echo "worktree ready: $dir (branch: $branch)"
-  echo "next: BA agent writes $dir/TASK_SCOPE.md, Developer agent works in $dir"
+  echo "next: Developer agent works in $dir"
 }
 
 cmd_complete() {
