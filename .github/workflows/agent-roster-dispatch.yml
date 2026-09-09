@@ -9,10 +9,16 @@ name: Agent Roster Dispatch
 #   1. Label-gated trigger (this file) -- a human must opt an issue in.
 #   2. PR-only permissions (below) -- this workflow's GITHUB_TOKEN can open
 #      a PR but has no path to merging it.
-#   3. Branch protection on `main` in the GitHub repo settings (Settings ->
-#      Branches) is REQUIRED alongside this file and is NOT something a
-#      workflow YAML can enforce -- set it up separately, with required
-#      review before merge, before relying on guardrail 2 alone.
+#   3. The `agent-core` Environment (below), with a required human
+#      reviewer, gates the job itself -- it must not start, and therefore
+#      cannot touch ANTHROPIC_API_KEY (now an environment secret, not a
+#      repo secret), until that reviewer approves it in the Actions UI.
+#      NOTE what this does NOT cover: GitHub Free doesn't support classic
+#      branch protection on private repos, and an Environment gates job
+#      *start*, not PR *merge*. Nothing here stops someone with push access
+#      from merging the opened PR into `main` without review -- that still
+#      depends on who has push access to this repo being trusted to review
+#      before merging, same as any other PR today.
 
 on:
   issues:
@@ -22,11 +28,13 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write
 
 jobs:
   run-roster:
     if: github.event.label.name == 'agent-ready'
     runs-on: ubuntu-latest
+    environment: agent-core
     steps:
       - uses: actions/checkout@v4
         with:
