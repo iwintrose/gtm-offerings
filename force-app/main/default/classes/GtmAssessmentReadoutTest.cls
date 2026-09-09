@@ -129,10 +129,10 @@ private class GtmAssessmentReadoutTest {
     @IsTest
     static void aFastTrackScoreCanCarryAGateQualifierWithoutLosingTheTier() {
         seed('sfmc_next', new List<GTM_Assessment_Gate__mdt>{ foundationGate() }, mcnSupplements());
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
 
         // 8 x 4 = 32 -- the top of the range.
-        GtmAssessmentScoring.Score score = GtmAssessmentScoring.score(fullAnswers(4), pack);
+        GtmAssessmentScoring.Score score = GtmAssessmentScoring.score('migration-accelerator', fullAnswers(4), pack);
         System.assertEquals(GtmAssessmentScoring.TIER_FAST_TRACK, score.tier);
 
         GtmAssessmentReadout.Readout out = GtmAssessmentReadout.compose(
@@ -152,8 +152,8 @@ private class GtmAssessmentReadoutTest {
     @IsTest
     static void aGateStaysSilentWhenNobodyAnsweredTheQuestionItKeysOn() {
         seed('sfmc_next', new List<GTM_Assessment_Gate__mdt>{ foundationGate() }, mcnSupplements());
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
-        GtmAssessmentScoring.Score score = GtmAssessmentScoring.score(fullAnswers(4), pack);
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
+        GtmAssessmentScoring.Score score = GtmAssessmentScoring.score('migration-accelerator', fullAnswers(4), pack);
 
         GtmAssessmentReadout.Readout out =
             GtmAssessmentReadout.compose(score, pack, new Map<String, Integer>());
@@ -168,9 +168,9 @@ private class GtmAssessmentReadoutTest {
     static void aGateDoesNotFireForADifferentTarget() {
         seed('other_target', new List<GTM_Assessment_Gate__mdt>{ foundationGate() },
              new List<GTM_Assessment_Supplement__mdt>());
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'other_target');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'other_target');
         GtmAssessmentReadout.Readout out = GtmAssessmentReadout.compose(
-            GtmAssessmentScoring.score(fullAnswers(3), pack), pack,
+            GtmAssessmentScoring.score('migration-accelerator', fullAnswers(3), pack), pack,
             new Map<String, Integer>{ 'data_cloud_state' => 1 }
         );
         System.assertEquals(0, out.gates.size(),
@@ -182,12 +182,12 @@ private class GtmAssessmentReadoutTest {
         seed('sfmc_next',
              new List<GTM_Assessment_Gate__mdt>{ foundationGate(), consentGate() },
              mcnSupplements());
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
         Map<String, Integer> answers = fullAnswers(3);
         answers.put('consent_portability', 2);
 
         GtmAssessmentReadout.Readout out = GtmAssessmentReadout.compose(
-            GtmAssessmentScoring.score(answers, pack), pack,
+            GtmAssessmentScoring.score('migration-accelerator', answers, pack), pack,
             new Map<String, Integer>{ 'data_cloud_state' => 1 }
         );
         System.assertEquals(2, out.gates.size());
@@ -200,10 +200,10 @@ private class GtmAssessmentReadoutTest {
         GTM_Assessment_Gate__mdt broken = foundationGate();
         broken.Predicate_JSON__c = '{ this is not json';
         seed('sfmc_next', new List<GTM_Assessment_Gate__mdt>{ broken }, mcnSupplements());
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
 
         GtmAssessmentReadout.Readout out = GtmAssessmentReadout.compose(
-            GtmAssessmentScoring.score(fullAnswers(4), pack), pack,
+            GtmAssessmentScoring.score('migration-accelerator', fullAnswers(4), pack), pack,
             new Map<String, Integer>{ 'data_cloud_state' => 1 }
         );
         System.assertEquals(0, out.gates.size(),
@@ -215,8 +215,8 @@ private class GtmAssessmentReadoutTest {
     @IsTest
     static void supplementScoresIntoItsOwnIndexAndNeverTheReadinessTotal() {
         seed('sfmc_next', new List<GTM_Assessment_Gate__mdt>(), mcnSupplements());
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
-        GtmAssessmentScoring.Score score = GtmAssessmentScoring.score(fullAnswers(2), pack);
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
+        GtmAssessmentScoring.Score score = GtmAssessmentScoring.score('migration-accelerator', fullAnswers(2), pack);
         System.assertEquals(16, score.total, '8 x 2');
 
         GtmAssessmentReadout.Readout out = GtmAssessmentReadout.compose(
@@ -242,7 +242,7 @@ private class GtmAssessmentReadoutTest {
     @IsTest
     static void anOutOfRangeSupplementAnswerIsDroppedNotClamped() {
         seed('sfmc_next', new List<GTM_Assessment_Gate__mdt>(), mcnSupplements());
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
 
         GtmAssessmentReadout.SupplementResult supp = GtmAssessmentReadout.scoreSupplements(
             pack,
@@ -267,10 +267,10 @@ private class GtmAssessmentReadoutTest {
             }
         }
         GtmAssessmentInstrument.resetCache();
-        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('hubspot', 'sfmc_next');
+        GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolve('migration-accelerator', 'hubspot', 'sfmc_next');
 
         GtmAssessmentReadout.Readout out = GtmAssessmentReadout.compose(
-            GtmAssessmentScoring.score(fullAnswers(3), pack), pack, null
+            GtmAssessmentScoring.score('migration-accelerator', fullAnswers(3), pack), pack, null
         );
         System.assertEquals('nothing is instrumented on either end', out.postureStatement);
         System.assertEquals(true, out.estateFiguresIllustrative);
@@ -284,7 +284,7 @@ private class GtmAssessmentReadoutTest {
     static void composeWithANullPackFallsBackToBaseRatherThanThrowing() {
         seed('sfmc_next', new List<GTM_Assessment_Gate__mdt>(), mcnSupplements());
         GtmAssessmentReadout.Readout out = GtmAssessmentReadout.compose(
-            GtmAssessmentScoring.score(fullAnswers(4)), null, null
+            GtmAssessmentScoring.score('migration-accelerator', fullAnswers(4)), null, null
         );
         System.assertEquals(8, out.perDimension.size());
         System.assertEquals(GtmAssessmentScoring.TIER_FAST_TRACK, out.tier);

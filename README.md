@@ -22,14 +22,6 @@ or export.
 - **[`docs/architecture/overview.md`](./docs/architecture/overview.md)** —
   the system's container diagram and the readout's status lifecycle.
 
-## Legacy prototype
-
-`index.html` and `migration-accelerator/*.html` at the repo root are a
-pre-Salesforce static-HTML prototype of the offering story/configurator
-flow. They aren't deployed anywhere in the current app; the SFDX app under
-`force-app/` is what actually runs. They're left in place for now — whether
-to remove them is an open call, not decided here.
-
 ## Maintainers
 
 See [`MAINTAINERS.md`](./MAINTAINERS.md).

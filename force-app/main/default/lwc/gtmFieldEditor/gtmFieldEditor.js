@@ -3,7 +3,7 @@ import createField from '@salesforce/apex/GtmPageSectionController.createField';
 import deleteField from '@salesforce/apex/GtmPageSectionController.deleteField';
 import restoreField from '@salesforce/apex/GtmPageSectionController.restoreField';
 import saveFieldOrder from '@salesforce/apex/GtmPageSectionController.saveFieldOrder';
-import { fieldsFor, humaniseFieldKey, CTA_ICONS, AGENT_TONE_OPTIONS } from 'c/gtmPageLayouts';
+import { fieldsFor, humaniseFieldKey, CTA_ICONS, AGENT_TONE_OPTIONS, LOCKED_JSON_ITEMS } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
 // GtmPageContentController.resolveValue.
@@ -130,6 +130,11 @@ export default class GtmFieldEditor extends LightningElement {
                     statusClass: r.isDraft ? 'fld-status fld-status--draft' : 'fld-status',
                     statusLabel: r.isDraft ? 'Draft' : ''
                 };
+                // Renaming/reordering/deleting an existing item is always
+                // allowed; only the "+ Add item" affordance is gated. faq::items
+                // is the first field here -- see LOCKED_JSON_ITEMS' own comment.
+                base.itemsLocked = base.isJson
+                    && LOCKED_JSON_ITEMS.has(`${this.layoutType}::${r.fieldKey}`);
                 if (base.isJson) base.items = this.buildItems(r.id, value);
                 if (base.isIconText) base.button = this.buildButton(value);
                 if (base.isEnum) base.options = ENUM_OPTIONS[r.fieldKey] || [];

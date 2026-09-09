@@ -316,4 +316,51 @@ private class GtmReadoutModelTest {
             );
         }
     }
+
+    // -------------------------------------------------- offering scoping
+    //
+    // ADR-0007 section 3. The regression guard on Phase 3's backfill
+    // assumption: a request row that predates Offering_Key__c must still
+    // render, via the migration-accelerator fallback, rather than erroring or
+    // resolving against a blank pack.
+
+    @IsTest
+    static void aRequestWithNoOfferingKeyStillRendersViaTheFallback() {
+        GTM_Assessment_Request__c req = request();
+        req.Offering_Key__c   = null;
+        req.Instrument_Pair__c = 'base';
+
+        Map<String, Object> snap = snapshot(req);
+
+        System.assertNotEquals(null, snap, 'A pre-backfill row still renders');
+        System.assertEquals(19, ((Map<String, Object>) snap.get('readiness')).get('score'),
+            'and its stored score is untouched by the fallback');
+    }
+
+    @IsTest
+    static void aRequestsStoredOfferingKeyIsWhatResolvesItsPack() {
+        // The pack is re-resolved against the offering the request was SCORED
+        // against, so reopening it walks that offering's own pair table rather
+        // than whichever offering happens to be current.
+        GTM_Assessment_Request__c ma = request();
+        ma.Offering_Key__c    = 'migration-accelerator';
+        ma.Instrument_Pair__c = 'base';
+
+        GTM_Assessment_Request__c other = request();
+        other.Offering_Key__c    = 'an-offering-that-does-not-exist';
+        other.Instrument_Pair__c = 'base';
+
+        // Both render; neither throws. What differs is which offering's pair
+        // table was walked -- the other offering owns no pairs, so it resolves
+        // nothing rather than inheriting Migration Accelerator's `base`.
+        System.assertNotEquals(null, GtmReadoutModel.buildJson(ma));
+        System.assertNotEquals(null, GtmReadoutModel.buildJson(other));
+
+        GtmAssessmentInstrument.resetCache();
+        GtmAssessmentInstrument.Pack leaked = GtmAssessmentInstrument.resolveByPairKey(
+            'an-offering-that-does-not-exist', 'base'
+        );
+        System.assertEquals(0, leaked.slots.size(),
+            'LEAK: another offering resolved Migration Accelerator\'s base pair');
+    }
 }

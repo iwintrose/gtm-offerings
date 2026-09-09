@@ -4,6 +4,10 @@
     <label>mcn_readiness_shared_audience_def_e5a378</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Set_Key__c</field>
         <value xsi:type="xsd:string">mcn_readiness</value>
     </values>

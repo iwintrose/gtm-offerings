@@ -3,7 +3,12 @@ import GtmInstrumentAuthor from 'c/gtmInstrumentAuthor';
 import getPlatforms from '@salesforce/apex/GtmAssessmentInstrument.getPlatforms';
 import getPack from '@salesforce/apex/GtmAssessmentInstrument.getPack';
 import getFrame from '@salesforce/apex/GtmAssessmentInstrument.getFrame';
+import getOfferings from '@salesforce/apex/GtmPageContentController.getOfferings';
 
+jest.mock(
+    '@salesforce/apex/GtmPageContentController.getOfferings',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
 jest.mock(
     '@salesforce/apex/GtmAssessmentInstrument.getPlatforms',
     () => ({ default: jest.fn() }), { virtual: true }
@@ -91,6 +96,11 @@ function pack() {
 async function mount() {
     const el = createElement('c-gtm-instrument-author', { is: GtmInstrumentAuthor });
     document.body.appendChild(el);
+    // connectedCallback now awaits getOfferings, then getPlatforms, then the
+    // per-offering frame and pack -- a longer promise chain than before the
+    // offering selector existed, so it needs more microtask turns to settle.
+    await flush();
+    await flush();
     await flush();
     await flush();
     return el;
@@ -106,6 +116,9 @@ function selectSlot(el, key) {
 describe('c-gtm-instrument-author', () => {
     beforeEach(() => {
         getPlatforms.mockResolvedValue([{ key: 'sfmc', label: 'SFMC' }]);
+        getOfferings.mockResolvedValue([
+            { offeringKey: 'migration-accelerator', label: 'Migration Accelerator' }
+        ]);
         getFrame.mockResolvedValue(FRAME);
         getPack.mockResolvedValue(pack());
     });
@@ -113,6 +126,7 @@ describe('c-gtm-instrument-author', () => {
     afterEach(() => {
         while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
         jest.clearAllMocks();
+        window.localStorage.clear();
     });
 
     it('lists all eight slots and marks the pinned ones', async () => {
@@ -234,5 +248,114 @@ describe('c-gtm-instrument-author', () => {
         expect(rows.length).toBe(8);
         expect(rows[6]).toContain('consent_owned_elsewhere');
         expect(rows[6]).toContain('consent_ownership_outside_platform');
+    });
+
+    it('shows the orientation panel expanded on first visit, and it persists dismissal via localStorage', async () => {
+        const el = await mount();
+        expect(one(el, '.ia-orient')).not.toBeNull();
+        expect(one(el, '.ia-orient-reopen')).toBeNull();
+        expect(one(el, '.ia-orient').textContent).toContain('What this is');
+        // The reachability caveat ("the live GTM1 site's booking form does not
+        // yet ask these questions, so editing a pack here does not change what
+        // a real prospect sees today") is deliberately GONE as of ADR-0008 /
+        // backlog D11: the live /configurator route now hosts the real
+        // questionnaire, so a pack edited here DOES change what a real prospect
+        // is asked. Asserted as an absence so the banner cannot come back
+        // untruthfully by accident.
+        expect(one(el, '.ia-orient').textContent).not.toContain('down for');
+        expect(one(el, '.ia-orient').textContent).not.toContain('Heads up');
+        expect(one(el, '.ia-orient-warn')).toBeNull();
+
+        one(el, '.ia-orient-dismiss').click();
+        await flush();
+        expect(one(el, '.ia-orient')).toBeNull();
+        expect(one(el, '.ia-orient-reopen')).not.toBeNull();
+        expect(window.localStorage.getItem('gtmInstrumentAuthor.orientationCollapsed')).toBe('1');
+
+        // Reload picks up the persisted dismissal.
+        document.body.removeChild(el);
+        const el2 = await mount();
+        expect(one(el2, '.ia-orient')).toBeNull();
+        expect(one(el2, '.ia-orient-reopen').textContent).toContain('Any source → Any target');
+    });
+
+    it('surfaces the resolution chain and note the pack response already carries', async () => {
+        getPack.mockResolvedValue({ ...pack(), resolutionChain: ['base', 'sfmc__mcn'], resolutionNote: null });
+        const el = await mount();
+        expect(one(el, '.ia-chain').textContent).toContain('base → sfmc__mcn');
+    });
+
+    it('shows the undecided-target note when the server returns one and no chain to render', async () => {
+        getPack.mockResolvedValue({ ...pack(), resolutionChain: [], resolutionNote: 'Target platform not yet chosen.' });
+        const el = await mount();
+        expect(one(el, '.ia-chain')).not.toBeNull();
+        expect(one(el, '.ia-chain--note').textContent).toBe('Target platform not yet chosen.');
+    });
+});
+
+describe('c-gtm-instrument-author offering selection', () => {
+    beforeEach(() => {
+        getPlatforms.mockResolvedValue([{ key: 'sfmc', label: 'SFMC' }]);
+        getFrame.mockResolvedValue(FRAME);
+        getPack.mockResolvedValue(pack());
+    });
+
+    afterEach(() => {
+        while (document.body.firstChild) document.body.removeChild(document.body.firstChild);
+        jest.clearAllMocks();
+        window.localStorage.clear();
+    });
+
+    it('keys the frame and pack on the chosen offering, not on a hardcoded default', async () => {
+        getOfferings.mockResolvedValue([
+            { offeringKey: 'migration-accelerator', label: 'Migration Accelerator' }
+        ]);
+        await mount();
+        expect(getFrame).toHaveBeenCalledWith({ offeringKey: 'migration-accelerator' });
+        expect(getPack).toHaveBeenCalledWith({
+            offeringKey: 'migration-accelerator',
+            sourceName: '',
+            targetName: ''
+        });
+    });
+
+    it('drops the framework pseudo-offering, which owns page content and not an instrument', async () => {
+        getOfferings.mockResolvedValue([
+            { offeringKey: 'gtm', label: 'Framework' },
+            { offeringKey: 'migration-accelerator', label: 'Migration Accelerator' }
+        ]);
+        const el = await mount();
+        // Two rows in, one instrument-bearing offering out -- so it presets to
+        // that one and the picker stays hidden, exactly as for a single row.
+        const picker = el.shadowRoot.querySelector('lightning-combobox');
+        expect(picker).toBeNull();
+        expect(getFrame).toHaveBeenCalledWith({ offeringKey: 'migration-accelerator' });
+    });
+
+    it('shows a picker for 2+ offerings and re-resolves both frame and pack on switch', async () => {
+        getOfferings.mockResolvedValue([
+            { offeringKey: 'migration-accelerator', label: 'Migration Accelerator' },
+            { offeringKey: 'second-offering', label: 'Second Offering' }
+        ]);
+        const el = await mount();
+        const picker = el.shadowRoot.querySelector('lightning-combobox');
+        expect(picker).not.toBeNull();
+        // Neither is preset with two to choose from, so nothing is resolved yet:
+        // showing one offering's instrument before the author picked would be a
+        // guess, and guessing wrong is the leak this screen now prevents.
+        expect(getFrame).not.toHaveBeenCalled();
+        expect(getPack).not.toHaveBeenCalled();
+
+        picker.dispatchEvent(
+            new CustomEvent('change', { detail: { value: 'second-offering' } })
+        );
+        await flush();
+        await flush();
+        expect(getFrame).toHaveBeenCalledWith({ offeringKey: 'second-offering' });
+        expect(getPack).toHaveBeenCalledWith({
+            offeringKey: 'second-offering',
+            sourceName: '',
+            targetName: ''
+        });
     });
 });

@@ -46,7 +46,15 @@
     border-radius: var(--gtm-radius); padding: 0.1rem 0.4rem;
 }
 .gcm-save { font-size: 11.5px; color: #2e844a; margin-left: 0.25rem; }
-.gcm-bar-right { margin-left: auto; display: flex; gap: 0.4rem; }
+/* flex-wrap so a narrow window drops the right-hand cluster to its own row
+   instead of every flex child shrinking below its content's natural width --
+   that's what was making "Save & exit" wrap mid-word inside a squeezed button. */
+.gcm-bar { flex-wrap: wrap; row-gap: 0.4rem; }
+.gcm-bar-right { margin-left: auto; display: flex; gap: 0.4rem; flex-shrink: 0; flex-wrap: nowrap; }
+.gcm-bar-right lightning-button-group,
+.gcm-bar-right .slds-button {
+    white-space: nowrap;
+}
 
 /* ── error ───────────────────────────────────────────────────────────────── */
 .gcm-error {
@@ -56,6 +64,20 @@
     background: #fef5ec; font-size: 12.5px;
 }
 .gcm-error-x {
+    margin-left: auto; border: 0; background: none; cursor: pointer;
+    font-size: 16px; line-height: 1; color: var(--gtm-text-muted); padding: 0 0.2rem;
+}
+
+/* ── new-offering orientation hint ──────────────────────────────────────── */
+/* Same box model as .gcm-error, success colour instead of warning so this
+   reads as good news, not a problem. */
+.gcm-new-hint {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin: 0.5rem 0.75rem 0; padding: 0.5rem 0.7rem;
+    border: 1px solid #2e844a; border-left-width: 3px; border-radius: var(--gtm-radius);
+    background: #eaf6ee; font-size: 12.5px;
+}
+.gcm-new-hint-x {
     margin-left: auto; border: 0; background: none; cursor: pointer;
     font-size: 16px; line-height: 1; color: var(--gtm-text-muted); padding: 0 0.2rem;
 }
@@ -217,6 +239,18 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 12px; color: #444;
 }
+
+/* The customizer-settings toolbar affordance and its rail-side panel — a
+   distinct surface, not another row of the ordinary Sections list. */
+.gcm-settings-btn {
+    display: inline-flex; align-items: center; gap: .3rem;
+    margin-left: .3rem; border: 1px solid #c9c9c9; border-radius: var(--gtm-radius);
+    background: var(--gtm-bg-surface); padding: .2rem .55rem;
+}
+.gcm-settings-btn:hover { border-color: #0176d3; text-decoration: none; }
+.gcm-settings-note { padding: .7rem; }
+.gcm-settings-note-h { margin: 0 0 .3rem; font-size: 12.5px; font-weight: 700; color: #444; }
+.gcm-settings-back { padding: 0; }
 
 .gcm-pages { padding: 1.5rem; overflow-y: auto; }
 .gcm-pages-h { margin: 0 0 .9rem; font-size: 15px; font-weight: 700; }

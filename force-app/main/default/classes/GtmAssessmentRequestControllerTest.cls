@@ -1123,7 +1123,7 @@ private class GtmAssessmentRequestControllerTest {
     @isTest
     static void submittingClosesTheLinkedDraftByAppendingNotUpdating() {
         GtmAssessmentDraftController.DraftHandle draft =
-            GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc');
+            GtmAssessmentDraftController.saveDraft(null, '{"q1":"a"}', 'hubspot__sfmc', null, null);
         Integer rowsBeforeSubmit = [
             SELECT COUNT() FROM GTM_Form_Draft__c WHERE Resume_Token__c = :draft.resumeToken
         ];
@@ -1174,5 +1174,428 @@ private class GtmAssessmentRequestControllerTest {
         // No assertion needed beyond success -- closeDraft's own blank-token
         // guard means this path issues no GTM_Form_Draft__c query or DML at
         // all, and a stray exception there would have surfaced as a failure.
+    }
+
+    // ----------------------------------------------------- offering scoping
+    //
+    // ADR-0007 section 3: the offering key is resolved server-side, once, and
+    // stamped on the request at insert. Never client-supplied.
+
+    private static GTM_Saved_Configuration__c linkFor(String offeringKey) {
+        Account acc = new Account(Name = 'Northwind Retail');
+        insert acc;
+        GTM_Saved_Configuration__c cfg = new GTM_Saved_Configuration__c(
+            Offering__c      = offeringKey,
+            Company__c       = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Account__c       = acc.Id,
+            OwnerId          = UserInfo.getUserId()
+        );
+        insert cfg;
+        return cfg;
+    }
+
+    @isTest
+    static void aDirectBookingWithNoLinkIsStampedMigrationAccelerator() {
+        // The fallback: migration-accelerator is the only offering that has
+        // ever been assessed, so it is the honest answer rather than a guess.
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        Test.startTest();
+        GtmAssessmentRequestController.submitRequest(sampleInput());
+        Test.stopTest();
+
+        List<GTM_Assessment_Request__c> reqs = [
+            SELECT Offering_Key__c, Source__c FROM GTM_Assessment_Request__c
+        ];
+        Assert.areEqual(1, reqs.size());
+        Assert.areEqual('migration-accelerator', reqs[0].Offering_Key__c);
+    }
+
+    @isTest
+    static void theLinksOwnOfferingIsWhatGetsStamped() {
+        // The whole point: a request booked against a second offering's
+        // engagement link is that offering's, not Migration Accelerator's.
+        GTM_Saved_Configuration__c cfg = linkFor('second-offering');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = cfg.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        List<GTM_Assessment_Request__c> reqs = [
+            SELECT Offering_Key__c FROM GTM_Assessment_Request__c
+        ];
+        Assert.areEqual(1, reqs.size());
+        Assert.areEqual('second-offering', reqs[0].Offering_Key__c,
+            'The engagement link\'s own offering decides which instrument scored this');
+    }
+
+    @isTest
+    static void aNonMigrationOfferingIsNeverPairGated() {
+        // ADR-0007 section 5: "can the accelerator process this platform move"
+        // is a migration business rule. An offering that is not a migration
+        // gets the inert, never-evaluated verdict, so no tier is ever
+        // suppressed on it by a gate that does not apply.
+        GTM_Saved_Configuration__c cfg = linkFor('second-offering');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = cfg.Id;
+        // A source/target combination Migration Accelerator would refuse.
+        input.currentPlatform = 'Some Platform The Accelerator Cannot Process';
+        input.targetPlatform  = 'Another One';
+
+        Test.startTest();
+        GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        List<GTM_Assessment_Request__c> reqs = [
+            SELECT Assessment_Advisory__c, Advisory_Reason__c
+            FROM GTM_Assessment_Request__c
+        ];
+        Assert.areEqual(1, reqs.size());
+        Assert.isFalse(reqs[0].Assessment_Advisory__c,
+            'The migration pair gate must not fire for a non-migration offering');
+        Assert.isNull(reqs[0].Advisory_Reason__c);
+    }
+
+    // ------------------------------------------------- Source__c resolution
+    //
+    // QA round 1, Finding 1: sourceLabelFor() resolved ONLY GTM_Offering__mdt,
+    // so the two offerings that actually exist in gtm-dev -- both of which have
+    // page content but no custom metadata row yet -- were stamped 'Migration
+    // Accelerator'. sourceLabelFor is private, so each tier is driven through
+    // the real submitRequest path and asserted on the persisted field, which is
+    // also what proves the tier is reachable from a guest submission at all.
+
+    private static GTM_Page_Content__c listingName(String offeringKey, String name) {
+        return new GTM_Page_Content__c(
+            Offering_Key__c  = offeringKey,
+            Template_Type__c = 'offerings-listing',
+            Section_Key__c   = 'card',
+            Field_Key__c     = 'name',
+            Field_Type__c    = 'text',
+            Text_Value__c    = name,
+            Active__c        = true
+        );
+    }
+
+    private static GTM_Page_Section__c anySection(String offeringKey) {
+        return new GTM_Page_Section__c(
+            Section_Address__c = offeringKey + '::story::hero',
+            Offering_Key__c    = offeringKey,
+            Template_Type__c   = 'story',
+            Section_Key__c     = 'hero',
+            Label__c           = 'Hero',
+            Layout_Type__c     = 'hero',
+            Width__c           = 'standard',
+            Sort_Order__c      = 10,
+            Active__c          = true
+        );
+    }
+
+    private static String submittedSourceFor(String offeringKey) {
+        GTM_Saved_Configuration__c cfg = linkFor(offeringKey);
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = cfg.Id;
+
+        GtmAssessmentRequestController.submitRequest(input);
+
+        List<GTM_Assessment_Request__c> reqs = [
+            SELECT Offering_Key__c, Source__c FROM GTM_Assessment_Request__c
+        ];
+        Assert.areEqual(1, reqs.size());
+        Assert.areEqual(offeringKey, reqs[0].Offering_Key__c);
+        return reqs[0].Source__c;
+    }
+
+    @isTest
+    static void tierOneMigrationAcceleratorKeepsTheExactLegacyLiteral() {
+        // The no-regression half: GTM_Offering__mdt carries this offering, and
+        // its Label__c is byte-identical to the constant the field used to be
+        // hardcoded to, so no existing row's value changes.
+        Test.startTest();
+        String source = submittedSourceFor('migration-accelerator');
+        Test.stopTest();
+
+        Assert.areEqual('Migration Accelerator', source);
+    }
+
+    @isTest
+    static void tierTwoAnOfferingWithOnlyPageContentGetsItsOwnAuthoredName() {
+        // The live case: my-test-offering and data-cloud-accelorator are both
+        // in exactly this state in gtm-dev today -- a name on their own
+        // offerings-listing tile, no custom metadata row.
+        insert listingName('page-only-offering', 'Page Only Offering');
+
+        Test.startTest();
+        String source = submittedSourceFor('page-only-offering');
+        Test.stopTest();
+
+        Assert.areEqual('Page Only Offering', source,
+            'The name on an offering\'s own listing tile is the name its requests carry');
+        Assert.areNotEqual('Migration Accelerator', source);
+    }
+
+    @isTest
+    static void tierThreeARealButUnnamedOfferingGetsItsKeyNotAnotherOfferingsName() {
+        // Sections but no authored name anywhere. Showing the raw key is the
+        // same fallback getOfferings()/getHomeSummary() use, and it is honest;
+        // showing 'Migration Accelerator' would not be.
+        insert anySection('unnamed-offering');
+
+        Test.startTest();
+        String source = submittedSourceFor('unnamed-offering');
+        Test.stopTest();
+
+        Assert.areEqual('unnamed-offering', source);
+        Assert.areNotEqual('Migration Accelerator', source);
+    }
+
+    @isTest
+    static void tierFourAGenuinelyUnknownOfferingStillFallsBackToTheLegacyLiteral() {
+        // Nothing in any of the three tables. There is no truthful name to
+        // give, so the historical literal stands -- the documented limit of
+        // this resolution, asserted so a future change to it is deliberate.
+        Test.startTest();
+        String source = submittedSourceFor('no-such-offering-anywhere');
+        Test.stopTest();
+
+        Assert.areEqual('Migration Accelerator', source);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ONE SUBMITTED ASSESSMENT PER ENGAGEMENT LINK (ADR-0008 section 4)
+    //
+    // Before this, nothing at any layer prevented N scored requests against one
+    // link: closeDraft's terminal row revokes a RESUME LINK (a different
+    // problem, intact, and not touched here), and the only live-path guard was
+    // sessionStorage in one tab. The invariant is a SERVER rule; the client is a
+    // courtesy.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** A link with everything a real engagement link carries. */
+    private static GTM_Saved_Configuration__c engagementLinkFor(String company) {
+        Account acc = new Account(Name = company);
+        insert acc;
+        GTM_Saved_Configuration__c link = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Industry__c = 'Financial Services',
+            Company__c = company,
+            Generated_URL__c = 'https://example.com/configurator?company=' + company,
+            Account__c = acc.Id,
+            OwnerId = UserInfo.getUserId()
+        );
+        insert link;
+        return link;
+    }
+
+    private static Integer requestCountFor(Id linkId) {
+        return [
+            SELECT COUNT()
+            FROM GTM_Assessment_Request__c
+            WHERE Saved_Configuration__c = :linkId
+        ];
+    }
+
+    @isTest
+    static void refusesASecondSubmissionAgainstTheSameLink() {
+        GTM_Saved_Configuration__c link = engagementLinkFor('Northlight Media Group');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        GtmAssessmentRequestController.RequestInput first = sampleInput();
+        first.savedRecordId = link.Id;
+        GtmAssessmentRequestController.submitRequest(first);
+        Assert.areEqual(1, requestCountFor(link.Id), 'The first submission should land');
+
+        GtmAssessmentRequestController.RequestInput second = sampleInput();
+        second.savedRecordId = link.Id;
+        second.email = 'someone.else@example.com';
+
+        Boolean threw = false;
+        Test.startTest();
+        try {
+            GtmAssessmentRequestController.submitRequest(second);
+        } catch (Exception e) {
+            threw = true;
+        }
+        Test.stopTest();
+
+        Assert.isTrue(threw, 'A second submission against the same link must be refused');
+        // The assertion that actually matters. A thrown exception that still
+        // wrote the row would be a guard in name only.
+        Assert.areEqual(
+            1,
+            requestCountFor(link.Id),
+            'The refused submission must not have inserted a second request'
+        );
+    }
+
+    @isTest
+    static void theFirstSubmissionAgainstALinkStillSucceeds() {
+        // The guard must add no regression to the path everyone actually takes.
+        GTM_Saved_Configuration__c link = engagementLinkFor('Ashford Capital Bank');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = link.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'The first submission should succeed unchanged');
+        Assert.isNotNull(result.assessmentRequestId);
+        Assert.areEqual(1, requestCountFor(link.Id));
+    }
+
+    @isTest
+    static void aSecondDirectBookingWithNoLinkStillSucceeds() {
+        // SCOPED TO LINKS ONLY. A direct booking has no link to be a duplicate
+        // against, and refusing these would silently close the one path that has
+        // no engagement link at all.
+        //
+        // Contact creation is switched OFF here deliberately. With it on, the
+        // second submission inserts a second Contact with the same name at the
+        // same resolved Account and the org's standard DUPLICATE RULE rejects it
+        // (CLAUDE.md section 5.2) -- which would make this test fail for a
+        // reason that has nothing to do with the guard it is named after. What
+        // is under test is that the resubmit guard does not fire without a link.
+        GtmAssessmentRequestController.configOverride = config(false, false, 'Task');
+
+        GtmAssessmentRequestController.submitRequest(sampleInput());
+
+        GtmAssessmentRequestController.RequestInput second = sampleInput();
+        second.name = 'Dana Okonkwo';
+        second.email = 'second.person@example.com';
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(second);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'A second link-less booking must still be accepted');
+        Assert.areEqual(
+            2,
+            [SELECT COUNT() FROM GTM_Assessment_Request__c WHERE Saved_Configuration__c = null],
+            'Both link-less requests should exist'
+        );
+    }
+
+    @isTest
+    static void aDifferentLinkOnTheSameAccountStillSucceeds() {
+        // The invariant is PER LINK, not per Account. A rep who sends a second
+        // engagement link to the same client must get a second assessment.
+        Account acc = new Account(Name = 'Solara Health Systems');
+        insert acc;
+        List<GTM_Saved_Configuration__c> links = new List<GTM_Saved_Configuration__c>{
+            new GTM_Saved_Configuration__c(
+                Offering__c = 'migration-accelerator', Company__c = 'Solara Health Systems',
+                Generated_URL__c = 'https://example.com/a', Account__c = acc.Id,
+                OwnerId = UserInfo.getUserId()
+            ),
+            new GTM_Saved_Configuration__c(
+                Offering__c = 'migration-accelerator', Company__c = 'Solara Health Systems',
+                Generated_URL__c = 'https://example.com/b', Account__c = acc.Id,
+                OwnerId = UserInfo.getUserId()
+            )
+        };
+        insert links;
+
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput first = sampleInput();
+        first.savedRecordId = links[0].Id;
+        GtmAssessmentRequestController.submitRequest(first);
+
+        GtmAssessmentRequestController.RequestInput second = sampleInput();
+        second.savedRecordId = links[1].Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(second);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'A different link on the same Account must still be accepted');
+        Assert.areEqual(1, requestCountFor(links[0].Id));
+        Assert.areEqual(1, requestCountFor(links[1].Id));
+    }
+
+    @isTest
+    static void theRefusedSubmissionWritesNothingAtAll() {
+        // Placed before any DML on purpose: a refused duplicate must not leave a
+        // Contact, an Opportunity or an activity behind it. The guard is not
+        // just "no second request", it is "no side effects".
+        GTM_Saved_Configuration__c link = engagementLinkFor('Harborline Transit Authority');
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+
+        GtmAssessmentRequestController.RequestInput first = sampleInput();
+        first.savedRecordId = link.Id;
+        GtmAssessmentRequestController.submitRequest(first);
+
+        Integer contactsBefore = [SELECT COUNT() FROM Contact];
+        Integer tasksBefore    = [SELECT COUNT() FROM Task];
+        Integer oppsBefore     = [SELECT COUNT() FROM Opportunity];
+
+        GtmAssessmentRequestController.RequestInput second = sampleInput();
+        second.savedRecordId = link.Id;
+        second.name  = 'Someone Entirely New';
+        second.email = 'someone.entirely.new@example.com';
+
+        Test.startTest();
+        try {
+            GtmAssessmentRequestController.submitRequest(second);
+            Assert.fail('The duplicate should have been refused');
+        } catch (Exception e) {
+            // expected
+        }
+        Test.stopTest();
+
+        Assert.areEqual(contactsBefore, [SELECT COUNT() FROM Contact],
+            'A refused duplicate must not create a Contact');
+        Assert.areEqual(tasksBefore, [SELECT COUNT() FROM Task],
+            'A refused duplicate must not log an activity');
+        Assert.areEqual(oppsBefore, [SELECT COUNT() FROM Opportunity],
+            'A refused duplicate must not create an Opportunity');
+    }
+
+    // ── the guest-safe durable status check (ADR-0008 section 4, phase 4.3) ──
+
+    @isTest
+    static void statusControllerReportsWhetherALinkHasBeenSubmitted() {
+        GTM_Saved_Configuration__c link = engagementLinkFor('Northlight Media Group');
+
+        Assert.isFalse(
+            GtmConfigurationStatusController.hasSubmittedAssessment(link.Id),
+            'A fresh link has no assessment against it'
+        );
+
+        GtmAssessmentRequestController.configOverride = config(false, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = link.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(
+            GtmConfigurationStatusController.hasSubmittedAssessment(link.Id),
+            'The same link now reports as submitted -- this is what lets a fresh '
+                + 'browser with no sessionStorage land in the submitted state'
+        );
+    }
+
+    @isTest
+    static void statusControllerFailsSafeOnABlankOrUnresolvableId() {
+        // Fails to FALSE, deliberately: the client fails open on an errored
+        // check (an unknown link must not lock a prospect out of a form they
+        // have not filled in), and the SERVER is the enforcement point either
+        // way, so a false here costs nothing.
+        Assert.isFalse(GtmConfigurationStatusController.hasSubmittedAssessment(null));
+        Assert.isFalse(GtmConfigurationStatusController.hasSubmittedAssessment(''));
+        Assert.isFalse(GtmConfigurationStatusController.hasSubmittedAssessment('not-an-id'));
     }
 }

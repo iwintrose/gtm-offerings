@@ -63,7 +63,7 @@ private class GtmAssessmentScoringTest {
 
     @isTest
     static void aPerfectQuestionnaireScoresThirtyTwoAndFastTracks() {
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4));
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4));
         Assert.areEqual(32, scored.total);
         Assert.areEqual(GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier);
         Assert.areEqual(8, scored.sectionScores.size());
@@ -73,7 +73,7 @@ private class GtmAssessmentScoringTest {
 
     @isTest
     static void aFloorQuestionnaireScoresEight() {
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(1));
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(1));
         Assert.areEqual(8, scored.total);
         Assert.areEqual(GtmAssessmentScoring.TIER_DISCOVERY_FIRST, scored.tier);
     }
@@ -129,7 +129,7 @@ private class GtmAssessmentScoringTest {
         // 4s everywhere except access. The total is 29 -- Fast-Track territory
         // -- and it must still come back Discovery First, because there is no
         // offering to run without an extract.
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             allAtExcept(4, new Map<String, Integer>{ 'source_access' => 1 })
         );
 
@@ -144,7 +144,7 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void theAccessGateFiresOnlyAtTheFloor() {
         for (Integer accessValue : new List<Integer>{ 2, 3, 4 }) {
-            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
                 allAtExcept(4, new Map<String, Integer>{ 'source_access' => accessValue })
             );
             Assert.isFalse(scored.cappedByAccessGate,
@@ -159,9 +159,9 @@ private class GtmAssessmentScoringTest {
         // not evidence that access is missing.
         Map<String, Integer> noAccessAnswer = allAt(4);
         noAccessAnswer.remove('source_access');
-        Assert.isFalse(GtmAssessmentScoring.score(noAccessAnswer).cappedByAccessGate);
+        Assert.isFalse(GtmAssessmentScoring.score('migration-accelerator', noAccessAnswer).cappedByAccessGate);
 
-        GtmAssessmentScoring.Score outOfRange = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score outOfRange = GtmAssessmentScoring.score('migration-accelerator', 
             allAtExcept(4, new Map<String, Integer>{ 'source_access' => 0 })
         );
         Assert.isFalse(outOfRange.cappedByAccessGate, 'A dropped 0 is not an answer of 1');
@@ -171,7 +171,7 @@ private class GtmAssessmentScoringTest {
 
     @isTest
     static void anUnsupportedPairSuppressesTheTierEntirely() {
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             allAt(4), unsupported('Adobe Campaign is not a source we can extract from.')
         );
 
@@ -185,7 +185,7 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void anUnsupportedPairBeatsTheAccessGateToo() {
         // Both overrides fire. Suppression wins: there is no band to cap.
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             allAtExcept(4, new Map<String, Integer>{ 'source_access' => 1 }),
             unsupported(null)
         );
@@ -199,7 +199,7 @@ private class GtmAssessmentScoringTest {
     static void anUnsupportedPairIsFlaggedEvenWhenNothingWasScored() {
         // Nothing to band, but a rep still has to be told not to scope it.
         GtmAssessmentScoring.Score scored =
-            GtmAssessmentScoring.score(new Map<String, Integer>(), unsupported('Nope.'));
+            GtmAssessmentScoring.score('migration-accelerator', new Map<String, Integer>(), unsupported('Nope.'));
         Assert.isFalse(scored.hasAnswers);
         Assert.isNull(scored.total);
         Assert.isTrue(scored.advisory);
@@ -213,7 +213,7 @@ private class GtmAssessmentScoringTest {
             new GtmAssessmentScoring.PairEligibility(),  // not evaluated
             supported()
         }) {
-            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4), pair);
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4), pair);
             Assert.isFalse(scored.advisory);
             Assert.areEqual(GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier);
             Assert.isNull(scored.advisoryReason);
@@ -226,7 +226,7 @@ private class GtmAssessmentScoringTest {
     static void bothPortabilityDimensionsAtTheFloorRaiseTheRebuildFlag() {
         // Deliberately at a HIGH total: the whole point of the annotation is
         // that it is true even when the headline number looks good.
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             allAtExcept(4, new Map<String, Integer>{
                 'orchestration_portability' => 1,
                 'content_portability'       => 1
@@ -245,7 +245,7 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void oneDimensionAtTheFloorIsNotEnoughToRaiseIt() {
         for (String only : new List<String>{ 'orchestration_portability', 'content_portability' }) {
-            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
                 allAtExcept(4, new Map<String, Integer>{ only => 1 })
             );
             Assert.areEqual(0, scored.annotations.size(), only + ' alone must not flag');
@@ -262,7 +262,7 @@ private class GtmAssessmentScoringTest {
         answers.put('another_one', 4);
         answers.put('estate_scale_bonus', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers);
 
         Assert.areEqual(8, scored.total, 'Only the eight real dimensions count');
         Assert.areEqual(8, scored.sectionScores.size());
@@ -283,7 +283,7 @@ private class GtmAssessmentScoringTest {
             'data_model_readiness'      => null
         };
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers);
 
         Assert.areEqual(4, scored.total, 'Only the one in-range answer scores');
         Assert.areEqual(1, scored.sectionScores.size());
@@ -292,7 +292,7 @@ private class GtmAssessmentScoringTest {
 
     @isTest
     static void aPartiallyAnsweredQuestionnaireScoresOnlyWhatWasAnswered() {
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             new Map<String, Integer>{ 'estate_scale' => 3, 'source_access' => 2 }
         );
         Assert.areEqual(5, scored.total);
@@ -310,7 +310,7 @@ private class GtmAssessmentScoringTest {
             new Map<String, Integer>(),
             new Map<String, Integer>{ 'not_a_dimension' => 4 }
         }) {
-            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(empty);
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', empty);
             Assert.isFalse(scored.hasAnswers);
             Assert.isNull(scored.total);
             Assert.isNull(scored.tier);
@@ -323,7 +323,7 @@ private class GtmAssessmentScoringTest {
     static void sectionScoresJsonIsParseableAndCarriesOnlyScoredDimensions() {
         // GtmReadoutController.sectionScoreLines parses this blob to build the
         // readout's breakdown, so it has to be real JSON.
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             new Map<String, Integer>{ 'estate_scale' => 3, 'source_access' => 2 }
         );
 
@@ -371,7 +371,7 @@ private class GtmAssessmentScoringTest {
         answers.remove('data_model_readiness');
         answers.put('crm_and_data_model_entanglement', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
 
         Assert.areEqual(25, scored.total, '7 x 3 + 4');
         Assert.areEqual(4, scored.sectionScores.get('crm_and_data_model_entanglement'));
@@ -399,7 +399,7 @@ private class GtmAssessmentScoringTest {
         for (GtmAssessmentInstrument.Slot slot : pack.slots) {
             answers.put(slot.key, 2);
         }
-        return GtmAssessmentScoring.score(answers, pack).sectionScores.keySet();
+        return GtmAssessmentScoring.score('migration-accelerator', answers, pack).sectionScores.keySet();
     }
 
     @isTest
@@ -409,7 +409,7 @@ private class GtmAssessmentScoringTest {
         Map<String, Integer> answers = allAt(3);
         answers.put('source_access', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
 
         Assert.isFalse(scored.sectionScores.containsKey('source_access'),
             'A 4 submitted to a slot the pair rendered as capped at 3 is a claim to an ' +
@@ -426,7 +426,7 @@ private class GtmAssessmentScoringTest {
     static void anAnswerAtTheCeilingIsAcceptedNormally() {
         GtmAssessmentInstrument.Pack pack = packWith(null, null, 'source_access', 3);
         Map<String, Integer> answers = allAt(3);
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
         Assert.areEqual(24, scored.total, '8 x 3 -- the ceiling is a maximum, not an exclusion');
         Assert.areEqual(3, scored.sectionScores.get('source_access'));
     }
@@ -439,7 +439,7 @@ private class GtmAssessmentScoringTest {
         only.baseKey = 'estate_scale';
         shortPack.slots.add(only);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4), shortPack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4), shortPack);
 
         Assert.areEqual(GtmAssessmentScoring.MAX_TOTAL_SCORE, scored.total,
             'A seven-slot pack that scored out of 28 while the readout printed ' +
@@ -452,7 +452,7 @@ private class GtmAssessmentScoringTest {
     static void aPackWithDuplicateKeysFallsBackToTheBaseEight() {
         GtmAssessmentInstrument.Pack dupes =
             packWith('orchestration_portability', 'content_portability', null, null);
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4), dupes);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4), dupes);
         Assert.areEqual(GtmAssessmentScoring.DIMENSIONS, scored.dimensionKeys,
             'Two slots collapsing into one key would silently halve a dimension\'s weight');
     }
@@ -464,7 +464,7 @@ private class GtmAssessmentScoringTest {
         answers.put('totally_made_up', 4);
         answers.put('another_invention', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
 
         Assert.areEqual(16, scored.total, '8 x 2 and nothing else');
         Assert.areEqual(8, scored.sectionScores.size(),
@@ -475,9 +475,9 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void theNullPackOverloadBehavesExactlyAsTheOldTwoArgumentCallDid() {
         Map<String, Integer> answers = allAt(3);
-        GtmAssessmentScoring.Score withoutPack = GtmAssessmentScoring.score(answers);
+        GtmAssessmentScoring.Score withoutPack = GtmAssessmentScoring.score('migration-accelerator', answers);
         GtmAssessmentScoring.Score withNullPack =
-            GtmAssessmentScoring.score(answers, null, null);
+            GtmAssessmentScoring.score('migration-accelerator', answers, null, null);
         Assert.areEqual(withoutPack.total, withNullPack.total);
         Assert.areEqual(withoutPack.tier, withNullPack.tier);
         Assert.areEqual(GtmAssessmentScoring.DIMENSIONS, withoutPack.dimensionKeys);
@@ -522,7 +522,7 @@ private class GtmAssessmentScoringTest {
             packWithPoints('orchestration_portability', new List<Integer>{ 1, 1, 3, 4 });
 
         GtmAssessmentScoring.Score scored =
-            GtmAssessmentScoring.score(allAtExcept(4, new Map<String, Integer>{
+            GtmAssessmentScoring.score('migration-accelerator', allAtExcept(4, new Map<String, Integer>{
                 'orchestration_portability' => 2
             }), pack);
 
@@ -547,14 +547,14 @@ private class GtmAssessmentScoringTest {
             packWithPoints('content_portability', new List<Integer>{ 1, 2, 3, 3 });
         Assert.areEqual(31, pack.maxTotal(), 'The pack as authored tops out at 31');
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(4), pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(4), pack);
         Assert.areEqual(32, scored.total,
             'The authored points are refused and the identity scale used instead, ' +
             'rather than quietly printing a total out of 31 against bands ' +
             'calibrated for 32');
         Assert.areEqual(GtmAssessmentScoring.MAX_TOTAL_SCORE, scored.maxTotal);
         Assert.areEqual(
-            GtmAssessmentScoring.MAX_TOTAL_SCORE, GtmAssessmentScoring.maxTotalFor(pack)
+            GtmAssessmentScoring.MAX_TOTAL_SCORE, GtmAssessmentScoring.maxTotalFor('migration-accelerator', pack)
         );
     }
 
@@ -566,7 +566,7 @@ private class GtmAssessmentScoringTest {
         GtmAssessmentInstrument.Pack pack =
             packWithPoints('consent_portability', new List<Integer>{ 1, 1, 3, 4 });
         GtmAssessmentScoring.Score scored =
-            GtmAssessmentScoring.score(allAtExcept(3, new Map<String, Integer>{
+            GtmAssessmentScoring.score('migration-accelerator', allAtExcept(3, new Map<String, Integer>{
                 'consent_portability' => 2
             }), pack);
         Assert.areEqual(22, scored.total, 'Seven at 3, one worth 1');
@@ -586,7 +586,7 @@ private class GtmAssessmentScoringTest {
         Map<String, Integer> answers = allAt(4);
         answers.put('invented_dimension', 4);
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(answers, pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', answers, pack);
         Assert.areEqual(32, scored.total, 'An invented key adds nothing, as ever');
         Assert.isFalse(scored.sectionScores.containsKey('invented_dimension'));
     }
@@ -599,7 +599,7 @@ private class GtmAssessmentScoringTest {
         GtmAssessmentInstrument.Pack pack =
             packWithPoints('source_access', new List<Integer>{ 1, 1, 3, 4 });
         GtmAssessmentScoring.Score scored =
-            GtmAssessmentScoring.score(allAtExcept(4, new Map<String, Integer>{
+            GtmAssessmentScoring.score('migration-accelerator', allAtExcept(4, new Map<String, Integer>{
                 'source_access' => 1
             }), pack);
         Assert.isTrue(scored.cappedByAccessGate,
@@ -610,7 +610,7 @@ private class GtmAssessmentScoringTest {
     @isTest
     static void theBranchPathIsRecordedForEverySlot() {
         GtmAssessmentInstrument.Pack pack = packWith(null, null, null, null);
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(allAt(3), pack);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', allAt(3), pack);
         Assert.areEqual(8, scored.branchPath.size(),
             'Every slot names the question that filled it, so a readout reopened ' +
             'later can say what was actually asked');
@@ -633,5 +633,291 @@ private class GtmAssessmentScoringTest {
                 'preview shows an author a band the scorer would not give');
             Assert.areEqual(b.tier, GtmAssessmentScoring.tierFor(b.highest));
         }
+    }
+
+    // --------------------------------------------------- the per-offering frame
+    //
+    // ADR-0007: the frame stopped being a compiled singleton. These prove the
+    // two halves of that -- an offering's own GTM_Assessment_Frame__mdt record
+    // is honoured, and every way of NOT having a usable one falls back to the
+    // constants above rather than throwing or inventing a scale.
+
+    /**
+     * A pack belonging to some OTHER offering: its own keys, its own options,
+     * nothing borrowed from Migration Accelerator.
+     *
+     * Non-MA offerings must now supply one to score at all -- an offering with
+     * no instrument deployed scores nothing rather than borrowing the compiled
+     * eight (see anEmptyPackForAnotherOfferingScoresNOTHING...). So these
+     * fixtures hand over the instrument the offering would really have.
+     */
+    private static GtmAssessmentInstrument.Pack fixturePack(Integer slots, Integer topValue) {
+        GtmAssessmentInstrument.Pack pack = new GtmAssessmentInstrument.Pack();
+        for (Integer i = 1; i <= slots; i++) {
+            GtmAssessmentInstrument.Slot slot = new GtmAssessmentInstrument.Slot();
+            slot.position = i;
+            slot.key      = 'fx_dim_' + i;
+            slot.baseKey  = 'fx_dim_' + i;
+            slot.maxAttainable = topValue;
+            for (Integer v = 1; v <= topValue; v++) {
+                slot.options.add(new GtmAssessmentInstrument.Option(v, 'option ' + v, v));
+            }
+            pack.slots.add(slot);
+        }
+        return pack;
+    }
+
+    /** Every slot of a fixture pack answered at the same value. */
+    private static Map<String, Integer> fixtureAnswers(GtmAssessmentInstrument.Pack pack, Integer value) {
+        Map<String, Integer> answers = new Map<String, Integer>();
+        for (GtmAssessmentInstrument.Slot slot : pack.slots) {
+            answers.put(slot.key, value);
+        }
+        return answers;
+    }
+
+    private static GTM_Assessment_Frame__mdt frameRecord(
+        String offeringKey, Integer minValue, Integer maxValue, String bandsJson
+    ) {
+        return new GTM_Assessment_Frame__mdt(
+            Offering_Key__c    = offeringKey,
+            Min_Answer_Value__c = minValue,
+            Max_Answer_Value__c = maxValue,
+            Bands_JSON__c      = bandsJson
+        );
+    }
+
+    @isTest
+    static void anOfferingWithNoFrameRecordScoresAgainstTheCompiledConstants() {
+        // The path EVERY migration-accelerator submission takes in production,
+        // because no frame record is deployed for it and none is meant to be.
+        // Its absence is what proves the fallback, so this is the well-trodden
+        // path rather than an error branch (ADR-0007 section 6).
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        GtmAssessmentScoring.Score scored =
+            GtmAssessmentScoring.score('migration-accelerator', allAt(4));
+
+        Assert.areEqual(32, scored.total, 'Falls back to the compiled 8 x 4');
+        Assert.areEqual(32, scored.maxTotal);
+        Assert.areEqual(GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier);
+    }
+
+    @isTest
+    static void anOfferingNobodyHasConfiguredAlsoFallsBackRatherThanFailing() {
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>{
+            frameRecord('some-other-offering', 1, 5, null)
+        };
+        GtmAssessmentFrames.resetCache();
+
+        // It brings its own instrument -- eight slots of its own keys -- and
+        // borrows only the SCALE and BANDS, which are neutral numbers rather
+        // than another offering's content.
+        GtmAssessmentInstrument.Pack pack = fixturePack(8, 4);
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+            'an-offering-with-no-row', fixtureAnswers(pack, 4), null, pack);
+
+        Assert.areEqual(32, scored.total, 'No row for THIS offering means the fallback scale');
+        Assert.areEqual(GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier);
+        Assert.areEqual('fx_dim_1', scored.dimensionKeys[0],
+            'and it scored its OWN keys, never Migration Accelerator\'s');
+    }
+
+    @isTest
+    static void anOfferingsOwnBandsDecideItsTier() {
+        // Same answers, same total, a different tier -- because the offering
+        // authored different edges. This is the whole point of the ADR: a
+        // second offering's frame does not have to resemble this one's.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>{
+            frameRecord('second-offering', 1, 4,
+                '[{"tier":"Low","lowest":8,"highest":30},' +
+                 '{"tier":"High","lowest":31,"highest":32}]')
+        };
+        GtmAssessmentFrames.resetCache();
+
+        GtmAssessmentInstrument.Pack pack = fixturePack(8, 4);
+        GtmAssessmentScoring.Score fixture = GtmAssessmentScoring.score(
+            'second-offering', fixtureAnswers(pack, 3), null, pack);
+        Assert.areEqual(24, fixture.total);
+        Assert.areEqual('Low', fixture.tier, 'Banded by the offering\'s own edges');
+
+        // The same 24 is Accelerator-Ready on Migration Accelerator's edges.
+        Assert.areEqual(
+            GtmAssessmentScoring.TIER_ACCELERATOR_READY,
+            GtmAssessmentScoring.score('migration-accelerator', allAt(3)).tier,
+            'The same total bands differently per offering, which is the point'
+        );
+    }
+
+    @isTest
+    static void aMalformedBandsJsonFallsBackRatherThanThrowing() {
+        // Every shape of broken: unparseable, a gap, a descent, and not a list.
+        // Each must leave the offering scoring on the compiled bands rather
+        // than half-banded -- a band set with a gap puts some totals in no band
+        // at all, which is worse than the wrong band.
+        for (String bad : new List<String>{
+            'not json at all',
+            '[]',
+            '{"tier":"Only","lowest":8,"highest":32}',
+            '[{"tier":"A","lowest":8,"highest":14},{"tier":"B","lowest":20,"highest":32}]',
+            '[{"tier":"A","lowest":8,"highest":14},{"tier":"B","lowest":10,"highest":32}]',
+            '[{"tier":"A","lowest":8}]'
+        }) {
+            GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>{
+                frameRecord('broken-offering', 1, 4, bad)
+            };
+            GtmAssessmentFrames.resetCache();
+
+            GtmAssessmentInstrument.Pack pack = fixturePack(8, 4);
+            GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+                'broken-offering', fixtureAnswers(pack, 4), null, pack);
+
+            Assert.areEqual(32, scored.total, 'Still scores: ' + bad);
+            Assert.areEqual(
+                GtmAssessmentScoring.TIER_FAST_TRACK, scored.tier,
+                'Falls back to the compiled bands rather than half-banding: ' + bad
+            );
+        }
+    }
+
+    @isTest
+    static void aBlankOrNullOfferingKeyIsTheCompiledFrame() {
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>{
+            frameRecord('second-offering', 1, 9, '[{"tier":"X","lowest":8,"highest":72}]')
+        };
+        GtmAssessmentFrames.resetCache();
+
+        // A blank key is the display path, where the compiled frame DOES
+        // legitimately apply -- so these keep scoring the compiled eight.
+        Assert.areEqual(32, GtmAssessmentScoring.score(null, allAt(4)).total);
+        Assert.areEqual(32, GtmAssessmentScoring.score('', allAt(4)).total);
+    }
+
+    @isTest
+    static void theRebuildRatioAnnotationIsMigrationAcceleratorsAlone() {
+        // Not generalised, per ADR-0007 section 6: it is keyed on three
+        // dimension names no other offering is required to have, and it is
+        // business judgement about migrations rather than generic config.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        Map<String, Integer> atFloor = allAtExcept(4, new Map<String, Integer>{
+            GtmAssessmentScoring.DIM_ORCHESTRATION => 1,
+            GtmAssessmentScoring.DIM_CONTENT       => 1
+        });
+
+        Assert.areEqual(
+            1,
+            GtmAssessmentScoring.score('migration-accelerator', atFloor).annotations.size(),
+            'Migration Accelerator still annotates'
+        );
+        // With a real instrument of its own, so the non-MA side reaches the
+        // annotation branch and is refused there rather than simply scoring
+        // nothing for want of an allowlist.
+        GtmAssessmentInstrument.Pack pack = fixturePack(8, 4);
+        Map<String, Integer> fxFloor = fixtureAnswers(pack, 1);
+        GtmAssessmentScoring.Score other =
+            GtmAssessmentScoring.score('second-offering', fxFloor, null, pack);
+        Assert.isTrue(other.hasAnswers, 'the fixture offering really did score');
+        Assert.areEqual(
+            0, other.annotations.size(),
+            'Another offering gets no migration-specific annotation'
+        );
+    }
+
+    @isTest
+    static void theAccessGateIsMigrationAcceleratorsAlone() {
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        Map<String, Integer> noAccess = allAtExcept(4, new Map<String, Integer>{
+            GtmAssessmentScoring.DIM_SOURCE_ACCESS => 1
+        });
+
+        Assert.isTrue(
+            GtmAssessmentScoring.score('migration-accelerator', noAccess).cappedByAccessGate,
+            'Migration Accelerator still caps at Discovery First without source access'
+        );
+        GtmAssessmentInstrument.Pack pack = fixturePack(8, 4);
+        GtmAssessmentScoring.Score other = GtmAssessmentScoring.score(
+            'second-offering', fixtureAnswers(pack, 1), null, pack);
+        Assert.isTrue(other.hasAnswers, 'the fixture offering really did score');
+        Assert.isFalse(
+            other.cappedByAccessGate,
+            'An offering that is not a migration has no source platform to lack access to'
+        );
+    }
+
+    @isTest
+    static void anEmptyPackForAnotherOfferingScoresNOTHINGRatherThanBorrowingTheEight() {
+        // REGRESSION. Found by running ADR-0007's isolation proof against the
+        // real deployed classes, not by a unit test: resolvedDimensions fell
+        // back to the compiled DIMENSIONS for every offering when the pack was
+        // unusable, so an offering with no instrument deployed scored a
+        // confident 32 out of 32 against Migration Accelerator's allowlist,
+        // answering questions its respondent was never asked. It looked
+        // completely correct in any test that supplied a well-formed pack.
+        //
+        // "Not assessed" and "assessed against somebody else's instrument" are
+        // very different claims, and only one of them is true.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        GtmAssessmentScoring.Score leaked =
+            GtmAssessmentScoring.score('an-offering-with-no-instrument', allAt(4));
+
+        Assert.isFalse(leaked.hasAnswers,
+            'LEAK: another offering scored Migration Accelerator answers');
+        Assert.isNull(leaked.total, 'and produced a total for an instrument that does not exist');
+        Assert.areEqual(0, leaked.dimensionKeys.size(),
+            'its allowlist must be empty, not Migration Accelerator\'s eight');
+
+        // The same call for Migration Accelerator itself must be untouched:
+        // a half-deployed pack there should still cost the adapted wording and
+        // not the score.
+        GtmAssessmentScoring.Score ma =
+            GtmAssessmentScoring.score('migration-accelerator', allAt(4));
+        Assert.isTrue(ma.hasAnswers);
+        Assert.areEqual(32, ma.total, 'Migration Accelerator still falls back to its own eight');
+    }
+
+    @isTest
+    static void theDenominatorLeaksNoFurtherThanTheNumeratorDid() {
+        // QA round 1, Finding 2. frameMaxTotal() was gated on fromRecord alone,
+        // so the offering above -- whose score is correctly null -- was still
+        // persisted as "measured out of 32", Migration Accelerator's
+        // denominator. The numerator was safe and the denominator was not,
+        // which is the harder half to notice: a null score out of 32 reads like
+        // an unfinished assessment rather than a borrowed instrument.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        Assert.isNull(
+            GtmAssessmentScoring.maxTotalFor('an-offering-with-no-instrument', null),
+            'LEAK: an offering with no instrument was measured out of somebody else\'s 32'
+        );
+        Assert.areEqual(
+            32, GtmAssessmentScoring.maxTotalFor('migration-accelerator', null),
+            'Migration Accelerator, with no pack in hand, is still measured out of its own 32'
+        );
+        Assert.areEqual(
+            32, GtmAssessmentScoring.maxTotalFor(null, null),
+            'A blank key is Migration Accelerator\'s historical meaning and keeps it'
+        );
+    }
+
+    @isTest
+    static void theComplexityAxisHasTheSameBoundary() {
+        Assert.isFalse(
+            GtmEstateComplexity.score('an-offering-with-no-instrument',
+                new Map<String, Integer>{ 'journey_footprint' => 3 }).hasAnswers,
+            'LEAK: another offering scored against Migration Accelerator\'s complexity keys'
+        );
+        Assert.isTrue(
+            GtmEstateComplexity.score('migration-accelerator',
+                new Map<String, Integer>{ 'journey_footprint' => 3 }).hasAnswers,
+            'Migration Accelerator still scores its own'
+        );
     }
 }

@@ -29,6 +29,12 @@ export default class GtmPagePreview extends LightningElement {
     @api pageUrl = '';
     @api hasDrafts = false;
 
+    // Set by c/gtmContentManager while its "Customizer settings" panel is
+    // open, so the note above the stage explains what this preview is
+    // showing instead of the ordinary configurator caption -- the fields
+    // being edited in that mode drive the rep's link wizard, not this page.
+    @api settingsMode = false;
+
     /** Which page is being edited. Decides which renderer to preview with. */
     @api templateType = 'story';
 
@@ -76,6 +82,67 @@ export default class GtmPagePreview extends LightningElement {
     }
 
     /**
+     * "Customizer settings" edits offering-defaults content -- the rep's
+     * link wizard's starting values (swatches, size presets, generic chips,
+     * default platforms, the demo campaign) -- which is never drawn on the
+     * page itself. Rendering the ordinary scrollable configurator page
+     * underneath it was worse than just misleading: that page has no
+     * "defaults" section (it is a setting, not a beat of the page, so it
+     * never gets a section rect), so scrolling always landed on some other
+     * real section, fired sectionchange, and the parent read that as "the
+     * user picked a different section" and closed Customizer settings out
+     * from under them. This mode replaces the scrollable page with a
+     * dedicated, non-scrolling summary of what the wizard actually starts
+     * from, so there is nothing page-shaped left to scroll.
+     */
+    get showSettingsPreview() { return this.settingsMode && this.isConfigurator; }
+
+    _settingsJson(key) {
+        try {
+            const raw = (this.content || {})[`defaults::${key}`];
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) { return []; }
+    }
+
+    _settingsText(key) { return (this.content || {})[`defaults::${key}`] || ''; }
+
+    get settingsSwatches() {
+        return this._settingsJson('swatches').map((s, i) => ({
+            key: `${s.name || ''}-${i}`,
+            name: s.name || '',
+            hex: s.hex || '',
+            style: `background:#${(s.hex || 'ccc').replace('#', '')};`
+        }));
+    }
+    get hasSettingsSwatches() { return this.settingsSwatches.length > 0; }
+
+    get settingsPresets() {
+        return this._settingsJson('sizePresets').map((p, i) => ({
+            key: p.key || String(i),
+            label: p.label || p.key || '',
+            sub: p.sub || '',
+            assetCount: p.assetCount,
+            dependencyCount: p.dependencyCount,
+            healthScore: p.healthScore
+        }));
+    }
+    get hasSettingsPresets() { return this.settingsPresets.length > 0; }
+
+    get settingsChips() { return this._settingsJson('genericChips'); }
+    get hasSettingsChips() { return this.settingsChips.length > 0; }
+
+    get settingsDemoDeps() { return this._settingsJson('genericDemoDeps'); }
+    get hasSettingsDemoDeps() { return this.settingsDemoDeps.length > 0; }
+
+    get settingsSourcePlatform() { return this._settingsText('defaultSourcePlatform'); }
+    get settingsTargetPlatform() { return this._settingsText('defaultTargetPlatform'); }
+    get hasSettingsPlatforms() {
+        return !!(this.settingsSourcePlatform || this.settingsTargetPlatform);
+    }
+    get settingsDemoRoot() { return this._settingsText('genericDemoRoot'); }
+
+    /**
      * The offerings page draws its tiles from every offering, so when the tile
      * itself is what is being edited, the draft is handed in and takes that
      * offering's place in the grid.
@@ -98,11 +165,16 @@ export default class GtmPagePreview extends LightningElement {
     }
 
     get previewNote() {
+        if (this.settingsMode && this.templateType === 'configurator') {
+            return 'These values configure the rep’s link wizard — they are not drawn on this page.';
+        }
         if (this.templateType === 'offerings-listing') {
             return 'Shown in place on the offerings page — the other tiles are live.';
         }
         if (this.templateType === 'configurator') {
-            return 'Shown as a prospect sees it, using the first industry on this page.';
+            return 'Shown as a prospect sees it, using the first industry on this page. '
+                 + 'The “Ask Gus” bubble is configured at the Framework level, not here — '
+                 + 'see the Framework card’s Settings to change its name, tone or opening line.';
         }
         return '';
     }
@@ -352,6 +424,11 @@ export default class GtmPagePreview extends LightningElement {
     }
 
     syncFromScroll() {
+        // Belt and suspenders alongside showSettingsPreview removing the
+        // scrollable page from the DOM entirely in this mode: nothing here
+        // should ever again read a scroll position as "the user changed
+        // section" while Customizer settings is open.
+        if (this.settingsMode) return;
         const { el: sc } = this.scroller();
         const rects = this.rects();
         if (!sc || !rects.length) return;

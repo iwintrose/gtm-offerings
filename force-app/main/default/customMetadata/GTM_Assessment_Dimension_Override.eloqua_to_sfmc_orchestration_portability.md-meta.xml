@@ -4,6 +4,10 @@
     <label>eloqua_to_sfmc_orchestration_portability</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Pair__c</field>
         <value xsi:type="xsd:string">eloqua_to_sfmc</value>
     </values>

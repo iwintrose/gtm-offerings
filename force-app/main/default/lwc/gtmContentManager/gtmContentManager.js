@@ -78,9 +78,18 @@ export default class GtmContentManager extends LightningElement {
     @track isSaving = false;
     @track loadError = '';
     @track saveMessage = '';
+    // One-time orientation nudge for a just-created offering — see
+    // capturePageRef() for how it's set and why it doesn't reappear on a
+    // later, unrelated navigation back to the same offering.
+    @track isNewOffering = false;
     @track reorderMode = false;
     @track exitOpen = false;
     @track dirtyKeys = [];
+
+    // Whether the customizer-settings surface (the offering-defaults section,
+    // presented apart from the ordinary rail) is showing instead of the
+    // normal content editor. See settingsSection/contentSections below.
+    @track settingsOpen = false;
 
     _dragKey = '';
     _saveTimer;
@@ -108,6 +117,11 @@ export default class GtmContentManager extends LightningElement {
     // I didn't choose" problem the home page exists to fix.
     _requestedOffering = '';
     _requestedTemplate = '';
+    // A one-shot mode request riding the same navigation as offering/template
+    // -- 'settings' today, from the offering card's Settings button. Consumed
+    // and cleared the moment it is applied (see applyRequestedPanel), so
+    // requesting it again (even for the same offering/page) fires again.
+    _requestedPanel = '';
 
     /** True once the offering list has loaded, so a later request can act. */
     _ready = false;
@@ -117,10 +131,32 @@ export default class GtmContentManager extends LightningElement {
         if (!ref || !ref.state) return;
         const offering = ref.state.c__offering || '';
         const template = ref.state.c__template || '';
-        if (offering === this._requestedOffering && template === this._requestedTemplate) return;
+        const panel = ref.state.c__panel || '';
+        if (offering === this._requestedOffering
+            && template === this._requestedTemplate
+            && panel === this._requestedPanel) return;
 
         this._requestedOffering = offering;
         this._requestedTemplate = template;
+        this._requestedPanel = panel;
+        // A one-time creation nudge, not a persistent "you haven't built
+        // Story yet" banner: only set when the home page's create flow
+        // stamped c__new on this navigation, and this whole handler only
+        // reacts when offering/template actually changed (guard above) — so
+        // switching away and back to the same offering without a fresh
+        // c__new never re-triggers it.
+        const isNew = ref.state.c__new === '1';
+        if (isNew) {
+            this.isNewOffering = true;
+            // A one-time nudge, not a persistent banner: c__new stays in the
+            // browser's address bar/history after this navigation (Lightning
+            // encodes navItemPage state as URL params), so an F5 on this same
+            // URL would otherwise hand the wire the identical state and show
+            // the banner again. Scrubbing it from the visible URL (a cosmetic
+            // history replace, not a navigation -- it does not requery the
+            // wire) is what makes a refresh actually a no-op here.
+            this.stripNewFromUrl();
+        }
 
         // connectedCallback runs once. Coming back from the home page a second
         // time reuses this component, so only this wire fires -- and it used
@@ -137,7 +173,24 @@ export default class GtmContentManager extends LightningElement {
         this.sections = [];
         this.records = [];
         this.activeKey = '';
+        this.settingsOpen = false;
         this.loadTemplates();
+    }
+
+    /**
+     * Apply a one-shot panel request once the page it targets has finished
+     * loading -- 'settings' lands the editor straight on the customizer
+     * settings surface instead of the ordinary first section. Consumed here
+     * (cleared to '') so it does not linger and reapply on an unrelated
+     * later load.
+     */
+    applyRequestedPanel() {
+        const panel = this._requestedPanel;
+        this._requestedPanel = '';
+        if (panel === 'settings' && this.settingsSection) {
+            this.activeKey = this.settingsSection.sectionKey;
+            this.settingsOpen = true;
+        }
     }
 
     // ─── lifecycle ────────────────────────────────────────────────────────────
@@ -170,6 +223,20 @@ export default class GtmContentManager extends LightningElement {
             });
     }
 
+    /** Best-effort only -- a failure here just means a refresh could re-show
+     * the welcome hint, not a broken page, so it is never allowed to throw. */
+    stripNewFromUrl() {
+        try {
+            if (typeof window === 'undefined' || !window.history || !window.history.replaceState) return;
+            const url = new URL(window.location.href);
+            if (!url.searchParams.has('c__new')) return;
+            url.searchParams.delete('c__new');
+            window.history.replaceState(window.history.state, '', url.toString());
+        } catch (e) {
+            // Nothing to do -- see the comment above.
+        }
+    }
+
     messageFrom(err) {
         if (!err) return '';
         if (err.body && err.body.message) return err.body.message;
@@ -196,6 +263,7 @@ export default class GtmContentManager extends LightningElement {
         this.sections = [];
         this.records = [];
         this.activeKey = '';
+        this.settingsOpen = false;
         this.loadTemplates();
     }
 
@@ -222,7 +290,7 @@ export default class GtmContentManager extends LightningElement {
                 if (asked) {
                     this._requestedTemplate = '';
                     this.selectedTemplate = asked.templateType;
-                    return this.loadPage();
+                    return this.loadPage().then(() => this.applyRequestedPanel());
                 }
                 if (built.length === 1) {
                     this.selectedTemplate = built[0].templateType;
@@ -240,6 +308,7 @@ export default class GtmContentManager extends LightningElement {
         if (!chosen) return;
         this.selectedTemplate = t;
         this.activeKey = '';
+        this.settingsOpen = false;
         this.loadPage();
     }
 
@@ -248,6 +317,7 @@ export default class GtmContentManager extends LightningElement {
         this.sections = [];
         this.records = [];
         this.activeKey = '';
+        this.settingsOpen = false;
     }
 
     loadPage() {
@@ -285,7 +355,12 @@ export default class GtmContentManager extends LightningElement {
     // ─── rail ─────────────────────────────────────────────────────────────────
 
     get railSections() {
-        return this.sections.map((s, i) => {
+        // offering-defaults never shows here -- see contentSections. It stays
+        // present in this.sections (the model everything else, including
+        // move()/persistOrder(), operates on) so hiding it from the rail
+        // changes nothing about its stored position.
+        const rows = this.contentSections;
+        return rows.map((s, i) => {
             // What is pending on this section, said in the words an editor
             // would use. A structural change is a draft like any other, so it
             // has to be visible before Publish, not only afterwards.
@@ -310,7 +385,7 @@ export default class GtmContentManager extends LightningElement {
                     + (s.isDeleted ? ' sec--doomed' : '')
                     + (s.isDraft ? ' sec--pending' : ''),
                 isFirst: i === 0,
-                isLast: i === this.sections.length - 1,
+                isLast: i === rows.length - 1,
                 toggleLabel: s.active === false ? 'Show on page' : 'Hide from page',
                 pendingLabel: pending,
                 hasPending: !!pending,
@@ -320,7 +395,7 @@ export default class GtmContentManager extends LightningElement {
         });
     }
 
-    get sectionCount() { return this.sections.length; }
+    get sectionCount() { return this.contentSections.length; }
 
     // Picking a section in the rail moves the preview to it: c/gtmPagePreview
     // scrolls its canvas when activeKey changes, so setting it is the whole
@@ -559,6 +634,7 @@ export default class GtmContentManager extends LightningElement {
         this.sections = [];
         this.records = [];
         this.activeKey = '';
+        this.settingsOpen = false;
         this.saveMessage = 'Draft kept — the live page is unchanged';
     }
 
@@ -604,6 +680,8 @@ export default class GtmContentManager extends LightningElement {
 
     handleDismissError() { this.loadError = ''; }
 
+    handleDismissNewOfferingHint() { this.isNewOffering = false; }
+
     // ─── add / delete sections ────────────────────────────────────────────────
 
     get layoutOptions() {
@@ -648,9 +726,13 @@ export default class GtmContentManager extends LightningElement {
     get hasLayoutOptions() { return this.layoutOptions.length > 0; }
 
     get noLayoutsReason() {
-        return this.selectedTemplate === 'offerings-page'
-            ? 'This page draws its tiles from the offerings themselves, so there is nothing to add here. Edit an offering\u2019s Offerings Listing page to change its tile.'
-            : 'This page has no layouts to add. Its content comes from elsewhere.';
+        if (this.selectedTemplate === 'offerings-page') {
+            return 'This page draws its tiles from the offerings themselves, so there is nothing to add here. Edit an offering\u2019s Offerings Listing page to change its tile.';
+        }
+        if (this.selectedTemplate === 'industry-chooser') {
+            return 'Industries aren\u2019t added from this generic editor. Edit an existing industry\u2019s tile to change what it says.';
+        }
+        return 'This page has no layouts to add. Its content comes from elsewhere.';
     }
 
     get addLayoutHint() {
@@ -933,11 +1015,49 @@ export default class GtmContentManager extends LightningElement {
         if (!this.templates.find((t) => t.templateType === next)) return;
         this.selectedTemplate = next;
         this.activeKey = '';
+        this.settingsOpen = false;
         this.loadPage();
     }
 
-    get hasSections() { return !this.isLoading && this.sections.length > 0; }
+    // ─── customizer settings surface ─────────────────────────────────────────
+    // offering-defaults (sizePresets/swatches -- what a configurator shows
+    // before a rep customises it) is real, offering-scoped content, but it is
+    // not a beat of the page the way Cover or a chapter is: it never renders
+    // on the public page (only c/gtmConfigWizard, the rep's link tool, reads
+    // it) and burying it in the ordinary rail next to actual page content is
+    // what made "Settings" hard to find. contentSections is what the rail
+    // shows and counts; settingsSection is the one row this panel edits.
+    // Neither changes where the data lives (still
+    // <offeringKey>::configurator::defaults::*) -- only how it is reached.
+
+    get contentSections() {
+        return this.sections.filter((s) => s.layoutType !== 'offering-defaults');
+    }
+
+    get settingsSection() {
+        return this.sections.find((s) => s.layoutType === 'offering-defaults');
+    }
+
+    get hasSettingsSection() { return !!this.settingsSection; }
+
+    handleOpenSettingsPanel() {
+        const sec = this.settingsSection;
+        if (!sec) return;
+        this.activeKey = sec.sectionKey;
+        this.settingsOpen = true;
+    }
+
+    handleCloseSettingsPanel() {
+        this.settingsOpen = false;
+        const first = this.contentSections[0];
+        this.activeKey = first ? first.sectionKey : '';
+    }
+
+    get hasSections() { return !this.isLoading && (this.contentSections.length > 0 || this.settingsOpen); }
+    // The Rearrange affordance only makes sense over the ordinary rail --
+    // the settings panel is one fixed section, not a reorderable list.
+    get canReorder() { return this.hasSections && !this.settingsOpen; }
     get showPagePicker() { return this.hasOffering && !this.hasTemplate && !this.isLoading; }
     get showEditor() { return this.hasOffering && this.hasTemplate && !this.isLoading; }
-    get noSections() { return this.showEditor && this.sections.length === 0; }
+    get noSections() { return this.showEditor && this.contentSections.length === 0 && !this.settingsOpen; }
 }

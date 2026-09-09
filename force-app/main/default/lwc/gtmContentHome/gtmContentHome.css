@@ -32,7 +32,7 @@
 }
 .home-head .slds-page-header__row { display: flex; align-items: center; gap: 1rem; }
 .home-head .slds-page-header__col-title { display: flex; align-items: center; gap: .75rem; min-width: 0; }
-.home-head .slds-page-header__col-actions { margin-left: auto; }
+.home-head .slds-page-header__col-actions { margin-left: auto; display: flex; gap: 0.5rem; }
 .home-head-icon { flex: none; }
 .home-eyebrow { font-size: 12px; color: #444; margin: 0; }
 .home-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
@@ -49,8 +49,35 @@
 .home-empty { padding: 2.5rem 1rem; text-align: center; color: #444; }
 .home-empty-sub { color: #747474; font-size: 12px; max-width: 26rem; margin: .3rem auto 0; line-height: 1.5; }
 
+/* Grid auto-placement fills cells in source order regardless of how many
+   explicit columns are declared -- with 4 direct children here (search,
+   the conditional no-results line, off-grid, and the aside) and only 2
+   columns, the browser was placing off-grid itself into column 2's narrow
+   18rem track (the search bar was the only thing that landed in column 1's
+   row), squeezing every offering card into a sliver on the right with a
+   dead column of empty space to its left. Every child needs an explicit
+   column now that there are more of them than the grid declares.
+   The row placement is explicit too, and deliberately does NOT use -1 for
+   the sidebar's end line: -1 addresses the *explicit* grid, and this grid
+   only ever declares columns, never grid-template-rows, so its rows are
+   entirely implicit. "1 / -1" collapsed back to just line 1, which pinned
+   the aside to row 1 and forced that row to grow to the sidebar's full
+   height (button + the whole Activity feed) -- exactly the tall grey gap
+   between the search bar and the cards this was meant to fix. Naming row 2
+   on both off-grid and the aside puts them side by side under the search
+   bar instead. */
 .home-body { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1rem; align-items: start; }
-@media (max-width: 1100px) { .home-body { grid-template-columns: minmax(0, 1fr); } }
+.home-body > .home-search { grid-column: 1; grid-row: 1; }
+.home-body > .home-no-results,
+.home-body > .off-grid { grid-column: 1; grid-row: 2; }
+.home-body > .side { grid-column: 2; grid-row: 2; }
+@media (max-width: 1100px) {
+    .home-body { grid-template-columns: minmax(0, 1fr); }
+    .home-body > .home-search,
+    .home-body > .home-no-results,
+    .home-body > .off-grid,
+    .home-body > .side { grid-column: 1; grid-row: auto; }
+}
 
 /* ── offering cards ──────────────────────────────────────────────────────────
    Two columns, so a second offering sits beside the first rather than below
@@ -110,6 +137,15 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .off-stat { flex: none; }
+.off-headright {
+    display: flex; flex-direction: column; align-items: flex-end; gap: .25rem;
+}
+/* Steady-state onboarding hint: what's still unbuilt, named. Sits under the
+   summary badge and renders nothing once an offering is fully built. */
+.off-nextstep {
+    font-size: 10.5px; color: #8c6a1a; text-align: right; max-width: 11rem;
+    line-height: 1.35;
+}
 /* The rename used to put the field and two buttons on one line inside a card
    header, which is only as wide as half the grid -- the input ended up a few
    characters wide and you could not read what you were typing. It gets the
@@ -156,11 +192,25 @@
 .side-card .slds-media { display: flex; align-items: center; gap: .6rem; }
 
 .pg-list { list-style: none; margin: 0; padding: .3rem; display: flex; flex-direction: column; gap: 1px; }
+.pg-row { display: flex; align-items: center; gap: .15rem; }
 .pg {
-    width: 100%; display: flex; align-items: center; gap: .6rem;
+    flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: .6rem;
     padding: .55rem .6rem; border: 1px solid transparent; border-radius: 4px;
     background: none; cursor: pointer; text-align: left; font: inherit; color: inherit;
 }
+/* Same "reveal on hover" treatment as an offering's own rename button. */
+.pg-rename {
+    flex: none; border: 0; background: none; padding: .35rem; cursor: pointer;
+    color: #747474; border-radius: 3px; line-height: 0; opacity: 0; transition: opacity .12s;
+}
+.pg-row:hover .pg-rename, .pg-rename:focus { opacity: 1; }
+.pg-rename:hover { background: #f3f3f3; color: #0176d3; }
+.pg-rename-row {
+    display: flex; align-items: center; gap: .5rem; width: 100%;
+    padding: .35rem .6rem;
+}
+.pg-rename-in { flex: 1 1 auto; min-width: 0; }
+.pg-rename-acts { display: flex; gap: .35rem; flex: none; }
 .pg:hover { background: #eef4ff; border-color: #0176d3; }
 .pg-main { display: flex; flex-direction: column; min-width: 0; }
 .pg-name { font-size: 13px; font-weight: 600; }

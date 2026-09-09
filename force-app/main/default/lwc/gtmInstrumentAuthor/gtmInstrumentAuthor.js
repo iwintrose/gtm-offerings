@@ -41,14 +41,31 @@ import { LightningElement, track, api } from 'lwc';
 import getPlatforms from '@salesforce/apex/GtmAssessmentInstrument.getPlatforms';
 import getPack from '@salesforce/apex/GtmAssessmentInstrument.getPack';
 import getFrame from '@salesforce/apex/GtmAssessmentInstrument.getFrame';
+import getOfferings from '@salesforce/apex/GtmPageContentController.getOfferings';
 import { resolveSlots, pointsFor, parse } from 'c/gtmPredicate';
 
 const VIEW_EDIT = 'edit';
 const VIEW_PREVIEW = 'preview';
+const ORIENTATION_KEY = 'gtmInstrumentAuthor.orientationCollapsed';
+
+/**
+ * The framework pseudo-offering (GtmPageContentController.FRAMEWORK_KEY). It
+ * owns cross-offering page content, not an instrument, so it is filtered out of
+ * this screen's picker -- there is nothing here for it to be.
+ */
+const FRAMEWORK_KEY = 'gtm';
 
 export default class GtmInstrumentAuthor extends LightningElement {
-    @api offeringKey = 'migration-accelerator';
+    /**
+     * A pinned starting offering, when this component is placed with one. No
+     * longer the dead default it used to be: connectedCallback now loads the
+     * real offering list and selectedOffering is what every Apex call is keyed
+     * on, so this is a preset rather than the answer.
+     */
+    @api offeringKey = '';
 
+    @track offerings = [];
+    @track selectedOffering = '';
     @track platforms = [];
     @track frame = null;
     @track pack = null;
@@ -58,6 +75,7 @@ export default class GtmInstrumentAuthor extends LightningElement {
     @track view = VIEW_EDIT;
     @track loading = true;
     @track error = '';
+    @track orientationCollapsed = false;
 
     /** Unsaved edits, keyed `${baseKey}::${variantKey}`. The pack is never mutated. */
     @track edits = {};
@@ -66,19 +84,133 @@ export default class GtmInstrumentAuthor extends LightningElement {
 
     async connectedCallback() {
         try {
-            const [platforms, frame] = await Promise.all([getPlatforms(), getFrame()]);
-            this.platforms = platforms || [];
-            this.frame = frame;
+            this.orientationCollapsed = window.localStorage.getItem(ORIENTATION_KEY) === '1';
         } catch (e) {
-            this.error = 'Could not read the instrument configuration.';
+            // Private browsing / storage blocked — default to shown.
         }
-        await this.load();
+        try {
+            const rows = await getOfferings();
+            // The framework entry owns page content, not an instrument.
+            this.offerings = (rows || []).filter((o) => o.offeringKey !== FRAMEWORK_KEY);
+            // Same preset rule gtmContentManager uses: a pinned property first,
+            // then the only offering when there is exactly one.
+            this.selectedOffering = this.offeringKey
+                || (this.offerings.length === 1 ? this.offerings[0].offeringKey : '');
+        } catch (e) {
+            this.offerings = [];
+            this.error = 'Offerings could not be loaded.';
+        }
+        try {
+            this.platforms = (await getPlatforms()) || [];
+        } catch (e) {
+            this.platforms = [];
+        }
+        await this.loadOffering();
         this.loading = false;
     }
 
+    /**
+     * Everything that is a property of the CHOSEN OFFERING: its frame, and the
+     * pack for whichever pair is selected. Re-run whenever the offering
+     * changes, because after ADR-0007 neither of them is global any more --
+     * showing offering A's frame beside offering B's pack would be exactly the
+     * cross-offering blend this screen now exists to make impossible.
+     */
+    async loadOffering() {
+        if (!this.hasOffering) {
+            this.frame = null;
+            this.pack = null;
+            return;
+        }
+        try {
+            this.frame = await getFrame({ offeringKey: this.selectedOffering });
+        } catch (e) {
+            this.frame = null;
+            this.error = 'Could not read the instrument configuration.';
+        }
+        await this.load();
+    }
+
+    get offeringOptions() {
+        return this.offerings.map((o) => ({ label: o.label, value: o.offeringKey }));
+    }
+
+    get hasOffering() { return !!this.selectedOffering; }
+
+    get showOfferingPicker() { return this.offerings.length > 1; }
+
+    async handleOfferingChange(event) {
+        const next = event.detail.value;
+        if (next === this.selectedOffering) return;
+        this.selectedOffering = next;
+        // A slot key is only meaningful inside one offering's frame, and the
+        // edit buffer is keyed by slot key -- carrying either across a switch
+        // would silently apply offering A's edits to offering B's questions.
+        this.selectedBaseKey = '';
+        this.edits = {};
+        this.previewAnswers = {};
+        this.error = '';
+        this.loading = true;
+        await this.loadOffering();
+        this.loading = false;
+    }
+
+    handleToggleOrientation() {
+        this.orientationCollapsed = !this.orientationCollapsed;
+        try {
+            window.localStorage.setItem(ORIENTATION_KEY, this.orientationCollapsed ? '1' : '0');
+        } catch (e) {
+            // Non-persistent this session; not worth failing over.
+        }
+    }
+
+    get offeringLabel() {
+        const hit = this.offerings.find((o) => o.offeringKey === this.selectedOffering);
+        return hit ? hit.label : this.selectedOffering;
+    }
+
+    get pairSummaryLabel() {
+        if (!this.pack) return '';
+        const src = this.sourceKey ? this.labelForKey(this.sourceKey) : 'Any source';
+        const tgt = this.targetKey ? this.labelForKey(this.targetKey) : 'Any target';
+        return `${src} → ${tgt}`;
+    }
+
+    labelForKey(key) {
+        const hit = this.platforms.find((p) => p.key === key);
+        return hit ? hit.label : key;
+    }
+
+    /**
+     * The reachability caveat is GONE, and that is the point.
+     *
+     * It used to tell an author: "the live GTM1 site's booking form does not
+     * yet ask these questions, so editing a pack here does not change what a
+     * real prospect sees today." Its own comment said to delete it "the day
+     * gtmConfigBooking is rewired onto the real questionnaire". That is this
+     * change (ADR-0008 / backlog D11): the live /configurator route now hosts
+     * the real questionnaire, so a pack edited here DOES change what a real
+     * prospect is asked. Leaving the banner up would now be actively
+     * misleading -- it would tell an author their work does not matter when it
+     * does.
+     *
+     * If a future change ever puts the authoring screen and the live guest
+     * surface out of step again, this is where that warning goes back.
+     */
+
+    get resolutionChainLabel() {
+        const chain = this.pack && this.pack.resolutionChain;
+        return chain && chain.length ? chain.join(' → ') : '';
+    }
+
     async load() {
+        if (!this.hasOffering) {
+            this.pack = null;
+            return;
+        }
         try {
             this.pack = await getPack({
+                offeringKey: this.selectedOffering,
                 sourceName: this.sourceKey,
                 targetName: this.targetKey
             });

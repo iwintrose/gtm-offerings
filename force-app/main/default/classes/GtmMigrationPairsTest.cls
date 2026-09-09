@@ -185,7 +185,7 @@ private class GtmMigrationPairsTest {
             perfect.put(dimension, 4);
         }
 
-        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score(
+        GtmAssessmentScoring.Score scored = GtmAssessmentScoring.score('migration-accelerator', 
             perfect, GtmMigrationPairs.evaluate('Pardot', 'MCN')
         );
 

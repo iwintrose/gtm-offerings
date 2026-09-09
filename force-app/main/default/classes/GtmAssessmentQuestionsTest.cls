@@ -40,7 +40,7 @@ private class GtmAssessmentQuestionsTest {
     @isTest
     static void theQuestionnaireCarriesBothInstrumentsAndTheirMaxima() {
         seedFullSet();
-        GtmAssessmentQuestions.Questionnaire q = GtmAssessmentQuestions.getQuestionnaire();
+        GtmAssessmentQuestions.Questionnaire q = GtmAssessmentQuestions.getQuestionnaire('migration-accelerator');
 
         Assert.areEqual(8, q.readiness.size());
         Assert.areEqual(6, q.complexity.size());
@@ -49,10 +49,36 @@ private class GtmAssessmentQuestionsTest {
     }
 
     @isTest
+    static void anOfferingWithNoInstrumentIsOfferedNoQuestionsAndNoDenominator() {
+        // QA round 1, Finding 3. Phase 5 threaded offeringKey into the SOQL
+        // under this endpoint but left the two maxima as compiled constants, so
+        // a second offering was handed zero questions and told they were worth
+        // 32 and 18 -- on a guest-reachable, cacheable endpoint. Both halves are
+        // asserted here: the emptiness AND the absence of a denominator, since
+        // the emptiness alone passed before the fix.
+        // Deliberately NOT seedFullSet(): rowOverride bypasses the offering
+        // filter, so the real SOQL is what has to run here for the emptiness to
+        // mean anything. No GTM_Assessment_Question__mdt row carries this key.
+        GtmAssessmentQuestions.resetCache();
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        GtmAssessmentQuestions.Questionnaire q =
+            GtmAssessmentQuestions.getQuestionnaire('an-offering-with-no-instrument');
+
+        Assert.areEqual(0, q.readiness.size());
+        Assert.areEqual(0, q.complexity.size());
+        Assert.isNull(q.readinessMaxScore,
+            'LEAK: zero questions were advertised as being scored out of 32');
+        Assert.isNull(q.complexityMaxScore,
+            'LEAK: zero questions were advertised as being scored out of 18');
+    }
+
+    @isTest
     static void wordingComesFromMetadataAndTheOrderIsWhatWasConfigured() {
         seedFullSet();
         List<GtmAssessmentQuestions.Question> readiness =
-            GtmAssessmentQuestions.questionsFor('Readiness');
+            GtmAssessmentQuestions.questionsFor('migration-accelerator', 'Readiness');
 
         // The first configured question is the first dimension -- the whole
         // point being that a consultant reorders questions in Setup.
@@ -66,7 +92,7 @@ private class GtmAssessmentQuestionsTest {
     static void readinessOffersFourAscendingOptionsAndComplexityThree() {
         seedFullSet();
         GtmAssessmentQuestions.Question readiness =
-            GtmAssessmentQuestions.questionsFor('Readiness')[0];
+            GtmAssessmentQuestions.questionsFor('migration-accelerator', 'Readiness')[0];
         Assert.areEqual(4, readiness.options.size());
         Assert.areEqual(1, readiness.options[0].value);
         Assert.areEqual('worst', readiness.options[0].label);
@@ -74,7 +100,7 @@ private class GtmAssessmentQuestionsTest {
         Assert.areEqual('best', readiness.options[3].label, 'Option 4 is the LOWEST migration risk');
 
         GtmAssessmentQuestions.Question complexity =
-            GtmAssessmentQuestions.questionsFor('Complexity')[0];
+            GtmAssessmentQuestions.questionsFor('migration-accelerator', 'Complexity')[0];
         Assert.areEqual(3, complexity.options.size(),
             'A complexity question is a 1-3 scale and must not offer a fourth option');
     }
@@ -82,13 +108,13 @@ private class GtmAssessmentQuestionsTest {
     @isTest
     static void everyConfiguredKeyIsOneTheScorerActuallyCounts() {
         seedFullSet();
-        for (GtmAssessmentQuestions.Question q : GtmAssessmentQuestions.questionsFor('Readiness')) {
+        for (GtmAssessmentQuestions.Question q : GtmAssessmentQuestions.questionsFor('migration-accelerator', 'Readiness')) {
             Assert.isTrue(q.scored, q.dimensionKey + ' should be scoreable');
         }
-        Assert.areEqual(0, GtmAssessmentQuestions.unscoredKeys('Readiness').size());
-        Assert.areEqual(0, GtmAssessmentQuestions.missingKeys('Readiness').size());
-        Assert.areEqual(0, GtmAssessmentQuestions.unscoredKeys('Complexity').size());
-        Assert.areEqual(0, GtmAssessmentQuestions.missingKeys('Complexity').size());
+        Assert.areEqual(0, GtmAssessmentQuestions.unscoredKeys('migration-accelerator', 'Readiness').size());
+        Assert.areEqual(0, GtmAssessmentQuestions.missingKeys('migration-accelerator', 'Readiness').size());
+        Assert.areEqual(0, GtmAssessmentQuestions.unscoredKeys('migration-accelerator', 'Complexity').size());
+        Assert.areEqual(0, GtmAssessmentQuestions.missingKeys('migration-accelerator', 'Complexity').size());
     }
 
     @isTest
@@ -103,14 +129,14 @@ private class GtmAssessmentQuestionsTest {
         };
 
         List<GtmAssessmentQuestions.Question> questions =
-            GtmAssessmentQuestions.questionsFor('Readiness');
+            GtmAssessmentQuestions.questionsFor('migration-accelerator', 'Readiness');
         Assert.areEqual(2, questions.size(), 'The unknown question is still shown');
         Assert.isTrue(questions[0].scored);
         Assert.isFalse(questions[1].scored);
 
         Assert.areEqual(new Set<String>{ 'invented_dimension' },
-            GtmAssessmentQuestions.unscoredKeys('Readiness'));
-        Assert.areEqual(7, GtmAssessmentQuestions.missingKeys('Readiness').size(),
+            GtmAssessmentQuestions.unscoredKeys('migration-accelerator', 'Readiness'));
+        Assert.areEqual(7, GtmAssessmentQuestions.missingKeys('migration-accelerator', 'Readiness').size(),
             'The seven dimensions with no wording configured are named too');
     }
 
@@ -123,14 +149,14 @@ private class GtmAssessmentQuestionsTest {
         retired.Active__c = false;
         GtmAssessmentQuestions.rowOverride = new List<GTM_Assessment_Question__mdt>{ retired };
 
-        Assert.areEqual(0, GtmAssessmentQuestions.questionsFor('Readiness').size());
-        Assert.areEqual('Estate Scale', GtmAssessmentQuestions.dimensionNames().get('estate_scale'));
+        Assert.areEqual(0, GtmAssessmentQuestions.questionsFor('migration-accelerator', 'Readiness').size());
+        Assert.areEqual('Estate Scale', GtmAssessmentQuestions.dimensionNames('migration-accelerator').get('estate_scale'));
     }
 
     @isTest
     static void dimensionNamesCoverBothInstruments() {
         seedFullSet();
-        Map<String, String> names = GtmAssessmentQuestions.dimensionNames();
+        Map<String, String> names = GtmAssessmentQuestions.dimensionNames('migration-accelerator');
         Assert.areEqual(14, names.size(), 'Eight readiness dimensions plus six complexity ones');
         Assert.areEqual('Readiness source_access', names.get('source_access'));
         Assert.areEqual('Complexity scripting_depth', names.get('scripting_depth'));
@@ -141,11 +167,11 @@ private class GtmAssessmentQuestionsTest {
         GtmAssessmentQuestions.resetCache();
         GtmAssessmentQuestions.rowOverride = new List<GTM_Assessment_Question__mdt>();
 
-        GtmAssessmentQuestions.Questionnaire q = GtmAssessmentQuestions.getQuestionnaire();
+        GtmAssessmentQuestions.Questionnaire q = GtmAssessmentQuestions.getQuestionnaire('migration-accelerator');
         Assert.areEqual(0, q.readiness.size());
         Assert.areEqual(0, q.complexity.size());
         // ...but every scoreable key is reported missing, which is the signal.
-        Assert.areEqual(8, GtmAssessmentQuestions.missingKeys('Readiness').size());
+        Assert.areEqual(8, GtmAssessmentQuestions.missingKeys('migration-accelerator', 'Readiness').size());
     }
 
     // -------------------------------------------------- the deployed metadata
@@ -159,14 +185,14 @@ private class GtmAssessmentQuestionsTest {
         // questionnaire that quietly scores 24 out of a claimed 32.
         GtmAssessmentQuestions.resetCache();
         GtmAssessmentQuestions.rowOverride = null;
-        if (GtmAssessmentQuestions.dimensionNames().isEmpty()) {
+        if (GtmAssessmentQuestions.dimensionNames('migration-accelerator').isEmpty()) {
             return;
         }
-        Assert.areEqual(new Set<String>(), GtmAssessmentQuestions.unscoredKeys('Readiness'),
+        Assert.areEqual(new Set<String>(), GtmAssessmentQuestions.unscoredKeys('migration-accelerator', 'Readiness'),
             'A configured readiness key that the scorer ignores');
-        Assert.areEqual(new Set<String>(), GtmAssessmentQuestions.missingKeys('Readiness'),
+        Assert.areEqual(new Set<String>(), GtmAssessmentQuestions.missingKeys('migration-accelerator', 'Readiness'),
             'A scoreable readiness dimension with no question configured');
-        Assert.areEqual(new Set<String>(), GtmAssessmentQuestions.unscoredKeys('Complexity'));
-        Assert.areEqual(new Set<String>(), GtmAssessmentQuestions.missingKeys('Complexity'));
+        Assert.areEqual(new Set<String>(), GtmAssessmentQuestions.unscoredKeys('migration-accelerator', 'Complexity'));
+        Assert.areEqual(new Set<String>(), GtmAssessmentQuestions.missingKeys('migration-accelerator', 'Complexity'));
     }
 }

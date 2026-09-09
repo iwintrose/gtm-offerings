@@ -208,8 +208,14 @@ public without sharing class GtmPageContentController {
      * The offerings this org knows about, from GTM_Offering__mdt. The editor
      * asks for these rather than assuming one, so adding an offering is a
      * metadata record and never a code change.
+     *
+     * cacheable=false, not true: this is called imperatively (never @wire'd),
+     * so cacheable bought nothing but a platform-cache staleness risk -- an
+     * offering created a moment ago missing from its own selector until the
+     * cache cleared, the same symptom getHomeSummary's own comments already
+     * document and fix the same way for the sibling read below.
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<OfferingOption> getOfferings() {
         List<OfferingOption> out = new List<OfferingOption>();
         String host = siteHost();
@@ -230,6 +236,52 @@ public without sharing class GtmPageContentController {
             o.label       = off.Label__c;
             o.publicUrl   = publicUrlFor(host, off.Site_Path__c);
             out.add(o);
+        }
+
+        // An offering that has pages but no metadata row yet is a real
+        // offering: custom metadata only deploys asynchronously, so one
+        // created a moment ago would otherwise vanish from its own editor
+        // until the deployment landed. Mirrors the same fallback already in
+        // getHomeSummary() below — that method treats page-only offerings as
+        // real, this one didn't, and that asymmetry is what left the
+        // offering-selector dropdown unable to pre-select a freshly created
+        // offering.
+        Set<String> known = new Set<String>();
+        for (OfferingOption o : out) known.add(o.offeringKey);
+
+        for (AggregateResult ar : [
+            SELECT Offering_Key__c o FROM GTM_Page_Section__c
+            WHERE Active__c = true GROUP BY Offering_Key__c
+        ]) {
+            String key = (String) ar.get('o');
+            if (known.contains(key)) continue;
+            OfferingOption o = new OfferingOption();
+            o.offeringKey = key;
+            o.label       = key;      // same fallback-to-key convention getHomeSummary uses
+            o.publicUrl   = null;     // no Site_Path__c exists yet — leave blank, don't fabricate one
+            out.add(o);
+            known.add(key);
+        }
+
+        // The name an offering goes by is the name on the tile it publishes
+        // about itself -- same lookup getHomeSummary() already does below,
+        // just missing here. Without it, any offering discovered above via
+        // the page-only fallback (which seeds label = key) showed its raw
+        // key ("data-cloud-accelorator") in this selector forever, never the
+        // real name, even after GTM_Offering__mdt's async deploy landed and
+        // fixed every other list on this exact same offering.
+        Map<String, OfferingOption> byKey = new Map<String, OfferingOption>();
+        for (OfferingOption o : out) byKey.put(o.offeringKey, o);
+        for (GTM_Page_Content__c rec : [
+            SELECT Offering_Key__c, Text_Value__c
+            FROM   GTM_Page_Content__c
+            WHERE  Template_Type__c = 'offerings-listing'
+            AND    Field_Key__c     = 'name'
+            AND    Active__c        = true
+            LIMIT  200
+        ]) {
+            OfferingOption o = byKey.get(rec.Offering_Key__c);
+            if (o != null && String.isNotBlank(rec.Text_Value__c)) o.label = rec.Text_Value__c;
         }
         return out;
     }
@@ -439,8 +491,63 @@ public without sharing class GtmPageContentController {
             o.canRename   = !o.isFramework;
         }
 
+        // A page's own name, same reserved address renamePage() writes to.
+        // What a page is CALLED (Story, "BD App Help (FAQ)") was hardcoded
+        // in TEMPLATE_LABELS with no way to change it -- this is the read
+        // half of making that editable, same pattern as the tile-name
+        // lookup just above for an offering's own name.
+        for (GTM_Page_Content__c rec : [
+            SELECT Offering_Key__c, Template_Type__c, Text_Value__c
+            FROM   GTM_Page_Content__c
+            WHERE  Template_Type__c != null
+            AND    Section_Key__c = 'page'
+            AND    Field_Key__c   = 'title'
+            AND    Active__c      = true
+            LIMIT  400
+        ]) {
+            if (String.isNotBlank(rec.Text_Value__c)) {
+                home.pageTitles.put(rec.Offering_Key__c + '::' + rec.Template_Type__c, rec.Text_Value__c);
+            }
+        }
+
         home.activity = getPageActivity();
         return home;
+    }
+
+    /**
+     * Rename a page (what it's called, not what it's made of).
+     *
+     * templateType itself can't change -- Apex, SOQL and every layout lookup
+     * key off it -- so this is a display-name override, not a rename of the
+     * address. Stored the same way an offering's own name is: content at a
+     * reserved, un-rendered address (page::title), read back by
+     * getHomeSummary() into pageTitles as an override over TEMPLATE_LABELS.
+     */
+    @AuraEnabled
+    public static String renamePage(String offeringKey, String templateType, String title) {
+        if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
+            throw new AuraHandledException('An offering and a page are both required.');
+        }
+        String clean = title == null ? '' : title.trim();
+        if (String.isBlank(clean)) {
+            throw new AuraHandledException('A name is required.');
+        }
+        if (clean.length() > 120) clean = clean.substring(0, 120);
+
+        GTM_Page_Content__c row = new GTM_Page_Content__c(
+            Content_Address__c = offeringKey + '::' + templateType + '::page::title',
+            Offering_Key__c    = offeringKey,
+            Template_Type__c   = templateType,
+            Section_Key__c     = 'page',
+            Field_Key__c       = 'title',
+            Field_Type__c      = 'text',
+            Label__c           = 'Page title',
+            Active__c          = true,
+            Status__c          = 'Published',
+            Text_Value__c      = clean
+        );
+        upsert row Content_Address__c;
+        return clean;
     }
 
     /**
@@ -591,6 +698,10 @@ public without sharing class GtmPageContentController {
     public class HomeSummary {
         @AuraEnabled public List<OfferingSummary> offerings = new List<OfferingSummary>();
         @AuraEnabled public List<PageActivity> activity = new List<PageActivity>();
+        // Keyed "<offeringKey>::<templateType>", present only for a page
+        // someone has renamed. TEMPLATE_LABELS in c/gtmPageLayouts is the
+        // fallback for everything else -- this is only ever an override.
+        @AuraEnabled public Map<String, String> pageTitles = new Map<String, String>();
     }
 
     public class OfferingSummary {

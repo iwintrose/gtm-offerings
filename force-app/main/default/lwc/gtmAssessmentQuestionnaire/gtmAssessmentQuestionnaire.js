@@ -82,6 +82,167 @@ const COMPLEXITY_CHUNK = 3;
  * between a filled box and an abandoned form.
  */
 const SUPPLEMENT_CHUNK = 3;
+const BD_CONTEXT_CHUNK = 4;
+
+/**
+ * Split a list of questions into screens, BALANCED rather than sliced.
+ *
+ * Seven questions cut into threes leaves a final screen with one question on
+ * it, which reads as the form having lost its place; the same seven spread over
+ * the same three screens is 3-2-2. The cap is still the cap -- the page count is
+ * derived from it -- so the four-per-screen rule this file states at the top
+ * holds either way.
+ *
+ * ONE implementation, deliberately. This was inline in supplementPages() and
+ * was lifted out when the BD-context step needed the same behaviour: a second
+ * copy is how two chunking schemes drift until one of them quietly breaks the
+ * four-per-screen rule the way the supplements step already did once.
+ */
+function chunkBalanced(all, cap) {
+    if (!all || !all.length) return [];
+    const pageCount = Math.ceil(all.length / cap);
+    const base = Math.floor(all.length / pageCount);
+    let extra = all.length % pageCount;
+    const pages = [];
+    let at = 0;
+    for (let i = 0; i < pageCount; i += 1) {
+        const size = base + (extra > 0 ? 1 : 0);
+        if (extra > 0) extra -= 1;
+        pages.push(all.slice(at, at + size));
+        at += size;
+    }
+    return pages;
+}
+
+/**
+ * THE BD-CONTEXT FIELDS (ADR-0008 section 5).
+ *
+ * Eleven qualitative fields that gtmConfigBooking collected and that
+ * GtmReadoutController.buildDraftHtml and GtmReadoutAgentContext read. Their
+ * only home was the booking modal, so retiring it without carrying them would
+ * have quietly emptied several sections of every future readout.
+ *
+ * THEY ARE NOT INSTRUMENT ANSWERS. They are fixed schema fields on
+ * GTM_Assessment_Request__c, not pack-resolved metadata, and nothing about them
+ * may reach a score: they never enter `answers`, `complexityAnswers` or
+ * `supplementAnswers`, and there is a test asserting exactly that. This is why
+ * they are their own step rather than being folded into `supplements` -- the
+ * supplements are resolved out of the instrument, and putting fixed schema
+ * fields into that resolution chain would put non-instrument content inside the
+ * instrument.
+ *
+ * `targetPlatform` is NOT here. The routing step already collects it
+ * (this.routing.target) and buildPayload already sends it; collecting it twice
+ * would be two answers to one question with no rule for which wins.
+ * `context` is NOT here either -- the contact step already asks it.
+ *
+ * Labels, options and placeholders are carried across verbatim from
+ * gtmConfigBooking.html so a rep reading a readout sees the same vocabulary
+ * they always have.
+ */
+const BD_CONTEXT_FIELDS = [
+    {
+        key: 'painPoints',
+        kind: 'textarea',
+        question: "What's not working with your current platform?",
+        placeholder: 'Performance, deliverability, lack of features, cost, support…'
+    },
+    {
+        key: 'migrationGoals',
+        kind: 'textarea',
+        question: 'What do you need from the new platform?',
+        placeholder: 'AI-powered personalisation, better journey automation, real-time triggers…'
+    },
+    {
+        key: 'keyIntegrations',
+        kind: 'textarea',
+        question: 'Key integrations that must stay connected',
+        placeholder: 'Salesforce CRM, Snowflake, Adobe AEM, Shopify, internal data warehouse…'
+    },
+    {
+        key: 'successCriteria',
+        kind: 'textarea',
+        question: 'How will you know the migration succeeded?',
+        placeholder: 'KPIs, milestones, or business outcomes that define success'
+    },
+    {
+        key: 'budgetRange',
+        kind: 'select',
+        question: 'Budget range',
+        options: [
+            { value: '', label: 'Prefer not to say' },
+            { value: 'Under $250K', label: 'Under $250K' },
+            { value: '$250K – $500K', label: '$250K – $500K' },
+            { value: '$500K – $1M', label: '$500K – $1M' },
+            { value: '$1M – $2.5M', label: '$1M – $2.5M' },
+            { value: '$2.5M+', label: '$2.5M+' }
+        ]
+    },
+    {
+        key: 'contactCount',
+        kind: 'number',
+        question: 'Contact / lead database size',
+        placeholder: 'e.g. 2500000'
+    },
+    {
+        key: 'monthlySendVolume',
+        kind: 'number',
+        question: 'Monthly email send volume',
+        placeholder: 'e.g. 5000000'
+    },
+    {
+        key: 'internalTeamSize',
+        kind: 'select',
+        question: 'Internal team for this migration',
+        options: [
+            { value: '', label: 'Select…' },
+            { value: 'Just me', label: 'Just me' },
+            { value: '2–5 people', label: '2–5 people' },
+            { value: '5–10 people', label: '5–10 people' },
+            { value: '10+ people', label: '10+ people' }
+        ]
+    },
+    {
+        key: 'executiveSponsorship',
+        kind: 'select',
+        question: 'Executive sponsorship',
+        options: [
+            { value: '', label: 'Select…' },
+            {
+                value: 'Strong — executive is driving this',
+                label: 'Strong — executive is driving this'
+            },
+            {
+                value: 'Moderate — executive is aware and supportive',
+                label: 'Moderate — aware and supportive'
+            },
+            {
+                value: 'Limited — team-level initiative',
+                label: 'Limited — team-level initiative'
+            },
+            { value: 'Unknown', label: 'Unknown' }
+        ]
+    },
+    {
+        key: 'decisionMakers',
+        kind: 'text',
+        question: 'Who approves the final decision?',
+        placeholder: 'e.g. CMO, VP Marketing, CIO'
+    },
+    {
+        key: 'urgencyDriver',
+        kind: 'text',
+        question: "What's driving the timeline?",
+        placeholder: 'Contract expires March 2026, board mandate, post-acquisition…'
+    }
+];
+
+/** The empty shape, so snapshot/restore and buildPayload have one source. */
+function emptyBdContext() {
+    const out = {};
+    BD_CONTEXT_FIELDS.forEach((f) => { out[f.key] = ''; });
+    return out;
+}
 
 /**
  * Storage is keyed PER LINK, not per browser.
@@ -120,6 +281,55 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
     @api prospect = '';
     @api industryLabel = '';
     @api prefillCompany = '';
+    /**
+     * Which offering's instrument this respondent is answering.
+     *
+     * Defaults to migration-accelerator because that is what every route on
+     * both existing sites is (ADR-0006 / backlog D9): this component's own
+     * route lives only on GTM_Accelerator1, which is down for maintenance, and
+     * the live GTM1 site's booking surface does not reach it at all. A page
+     * that does know its offering sets this property; until one does, the
+     * default is the honest answer rather than a guess -- migration-accelerator
+     * is the only offering that has ever been assessed. It is an @api property
+     * rather than a constant precisely so wiring a second offering's route is a
+     * page-builder change and not a code change.
+     */
+    @api offeringKey = 'migration-accelerator';
+
+    /**
+     * Rendered inside the configurator's overlay rather than as a page of its
+     * own. Only affects chrome: no step, question, branch or score differs.
+     *
+     * See ADR-0008 -- the overlay is the only host that has the engagement
+     * link's context (savedRecordId, submissionToken, the link's own
+     * Offering__c), so `embedded` is the normal case and standalone is the
+     * exception.
+     */
+    @api embedded = false;
+
+    /**
+     * The rep's calendar link, from the engagement link's ?book= parameter.
+     * Carried through to the confirmation panel so the "book an assessment"
+     * half of the CTA's promise survives gtmConfigBooking's retirement.
+     * Empty on a standalone visit, which simply renders no calendar CTA.
+     */
+    @api bookingUrl = '';
+
+    /**
+     * The host page's visit id, so a draft written during this visit ties back
+     * to the trail of what was read before it. Passed down by gtmConfigurator
+     * (visitSessionId); empty standalone.
+     */
+    @api sessionId = '';
+
+    /**
+     * The root element's class. `embedded` swaps in a modifier that undoes the
+     * full-page assumptions (viewport height, max-width, centring, padding,
+     * paper background) -- the overlay card supplies all five.
+     */
+    get rootClass() {
+        return this.embedded ? 'q-root q-root--embedded' : 'q-root';
+    }
 
     @track pack = null;
     /**
@@ -144,6 +354,12 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
     @track supplements = {};       // supplement key -> option value
     @track notes = {};             // unscored supplement key -> verbatim text
     @track contact = { name: '', email: '', company: '', role: '', context: '' };
+    /**
+     * The eleven BD-context fields (ADR-0008 section 5). Business-development
+     * context, NOT instrument answers -- see BD_CONTEXT_FIELDS. Every one is
+     * optional and none of them is ever scored.
+     */
+    @track bdContext = emptyBdContext();
 
     // --------------------------------------------------------- resume state
     /** The server-side draft's token, once one exists. Empty until the
@@ -180,7 +396,7 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
         try {
             const [platforms, questionnaire] = await Promise.all([
                 getPlatforms(),
-                getQuestionnaire()
+                getQuestionnaire({ offeringKey: this.offeringKey })
             ]);
             this.platforms = platforms || [];
             this.complexityQuestions = (questionnaire && questionnaire.complexity) || [];
@@ -266,6 +482,7 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
     async loadPack() {
         try {
             this.pack = await getPack({
+                offeringKey: this.offeringKey,
                 sourceName: this.routing.source,
                 targetName: this.routing.target === NOT_DECIDED ? '' : this.routing.target
             });
@@ -299,6 +516,13 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
         }
         this.supplementPages().forEach((page, i) => {
             steps.push({ kind: 'supplements', offset: i, title: 'About the target platform' });
+        });
+        // ADR-0008 section 5. Chunked, so eleven fields are not one wall --
+        // which is the exact mistake dc4ad5d built this component to undo. The
+        // step kind is `bdContext`, not `context`: `isContext`/`isContact` a
+        // single letter apart in a file this size is a bug waiting to be typed.
+        this.bdContextPages().forEach((page, i) => {
+            steps.push({ kind: 'bdContext', offset: i, title: 'Anything else worth knowing' });
         });
         steps.push({ kind: 'contact', title: 'Where to send it' });
         return steps;
@@ -342,6 +566,7 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
     get isReadiness()   { return this.step.kind === 'readiness'; }
     get isComplexity()  { return this.step.kind === 'complexity'; }
     get isSupplements() { return this.step.kind === 'supplements'; }
+    get isBdContext()   { return this.step.kind === 'bdContext'; }
     get isContact()     { return this.step.kind === 'contact'; }
     get isFirstStep()   { return this.stepIndex === 0; }
     get isLastStep()    { return this.stepNumber === this.stepCount; }
@@ -533,25 +758,7 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
      * eight at once.
      */
     supplementPages() {
-        const all = this.orderedSupplements;
-        if (!all.length) return [];
-        // BALANCED, not sliced. Seven questions cut into threes leaves a final
-        // screen with one question on it, which reads as the form having lost
-        // its place; the same seven spread over the same three screens is
-        // 3-2-2. The cap is still the cap -- pages is derived from it -- so the
-        // four-per-screen rule holds either way.
-        const pageCount = Math.ceil(all.length / SUPPLEMENT_CHUNK);
-        const base = Math.floor(all.length / pageCount);
-        let extra = all.length % pageCount;
-        const pages = [];
-        let at = 0;
-        for (let i = 0; i < pageCount; i += 1) {
-            const size = base + (extra > 0 ? 1 : 0);
-            if (extra > 0) extra -= 1;
-            pages.push(all.slice(at, at + size));
-            at += size;
-        }
-        return pages;
+        return chunkBalanced(this.orderedSupplements, SUPPLEMENT_CHUNK);
     }
 
     /** The current supplement screen's questions, decorated for rendering. */
@@ -583,6 +790,73 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
      */
     get isFirstSupplementStep() {
         return this.isSupplements && this.step.offset === 0;
+    }
+
+    // ----------------------------------------------------------- BD context
+    //
+    // ADR-0008 section 5. Eleven fields the readout depends on, carried over
+    // from gtmConfigBooking when it was retired. Every one is optional, the
+    // whole step is skippable in one click, and NOTHING here is ever scored.
+
+    bdContextPages() {
+        return chunkBalanced(BD_CONTEXT_FIELDS, BD_CONTEXT_CHUNK);
+    }
+
+    /** The current BD-context screen's fields, decorated for rendering. */
+    get currentBdContext() {
+        if (!this.isBdContext) return [];
+        const page = this.bdContextPages()[this.step.offset] || [];
+        const value = (f) => this.bdContext[f.key] || '';
+        return page.map((f) => ({
+            key: f.key,
+            question: f.question,
+            placeholder: f.placeholder || '',
+            value: value(f),
+            isSelect: f.kind === 'select',
+            isTextarea: f.kind === 'textarea',
+            isNumber: f.kind === 'number',
+            isText: f.kind === 'text',
+            // Same pattern as the routing selects: an option carries its own
+            // `selected` flag rather than relying on the select's value
+            // binding, because both are rendered in the same pass.
+            options: (f.options || []).map((o) => ({
+                key: `${f.key}::${o.value}`,
+                value: o.value,
+                label: o.label,
+                selected: value(f) === o.value
+            }))
+        }));
+    }
+
+    /** The "these do not affect your score" note belongs on the first of these
+     *  screens and nowhere else -- the supplements step learned the same. */
+    get isFirstBdContextStep() {
+        return this.isBdContext && this.step.offset === 0;
+    }
+
+    handleBdContext(event) {
+        const key = event.target.dataset.key;
+        if (!key) return;
+        this.bdContext = { ...this.bdContext, [key]: event.target.value };
+        this.persist();
+    }
+
+    /**
+     * Past the whole BD-context block in one click.
+     *
+     * Not "skip this screen": a respondent who does not want to answer these
+     * does not want to be asked the same thing again on the next screen. Lands
+     * on `contact`, which is the one step after this block.
+     */
+    handleSkipBdContext() {
+        const steps = this.steps;
+        const contactAt = steps.findIndex((s) => s.kind === 'contact');
+        this.stepIndex = contactAt > -1 ? contactAt : this.stepIndex + 1;
+        this.errorMessage = '';
+        this.invalidFields = [];
+        this.persist();
+        this.pushDraft(false);
+        this.scrollTop();
     }
 
     // ------------------------------------------------------------- context
@@ -800,6 +1074,11 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
      * schedule; the next step transition mints a new one.
      */
     handleRestart() {
+        // `contact` and `bdContext` are deliberately NOT cleared, for the same
+        // reason: this button means "I answered the instrument wrong", and it
+        // is a nasty surprise if fixing a routing answer also silently deletes
+        // your name and four paragraphs of free text about your estate. What is
+        // cleared below is exactly what the instrument produced.
         this.clearStorage();
         this.answers = {};
         this.complexity = {};
@@ -916,6 +1195,16 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
             company: this.contact.company,
             role: this.contact.role,
             context: this.contact.context,
+            // The eleven BD-context fields, ADR-0008 section 5. Spread as
+            // top-level keys because that is what RequestInput declares and
+            // recordAssessmentRequest writes -- no Apex change was needed.
+            //
+            // NOTE THE POSITION. They sit here, beside `context` and `role`,
+            // and NOT inside answers / complexityAnswers / supplementAnswers.
+            // Those three are the only scoring inputs Apex trusts; a BD field
+            // that leaked into one of them would be scored as if it were an
+            // instrument dimension. There is a test asserting they never do.
+            ...this.bdContext,
             currentPlatform: this.labelFor(this.routing.source),
             targetPlatform:
                 this.routing.target === NOT_DECIDED ? '' : this.labelFor(this.routing.target),
@@ -958,12 +1247,36 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
                 new CustomEvent('submitted', {
                     detail: {
                         email: this.contact.email.trim(),
-                        assessmentRequestId: result ? result.assessmentRequestId : null
+                        assessmentRequestId: result ? result.assessmentRequestId : null,
+                        // gtmConfigBooking's submitted event carried this and
+                        // gtmConfigurator.handleBookingSubmitted uses it to call
+                        // identifySession -- which attributes the whole
+                        // anonymous reading trail that led here to the person
+                        // who left it. Omitting it would have made the D11 swap
+                        // silently lose session identification. RequestResult
+                        // has always returned it; nothing else was needed.
+                        contactId: result ? result.contactId : null
                     }
                 })
             );
         } catch (error) {
             this.errorMessage = this.readError(error);
+            // ADR-0008 section 5.2. A submit can lose a race against a
+            // submission that already landed for this link -- another tab,
+            // another device -- and the server refuses it. The host has to be
+            // told, because the honest state of the page afterwards is
+            // "submitted" (the request exists), not "failed".
+            //
+            // Deliberately NOT detected by matching the server's message text:
+            // the host re-asks the server whether this link now has an
+            // assessment, which is authoritative, survives any rewording of
+            // that message, and correctly does nothing on an ordinary network
+            // failure. See gtmConfigurator.handleBookingFailed.
+            this.dispatchEvent(
+                new CustomEvent('submitfailed', {
+                    detail: { message: this.errorMessage }
+                })
+            );
         } finally {
             this.submitting = false;
         }
@@ -974,6 +1287,11 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
         if (body && body.message) return body.message;
         if (Array.isArray(body) && body.length && body[0].message) return body[0].message;
         return 'We could not send that just now. Please try again in a moment.';
+    }
+
+    /** Whether the engagement link carried a ?book= calendar URL. */
+    get hasBookingUrl() {
+        return !!(this.bookingUrl || '').trim();
     }
 
     get confirmMessage() {
@@ -1025,6 +1343,7 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
             supplements: this.supplements,
             notes: this.notes,
             contact: this.contact,
+            bdContext: this.bdContext,
             stepIndex: this.stepIndex,
             savedAt: new Date().toISOString()
         };
@@ -1040,6 +1359,11 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
         this.supplements = saved.supplements || {};
         this.notes       = saved.notes || {};
         this.contact     = { ...this.contact, ...(saved.contact || {}) };
+        // Merged onto the empty shape rather than assigned, so a draft written
+        // before this step existed (or by an older client) restores as blanks
+        // rather than as undefined -- undefined would reach buildPayload and be
+        // sent as null over a field the respondent may since have filled in.
+        this.bdContext   = { ...emptyBdContext(), ...(saved.bdContext || {}) };
         // Position matters as much as the answers. Clamped rather than trusted:
         // a stored index from a longer instrument must not land past the end.
         const wanted = Number(saved.stepIndex);
@@ -1112,7 +1436,17 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
             const handle = await saveDraft({
                 resumeToken: this.draftToken || '',
                 payload: JSON.stringify(this.snapshot()),
-                pairKey: (this.pack && this.pack.pairKey) || ''
+                pairKey: (this.pack && this.pack.pairKey) || '',
+                // ADR-0008 phase 7.1. Stored on the draft row so the emailed
+                // resume link can carry ?cfgId= as well as the token -- without
+                // it, a respondent who resumes from their inbox and finishes
+                // produces an unlinked, unattributed request scored against the
+                // default offering. The server validates it and degrades an
+                // unusable value to null rather than failing the save.
+                configId: this.savedRecordId || '',
+                // So a resume can be tied back to the interaction trail that
+                // led to it, the way the Booking draft path already does.
+                sessionId: this.sessionId || ''
             });
             if (handle && handle.resumeToken) {
                 this.draftToken = handle.resumeToken;
@@ -1162,7 +1496,23 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
         }
         try {
             const { origin, pathname } = window.location;
-            return `${origin}${pathname}?resume=${this.draftToken}`;
+            // ADR-0008 phase 7.1. This used to be origin + pathname + the
+            // token, which threw the query string away -- and since the
+            // questionnaire moved behind /configurator, throwing the query
+            // string away throws away ?cfgId=, which is the engagement link.
+            // Following such a link and finishing produced an UNLINKED
+            // submission: no Opportunity, no Account, no rep attribution, and
+            // scored against the default offering rather than the link's own.
+            //
+            // Rebuilt from savedRecordId rather than by copying
+            // window.location.search wholesale, so the link a respondent hands
+            // to a colleague carries exactly two parameters and none of the
+            // incidental ones (?rep=, ?book=, ?note=, a stale ?readout=) that
+            // happen to be on the URL they are sitting on.
+            const link = this.savedRecordId
+                ? `cfgId=${encodeURIComponent(this.savedRecordId)}&`
+                : '';
+            return `${origin}${pathname}?${link}resume=${this.draftToken}`;
         } catch (e) {
             return '';
         }

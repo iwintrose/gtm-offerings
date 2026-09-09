@@ -639,13 +639,40 @@ public with sharing class GtmReadoutModel {
      * platform names, so reopening a year-old request reproduces the chain
      * that actually scored it.
      */
+    /**
+     * Which offering's instrument this request was scored against.
+     *
+     * Reads the stored field, with the same blank-falls-back-to-Migration-
+     * Accelerator rule GtmReadoutController.generateDraftReadout uses, so the
+     * two cannot disagree about a legacy row. Defensive about the field being
+     * absent from the caller's SOQL: a readout rendering against the wrong
+     * offering would be worse than one rendering against the fallback, but a
+     * QueryException thrown from a display path would be worse than both.
+     */
+    private static String offeringKeyOf(GTM_Assessment_Request__c req) {
+        try {
+            if (req != null && String.isNotBlank(req.Offering_Key__c)) {
+                return req.Offering_Key__c;
+            }
+        } catch (SObjectException e) {
+            // Field not selected by this caller's query -- fall through.
+        }
+        return GtmAssessmentFrames.MIGRATION_ACCELERATOR;
+    }
+
     public static GtmAssessmentReadout.Readout adaptiveReadout(GTM_Assessment_Request__c req) {
         if (req == null) {
             return null;
         }
         try {
-            GtmAssessmentInstrument.Pack pack =
-                GtmAssessmentInstrument.resolveByPairKey(req.Instrument_Pair__c);
+            // Resolved against the offering the request was SCORED against,
+            // not whichever offering happens to be "current" -- so reopening a
+            // year-old readout walks that offering's own pair table. Blank
+            // falls back to migration-accelerator for rows predating
+            // Offering_Key__c; see the backfill script and ADR-0007 section 3.
+            GtmAssessmentInstrument.Pack pack = GtmAssessmentInstrument.resolveByPairKey(
+                offeringKeyOf(req), req.Instrument_Pair__c
+            );
 
             GtmAssessmentScoring.Score score = new GtmAssessmentScoring.Score();
             score.total = req.Assessment_Score__c;

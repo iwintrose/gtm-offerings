@@ -472,6 +472,181 @@ depending on resolution order) — fixed before deploy. Dry-run + real
 deploy clean, `GTM` site republished, migration re-run confirmed
 idempotent, `check-all.sh` green, pushed (`78206c2`, `a4c4ab8`).
 
+**D11 — The live site's booking modal never sends real assessment answers, so a
+real submission today scores nothing.** Found while adding orientation copy to
+the Instrument Editor and tracing whether source/target platform selection
+actually reaches instrument-pack resolution. It does, correctly — server-side
+resolution in `GtmAssessmentInstrument.getPack()`/`GtmAssessmentRequestController`
+never trusts the client and re-resolves independently, and there's no bug in
+that path. The real problem is upstream: `gtmAssessmentQuestionnaire` — the
+only component that asks any of the eight scored questions — has its sole
+route on `GTM_Accelerator1`, which is `DownForMaintenance` (same site as D9).
+The live `GTM1` site's actual booking flow (`gtmConfigBooking`) is a simpler,
+different component: it has a hardcoded platform list and sends **no
+`answers` array at all**. So a real prospect submitting through the live site
+today produces a request with no scored dimensions — `Assessment_Score__c`
+and `Assessment_Tier__c` come back meaningless, and the readout that
+auto-generates from it has nothing real to narrate. This wasn't caught by
+tonight's earlier "the core prospect journey likely still works" read (ADR-0006)
+because that read confirmed `gtmConfigurator` doesn't *navigate* anywhere
+missing — it didn't check whether the component it *does* render actually
+sends what scoring needs. Same underlying class of gap as D9, more
+consequential: D9 is a missing page; this is the core product's central value
+prop (a real score, a real readout) silently not happening for anyone who
+uses the live link today. **Not fixed. Needs a real decision** — promote
+`GTM_Accelerator1` to live, port `gtmAssessmentQuestionnaire`'s route onto
+`GTM1`, or wire `gtmConfigBooking` to actually collect and send scored
+answers — each a different size of change, not this session's to pick
+unilaterally.
+
+*Update (ADR-0007, per-offering instrument):* what "fixed" has to include has
+changed slightly, though none of the above is invalidated.
+`GtmAssessmentInstrument.getPack`, `GtmAssessmentScoring.score`,
+`GtmEstateComplexity.score` and `GtmAssessmentQuestions.getQuestionnaire` now
+all take a required `offeringKey`, and an offering that resolves to no
+instrument scores **nothing** rather than falling back to Migration
+Accelerator's eight dimensions — deliberately, since a confident score against
+another offering's questions is worse than no score. So a D11 fix that wires
+`gtmConfigBooking` to collect and send real answers must also thread an
+offering key through. The good news is that it already has one available and
+needs no new plumbing: `gtmConfigBooking` is reached from a saved,
+offering-tagged engagement link, and `GtmAssessmentRequestController`'s
+existing `resolveConfigContext` → `resolveOfferingKey` path already reads
+`GTM_Saved_Configuration__c.Offering__c` and stamps
+`GTM_Assessment_Request__c.Offering_Key__c` on every submission. This is an
+assumption D11's implementer should **verify** rather than rediscover — not
+new work D11 inherits. See
+`docs/agent-artifacts/per-offering-instrument-plan.md` §6.
+
+*Update (decided, planned, not yet implemented — ADR-0008):* the "needs a
+real decision" above is closed. **The live surface adopts the questionnaire,
+inside `gtmConfigurator`, on the existing `/configurator` route.**
+`gtmConfigBooking` is retired; no route moves, no `Network.Status` changes,
+`GTM_Accelerator1` stays down. Git history settles it: `dc4ad5d`'s own
+commit message ("The long form was never going to be filled in. This is the
+same instrument in digestible steps") shows `gtmAssessmentQuestionnaire` was
+built as the **replacement** for the booking modal's long "rich assessment"
+form (`552dfb1`) — the swap on the live surface was simply never done. The
+other two options were rejected for a concrete reason, not a size one: both
+put the questionnaire on a standalone page, whose `savedRecordId` /
+`submissionToken` / `offeringKey` are `@api` properties absent from its
+`targetConfigs` and unreachable from any URL param, so a submission from
+there resolves an empty `ConfigContext` — no Opportunity, no Account, no rep
+attribution, no `Link_Password__c` gate, and `resolveOfferingKey` falling to
+the hardcoded default instead of reading the link's `Offering__c`. That
+trades "scores nothing" for "scores something, attributed to nobody, against
+a guessed offering," which ADR-0007's hard boundary already forbids.
+
+Two things the same investigation found, both of which the fix has to carry:
+the **resubmit guard** is degraded rather than lost — the durable half
+(`closeDraft` appending a terminal `GTM_Form_Draft__c` row with
+`Submitted_Request__c`, refused by `GtmAssessmentDraftController.
+latestOpenRowFor`) is intact but only revokes a *resume link*, and
+`gtmConfigBooking` never sends a `draftToken` so it never fires; the live
+path has only `sessionStorage`, `gtmConfigBooking.handleReopen()` is an
+unguarded re-open, and `submitRequest` has no duplicate check at all. And
+the **button flip** (`hasSubmittedAssessment` → disabled "Your assessment is
+in review" → "View your assessment", plus the closing-card flip) is present
+and live — but its regression test,
+`lwc/maConfigurator/__tests__/maConfigurator.readout.test.js` (`c8945b8`,
+extended `b1e2e80`), was dropped when `a2fc262` ported the state machine
+into this branch, so it is unprotected today. Restoring it is phase 1.
+
+Full plan, file-by-file plus QA protocol:
+`docs/agent-artifacts/d11-resolution-plan.md`. Decision record:
+`docs/architecture/adr/0008-the-guest-assessment-is-hosted-by-the-engagement-link-not-by-a-standalone-route.md`.
+
+***RESOLVED*** *(ADR-0008 implemented, phases 1-7, deployed to `gtm-dev`).*
+The live `/configurator` overlay now renders `gtmAssessmentQuestionnaire`
+instead of `gtmConfigBooking`, so a real prospect submitting through the live
+engagement link answers the eight scored questions, the six complexity
+questions and the pair's supplements, and the request comes back with real
+`Section_Scores__c`. `gtmConfigBooking` is deleted. Zero files under
+`force-app/main/default/experiences/` changed; `GTM` is still `Live` and
+`GTM_Accelerator1` is still `DownForMaintenance`, both unchanged.
+
+What landed beyond the swap itself, each because leaving it out would have
+turned a fix into a different bug:
+
+- the recipient state-machine test lost in the `MA_`→`GTM_` port is restored
+  (`lwc/gtmConfigurator/__tests__/gtmConfigurator.readout.test.js`); all eight
+  recovered assertions passed against unmodified `gtmConfigurator`, so the port
+  dropped the test and not the behaviour;
+- the client now reads the **link's** `Offering__c` (`effectiveOfferingKey`)
+  rather than the Experience Builder page property, which could disagree with
+  what the server scores against and produce a confident-looking score that
+  resolved no dimension keys at all;
+- the eleven BD-context fields the readout depends on moved into the
+  questionnaire as one optional, chunked, skippable step, with a test asserting
+  no BD key ever reaches `answers` / `complexityAnswers` / `supplementAnswers`;
+- **one submitted assessment per engagement link** is now enforced server-side
+  in `submitRequest`, before any DML, with a guest-safe boolean mirror
+  (`GtmConfigurationStatusController.hasSubmittedAssessment`) so the submitted
+  state survives a new tab, a second device or a private window rather than
+  living only in `sessionStorage`;
+- the calendar CTA survives the retirement; the unguarded "Re-open the request"
+  path does not.
+
+Two things found while implementing, both fixed here and neither in the plan:
+
+1. `GTM_Assessment_Config.Default.md-meta.xml` carried an explicit
+   `<value xsi:nil="true"/>` for `Resume_Link_Base_URL__c` directly beneath a
+   comment telling operators to set that value in the org. A custom-metadata
+   deploy writes the fields it lists, so every `./scripts/deploy.sh` silently
+   re-blanked it and resume emails stopped going out with no error anywhere.
+   The field is now **absent** from the file rather than nil; verified against
+   `gtm-dev` that a deploy with it omitted leaves the org's value intact.
+   `Resume_Link_Base_URL__c` is set to
+   `https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtm/s/configurator`.
+2. `npm test` was collecting and running suites out of `.claude/worktrees/`,
+   so an abandoned agent checkout's failures were reported as failures of HEAD.
+   Jest now ignores that gitignored tree.
+
+Still open, deliberately, and named here so it is not lost:
+`GtmFormDraftController` and the existing `Draft_Type__c = 'Booking'` rows are
+untouched. The controller is still granted in `GTM_Story_Guest` and the rows
+are prospect data; it is now unused **by the configurator**, and retiring that
+path is a separate decision (plan open call 2).
+
+**D12 — Industry Chooser's generic "Add section" path is now closed, and there
+is no purpose-built replacement.** Landed while implementing the Content
+Manager IA plan (`docs/agent-artifacts/content-manager-ia-plan.md` §3.5):
+`gtmPageLayouts.js`'s `TEMPLATE_LAYOUTS['industry-chooser']` is now `[]`, so
+the generic "Add section" modal on that page (any heading text, any layout,
+becomes the industry's `Section_Key__c` with none of a real "Add industry"
+form's validation — duplicate-name check, a real key rather than a slugified
+heading) is closed off, per the PO's own "I can click in, I can add — should
+not be able to." That generic modal was, until this change, the *only* way a
+new industry got created anywhere in the app. Existing `industry-tile`
+sections are untouched — still fully renameable, reorderable, hideable and
+deletable — only *creation* is blocked. **Not urgent** while Migration
+Accelerator is the only offering in the org (no second industry has needed
+adding), but this becomes a real, blocking gap the moment one does. Needs a
+purpose-built "Add industry" flow before then: validated key, a duplicate
+check against existing industries, and a seeded field set matching
+`industry-tile`'s layout — not a re-opening of the generic modal.
+
+**D13 — Per-offering "look and feel" (theming) — deferred, not decided
+against.** Raised in the same IA plan (§5): a content author cannot change
+the base visual system (`gtmStory.css`/`gtmConfigurator.css` — ~150-200 raw
+colour/`var()` declarations each, shared by every offering that renders
+through them) per offering today. The two levers that *do* exist —
+`Css_Class__c`/`Inline_Style__c`/`Html_Id__c` on `GTM_Page_Content__c`
+(per-field, already offering-scoped) and `swatches` under
+`offering-defaults` (the rep's link-wizard colour choices, already
+offering-scoped) — cover the specific "edit the accelerator one we've built
+so far" case today, without waiting on anything below. **Deliberately not
+built this pass:** a real per-offering theme/token layer is a cross-cutting
+CSS architecture change to the two largest, most heavily-styled components in
+the app — categorically bigger than an IA cleanup, and speculative while
+Migration Accelerator is the only offering built out (nothing to validate a
+theme system against yet). **The trigger, so this isn't silently dropped:**
+build it the moment a *second* offering is being onboarded with a genuinely
+different visual identity from Migration Accelerator's. The seam is already
+known — CSS custom properties at the top of both stylesheets, sourced from a
+new json field beside `swatches` in the customizer-settings surface (see
+D8/§1 above), applied per-offering the same way `Inline_Style__c` already is.
+
 ---
 
 ## Ready to build — no decision needed
@@ -511,6 +686,36 @@ editable in Setup without a deploy) · two more dead-code removals
 B5, feedback card padding · B1, the CMS-editable FAQ widget on both apps ·
 B4, the retired CMS content (records deleted by Don, the 5 dead
 managedContentType definitions removed).
+
+**D14 — The Instrument Editor still previews Migration Accelerator's band
+ladder for an offering that has no instrument.** The one residual from QA
+round 1 on ADR-0007 deliberately left out of that round's fix list. Three
+sibling leaks were closed (`Source__c` now resolves through the same
+GTM_Offering__mdt → GTM_Page_Content__c → GTM_Page_Section__c tiers
+`getOfferings()` uses; `GtmAssessmentScoring.frameMaxTotal()` and the new
+`GtmEstateComplexity.maxTotalFor()` return `null` rather than 32/18 for an
+offering the compiled constants don't apply to; `getQuestionnaire()` derives
+both maxima per offering). This fourth one is a different site and was not in
+the endorsed fix list: `GtmAssessmentInstrument.getFrame()` takes its bands
+from `GtmAssessmentScoring.bands(offeringKey)`, whose no-frame-record
+fail-open hands back Migration Accelerator's four-band ladder. Verified still
+present against live `gtm-dev` after the round-1 fixes:
+
+```
+CHECK6 [migration-accelerator] slotCount=8 maxTotal=32 bands=[Discovery First 8-14]…[Fast-Track 27-32]
+CHECK6 [my-test-offering]      slotCount=0 maxTotal=32 bands=[Discovery First 8-14]…[Fast-Track 27-32]
+CHECK6 [data-cloud-accelorator] slotCount=0 maxTotal=32 bands=[Discovery First 8-14]…[Fast-Track 27-32]
+```
+
+So an author opening a brand-new offering in the Instrument Editor is shown
+another offering's band edges next to a slot count of 0, as if they were
+theirs. Lower stakes than the three that were fixed — this is an authoring
+preview, not a persisted field or a guest endpoint, and nothing scores off it
+— but it is the same borrowed-instrument shape, and the fail-open that
+produces it is deliberate (a missing frame record is the path every
+Migration Accelerator assessment takes today), so closing it means deciding
+what an offering with no frame *should* preview rather than just removing the
+fallback. Named here rather than fixed silently.
 
 **D9 — The Industry Chooser isn't reachable anywhere live.** Found while
 trying to screenshot it: `chooseIndustry` (LWC, `gtm::industry-chooser`

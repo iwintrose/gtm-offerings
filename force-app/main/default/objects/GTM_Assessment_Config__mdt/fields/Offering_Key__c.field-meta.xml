@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Offering_Key__c</fullName>
+    <label>Offering Key</label>
+    <description>Which offering this config row applies to. Blank means
+        "the default for every offering with no row of its own" -- the
+        existing GTM_Assessment_Config.Default record stays blank and
+        becomes that fallback. Matches GTM_Offering__mdt.Offering_Key__c.
+    </description>
+    <required>false</required>
+    <length>80</length>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

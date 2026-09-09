@@ -23,7 +23,7 @@ private class GtmEstateComplexityTest {
         // The two instruments share a shape and nothing else. If complexity
         // ever started accepting 4s it would be silently borrowing the
         // readiness scale, and the two axes would stop being comparable.
-        GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score(allAt(4));
+        GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score('migration-accelerator', allAt(4));
         Assert.isFalse(scored.hasAnswers, 'A 4 is out of range for a 1-3 dimension');
         Assert.isNull(scored.total);
     }
@@ -63,11 +63,11 @@ private class GtmEstateComplexityTest {
 
     @isTest
     static void aLightestAndHeaviestEstateBandCorrectly() {
-        GtmEstateComplexity.Complexity light = GtmEstateComplexity.score(allAt(1));
+        GtmEstateComplexity.Complexity light = GtmEstateComplexity.score('migration-accelerator', allAt(1));
         Assert.areEqual(6, light.total);
         Assert.areEqual('Light', light.band);
 
-        GtmEstateComplexity.Complexity heavy = GtmEstateComplexity.score(allAt(3));
+        GtmEstateComplexity.Complexity heavy = GtmEstateComplexity.score('migration-accelerator', allAt(3));
         Assert.areEqual(18, heavy.total);
         Assert.areEqual('Heavy', heavy.band);
         Assert.areEqual(6, heavy.dimensionScores.size());
@@ -82,7 +82,7 @@ private class GtmEstateComplexityTest {
             'not_a_dimension'           => 3,
             'consent_suppression_model' => null
         };
-        GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score(answers);
+        GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score('migration-accelerator', answers);
         Assert.areEqual(3, scored.total);
         Assert.areEqual(1, scored.dimensionScores.size());
         Assert.isFalse(scored.dimensionScoresJson.contains('not_a_dimension'));
@@ -93,7 +93,7 @@ private class GtmEstateComplexityTest {
         for (Map<String, Integer> empty : new List<Map<String, Integer>>{
             null, new Map<String, Integer>(), new Map<String, Integer>{ 'nope' => 2 }
         }) {
-            GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score(empty);
+            GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score('migration-accelerator', empty);
             Assert.isFalse(scored.hasAnswers);
             Assert.isNull(scored.total);
             Assert.isNull(scored.band);
@@ -119,7 +119,7 @@ private class GtmEstateComplexityTest {
             GtmEstateComplexity.DIMENSIONS[0] => 3
         };
 
-        GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score(answers, resolved);
+        GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score('migration-accelerator', answers, resolved);
         Assert.areEqual(5, scored.total, 'Only the two answers under resolved keys count');
         Assert.areEqual(2, scored.dimensionScores.size());
         Assert.isTrue(scored.dimensionScores.containsKey('workflow_footprint_native'));
@@ -144,7 +144,7 @@ private class GtmEstateComplexityTest {
         duplicated[5] = duplicated[0];
 
         for (List<String> bad : new List<List<String>>{ null, tooShort, duplicated }) {
-            GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score(answers, bad);
+            GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score('migration-accelerator', answers, bad);
             Assert.areEqual(6, scored.total, 'Scored against the default six instead');
             Assert.areEqual(2, scored.dimensionScores.size());
         }
@@ -160,13 +160,36 @@ private class GtmEstateComplexityTest {
             GtmEstateComplexity.DIMENSIONS[2] => 3,
             'not_a_dimension' => 3
         };
-        GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score(answers, resolved);
+        GtmEstateComplexity.Complexity scored = GtmEstateComplexity.score('migration-accelerator', answers, resolved);
         Assert.areEqual(3, scored.total, 'A 4 on a 1-3 scale is dropped, never clamped to 3');
         Assert.areEqual(1, scored.dimensionScores.size());
         Assert.isFalse(scored.dimensionScoresJson.contains('not_a_dimension'));
         Assert.areEqual(
             18, GtmEstateComplexity.MAX_TOTAL_SCORE,
             'and the maximum is still derived from the frame, not typed'
+        );
+    }
+
+    @isTest
+    static void theComplexityMaximumIsPerOfferingAndNullWhereThereIsNoInstrument() {
+        // QA round 1, Finding 3. This method is new: nothing exposed the
+        // complexity MAXIMUM to a caller holding only an offering key, so the
+        // guest questionnaire endpoint -- which needs it before any answer
+        // exists -- printed the compiled 18 for every offering alive.
+        GtmAssessmentFrames.rowOverride = new List<GTM_Assessment_Frame__mdt>();
+        GtmAssessmentFrames.resetCache();
+
+        Assert.areEqual(
+            18, GtmEstateComplexity.maxTotalFor('migration-accelerator'),
+            'Migration Accelerator is still measured out of its own six dimensions'
+        );
+        Assert.areEqual(
+            18, GtmEstateComplexity.maxTotalFor(null),
+            'and a blank key still means Migration Accelerator'
+        );
+        Assert.isNull(
+            GtmEstateComplexity.maxTotalFor('an-offering-with-no-instrument'),
+            'LEAK: an offering with no complexity axis was measured out of somebody else\'s 18'
         );
     }
 

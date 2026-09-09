@@ -250,13 +250,13 @@ describe('c-gtm-assessment-questionnaire', () => {
         // (deriving all the readiness steps from the resolved pack) made the
         // form appear to double in length the moment you answered the first
         // question, which is the opposite of what a progress bar is for.
-        expect(one(el, '.q-progress-label').textContent).toBe('Section 1 of 6');
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 1 of 9');
     });
 
     it('adds the supplement step once the pack says the pair has one', async () => {
         const el = await mount();
         await toReadiness(el);
-        expect(one(el, '.q-progress-label').textContent).toBe('Section 2 of 9');
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 2 of 12');
     });
 
     it('shows the posture statement exactly once, leading the first questions', async () => {
@@ -272,7 +272,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         expect(one(el, '.q-posture').textContent).toContain('We can read your current estate.');
         // And on no screen after it.
         let guard = 0;
-        while (!one(el, '.q-done') && guard < 12) {
+        while (!one(el, '.q-done') && guard < 16) {
             answerStep(el);
             const before = one(el, '.q-progress-label')
                 ? one(el, '.q-progress-label').textContent : null;
@@ -375,7 +375,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         const el = await mount();
         await toReadiness(el);
         let guard = 0;
-        while (!one(el, '.q-done') && guard < 12) {
+        while (!one(el, '.q-done') && guard < 16) {
             expect(q(el, 'fieldset').length).toBeLessThanOrEqual(4);
             answerStep(el);
             const before = one(el, '.q-progress-label').textContent;
@@ -440,7 +440,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         const el = await mount();
         await toReadiness(el);
         let guard = 0;
-        while (!one(el, '.q-aside-tag') && guard < 8) {
+        while (!one(el, '.q-aside-tag') && guard < 12) {
             answerStep(el);
             await next(el);
             guard += 1;
@@ -455,7 +455,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         const el = await mount();
         await toReadiness(el);
         let guard = 0;
-        while (!one(el, 'input[data-field="name"]') && guard < 9) {
+        while (!one(el, 'input[data-field="name"]') && guard < 14) {
             answerStep(el);
             await next(el);
             guard += 1;
@@ -483,7 +483,7 @@ describe('c-gtm-assessment-questionnaire', () => {
      * answer map that comes back but dumps the respondent at step 1 is not
      * resuming, it is asking them to find their place again. The old version of
      * this test asserted `not.toBe('Section 1 of 7')`, which a regression to
-     * "Section 1 of 6" would have passed.
+     * "Section 1 of 9" would have passed.
      */
     it('restores both the answers AND the step after a reload', async () => {
         const el = await mount();
@@ -493,7 +493,7 @@ describe('c-gtm-assessment-questionnaire', () => {
 
         getPack.mockResolvedValue(pack());
         const again = await mount();
-        expect(one(again, '.q-progress-label').textContent).toBe('Section 2 of 9');
+        expect(one(again, '.q-progress-label').textContent).toBe('Section 2 of 12');
         expect(one(again, '.q-title').textContent).toBe(
             'What you are moving, and whether we can read it'
         );
@@ -507,12 +507,12 @@ describe('c-gtm-assessment-questionnaire', () => {
         await next(el);
         answerStep(el);
         await next(el);
-        expect(one(el, '.q-progress-label').textContent).toBe('Section 4 of 9');
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 4 of 12');
         document.body.removeChild(el);
 
         getPack.mockResolvedValue(pack());
         const again = await mount();
-        expect(one(again, '.q-progress-label').textContent).toBe('Section 4 of 9');
+        expect(one(again, '.q-progress-label').textContent).toBe('Section 4 of 12');
     });
 
     /**
@@ -538,7 +538,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         document.body.appendChild(b);
         await flush();
         await flush();
-        expect(one(b, '.q-progress-label').textContent).toBe('Section 1 of 6');
+        expect(one(b, '.q-progress-label').textContent).toBe('Section 1 of 9');
         expect(q(b, '.q-opt--on').length).toBe(0);
     });
 
@@ -612,7 +612,7 @@ describe('c-gtm-assessment-questionnaire', () => {
         await flush();
 
         expect(resumeDraft).toHaveBeenCalledWith({ resumeToken: 'TOKEN-BBB' });
-        expect(one(el, '.q-progress-label').textContent).toBe('Section 3 of 9');
+        expect(one(el, '.q-progress-label').textContent).toBe('Section 3 of 12');
         expect(one(el, '.q-notice')).not.toBeNull();
     });
 
@@ -706,8 +706,437 @@ describe('c-gtm-assessment-questionnaire', () => {
         await toReadiness(el);
         expect(one(el, '.q-question').textContent).toBe('Question 1?');
         expect(getPack).toHaveBeenCalledWith({
+            // Which offering's instrument these questions came from. Defaults
+            // to migration-accelerator until a page sets the @api property --
+            // see the property's own comment for why that default is honest
+            // rather than a guess.
+            offeringKey: 'migration-accelerator',
             sourceName: 'sfmc',
             targetName: 'sfmc_next'
         });
+        // The base question set is offering-scoped too: GtmAssessmentQuestions
+        // filters its rows by Offering_Key__c, so an un-keyed call would serve
+        // whatever offering's questions happened to sort first.
+        expect(getQuestionnaire).toHaveBeenCalledWith({
+            offeringKey: 'migration-accelerator'
+        });
+    });
+
+    // ── the resume link keeps the engagement link (ADR-0008 phase 7.1) ──────
+
+    it('sends the engagement link and the session with every draft save', async () => {
+        // Stored on the draft row so the EMAILED resume link can carry ?cfgId=
+        // as well as the token. Without it, a respondent who resumes from their
+        // inbox and finishes produces an unlinked request: no Opportunity, no
+        // Account, no rep attribution, scored against the default offering.
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.savedRecordId = 'a0Bgk000000ABCDEAA';
+        el.sessionId = 'visit-123';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await toReadiness(el);
+
+        expect(saveDraft).toHaveBeenCalled();
+        const args = saveDraft.mock.calls[0][0];
+        expect(args.configId).toBe('a0Bgk000000ABCDEAA');
+        expect(args.sessionId).toBe('visit-123');
+    });
+
+    it('keeps the engagement link on the copyable resume URL', async () => {
+        // This used to be origin + pathname + the token, which threw the whole
+        // query string away -- and since the questionnaire moved behind
+        // /configurator, that means throwing away ?cfgId=.
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.savedRecordId = 'a0Bgk000000ABCDEAA';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await toReadiness(el);
+
+        const url = one(el, '.q-keep-url').value;
+        expect(url).toContain('cfgId=a0Bgk000000ABCDEAA');
+        expect(url).toContain('resume=TOKEN-AAA');
+        // Exactly two parameters: the incidental ones on the URL the respondent
+        // happens to be sitting on (?rep=, ?book=, a stale ?readout=) are not
+        // handed to whoever they forward this to.
+        expect(url.split('?')[1].split('&').length).toBe(2);
+    });
+
+    it('still builds a usable resume URL with no engagement link at all', async () => {
+        const el = await mount();
+        await toReadiness(el);
+
+        const url = one(el, '.q-keep-url').value;
+        expect(url).toContain('resume=TOKEN-AAA');
+        expect(url).not.toContain('cfgId=');
+    });
+
+    // ── the BD-context step (ADR-0008 section 5) ────────────────────────────
+
+    /** Walks to the first BD-context screen. */
+    async function toBdContext(el) {
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, '.q-skip') && guard < 14) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        expect(one(el, '.q-skip')).not.toBeNull();
+    }
+
+    it('asks the BD-context fields as their own optional, chunked step', async () => {
+        const el = await mount();
+        await toBdContext(el);
+
+        expect(one(el, '.q-title').textContent).toBe('Anything else worth knowing');
+        // The file's own rule, which it has broken once before: never more than
+        // four questions on a screen. Eleven fields, chunked, is 4-4-3.
+        expect(q(el, 'fieldset').length).toBeLessThanOrEqual(4);
+        // Said in prose once, and per field where the decision is actually made.
+        expect(one(el, '.q-aside-tag').textContent).toBe('These do not affect your score');
+        expect(q(el, '.q-optional').length).toBe(q(el, 'fieldset').length);
+    });
+
+    it('blocks nothing on the BD-context step — every field is optional', async () => {
+        const el = await mount();
+        await toBdContext(el);
+        const before = one(el, '.q-progress-label').textContent;
+
+        // Nothing answered at all, straight to Continue.
+        await next(el);
+
+        expect(one(el, '.q-error')).toBeNull();
+        expect(one(el, '.q-progress-label').textContent).not.toBe(before);
+    });
+
+    it('skips the whole BD-context block in one click, not just one screen', async () => {
+        // A respondent who does not want to answer these does not want to be
+        // asked the same thing again on the next screen.
+        const el = await mount();
+        await toBdContext(el);
+
+        one(el, '.q-skip').click();
+        await flush();
+        await flush();
+
+        expect(one(el, 'input[data-field="name"]')).not.toBeNull();
+        expect(one(el, '.q-title').textContent).toBe('Where to send it');
+        expect(one(el, '.q-skip')).toBeNull();
+    });
+
+    it('carries all eleven BD-context fields on the payload', async () => {
+        const el = await mount();
+        await toBdContext(el);
+
+        const type = (key, value) => {
+            const node = one(el, `[data-key="${key}"]`);
+            expect(node).not.toBeNull();
+            node.value = value;
+            node.dispatchEvent(new CustomEvent('change'));
+        };
+        const VALUES = {
+            painPoints: 'Deliverability is poor',
+            migrationGoals: 'Real-time triggers',
+            keyIntegrations: 'Snowflake',
+            successCriteria: 'Sends land',
+            budgetRange: '$500K – $1M',
+            contactCount: '2500000',
+            monthlySendVolume: '5000000',
+            internalTeamSize: '2–5 people',
+            executiveSponsorship: 'Unknown',
+            decisionMakers: 'CMO',
+            urgencyDriver: 'Contract expires March 2026'
+        };
+        // Spread across the three chunked screens, so this also proves the
+        // values survive the step transitions between them.
+        let guard = 0;
+        while (one(el, '.q-skip') && guard < 6) {
+            Object.keys(VALUES).forEach((k) => {
+                if (one(el, `[data-key="${k}"]`)) type(k, VALUES[k]);
+            });
+            await flush();
+            await next(el);
+            guard += 1;
+        }
+
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+
+        const payload = submitRequest.mock.calls[0][0].input;
+        Object.keys(VALUES).forEach((k) => {
+            expect(payload[k]).toBe(VALUES[k]);
+        });
+        // targetPlatform is NOT a bdContext key -- routing already collects it,
+        // and collecting it twice would be two answers to one question.
+        expect(payload.targetPlatform).toBe('Marketing Cloud Next');
+    });
+
+    /**
+     * THE ISOLATION TEST. ADR-0008 section 5 and ADR-0007's hard boundary.
+     *
+     * These eleven are BD context, not instrument answers. answers,
+     * complexityAnswers and supplementAnswers are the only scoring inputs Apex
+     * trusts; a BD field that leaked into one of them would be scored as though
+     * it were a dimension the respondent had been asked about.
+     */
+    it('never lets a BD-context field into a scored answer map', async () => {
+        const el = await mount();
+        await toBdContext(el);
+
+        let guard = 0;
+        while (one(el, '.q-skip') && guard < 6) {
+            q(el, '[data-key]').forEach((node) => {
+                node.value = 'SENTINEL';
+                node.dispatchEvent(new CustomEvent('change'));
+            });
+            await flush();
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+
+        const payload = submitRequest.mock.calls[0][0].input;
+        const BD_KEYS = [
+            'painPoints', 'migrationGoals', 'keyIntegrations', 'successCriteria',
+            'budgetRange', 'contactCount', 'monthlySendVolume', 'internalTeamSize',
+            'executiveSponsorship', 'decisionMakers', 'urgencyDriver'
+        ];
+        const scoredDimensions = []
+            .concat(payload.answers, payload.complexityAnswers, payload.supplementAnswers)
+            .map((a) => a.dimension);
+
+        BD_KEYS.forEach((k) => {
+            expect(scoredDimensions).not.toContain(k);
+        });
+        // And the shape is undisturbed: still exactly eight scored slots.
+        expect(payload.answers.length).toBe(8);
+        expect(payload.complexityAnswers.length).toBe(6);
+    });
+
+    it('carries the BD-context answers through a draft round-trip', async () => {
+        const el = await mount();
+        await toBdContext(el);
+        const pain = one(el, '[data-key="painPoints"]');
+        pain.value = 'Deliverability is poor';
+        pain.dispatchEvent(new CustomEvent('change'));
+        await flush();
+
+        const stored = JSON.parse(
+            window.localStorage.getItem('ma-assessment-progress-v2:direct')
+        );
+        expect(stored.bdContext.painPoints).toBe('Deliverability is poor');
+
+        // And it comes back on a fresh mount, at the same step.
+        document.body.removeChild(el);
+        getPack.mockResolvedValue(pack());
+        const again = await mount();
+        expect(one(again, '[data-key="painPoints"]').value).toBe('Deliverability is poor');
+    });
+
+    // ── the confirmation panel (ADR-0008 phase 5.3) ─────────────────────────
+
+    /** Walks a mounted element all the way to a completed submission. */
+    async function submitFully(el) {
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, 'input[data-field="name"]') && guard < 14) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+    }
+
+    it('offers the calendar CTA on the confirmation panel when the link carried one', async () => {
+        // The "book an assessment" half of the CTA's promise. gtmConfigBooking's
+        // confirmation panel had this; the questionnaire's did not, and a
+        // straight swap would have dropped it.
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.bookingUrl = 'https://calendly.example.com/rep';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await submitFully(el);
+
+        expect(one(el, '.q-done')).not.toBeNull();
+        const cta = one(el, '.q-done .q-cta');
+        expect(cta).not.toBeNull();
+        expect(cta.textContent.trim()).toBe('Pick a time in our calendar →');
+        expect(cta.href).toBe('https://calendly.example.com/rep');
+        expect(cta.target).toBe('_blank');
+        expect(cta.rel).toBe('noopener');
+    });
+
+    it('shows no calendar CTA when the link carried no ?book= URL', async () => {
+        const el = await mount();
+        await submitFully(el);
+
+        expect(one(el, '.q-done')).not.toBeNull();
+        expect(one(el, '.q-done .q-cta')).toBeNull();
+    });
+
+    it('never offers a way to re-open the request after submitting', async () => {
+        // gtmConfigBooking's confirmation panel had "Didn't send? Re-open the
+        // request", which was the un-guarded resubmit path. After the
+        // one-per-link server guard it would only offer a prospect a form the
+        // server will refuse.
+        const el = await mount();
+        await submitFully(el);
+
+        const done = one(el, '.q-done');
+        expect(done.textContent).not.toContain('Re-open');
+        expect(done.textContent).not.toContain('re-open');
+        expect(one(el, '.q-btn--go')).toBeNull();
+        expect(one(el, 'input[data-field="name"]')).toBeNull();
+    });
+
+    it('tells the host when a submit fails, so a lost race can be recovered', async () => {
+        // The server refuses a duplicate (ADR-0008 section 4). The host re-asks
+        // the server whether the link is now submitted rather than matching on
+        // the refusal message -- so this event carries the message for display
+        // and nothing the host has to parse.
+        submitRequest.mockRejectedValue({
+            body: { message: 'An assessment has already been submitted for this link.' }
+        });
+        const el = await mount();
+        const failures = [];
+        el.addEventListener('submitfailed', (e) => failures.push(e.detail));
+
+        await submitFully(el);
+
+        expect(failures.length).toBe(1);
+        expect(failures[0].message).toContain('already been submitted');
+        // The respondent sees why, in the form's own error slot, and the form
+        // is still there rather than showing a false confirmation.
+        expect(one(el, '.q-error').textContent).toContain('already been submitted');
+        expect(one(el, '.q-done')).toBeNull();
+    });
+
+    // ── hosted inside the configurator's overlay (ADR-0008) ─────────────────
+
+    it('renders full-page chrome by default and drops it when embedded', async () => {
+        const standalone = await mount();
+        expect(one(standalone, '.q-root')).not.toBeNull();
+        expect(one(standalone, '.q-root--embedded')).toBeNull();
+
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.embedded = true;
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        // Both classes: the modifier only undoes the page-level box, so every
+        // rule that hangs off .q-root must still apply.
+        expect(one(el, '.q-root.q-root--embedded')).not.toBeNull();
+    });
+
+    it('is embeddable without changing a single question, step or branch', async () => {
+        // The whole safety argument for the D11 swap is that `embedded` is
+        // chrome and nothing else. Asserted by walking the same form twice.
+        const plain = await mount();
+        await toReadiness(plain);
+        const plainTitle = one(plain, '.q-title').textContent;
+        const plainLabel = one(plain, '.q-progress-label').textContent;
+        const plainQuestions = Array.from(q(plain, '.q-question')).map((n) => n.textContent);
+        document.body.removeChild(plain);
+        window.localStorage.clear();
+
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.embedded = true;
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+        await toReadiness(el);
+
+        expect(one(el, '.q-title').textContent).toBe(plainTitle);
+        expect(one(el, '.q-progress-label').textContent).toBe(plainLabel);
+        expect(Array.from(q(el, '.q-question')).map((n) => n.textContent))
+            .toEqual(plainQuestions);
+    });
+
+    it('asks the offering it was given, not the built-in default', async () => {
+        // ADR-0008 section 3. gtmConfigurator passes the ENGAGEMENT LINK's own
+        // Offering__c down here -- the same field
+        // GtmAssessmentRequestController.resolveOfferingKey scores against. If
+        // this property were ignored, the client would render one offering's
+        // questions and the server would score them against another's pack,
+        // resolving none of the submitted dimension keys and scoring nothing
+        // while looking like it scored.
+        const el = createElement('c-gtm-assessment-questionnaire', {
+            is: GtmAssessmentQuestionnaire
+        });
+        el.offeringKey = 'commerce-accelerator';
+        document.body.appendChild(el);
+        await flush();
+        await flush();
+
+        expect(getQuestionnaire).toHaveBeenCalledWith({
+            offeringKey: 'commerce-accelerator'
+        });
+
+        await toReadiness(el);
+        expect(getPack).toHaveBeenCalledWith({
+            offeringKey: 'commerce-accelerator',
+            sourceName: 'sfmc',
+            targetName: 'sfmc_next'
+        });
+    });
+
+    it('carries contactId on the submitted event so the reading trail stays attributable', async () => {
+        // gtmConfigurator.handleBookingSubmitted calls identifySession with
+        // this, which attributes the whole anonymous reading trail to the
+        // person who left it. gtmConfigBooking's event carried it; losing it in
+        // the swap would have been a silent regression.
+        submitRequest.mockResolvedValue({
+            assessmentRequestId: 'AR-9',
+            contactId: '003000000000001'
+        });
+        const el = await mount();
+        const seen = [];
+        el.addEventListener('submitted', (e) => seen.push(e.detail));
+
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, 'input[data-field="name"]') && guard < 14) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+        await next(el);
+
+        expect(seen.length).toBe(1);
+        expect(seen[0].assessmentRequestId).toBe('AR-9');
+        expect(seen[0].contactId).toBe('003000000000001');
+        expect(seen[0].email).toBe('ada@example.com');
     });
 });

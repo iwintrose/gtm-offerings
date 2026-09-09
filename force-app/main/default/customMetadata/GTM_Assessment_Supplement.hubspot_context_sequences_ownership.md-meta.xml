@@ -4,6 +4,10 @@
     <label>hubspot_context_sequences_ownership</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Set_Key__c</field>
         <value xsi:type="xsd:string">hubspot_context</value>
     </values>

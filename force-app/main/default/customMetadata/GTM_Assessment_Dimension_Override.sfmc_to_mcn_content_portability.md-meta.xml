@@ -4,6 +4,10 @@
     <label>sfmc_to_mcn_content_portability</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Pair__c</field>
         <value xsi:type="xsd:string">sfmc_to_mcn</value>
     </values>

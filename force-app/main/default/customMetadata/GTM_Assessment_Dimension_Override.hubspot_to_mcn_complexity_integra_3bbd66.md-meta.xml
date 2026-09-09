@@ -4,6 +4,10 @@
     <label>hubspot_to_mcn_complexity_integra_3bbd66</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Pair__c</field>
         <value xsi:type="xsd:string">hubspot_to_mcn</value>
     </values>

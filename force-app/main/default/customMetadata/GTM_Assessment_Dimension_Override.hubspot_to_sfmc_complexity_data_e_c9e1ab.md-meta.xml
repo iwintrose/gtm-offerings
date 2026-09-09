@@ -4,6 +4,10 @@
     <label>hubspot_to_sfmc_complexity_data_e_c9e1ab</label>
     <protected>false</protected>
     <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
         <field>Pair__c</field>
         <value xsi:type="xsd:string">hubspot_to_sfmc</value>
     </values>

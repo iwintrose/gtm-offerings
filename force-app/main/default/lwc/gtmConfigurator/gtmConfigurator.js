@@ -2,6 +2,12 @@ import { LightningElement, api, track, wire } from 'lwc';
 import isRep from '@salesforce/apex/GtmViewerContext.isRep';
 import getConfigurationCrmData from '@salesforce/apex/GtmSavedConfigurationController.getConfigurationCrmData';
 import isActive from '@salesforce/apex/GtmConfigurationStatusController.isActive';
+// The durable half of "one submitted assessment per engagement link"
+// (ADR-0008 section 4). A boolean and nothing else, from the same tiny
+// guest-safe class isActive comes from. sessionStorage is the fast path; this
+// is what makes the submitted state survive a new tab, a second device, a
+// private window, or storage that is blocked outright.
+import hasSubmittedAssessmentApex from '@salesforce/apex/GtmConfigurationStatusController.hasSubmittedAssessment';
 import getConfiguration from '@salesforce/apex/GtmSavedConfigurationController.getConfiguration';
 import getPublicConfiguration from '@salesforce/apex/GtmConfigurationReader.getPublicConfiguration';
 import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
@@ -140,6 +146,22 @@ export default class GtmConfigurator extends LightningElement {
     @track expired = false;
     @track inactive = false;
     @track isProspectLink = false;
+
+    /**
+     * A draft resume token from the URL (?resume=...), carried by the link
+     * GtmAssessmentDraftController emails. ADR-0008 phase 7.1.
+     *
+     * Passed down to the questionnaire and used to auto-open the overlay: a
+     * resume link that landed on the story page with the form shut would be a
+     * resume link that does not resume. The questionnaire also reads the same
+     * param off location.search itself as a fallback, so the two agree.
+     */
+    @track resumeToken = '';
+
+    /** The engagement link's own Offering__c, once loadSavedConfiguration()
+     *  has read it. Blank for a link-less direct visit. See
+     *  effectiveOfferingKey and ADR-0008 section 3. */
+    @track linkOfferingKey = '';
 
     @track customizeOpen = false;
     @track bookingOpen = false;
@@ -317,6 +339,15 @@ export default class GtmConfigurator extends LightningElement {
         // assessment state (scoped to it, same as the ma-auth- session key)
         // can be restored on this same pass.
         this.restoreAssessmentState();
+        // ADR-0008 section 4, and deliberately AFTER restoreAssessmentState.
+        // sessionStorage is the fast path and, when it has an answer, the
+        // better one -- it carries the actual assessmentRequestId, where the
+        // server call can only return a boolean. Asking second means a repeat
+        // visit in the same tab makes no round trip at all, and a fresh browser
+        // (new tab, second device, private window, blocked storage) still lands
+        // in the submitted state on FIRST load rather than being invited to
+        // re-answer a form the server would refuse.
+        this.checkSubmittedStatus();
 
         // In preview the parent owns the copy, so fetching would replace the
         // draft with what is published.
@@ -609,6 +640,26 @@ export default class GtmConfigurator extends LightningElement {
         const readoutParam = get('readout');
         if (readoutParam) this.checkReadoutToken(readoutParam);
 
+        // ADR-0008 phase 7.1. An emailed resume link lands here now that the
+        // questionnaire lives behind /configurator rather than on a route of
+        // its own. Opening the overlay is the whole point of following it -- a
+        // resume link that dropped the respondent on the story page with the
+        // form shut would be a resume link that does not resume.
+        //
+        // A resumed open is an open, so it logs the same Form Opened event
+        // handleOpenBooking does; without that, every resumed session would be
+        // a drop-off in the funnel.
+        const resumeParam = get('resume');
+        if (resumeParam) {
+            this.resumeToken = resumeParam;
+            this.bookingOpen = true;
+            if (!this._formOpened) {
+                this._formOpened = true;
+                this._logEvent('Form Opened');
+            }
+            this._track('Form Resumed', 'assessment');
+        }
+
         // Set from chooseIndustry's tiles (?wizard=1); consumed once
         // isConfigManager resolves -- see maybeAutoOpenWizard(). Never set
         // on a prospect link (isProspectLink), which never carries this
@@ -659,6 +710,18 @@ export default class GtmConfigurator extends LightningElement {
             if (rec.industry) this.industryKey = rec.industry;
             if (rec.notifyEmail) this.notifyEmail = rec.notifyEmail;
 
+            // ADR-0008 section 3. The SERVER resolves the offering from this
+            // same record's Offering__c
+            // (GtmAssessmentRequestController.resolveOfferingKey). The
+            // `offeringKey` page property below is an Experience Builder
+            // default and can disagree with it; if it does, the questionnaire
+            // renders one offering's questions and the server scores them
+            // against another's pack, resolving none of the submitted dimension
+            // keys and scoring nothing while looking like it scored (ADR-0007's
+            // hard boundary). Reading it here is what makes the two
+            // derivations one.
+            if (rec.offering) this.linkOfferingKey = rec.offering;
+
             let saved = {};
             try { saved = JSON.parse(rec.configPayload || '{}'); } catch (e) { saved = {}; }
             if (rec.industryLabel && !this.industryKey) this.industryKey = rec.industry;
@@ -692,6 +755,42 @@ export default class GtmConfigurator extends LightningElement {
         } catch (e) {
             // Fails open: a status-check error should never itself block a
             // client from seeing an otherwise-working link.
+        }
+    }
+
+    /**
+     * Has this link already had an assessment submitted against it?
+     *
+     * ADR-0008 section 4. restoreAssessmentState() answers this from
+     * sessionStorage, which survives a refresh in the same tab and nothing
+     * else -- not a new tab, not a second device, not a private window, not
+     * storage that is blocked. So a prospect who submitted yesterday on their
+     * laptop was shown the open CTA again on their phone, and could burn
+     * fifteen minutes re-answering a form the server would now refuse.
+     *
+     * This is the durable half. It only ever turns the flag ON: the local
+     * assessmentRequestId, when there is one, is the more specific answer (it
+     * is the actual id) and must not be overwritten by a bare boolean.
+     *
+     * FAILS OPEN, exactly as checkActiveStatus above states for itself: an
+     * errored check leaves the CTA available. The server is the enforcement
+     * point, and a status-check blip must never lock a prospect out of a form
+     * they have not yet filled in.
+     */
+    async checkSubmittedStatus() {
+        if (!this.savedRecordId || this.assessmentRequestId) return;
+        try {
+            const submitted = await hasSubmittedAssessmentApex({
+                recordId: this.savedRecordId
+            });
+            // 'linked' is the same sentinel checkReadoutToken uses for "we know
+            // an assessment exists but not which one" -- there is deliberately
+            // no guest method that would tell us the id.
+            if (submitted && !this.assessmentRequestId) {
+                this.assessmentRequestId = 'linked';
+            }
+        } catch (e) {
+            // Fails open. See the doc comment.
         }
     }
 
@@ -875,6 +974,20 @@ export default class GtmConfigurator extends LightningElement {
 
     get bookingUrl() {
         return this.tokenValue('BOOKING_URL');
+    }
+
+    /**
+     * What the questionnaire is actually answering.
+     *
+     * The link wins; the `offeringKey` page property is only the answer for a
+     * direct visit with no link. Deliberately NOT assigned back over
+     * this.offeringKey: getIndustryProfiles and the getPageLayout calls key off
+     * the page property and must keep doing so -- this page's *content* is
+     * chosen by the page it is, while the *instrument* is chosen by the link.
+     * Only the assessment path reads this. ADR-0008 section 3.
+     */
+    get effectiveOfferingKey() {
+        return this.linkOfferingKey || this.offeringKey;
     }
 
     // ---------------------------------------------------------- the assistant
@@ -1266,8 +1379,16 @@ export default class GtmConfigurator extends LightningElement {
     // -------------------------------------------------------- booking events
 
     handleOpenBooking() {
-        const modal = this.template.querySelector('c-gtm-config-booking');
-        if (modal) modal.reset();
+        // No reset() call any more: there is no longer a persistent child to
+        // reset, because the questionnaire is rendered behind if:true={bookingOpen}
+        // and a fresh mount IS the reset (ADR-0008 phase 6.2).
+        //
+        // Re-checked on open as well as on load (ADR-0008 section 4): the load
+        // check may still have been in flight when this was clicked. It does not
+        // block the open -- the server refuses a duplicate with a message the
+        // questionnaire renders, and blocking on a round trip here would make
+        // the one button this page is for feel broken.
+        this.checkSubmittedStatus();
         this.bookingOpen = true;
         if (!this._formOpened) {
             this._formOpened = true;
@@ -1278,6 +1399,17 @@ export default class GtmConfigurator extends LightningElement {
 
     handleCloseBooking() {
         this.bookingOpen = false;
+    }
+
+    /**
+     * Click the scrim, not the card, to close. Lifted from gtmConfigBooking
+     * along with the rest of the modal chrome when that component was retired
+     * (ADR-0008 phase 6.1) -- the frame outlives the component that owned it.
+     */
+    handleOverlayClick(event) {
+        if (event.target === event.currentTarget) {
+            this.handleCloseBooking();
+        }
     }
 
     handleBookingSubmitted(event) {
@@ -1302,6 +1434,24 @@ export default class GtmConfigurator extends LightningElement {
             this.assessmentRequestId = detail.assessmentRequestId;
             this.persistAssessmentId(detail.assessmentRequestId);
         }
+    }
+
+    /**
+     * The questionnaire could not submit.
+     *
+     * Usually an ordinary failure, in which case this does nothing and the
+     * respondent sees the message in the form's own error slot and can retry.
+     *
+     * But it is also how the page recovers from LOSING THE RACE: an assessment
+     * that already landed for this link in another tab or on another device
+     * means the server refuses this one (ADR-0008 section 4), and the honest
+     * state afterwards is "submitted" -- the request exists -- not "failed". So
+     * this re-asks the server. That is authoritative, needs no string-matching
+     * against the refusal message, and correctly leaves the CTA alone when the
+     * failure really was just a failure.
+     */
+    handleBookingFailed() {
+        this.checkSubmittedStatus();
     }
 
     /** A resumed form is worth knowing about: it means the link did its job on

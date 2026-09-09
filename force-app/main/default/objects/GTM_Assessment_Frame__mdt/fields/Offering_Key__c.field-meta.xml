@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Offering_Key__c</fullName>
+    <label>Offering Key</label>
+    <description>Which GTM offering this scoring frame belongs to. Matches
+        GTM_Offering__mdt.Offering_Key__c. One record per offering at most;
+        an offering with no record here scores against the compiled
+        migration-accelerator fallback in GtmAssessmentScoring /
+        GtmEstateComplexity. See ADR-0007 section 6.
+    </description>
+    <required>true</required>
+    <length>80</length>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

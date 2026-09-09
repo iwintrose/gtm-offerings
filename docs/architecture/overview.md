@@ -23,7 +23,7 @@ graph TB
     subgraph liveSite["GTM1 — LIVE site (Network.Status = Live, gtm/s)"]
         cfgRoute["/configurator route\n(the ONLY route on this site\nbeyond Experience Cloud boilerplate)"]
         cfgComponent["c:gtmConfigurator"]
-        inlineBooking["gtmConfigBooking\nembedded modal — assessment intake"]
+        inlineBooking["gtmAssessmentQuestionnaire\nembedded modal — the FULL branching,\nscored instrument (ADR-0008 / D11)"]
         inlineReadout["inline readout view\nembedded modal, calls getPublishedReadout directly"]
     end
 
@@ -105,11 +105,22 @@ graph TB
 
 **Reading the two site boxes.** `GTM1` is the only currently-`Live` guest
 site, and its only route is `/configurator`, rendering `c:gtmConfigurator`.
-That one component embeds, inline, both an assessment-intake modal
-(`gtmConfigBooking`, which calls `GtmAssessmentRequestController.submitRequest`
-directly) and a published-readout modal (calling
+That one component embeds, inline, both the guest assessment
+(`c:gtmAssessmentQuestionnaire`, in an overlay, calling
+`GtmAssessmentRequestController.submitRequest` directly) and a
+published-readout modal (calling
 `GtmReadoutPublicController.getPublishedReadout` directly) — there is no
 separate `/assessment` or `/readout` page on this site to navigate to.
+
+**That overlay used to hold `gtmConfigBooking`, and that was D11.** The
+booking modal sent no `answers` array at all, so every real submission through
+the live link produced a request with no scored dimensions and a readout
+generated from nothing. ADR-0008 replaced it with the questionnaire in place,
+on this same route — deliberately *not* by promoting `GTM_Accelerator1` or
+porting the `/assessment` route across, because a standalone page cannot see
+the engagement link's `savedRecordId`, and a submission without it is
+un-attributable and scored against a guessed offering. `gtmConfigBooking` is
+deleted. No route on either site changed.
 This is confirmed from source: `gtmConfigurator.js` has no navigation call
 to any other route, and no `/story`, `/industry`, `/assessment`, or
 `/readout` view exists under `GTM1`'s `ExperienceBundle`. It is **not**
@@ -120,12 +131,14 @@ reachable in principle" as a source-level finding, not an end-to-end one.
 separately-routed story/industry/questionnaire/readout build exists in
 source and is deployed, but a real prospect cannot reach it today.
 
-**Known gap, already tracked.** This split — a fuller build sitting on a
-site that isn't live, versus a minimal live site — is not new information
-this documentation effort discovered; it is the same gap
-`docs/backlog.md` **D9** ("The Industry Chooser isn't reachable anywhere
-live... Not started") already tracks for the industry chooser specifically,
-generalized here to the rest of `GTM_Accelerator1`'s routes. See
+**Known gap, already tracked — and now narrower than it was.** This split —
+a fuller build sitting on a site that isn't live, versus a minimal live site —
+is the same gap `docs/backlog.md` **D9** ("The Industry Chooser isn't
+reachable anywhere live... Not started") tracks for the industry chooser,
+generalized to the rest of `GTM_Accelerator1`'s routes. The **assessment** half
+of it is closed: the live site now runs the real instrument (ADR-0008), so
+what remains stranded on the dark site is the story, industry and readout
+routes, not the thing that scores. See
 **ADR-0006** for the standing rule this gap motivated: route reachability
 has to be verified against the live site's `Network.Status`, not assumed
 from source or a passing static check.

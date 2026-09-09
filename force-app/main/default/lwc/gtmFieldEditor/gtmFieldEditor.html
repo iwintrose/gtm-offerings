@@ -171,10 +171,12 @@
                 </div>
               </template>
 
-              <button class="addbtn" data-id={f.id} onclick={handleItemAdd}
-                      title="Add another item">
-                <span class="addbtn-plus">+</span> Add item
-              </button>
+              <template if:false={f.itemsLocked}>
+                <button class="addbtn" data-id={f.id} onclick={handleItemAdd}
+                        title="Add another item">
+                  <span class="addbtn-plus">+</span> Add item
+                </button>
+              </template>
             </div>
           </template>
 

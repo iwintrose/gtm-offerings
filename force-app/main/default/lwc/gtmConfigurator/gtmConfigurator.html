@@ -487,20 +487,53 @@
       ></c-gtm-agent-bubble>
     </template>
 
-    <c-gtm-config-booking
-      is-open={bookingOpen}
-      booking-url={bookingUrl}
-      prospect={company}
-      industry-label={industryLabel}
-      saved-record-id={savedRecordId}
-      submission-token={submissionToken}
-      prefill-company={company}
-      prefill-platform={sourcePlatformPrefill}
-      session-id={visitSessionId}
-      onclose={handleCloseBooking}
-      onsubmitted={handleBookingSubmitted}
-      onformresumed={handleFormResumed}
-    ></c-gtm-config-booking>
+    <!-- THE GUEST ASSESSMENT (ADR-0008 / backlog D11).
+         This overlay used to hold c-gtm-config-booking, a short form that sent
+         no `answers` array at all -- so every real prospect submission through
+         the live link produced a request with no scored dimensions and a
+         readout generated from nothing. It now holds the real questionnaire,
+         which is what dc4ad5d built it to be replaced by; the swap on the live
+         surface was simply never performed.
+
+         Hosted HERE, rather than on a route of its own, because this is the
+         only place the engagement link's context exists: savedRecordId,
+         submissionToken (the password gate), the visit session, and the link's
+         own offering. A standalone page has none of them, and a submission
+         without them is un-attributable and scored against a guessed offering.
+
+         The scrim/card/close chrome is lifted from gtmConfigBooking so the
+         modal frame outlives the component that used to own it.
+
+         Rendered behind if:true={bookingOpen} rather than always-rendered and
+         styled shut: the questionnaire does real work in connectedCallback
+         (getPlatforms, getQuestionnaire, draft restore) and must not do it on
+         every page load for every prospect who never opens the form. A fresh
+         mount is also the reset, and it removes the ordering hazard where the
+         overlay could open before the link's offering had loaded. In-progress
+         answers survive the unmount via localStorage on every change plus the
+         server draft. -->
+    <template if:true={bookingOpen}>
+      <div class="bk open" onclick={handleOverlayClick}>
+        <div class="bk-card bk-card--assessment">
+          <button class="bk-x" aria-label="Close" onclick={handleCloseBooking}>&times;</button>
+          <c-gtm-assessment-questionnaire
+            embedded={alwaysTrue}
+            offering-key={effectiveOfferingKey}
+            saved-record-id={savedRecordId}
+            submission-token={submissionToken}
+            resume-token={resumeToken}
+            prospect={company}
+            industry-label={industryLabel}
+            prefill-company={company}
+            booking-url={bookingUrl}
+            session-id={visitSessionId}
+            onsubmitted={handleBookingSubmitted}
+            onsubmitfailed={handleBookingFailed}
+            onformresumed={handleFormResumed}
+          ></c-gtm-assessment-questionnaire>
+        </div>
+      </div>
+    </template>
 
     <!-- Ported from claude/salesforce-marketing-maturity-bsxmxs. -->
     <template if:true={readoutViewOpen}>

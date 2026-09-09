@@ -36,7 +36,71 @@
       <div class="pv-note">{previewNote}</div>
     </template>
 
-    <div class="pv-stage">
+    <template if:true={showSettingsPreview}>
+      <div class="pv-settings">
+        <template if:true={hasSettingsPlatforms}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Starts from</h3>
+            <p class="pvs-line">{settingsSourcePlatform} &rarr; {settingsTargetPlatform}</p>
+          </div>
+        </template>
+
+        <template if:true={hasSettingsPresets}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Size presets</h3>
+            <div class="pvs-presets">
+              <template for:each={settingsPresets} for:item="p">
+                <div key={p.key} class="pvs-preset">
+                  <span class="pvs-preset-key">{p.key}</span>
+                  <span class="pvs-preset-label">{p.label}</span>
+                  <span class="pvs-preset-sub">{p.sub}</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={hasSettingsSwatches}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Swatches</h3>
+            <div class="pvs-swatches">
+              <template for:each={settingsSwatches} for:item="s">
+                <span key={s.key} class="pvs-swatch" title={s.name}>
+                  <span class="pvs-dot" style={s.style}></span>{s.name}
+                </span>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={hasSettingsChips}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Generic chips</h3>
+            <div class="pvs-chips">
+              <template for:each={settingsChips} for:item="c">
+                <span key={c} class="pvs-chip">{c}</span>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={settingsDemoRoot}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Demo campaign</h3>
+            <p class="pvs-line">{settingsDemoRoot}</p>
+            <template if:true={hasSettingsDemoDeps}>
+              <div class="pvs-chips">
+                <template for:each={settingsDemoDeps} for:item="d">
+                  <span key={d} class="pvs-chip pvs-chip--dep">{d}</span>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <div class="pv-stage" if:false={showSettingsPreview}>
       <div class="pv-scroll" onscroll={handleScroll} onwheel={handleIntent}
            onpointerdown={handleIntent} onkeydown={handleIntent}>
         <!-- Clicks are swallowed here, at the frame, rather than in each

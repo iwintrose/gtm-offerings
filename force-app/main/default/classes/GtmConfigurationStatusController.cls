@@ -39,4 +39,48 @@ public without sharing class GtmConfigurationStatusController {
         }
         return rows[0].Active__c;
     }
+
+    /**
+     * Whether this link has already had an assessment submitted against it.
+     *
+     * A BOOLEAN AND NOTHING ELSE -- no id, no score, no date, no company. The
+     * caller already holds the link; this tells them the form is done, which is
+     * the one thing the page needs in order not to invite a second submission
+     * (ADR-0008 section 4). The disclosure is "this link's form is done", which
+     * the holder of the link is entitled to and which is strictly less than
+     * isActive above already tells them. Returning the request id or the score
+     * here would be exactly the scope creep this class's header warns about --
+     * GtmReadoutPublicController is the only guest path onto assessment
+     * *content*, and it is token-gated for a reason.
+     *
+     * NOT CACHEABLE, unlike isActive. A stale `false` served from the Lightning
+     * data service immediately after a submit is the precise case this method
+     * exists to prevent.
+     *
+     * The `without sharing` context on this class is what makes the query
+     * resolve: GTM_Assessment_Guest grants the guest allowRead + allowCreate on
+     * GTM_Assessment_Request__c with viewAllRecords = false, exactly as it does
+     * for isActive's own read.
+     *
+     * SERVER ENFORCEMENT IS NOT HERE. GtmAssessmentRequestController.submitRequest
+     * holds the invariant; this only lets the page tell the truth about it in a
+     * browser that has never seen the submission. A caller that skips this
+     * method gains nothing.
+     */
+    @AuraEnabled(cacheable=false)
+    public static Boolean hasSubmittedAssessment(String recordId) {
+        if (String.isBlank(recordId)) {
+            return false;
+        }
+        Id parsedId = GtmLegacyConfigId.resolve(recordId);
+        if (parsedId == null) {
+            return false;
+        }
+        return ![
+            SELECT Id
+            FROM   GTM_Assessment_Request__c
+            WHERE  Saved_Configuration__c = :parsedId
+            LIMIT  1
+        ].isEmpty();
+    }
 }
