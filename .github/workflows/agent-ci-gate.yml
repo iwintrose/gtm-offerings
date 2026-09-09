@@ -1,0 +1,91 @@
+name: Agent CI Gate
+
+# Integration gate for the BA -> Architect -> Developer -> QA worktree
+# roster (AGENTS.md §2). Runs on any agent/issue-* branch and on PRs whose
+# head branch matches, so a Developer agent's push and a QA agent's PR both
+# hit the same checks before scripts/agent-workspace.sh complete opens or
+# merges anything.
+
+on:
+  push:
+    branches:
+      - "agent/issue-*"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  gate:
+    # For push events this checks the ref name; for pull_request events
+    # GitHub Actions can't filter `on:` by head branch pattern, so the same
+    # condition is re-checked here against github.head_ref.
+    if: |
+      startsWith(github.ref_name, 'agent/issue-') ||
+      startsWith(github.head_ref, 'agent/issue-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require TASK_SCOPE.md
+        run: |
+          if [[ ! -f TASK_SCOPE.md ]]; then
+            echo "::error::TASK_SCOPE.md is missing at repo root. The BA agent must author it before this branch can pass the gate (AGENTS.md §2)." >&2
+            exit 1
+          fi
+          if grep -qE '\[ID\]|\[What is the user trying to achieve\?\]' TASK_SCOPE.md; then
+            echo "::error::TASK_SCOPE.md still has unfilled template placeholders — the BA agent must complete it, not just check in the blank template." >&2
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: LWC Jest suite
+        run: npm test
+
+      - name: Static reference / instrument drift audit
+        run: |
+          python3 scripts/check-references.py
+          python3 scripts/build-instrument.py --check
+
+      - name: Set up Salesforce CLI
+        run: npm install --global @salesforce/cli
+
+      - name: Authenticate to gtm-dev (JWT)
+        id: sf_auth
+        env:
+          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
+          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+          SF_INSTANCE_URL: ${{ secrets.SF_INSTANCE_URL }}
+        run: |
+          if [[ -z "$SF_JWT_KEY" || -z "$SF_CONSUMER_KEY" || -z "$SF_USERNAME" ]]; then
+            echo "::warning::SF_JWT_KEY / SF_CONSUMER_KEY / SF_USERNAME secrets are not configured — skipping the metadata dry-run. Deploy validation is not actually running until these are set on the repo (Settings > Secrets and variables > Actions)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$SF_JWT_KEY" > server.key
+          sf org login jwt \
+            --client-id "$SF_CONSUMER_KEY" \
+            --jwt-key-file server.key \
+            --username "$SF_USERNAME" \
+            --instance-url "${SF_INSTANCE_URL:-https://login.salesforce.com}" \
+            --alias ci-gate
+          rm -f server.key
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Validate metadata (dry run — no org changes)
+        if: steps.sf_auth.outputs.skip == 'false'
+        run: |
+          sf project deploy start \
+            --source-dir force-app/main/default \
+            --target-org ci-gate \
+            --dry-run \
+            --ignore-conflicts
