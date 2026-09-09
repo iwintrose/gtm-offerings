@@ -35,8 +35,10 @@ scripts/agent-workspace.sh create <issue-id>
 
 This creates `../worktrees/issue-<issue-id>` on branch
 `agent/issue-<issue-id>` off `main`, symlinks `.env` into it if one exists,
-and drops a scoped `CLAUDE.md` there. Confirm `TASK_SCOPE.md` made it into
-the worktree root (copy it in yourself if not) before handing off.
+drops a scope-constraint note at `WORKTREE_SCOPE.md` (not `CLAUDE.md` —
+the worktree already has the real one from the branch), and copies the
+current `TASK_SCOPE.md` in automatically. Confirm it actually landed
+(copy it in yourself if not) before handing off.
 
 **Never check out, commit to, or push `main` directly.** Everything you
 provision lives on an `agent/issue-*` branch — that boundary is load-bearing

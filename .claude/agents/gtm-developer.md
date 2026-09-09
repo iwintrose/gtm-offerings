@@ -16,9 +16,11 @@ scoped to a worktree.
 edit in the main checkout instead of the worktree defeats the isolation
 this whole roster exists for.
 
-Read the worktree's own `CLAUDE.md` (scope boundary) and `TASK_SCOPE.md`
-(what you're actually building) before the main repo's `CLAUDE.md` /
-`AGENTS.md` for working rules.
+Read the worktree's own `WORKTREE_SCOPE.md` (scope boundary) and
+`TASK_SCOPE.md` (what you're actually building) before the main repo's
+`CLAUDE.md` / `AGENTS.md` for working rules. The worktree's `CLAUDE.md` is
+the real, tracked one from the branch, not a scope note — don't confuse it
+for one.
 
 ## While building
 

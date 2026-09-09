@@ -37,6 +37,17 @@ jobs:
             echo "::error::TASK_SCOPE.md still has unfilled template placeholders — the BA agent must complete it, not just check in the blank template." >&2
             exit 1
           fi
+          # A non-placeholder TASK_SCOPE.md isn't necessarily the RIGHT
+          # one -- found on the issue-13 test run, where a worktree
+          # branched with the previous issue's already-filled-in scope
+          # file still in place and this check passed anyway. Cross-check
+          # the branch name's issue id against the file's own header.
+          BRANCH_NAME="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          ISSUE_ID="${BRANCH_NAME#agent/issue-}"
+          if ! grep -qF "ISSUE #${ISSUE_ID}" TASK_SCOPE.md; then
+            echo "::error::TASK_SCOPE.md doesn't mention 'ISSUE #${ISSUE_ID}' (branch ${BRANCH_NAME}) -- this looks like a stale scope file left over from a different issue, not one written for this branch." >&2
+            exit 1
+          fi
 
       - name: Set up Node
         uses: actions/setup-node@v4
