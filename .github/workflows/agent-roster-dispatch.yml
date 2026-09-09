@@ -9,7 +9,17 @@ name: Agent Roster Dispatch
 #   1. Label-gated trigger (this file) -- a human must opt an issue in.
 #   2. PR-only permissions (below) -- this workflow's GITHUB_TOKEN can open
 #      a PR but has no path to merging it.
-#   3. NOT ACTIVE, despite appearances: the `agent-core` Environment below
+#   3. The `agent-core` Environment (below), with a required human
+#      reviewer, gates the job itself -- it must not start, and therefore
+#      cannot touch ANTHROPIC_API_KEY (now an environment secret, not a
+#      repo secret), until that reviewer approves it in the Actions UI.
+#      NOTE what this does NOT cover: GitHub Free doesn't support classic
+#      branch protection on private repos, and an Environment gates job
+#      *start*, not PR *merge*. Nothing here stops someone with push access
+#      from merging the opened PR into `main` without review -- that still
+#      depends on who has push access to this repo being trusted to review
+#      before merging, same as any other PR today.
+#   4. NOT ACTIVE, despite appearances: the `agent-core` Environment below
 #      holds ANTHROPIC_API_KEY as an environment secret, but its intended
 #      required-reviewer approval pause could NOT be configured --
 #      confirmed via the GitHub API (422: "Please ensure the billing plan
