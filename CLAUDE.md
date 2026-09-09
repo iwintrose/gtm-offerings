@@ -1,8 +1,9 @@
 # CLAUDE.md — GTM Offerings
 
-Agent instructions for this repo. `AGENTS.md` is a symlink to this file — one
-source of truth for Claude Code and any other agent tooling pointed at this
-repo.
+Repo instructions for this project: what it is, how it's laid out, working
+rules, deploy conventions, and known gotchas. For how the *agents* in and
+around this repo actually work — GUS (the in-app AI agent) and any coding
+agents operating on this codebase — see `AGENTS.md`.
 
 ## 1. What this is
 
@@ -169,13 +170,20 @@ deploy start -c` means `--ignore-conflicts`, **not** a dry run. The actual
    invented clients (`Northlight Media Group`, `Ashford Capital Bank`,
    `Solara Health Systems`, `Harborline Transit Authority`) after an earlier
    version used real company names by mistake — don't reintroduce a real
-   name there. The one deliberate exception is
-   `scripts/data/seed-cmc-sample.apex`'s use of the real Commercial Metals
-   Company name — that's intentional, chosen by the user, and should not be
-   "fixed" to a fictional name by an agent who doesn't know the history.
-   The seed script being fixed doesn't guarantee the org's current data is
-   clean — real-company Account names with no `(Demo)` suffix have shown up
-   in `gtm-dev` before, so check what's actually there rather than assuming.
+   name there. The seed script being fixed doesn't guarantee the org's
+   current data is clean — real-company Account names with no `(Demo)`
+   suffix have shown up in `gtm-dev` before, so check what's actually there
+   rather than assuming.
+   **A real client engagement is org data only, never a committed script.**
+   `scripts/data/seed-cmc-sample.apex` (a fictional Commercial Metals Company
+   walkthrough) existed alongside a real Commercial Metals Company engagement
+   a rep had built directly in the org for an actual prospect — the two were
+   easy to confuse and the sample nearly got mistaken for the real thing.
+   The fictional script was deleted; the real engagement stays exactly where
+   it was created, in `gtm-dev`'s data, with nothing about it — name, link,
+   password — ever written into this repo. If a rep's real prospect work
+   needs an agent's help, help against the org directly; don't reach for a
+   seed script as the tool.
 6. **`Network.allowInternalUserLogin` and who a site thinks is looking.**
    This field controls whether a logged-in internal Salesforce user opening
    a site URL is served the site's **rep** experience or its **guest**
@@ -308,8 +316,8 @@ python3 scripts/build-instrument.py --check
 - Don't use `-c` expecting dry-run behavior — it means `--ignore-conflicts`.
 - Don't add a Flow and an Apex trigger/class reacting to the same DML (§6.3,
   ADR-0003).
-- Don't "fix" `seed-cmc-sample.apex`'s use of a real company name — that
-  one's intentional (§6.5).
+- Don't seed a real client engagement as a script in this repo — it belongs
+  in the org's data only, the same way a rep would create it (§6.5).
 - Don't trust `docs/specs/*.md` symbol names without checking current code
   first — they predate the `MA_`→`GTM_` rename.
 - Don't claim a route/URL is "live" from source or a passing static check
