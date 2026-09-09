@@ -42,7 +42,6 @@ GTM Offerings is a Salesforce Lightning/Apex application built to simplify, stan
 - **YAML Is Truth:** Always author instrument changes in the `migration-accelerator/` YAML directories.
 - **Do Not Hand-Edit Metadata:** Never manually edit the generated `force-app/main/default/customMetadata/GTM_Assessment_*` XML files. They are auto-compiled, validated, and stamped via `scripts/build-instrument.py`.
 - _Exception:_ The 14 core hand-authored `GTM_Assessment_Question.*` metadata records are read-only for the build script and can be safely modified.
-- **Static Prototype:** The root `index.html` and `migration-accelerator/*.html` files are legacy pre-Salesforce static prototypes. They are inert and not deployed.
 
 ---
 
