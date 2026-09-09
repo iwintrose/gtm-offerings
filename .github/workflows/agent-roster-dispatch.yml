@@ -28,7 +28,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
-  id-token: write # 🔑 CRITICAL: Grants authority for Anthropic OIDC verification
+  id-token: write
 
 jobs:
   run-roster:
