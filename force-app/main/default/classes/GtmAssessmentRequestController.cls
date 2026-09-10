@@ -38,6 +38,22 @@ public without sharing class GtmAssessmentRequestController {
     private static final String DEFAULT_CONFIG = 'Default';
     private static final Integer MAX_SHORT = 255;
     private static final Integer MAX_LONG = 4000;
+
+    /**
+     * The one message every submission-token failure throws -- blank, malformed,
+     * wrong record, expired, or a bad HMAC. These used to throw five different
+     * sentences; a respondent who ran out the 30-minute window while still
+     * mid-form (very plausible on a resumed draft link) saw "a submission token
+     * is required", which reads as a bug, not a timeout. They are now the SAME
+     * string on purpose: gtmAssessmentQuestionnaire.js matches this exact
+     * message to trigger its re-auth overlay, and every one of these cases has
+     * the same correct recovery -- re-enter the password, get a fresh token,
+     * retry the same submit. This string must stay byte-identical to
+     * TOKEN_REAUTH_MESSAGE in gtmAssessmentQuestionnaire.js; there is no shared
+     * error-code convention elsewhere in this codebase to hang it on instead.
+     */
+    private static final String TOKEN_REAUTH_MESSAGE =
+        'Your session has expired. Please re-enter the access password to send your assessment.';
     /** Capacity of Section_Scores__c (see its field metadata). */
     private static final Integer MAX_SECTION_SCORES = 32768;
 
@@ -1106,15 +1122,13 @@ public without sharing class GtmAssessmentRequestController {
         }
 
         if (String.isBlank(token)) {
-            throw new AuraHandledException(
-                'A submission token is required. Please enter the access password again.'
-            );
+            throw new AuraHandledException(TOKEN_REAUTH_MESSAGE);
         }
 
         // Expected format: "<recordId>:<epochSeconds>:<hmacHex>"
         List<String> parts = token.split(':');
         if (parts.size() != 3) {
-            throw new AuraHandledException('Invalid submission token. Please refresh and try again.');
+            throw new AuraHandledException(TOKEN_REAUTH_MESSAGE);
         }
 
         String tokenRecordId = parts[0];
@@ -1122,21 +1136,19 @@ public without sharing class GtmAssessmentRequestController {
         try {
             tokenEpoch = Long.valueOf(parts[1]);
         } catch (Exception e) {
-            throw new AuraHandledException('Invalid submission token. Please refresh and try again.');
+            throw new AuraHandledException(TOKEN_REAUTH_MESSAGE);
         }
         String tokenHmac = parts[2];
 
         // Must be for the same record this request references.
         if (tokenRecordId != savedRecordId) {
-            throw new AuraHandledException('Submission token does not match this link. Please refresh and try again.');
+            throw new AuraHandledException(TOKEN_REAUTH_MESSAGE);
         }
 
         // Must be within the valid window (30 min, matching GtmLinkAuthController).
         Long nowEpoch = System.now().getTime() / 1000L;
         if (nowEpoch - tokenEpoch > 1800L) {
-            throw new AuraHandledException(
-                'Your session has expired. Please re-enter the access password.'
-            );
+            throw new AuraHandledException(TOKEN_REAUTH_MESSAGE);
         }
 
         // Verify the HMAC (constant-time comparison prevents timing attacks).
@@ -1144,7 +1156,7 @@ public without sharing class GtmAssessmentRequestController {
         Blob expected = Crypto.generateMac('HmacSHA256', Blob.valueOf(payload), Blob.valueOf(ctx.linkPassword));
         String expectedHex = EncodingUtil.convertToHex(expected);
         if (!constantTimeEqual(expectedHex, tokenHmac)) {
-            throw new AuraHandledException('Invalid submission token. Please refresh and try again.');
+            throw new AuraHandledException(TOKEN_REAUTH_MESSAGE);
         }
     }
 

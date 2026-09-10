@@ -7,7 +7,12 @@ import submitRequest from '@salesforce/apex/GtmAssessmentRequestController.submi
 import saveDraft from '@salesforce/apex/GtmAssessmentDraftController.saveDraft';
 import resumeDraft from '@salesforce/apex/GtmAssessmentDraftController.resumeDraft';
 import emailResumeLink from '@salesforce/apex/GtmAssessmentDraftController.emailResumeLink';
+import verifyAndIssueToken from '@salesforce/apex/GtmLinkAuthController.verifyAndIssueToken';
 
+jest.mock(
+    '@salesforce/apex/GtmLinkAuthController.verifyAndIssueToken',
+    () => ({ default: jest.fn() }), { virtual: true }
+);
 jest.mock(
     '@salesforce/apex/GtmAssessmentInstrument.getPlatforms',
     () => ({ default: jest.fn() }), { virtual: true }
@@ -476,6 +481,98 @@ describe('c-gtm-assessment-questionnaire', () => {
         expect(payload.answers[0]).toHaveProperty('dimension');
         expect(payload.answers[0]).toHaveProperty('value');
         expect(payload.complexityAnswers.length).toBe(6);
+    });
+
+    /**
+     * TOKEN RE-AUTH OVERLAY. The 30-minute password-gate token (separate from
+     * the resume link, which is long-lived) can go stale while someone is
+     * still filling the form in -- easily, on a resumed draft link. The old
+     * behaviour surfaced the server's raw message with only "Start again" as
+     * a way out, which read as data loss even though the draft survives.
+     */
+    async function reachContactStep(el) {
+        await toReadiness(el);
+        let guard = 0;
+        while (!one(el, 'input[data-field="name"]') && guard < 14) {
+            answerStep(el);
+            await next(el);
+            guard += 1;
+        }
+        one(el, 'input[data-field="name"]').value = 'Ada';
+        one(el, 'input[data-field="name"]').dispatchEvent(new CustomEvent('change'));
+        one(el, 'input[data-field="email"]').value = 'ada@example.com';
+        one(el, 'input[data-field="email"]').dispatchEvent(new CustomEvent('change'));
+        await flush();
+    }
+
+    const TOKEN_REAUTH_MESSAGE =
+        'Your session has expired. Please re-enter the access password to send your assessment.';
+
+    it('shows the re-auth overlay, not a raw error, when the submission token has gone stale', async () => {
+        const el = await mount();
+        await reachContactStep(el);
+        submitRequest.mockRejectedValueOnce({ body: { message: TOKEN_REAUTH_MESSAGE } });
+
+        await next(el);
+
+        expect(one(el, '.q-reauth-overlay')).toBeTruthy();
+        expect(one(el, '.q-error')).toBeFalsy();
+        // The answers are untouched -- nothing was cleared to show the overlay.
+        expect(one(el, 'input[data-field="name"]').value).toBe('Ada');
+    });
+
+    it('re-authenticates and retries the same submit, with no lost answers', async () => {
+        const el = await mount();
+        await reachContactStep(el);
+        submitRequest.mockRejectedValueOnce({ body: { message: TOKEN_REAUTH_MESSAGE } });
+        await next(el);
+        expect(one(el, '.q-reauth-overlay')).toBeTruthy();
+
+        verifyAndIssueToken.mockResolvedValue({
+            matched: true,
+            submissionToken: 'REC:1234:freshhmac'
+        });
+        submitRequest.mockResolvedValueOnce({ assessmentRequestId: '002' });
+
+        const pwInput = one(el, '.q-reauth-overlay input[type="password"]');
+        pwInput.value = 'secret123';
+        pwInput.dispatchEvent(new CustomEvent('change'));
+        one(el, '.q-reauth-overlay form').dispatchEvent(new CustomEvent('submit'));
+        await flush();
+        await flush();
+
+        expect(verifyAndIssueToken).toHaveBeenCalledWith(
+            expect.objectContaining({ password: 'secret123' })
+        );
+        expect(one(el, '.q-reauth-overlay')).toBeFalsy();
+        expect(submitRequest).toHaveBeenCalledTimes(2);
+        const retriedPayload = submitRequest.mock.calls[1][0].input;
+        expect(retriedPayload.submissionToken).toBe('REC:1234:freshhmac');
+        expect(retriedPayload.name).toBe('Ada');
+        expect(one(el, '.q-done')).toBeTruthy();
+    });
+
+    it('shows an inline error on a wrong re-auth password and keeps the overlay and the form state', async () => {
+        const el = await mount();
+        await reachContactStep(el);
+        submitRequest.mockRejectedValueOnce({ body: { message: TOKEN_REAUTH_MESSAGE } });
+        await next(el);
+        expect(one(el, '.q-reauth-overlay')).toBeTruthy();
+
+        verifyAndIssueToken.mockResolvedValue({ matched: false });
+
+        const pwInput = one(el, '.q-reauth-overlay input[type="password"]');
+        pwInput.value = 'wrong';
+        pwInput.dispatchEvent(new CustomEvent('change'));
+        one(el, '.q-reauth-overlay form').dispatchEvent(new CustomEvent('submit'));
+        await flush();
+        await flush();
+
+        expect(one(el, '.q-reauth-overlay')).toBeTruthy();
+        expect(one(el, '.q-reauth-overlay .q-error').textContent).toContain('Incorrect password');
+        // submitRequest was never retried on a failed re-auth.
+        expect(submitRequest).toHaveBeenCalledTimes(1);
+        expect(one(el, 'input[data-field="name"]').value).toBe('Ada');
     });
 
     /**

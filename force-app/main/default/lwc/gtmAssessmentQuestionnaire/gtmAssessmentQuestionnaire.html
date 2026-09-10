@@ -477,5 +477,42 @@
                 </template>
             </template>
         </template>
+
+        <!-- ── token re-auth overlay ────────────────────────────────────
+             Shown in place of a raw error when the 30-minute password-gate
+             token has gone stale. Nothing below it is unmounted -- all
+             answers stay exactly as they were; submit() is simply retried
+             once a fresh token exists. -->
+        <template if:true={showReauthOverlay}>
+            <div class="q-reauth-overlay">
+                <div class="q-reauth-card">
+                    <p class="q-eyebrow">Session timed out</p>
+                    <h2 class="q-title">Enter the access password again</h2>
+                    <p class="q-lede">
+                        Everything you have answered is still here. We just need the access
+                        password once more before we can send it.
+                    </p>
+                    <form onsubmit={handleReauthSubmit}>
+                        <label class="q-field q-field--wide">
+                            <span class="q-label">Access password</span>
+                            <input
+                                type="password"
+                                value={reauthPasswordInput}
+                                onchange={handleReauthInput}
+                                autocomplete="off"
+                            />
+                        </label>
+                        <template if:true={reauthError}>
+                            <p class="q-error" role="alert">{reauthError}</p>
+                        </template>
+                        <button
+                            type="submit"
+                            class="q-btn q-btn--go q-reauth-submit"
+                            disabled={reauthChecking}
+                        >{reauthSubmitLabel}</button>
+                    </form>
+                </div>
+            </div>
+        </template>
     </div>
 </template>
