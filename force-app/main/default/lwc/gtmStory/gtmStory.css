@@ -1,3 +1,5 @@
+@import 'c/gtmBrandTokens';
+
 /* Migration Accelerator — The Story
    Port of gtm-offerings/migration-accelerator/story.html
    :root -> .story-root (LWC shadow DOM has no :root) */
@@ -16,28 +18,33 @@
 }
 
 .story-root {
-  --bg: #f5f5f8;
-  --paper: #ffffff;
-  --ink: #181721;
-  --ink-soft: #5b5a6b;
-  --ink-faint: #8d8c9b;
-  --line: #e2e1ea;
-  --panel: #efeef5;
-  --panel-line: #e2e1ea;
-  --accent: #5b4fa3;
-  --accent-ink: #423876;
-  --accent-soft: rgba(91, 79, 163, 0.09);
-  --good: #2f8058;
-  --good-ring: rgba(47, 128, 88, 0.25);
-  --warn: #b4842e;
-  --shadow: 0 16px 40px -20px rgba(24, 23, 33, 0.18);
-  --shadow-soft: 0 6px 18px -10px rgba(24, 23, 33, 0.14);
+  /* Local names kept so the ~900 rules below don't all have to change; each
+     now resolves to a --ps-* from c/gtmBrandTokens. Dark/light no longer
+     redeclare these aliases — they override the --ps-* values instead, and
+     these resolve against whatever is set on this element. One palette now,
+     not four copies of one. */
+  --bg: var(--ps-surface-100);
+  --paper: var(--ps-white);
+  --ink: var(--ps-ink);
+  --ink-soft: var(--ps-ink-strong);
+  --ink-faint: var(--ps-ink-muted);
+  --line: var(--ps-border);
+  --panel: var(--ps-surface-alt);
+  --panel-line: var(--ps-border-subtle);
+  --accent: var(--ps-red);
+  --accent-ink: var(--ps-red-hover);
+  --accent-soft: var(--ps-red-soft);
+  --good: var(--ps-good);
+  --good-ring: var(--ps-good-ring);
+  --warn: var(--ps-warn);
+  --shadow: var(--ps-shadow);
+  --shadow-soft: var(--ps-shadow-soft);
 
   display: block;
   min-height: var(--story-vh);
   background: var(--bg);
   color: var(--ink);
-  font-family: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--ps-font-body);
   -webkit-font-smoothing: antialiased;
   line-height: 1.55;
   overflow-x: hidden;
@@ -45,61 +52,76 @@
 
 @media (prefers-color-scheme: dark) {
   .story-root:not(.light) {
-    --bg: #14131c;
-    --paper: #1c1a28;
-    --ink: #ecebf3;
-    --ink-soft: #aba9bc;
-    --ink-faint: #716f84;
-    --line: #2c2a3b;
-    --panel: #201e2e;
-    --panel-line: #2c2a3b;
-    --accent: #a79aee;
-    --accent-ink: #c7bef5;
-    --accent-soft: rgba(167, 154, 238, 0.14);
-    --good: #5fbf8e;
-    --good-ring: rgba(95, 191, 142, 0.25);
-    --warn: #e0ac5c;
-    --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
-    --shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
+    --ps-red: #ff3355;
+    --ps-red-hover: #ff6b83;
+    --ps-red-soft: rgba(255, 51, 85, 0.14);
+    --ps-ink: #ecebf3;
+    --ps-ink-strong: #aba9bc;
+    --ps-ink-muted: #8f8f8f;
+    --ps-white: #1c1a28;
+    --ps-surface-100: #14131c;
+    --ps-surface-alt: #201e2e;
+    --ps-border: #2c2a3b;
+    --ps-border-subtle: #2c2a3b;
+    --ps-good: #5fbf8e;
+    --ps-warn: #e0ac5c;
+    --ps-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
+    --ps-shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
+
+    /* The page is near-black here, so the band that breaks the rhythm has to
+       be light (§3.1). Mirrored from c/gtmBrandTokens's own
+       @media(dark) :host(:not(.light)) block -- :host there means gtmStory's
+       OWN custom-element host, not this internal .story-root div, so it never
+       actually matches; this redeclaration is what makes it real, exactly
+       like every other --ps-* value already re-declared in this block. */
+    --ps-invert-bg: #ffffff;
+    --ps-invert-fg: #000000;
+    --ps-invert-fg-muted: #555555;
+    --ps-invert-border: #dddddd;
   }
 }
 
 .story-root.dark {
-  --bg: #14131c;
-  --paper: #1c1a28;
-  --ink: #ecebf3;
-  --ink-soft: #aba9bc;
-  --ink-faint: #716f84;
-  --line: #2c2a3b;
-  --panel: #201e2e;
-  --panel-line: #2c2a3b;
-  --accent: #a79aee;
-  --accent-ink: #c7bef5;
-  --accent-soft: rgba(167, 154, 238, 0.14);
-  --good: #5fbf8e;
-  --good-ring: rgba(95, 191, 142, 0.25);
-  --warn: #e0ac5c;
-  --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
-  --shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
+  --ps-red: #ff3355;
+  --ps-red-hover: #ff6b83;
+  --ps-red-soft: rgba(255, 51, 85, 0.14);
+  --ps-ink: #ecebf3;
+  --ps-ink-strong: #aba9bc;
+  --ps-ink-muted: #8f8f8f;
+  --ps-white: #1c1a28;
+  --ps-surface-100: #14131c;
+  --ps-surface-alt: #201e2e;
+  --ps-border: #2c2a3b;
+  --ps-border-subtle: #2c2a3b;
+  --ps-good: #5fbf8e;
+  --ps-warn: #e0ac5c;
+  --ps-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
+  --ps-shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
+
+  --ps-invert-bg: #ffffff;
+  --ps-invert-fg: #000000;
+  --ps-invert-fg-muted: #555555;
+  --ps-invert-border: #dddddd;
 }
 
 .story-root.light {
-  --bg: #f5f5f8;
-  --paper: #ffffff;
-  --ink: #181721;
-  --ink-soft: #5b5a6b;
-  --ink-faint: #8d8c9b;
-  --line: #e2e1ea;
-  --panel: #efeef5;
-  --panel-line: #e2e1ea;
-  --accent: #5b4fa3;
-  --accent-ink: #423876;
-  --accent-soft: rgba(91, 79, 163, 0.09);
-  --good: #2f8058;
-  --good-ring: rgba(47, 128, 88, 0.25);
-  --warn: #b4842e;
-  --shadow: 0 16px 40px -20px rgba(24, 23, 33, 0.18);
-  --shadow-soft: 0 6px 18px -10px rgba(24, 23, 33, 0.14);
+  --ps-red: #e90130;
+  --ps-red-hover: #be0128;
+  --ps-red-soft: rgba(233, 1, 48, 0.09);
+  --ps-ink: #000000;
+  --ps-ink-strong: #444444;
+  --ps-ink-muted: #666666;
+  --ps-white: #ffffff;
+  --ps-surface-100: #f5f5f5;
+  --ps-surface-alt: #f6f6f6;
+  --ps-border: #dddddd;
+  --ps-border-subtle: #eeeeee;
+
+  /* Light theme keeps the default black band (§3.1). */
+  --ps-invert-bg: #000000;
+  --ps-invert-fg: #ffffff;
+  --ps-invert-fg-muted: #a8a8a8;
+  --ps-invert-border: #333333;
 }
 
 .story-root * {
@@ -107,27 +129,7 @@
 }
 
 .mono {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-}
-
-.rv {
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.rv.in {
-  opacity: 1;
-  transform: none;
-}
-.rv.d1 {
-  transition-delay: 0.06s;
-}
-.rv.d2 {
-  transition-delay: 0.12s;
-}
-.rv.d3 {
-  transition-delay: 0.18s;
+  font-family: var(--ps-font-mono);
 }
 
 /* ---------- top bar ---------- */
@@ -136,12 +138,14 @@
   top: 0;
   z-index: 40;
   height: 52px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.bar-in {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 clamp(1rem, 4cqi, 2rem);
-  background: var(--bg);
-  border-bottom: 1px solid var(--line);
+  height: 100%;
 }
 .bar-wm {
   display: flex;
@@ -158,7 +162,7 @@
   flex: none;
 }
 .bar-tag {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono);
   font-size: 0.68rem;
   color: var(--ink-faint);
   letter-spacing: 0.04em;
@@ -198,15 +202,6 @@
   transition: width 0.1s linear;
 }
 
-.wrap {
-  max-width: 50rem;
-  margin: 0 auto;
-  padding: 0 clamp(1.1rem, 4cqi, 2rem);
-}
-.wide {
-  max-width: 60rem;
-}
-
 /* ---------- admin edit mode ---------- */
 .admin-edit-strip {
   display: flex;
@@ -219,7 +214,7 @@
 .aes-chip {
   display: inline-flex;
   align-items: center;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--ps-font-body);
   font-size: 0.6875rem;
   font-weight: 700;
   padding: 0.25rem 0.5625rem;
@@ -264,22 +259,16 @@
 .faq-edit-link:hover { background: rgba(124, 58, 237, 0.22); }
 
 /* ---------- hero ---------- */
-.hero {
-  min-height: calc(var(--story-vh) * 0.82);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  /* top/bottom only -- this element also carries .wrap, and a shorthand
-     "padding: X 0 Y" here zeroes .wrap's horizontal padding out entirely
-     since this rule is declared later in the stylesheet. That's what was
-     pinning every section of this page flush to the screen edge, worst on
-     mobile where .wrap's own max-width never kicks in to compensate. */
-  padding-top: 2.5rem;
-  padding-bottom: 4rem;
-  position: relative;
+.sec--hero {
+  /* No bottom padding -- the spacer after hero (§2.4) supplies the rhythm
+     below it instead. */
+  padding-top: 64px;
+}
+@container story (min-width: 1024px) {
+  .sec--hero { padding-top: 96px; }
 }
 .eyebrow {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -299,8 +288,8 @@
   flex: none;
 }
 h1.hero-h {
-  font-family: 'Sora', sans-serif;
-  font-weight: 800;
+  font-family: var(--ps-font-display);
+  font-weight: var(--ps-fw-light);
   font-size: clamp(2.1rem, 7cqi, 3.6rem);
   line-height: 1.06;
   letter-spacing: -0.02em;
@@ -320,7 +309,7 @@ h1.hero-h .accent {
   align-items: center;
   gap: 0.5rem;
   margin-top: 2.6rem;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono);
   font-size: 0.72rem;
   color: var(--ink-faint);
   letter-spacing: 0.06em;
@@ -353,29 +342,115 @@ h1.hero-h .accent {
   }
 }
 
-/* ---------- beat rhythm ---------- */
-.beat {
-  /* Same fix as .hero above -- also carries .wrap, so no horizontal value here. */
-  padding-top: clamp(3.2rem, 9cqi, 5.5rem);
-  padding-bottom: clamp(3.2rem, 9cqi, 5.5rem);
-  border-top: 1px solid var(--line);
+/* The hero's own reveal is slower than the rest of the page (§4.1), and its
+   nav strip lags 0.2s behind the text -- both PS's exact timing, not this
+   page's usual 0.7s / 0.15s pair. */
+.sec--hero .rv {
+  transition-duration: 1.5s;
 }
-.beat h2.beat-h {
-  font-family: 'Sora', sans-serif;
-  font-weight: 700;
+.sec--hero .hero-nav {
+  transition-delay: 0.2s;
+}
+
+/* Real in-page navigation, not a decorative list -- a click scrolls to the
+   section (handleNavClick, wired to [data-section]). Runs full-width on its
+   own row BELOW the hero text/CTA, at every width including mobile: a
+   horizontal strip of buttons reads naturally at any size, unlike the
+   earlier vertical list that only existed >=1024 filling a column gap. */
+.hero-nav {
+  list-style: none;
+  margin: var(--ps-s-40) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.hero-nav li {
+  flex: 1 1 auto;
+  border-right: 1px solid var(--line);
+}
+.hero-nav li:last-child {
+  border-right: none;
+}
+.hero-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font: inherit;
+  font-family: var(--ps-font-mono);
+  font-size: 12px;
+  letter-spacing: var(--ps-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 16px var(--ps-s-16);
+  text-align: left;
+  transition: background var(--ps-duration) var(--ps-ease), color var(--ps-duration) var(--ps-ease);
+}
+.hero-nav-btn:hover,
+.hero-nav-btn:focus-visible {
+  background: var(--ps-surface-alt);
+  color: var(--ink);
+}
+.hero-nav-btn .hr-n {
+  color: var(--ps-red-on-grey);
+}
+
+/* Width__c keeps both its existing values and stays meaningful (§2.5): rather
+   than a third value, 'standard' / 'wide' now modulate how far the rail body
+   spans, overriding the primitives' default .pc-railbody span (5/span7).
+   'mechanism' and 'bd' are the only two sections seeded 'wide' today. */
+@container story (min-width: 1024px) {
+  .sec--standard .pc-railbody { grid-column: 5 / span 7; }
+  .sec--wide     .pc-railbody { grid-column: 5 / span 8; }
+}
+
+/* .pc-rail's own display:none-below-1024 (primitives) and .eyebrow's own
+   display:flex (below, unconditional) are equal specificity (one class
+   each); source order alone would let .eyebrow win at every width, since
+   this file's rules come after the @import. The compound selector here
+   out-specifies both so the rail still disappears below 1024. */
+.pc-rail.eyebrow {
+  display: none;
+}
+@container story (min-width: 1024px) {
+  .pc-rail.eyebrow {
+    display: flex;
+  }
+}
+
+/* ---------- beat rhythm ----------
+   No section-level padding here on purpose (§2.3: "own padding: none" for
+   every page-ground beat) -- the rhythm between these sections comes from the
+   spacer pass (§2.4) and, where two page-ground beats sit back to back with
+   no spacer, from nothing at all. h2.beat-h and p.lede are typography rules
+   only now; they used to be scoped under a shared .beat wrapper class that no
+   longer exists (every beat's own banding is expressed on the <section> via
+   .ps-band* / .sec--* instead), so they are declared unscoped. */
+.beat-h {
+  font-family: var(--ps-font-display);
+  font-weight: var(--ps-fw-light);
   font-size: clamp(1.5rem, 4.6cqi, 2.15rem);
   line-height: 1.16;
   margin: 0 0 0.9rem;
   letter-spacing: -0.01em;
 }
-.beat p.lede {
+.lede {
   font-size: clamp(1rem, 2.4cqi, 1.08rem);
   color: var(--ink-soft);
   max-width: 38rem;
   margin: 0 0 1.6rem;
 }
 
-/* ---------- problem chips ---------- */
+/* ---------- problem chips ----------
+   PS's actual pattern here is a stacked list of hairline-ruled lines, not
+   pills -- same content, restyled. The extras block below (§2.6) still reuses
+   .chip-row/.chip for a generic undeclared-field list, so the pill look isn't
+   deleted, only overridden for the problem section's own chip-row. */
 .chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -394,6 +469,25 @@ h1.hero-h .accent {
   color: var(--accent);
   font-weight: 700;
   margin-right: 0.3rem;
+}
+.pc-media.chip-row {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
+  margin: 0;
+}
+.pc-media.chip-row .chip {
+  background: none;
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid var(--line);
+  box-shadow: none;
+  padding: 0.85rem 0;
+  margin: 0;
+}
+.pc-media.chip-row .chip:first-child {
+  border-top: none;
 }
 .close-line {
   font-size: 1.02rem;
@@ -485,7 +579,7 @@ h1.hero-h .accent {
 .proof-bar .pt {
   font-size: 0.8rem;
   color: var(--ink-soft);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono);
 }
 .proof-body {
   padding: 1.5rem;
@@ -517,7 +611,7 @@ h1.hero-h .accent {
   display: block;
 }
 .btn {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--ps-font-body);
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
@@ -558,9 +652,9 @@ h1.hero-h .accent {
   align-items: center;
 }
 .p-stat .ps-n {
-  font-family: 'Sora', sans-serif;
-  font-weight: 800;
-  font-size: 1.7rem;
+  font-family: var(--ps-font-mono);
+  font-weight: var(--ps-fw-regular);
+  font-size: 28px;
 }
 .p-stat .ps-l {
   font-size: 0.72rem;
@@ -591,7 +685,7 @@ h1.hero-h .accent {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Sora', sans-serif;
+  font-family: var(--ps-font-display);
   font-weight: 700;
   font-size: 0.78rem;
 }
@@ -639,7 +733,7 @@ h1.hero-h .accent {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono);
   font-size: 0.8rem;
 }
 .p-status .lv {
@@ -653,18 +747,18 @@ h1.hero-h .accent {
 /* ---------- capability cards ---------- */
 .cap-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 0.9rem;
   margin-top: 1.8rem;
 }
-@container story (max-width: 820px) {
+@container story (min-width: 768px) {
   .cap-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
-@container story (max-width: 540px) {
+@container story (min-width: 1024px) {
   .cap-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 .cap-card {
@@ -686,7 +780,7 @@ h1.hero-h .accent {
   font-weight: 700;
   font-size: 0.86rem;
   margin-bottom: 0.7rem;
-  font-family: 'Sora', sans-serif;
+  font-family: var(--ps-font-display);
 }
 .cap-card.new .cc-ic {
   background: var(--accent);
@@ -716,19 +810,22 @@ h1.hero-h .accent {
 }
 
 /* ---------- stat callout ---------- */
-.stat-block {
-  display: flex;
-  align-items: baseline;
-  gap: 1.2rem;
-  flex-wrap: wrap;
-  margin: 1.8rem 0 1.4rem;
+.stat-figure {
+  margin: 0;
 }
 .stat-big {
-  font-family: 'Sora', sans-serif;
-  font-weight: 800;
-  font-size: clamp(2.6rem, 9cqi, 4rem);
-  color: var(--accent);
+  font-family: var(--ps-font-mono);
+  font-weight: var(--ps-fw-light);
+  font-size: clamp(48px, 12cqi, 96px);
+  /* --ps-red on --ps-surface-100 (this section's own ground, §2.6) is
+     4.31:1 and fails AA -- --ps-red-on-grey is 6.03:1. */
+  color: var(--ps-red-on-grey);
   line-height: 1;
+}
+.stat-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
 }
 .stat-desc {
   font-size: 0.98rem;
@@ -791,7 +888,7 @@ h1.hero-h .accent {
   gap: 0.5rem;
 }
 .ps-label {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -825,6 +922,29 @@ h1.hero-h .accent {
     align-self: center;
   }
 }
+@container story (min-width: 1024px) {
+  /* .pitch-shift is .pc-full (§2.6): old at col 1/span 5, new at col 7/span
+     6, the arrow absolutely placed in the empty col 6 between them. */
+  .pitch-shift {
+    position: relative;
+    gap: 0;
+  }
+  .ps-col.old {
+    flex: 0 1 auto;
+    width: calc((5 / 12) * 100%);
+  }
+  .ps-col.new {
+    flex: 0 1 auto;
+    width: calc((6 / 12) * 100%);
+    margin-left: auto;
+  }
+  .pitch-shift .ps-arrow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
 
 /* ---------- FAQ accordion ---------- */
 .faq {
@@ -842,7 +962,7 @@ h1.hero-h .accent {
 .faq-q {
   width: 100%;
   text-align: left;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--ps-font-body);
   font-weight: 600;
   font-size: 0.94rem;
   color: var(--ink);
@@ -857,7 +977,7 @@ h1.hero-h .accent {
 }
 .faq-q .fq-plus {
   flex: none;
-  font-family: 'Sora', sans-serif;
+  font-family: var(--ps-font-display);
   font-weight: 400;
   font-size: 1.2rem;
   color: var(--accent);
@@ -883,7 +1003,7 @@ h1.hero-h .accent {
 }
 .faq-verdict {
   display: inline-block;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono);
   font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -901,62 +1021,103 @@ h1.hero-h .accent {
   border: 1px solid var(--warn);
 }
 
-/* ---------- closing ---------- */
-.closing {
+/* ---------- closing ----------
+   Band background/padding now come entirely from .ps-band--asym /
+   .ps-band--invert on the <section> (§2.1, §2.3); .pc-narrative (col 3/span
+   8, from the shared primitives) is the only grid placement this needs.
+   text-align: center below 768, left at >=768, per §2.6. */
+.sec--closing .pc-narrative {
   text-align: center;
-  /* Same fix as .hero above -- also carries .wrap, so no horizontal value here. */
-  padding-top: clamp(3.5rem, 10cqi, 6rem);
-  padding-bottom: clamp(3rem, 8cqi, 4.5rem);
 }
-.closing h2 {
-  font-family: 'Sora', sans-serif;
-  font-weight: 800;
+@container story (min-width: 768px) {
+  .sec--closing .pc-narrative {
+    text-align: left;
+  }
+}
+.pc-narrative h2 {
+  font-family: var(--ps-font-display);
+  font-weight: var(--ps-fw-light);
   font-size: clamp(1.6rem, 5cqi, 2.4rem);
   line-height: 1.14;
-  margin: 0 auto 1.1rem;
+  margin: 0 0 1.1rem;
   max-width: 34rem;
 }
-.closing p {
-  color: var(--ink-soft);
+.sec--closing .pc-narrative {
+  margin-inline: auto;
+}
+.pc-narrative p {
+  /* .pc-narrative is only ever drawn by 'closing' (§1.1), which is always on
+     the invert band -- var(--ps-invert-fg-muted) here, not --ink-soft, or
+     this reads as page-ground grey text on a black band. */
+  color: var(--ps-invert-fg-muted);
   max-width: 30rem;
-  margin: 0 auto;
+  margin: 0;
   font-size: 1rem;
 }
-.closing p.cta-line {
+.sec--closing .pc-narrative h2,
+.sec--closing .pc-narrative p {
+  margin-inline: auto;
+}
+@container story (min-width: 768px) {
+  .sec--closing .pc-narrative h2,
+  .sec--closing .pc-narrative p {
+    margin-inline: 0;
+  }
+}
+.pc-narrative p.cta-line {
   margin-top: 1.8rem;
 }
 
+/* ---------- statement (pivot) ----------
+   .st-kicker carries .ps-eyebrow already (mono/bold/uppercase/tracking), and
+   the invert band mutes it via .ps-band--invert .ps-eyebrow (primitives) --
+   nothing more to add. .st-line carries .ps-display (Lexend Deca 300, the
+   36->50px step), and the .ps-eyebrow + .ps-display adjacent-sibling rule
+   (primitives) already supplies its margin-top. Only the attribution line
+   needs its own rule: mono, muted, its own top margin. */
+.st-attr {
+  font-family: var(--ps-font-mono);
+  font-size: 12px;
+  color: var(--ps-invert-fg-muted);
+  margin-top: var(--ps-s-32);
+}
+
 .pf {
-  padding: 1.6rem clamp(1.1rem, 4cqi, 2rem) 2.4rem;
-  font-family: 'IBM Plex Mono', monospace;
+  padding-block: 1.6rem 2.4rem;
+  font-family: var(--ps-font-mono);
   font-size: 0.72rem;
   color: var(--ink-faint);
+  border-top: 1px solid var(--line);
+}
+.pf-in {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.5rem;
-  border-top: 1px solid var(--line);
-  max-width: 50rem;
-  margin: 0 auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rv {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
+  /* The .rv clause moved to c/gtmBrandTokens's primitives block (§4.1), which
+     covers .rv, .rv-l, .rv-r and .rv-stagger > * in one place -- keeping a
+     second copy here would only drift. */
   .scroll-cue .ln::after {
     animation: none;
+  }
+  .proof.on .p-node {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 
 /* Shown when a content callout fails. Deliberately visible rather than
    console-only: both data paths on this page failed silently for months
-   because the only signal was a console warning nobody was watching. */
+   because the only signal was a console warning nobody was watching.
+   No max-width/margin of its own -- it now carries .boxed too (§2.6), which
+   supplies the width, centering and gutter alignment shared by every other
+   band on the page. */
 .load-error {
-    max-width: 50rem;
-    margin: 0.75rem auto 0;
+    margin-block: 0.75rem 0;
     padding: 0.6rem 0.9rem;
     border: 1px solid var(--warn, #B4842E);
     border-left-width: 3px;
@@ -981,7 +1142,7 @@ h1.hero-h .accent {
 }
 .extra-h {
   margin: 0 0 0.5rem;
-  font-family: 'Sora', sans-serif;
+  font-family: var(--ps-font-display);
   font-size: 0.98rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -996,7 +1157,7 @@ h1.hero-h .accent {
 .extra-pairs { margin: 0; display: flex; flex-direction: column; gap: 0.9rem; }
 .extra-pair { display: block; }
 .extra-pair dt {
-  font-family: 'Sora', sans-serif;
+  font-family: var(--ps-font-display);
   font-weight: 600;
   font-size: 0.95rem;
   margin-bottom: 0.2rem;
@@ -1021,7 +1182,7 @@ h1.hero-h .accent {
 }
 .extra-badge {
   display: inline-block;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1033,7 +1194,7 @@ h1.hero-h .accent {
 }
 .extra-card h4 {
   margin: 0 0 0.35rem;
-  font-family: 'Sora', sans-serif;
+  font-family: var(--ps-font-display);
   font-size: 1rem;
   font-weight: 700;
 }

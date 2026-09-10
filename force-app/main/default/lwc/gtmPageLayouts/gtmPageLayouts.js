@@ -41,6 +41,7 @@ const LAYOUT_FIELDS = {
     'use-pitch':   { text: ['eyebrow', 'head'],              rich: ['lede'],                       json: ['useCases', 'pitchOldChips', 'pitchNewChips'] },
     'faq':         { text: ['eyebrow', 'head'],              rich: [],                             json: ['items'] },
     'closing':     { text: [], rich: ['head', 'sub'], json: [], icontext: ['ctaLabel'] },
+    'statement':   { text: ['kicker'], rich: ['statement', 'attribution'], json: [] },
     // One offering's entry on the offerings page: how it introduces itself.
     'offering-tile': { text: ['mark', 'name'], rich: ['description'], json: [] },
     // The defaults a configurator starts from before a rep customises it.
@@ -118,6 +119,7 @@ const LAYOUT_LABELS = {
     'use-pitch': 'Use cases and pitch',
     'faq': 'FAQ',
     'closing': 'Closing call to action',
+    'statement': 'Statement band',
     'offering-tile': 'Offering tile',
     'offering-defaults': 'Configurator defaults',
     'industry-tile': 'Industry',
@@ -141,6 +143,7 @@ const LAYOUT_HINTS = {
     'use-pitch': 'Use cases, plus a before/after chip comparison.',
     'faq': 'A list of questions and answers.',
     'closing': 'Final headline, subhead, and a call-to-action button.',
+    'statement': 'One sentence on a black band: a mono label, the line, and who or what it is attributed to.',
     'offering-tile': 'The short badge, name and description shown on the offerings page.',
     'offering-defaults': 'What a configurator shows before a rep customises it: platforms, counts, demo and colour swatches.',
     'industry-tile': 'One industry in the shared list: its name and the blurb on its card.',
@@ -197,7 +200,7 @@ function humaniseFieldKey(key) {
  * whatever sections it is given.
  */
 const TEMPLATE_LAYOUTS = {
-    story: ['hero', 'lede-chips', 'route-proof', 'card-grid', 'stat', 'use-pitch', 'faq', 'closing'],
+    story: ['hero', 'lede-chips', 'route-proof', 'card-grid', 'stat', 'use-pitch', 'faq', 'closing', 'statement'],
     configurator: ['chapter-cards', 'chapter-lede', 'chapter-proof', 'chapter-phases',
                    'chapter-close', 'offering-defaults'],
     'offerings-listing': ['offering-tile'],
@@ -220,6 +223,20 @@ const TEMPLATE_LAYOUTS = {
     // The assistant settings page is exactly its one frame-layout section and
     // nothing else -- there is no beat to add a second thing to.
     assistant: []
+};
+
+/**
+ * The ground a layout sits on. 'page' is the default white page ground;
+ * 'tint' is the alternate grey ground; 'invert' is the black band.
+ * Keyed by LAYOUT TYPE, not section key, because "a statement is on black"
+ * is a fact about the design system, not about Migration Accelerator.
+ * A layout reused on another template (faq, card-grid, hero) stays 'page'
+ * on purpose — a tinted band inside an app help panel would be wrong.
+ */
+const LAYOUT_BAND = {
+    'statement': 'invert',
+    'closing':   'invert',
+    'stat':      'tint'
 };
 
 // Layouts an editor may add to a page. The header, footer and assistant are
@@ -437,6 +454,7 @@ export {
     LOCKED_JSON_ITEMS,
     FRAME_LAYOUTS,
     TEMPLATE_LAYOUTS,
+    LAYOUT_BAND,
     LAYOUT_FIELDS,
     LAYOUT_LABELS,
     LAYOUT_HINTS,

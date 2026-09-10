@@ -83,6 +83,22 @@
   {
    "attributes": {
     "type": "GTM_Page_Section__c",
+    "referenceId": "sec9"
+   },
+   "Section_Address__c": "migration-accelerator::story::pivot",
+   "Offering_Key__c": "migration-accelerator",
+   "Template_Type__c": "story",
+   "Section_Key__c": "pivot",
+   "Label__c": "The Pivot",
+   "Help_Text__c": "One line, on black, at the page's midpoint: the shift this offering represents.",
+   "Layout_Type__c": "statement",
+   "Width__c": "standard",
+   "Sort_Order__c": 35,
+   "Active__c": true
+  },
+  {
+   "attributes": {
+    "type": "GTM_Page_Section__c",
     "referenceId": "sec4"
    },
    "Section_Address__c": "migration-accelerator::story::capabilities",

@@ -745,6 +745,7 @@ public with sharing class GtmSavedConfigurationController {
         if (key == 'media')      return 'Media';
         if (key == 'transport')  return 'Transportation';
         if (key == 'government') return 'Government';
+        if (key == 'energy-commodities') return 'Energy';
         return null;
     }
 
