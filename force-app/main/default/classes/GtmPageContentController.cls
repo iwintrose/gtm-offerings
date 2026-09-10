@@ -788,7 +788,7 @@ public without sharing class GtmPageContentController {
     private static GTM_Page_Section__c tileSectionFor(String offeringKey) {
         String sectionAddress = offeringKey + '::offerings-listing::tile';
         List<GTM_Page_Section__c> secs = [
-            SELECT Id, Offering_Status__c, Archived__c
+            SELECT Id, Section_Address__c, Offering_Status__c, Archived__c
             FROM   GTM_Page_Section__c
             WHERE  Section_Address__c = :sectionAddress LIMIT 1
         ];
