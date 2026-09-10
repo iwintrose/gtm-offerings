@@ -61,6 +61,11 @@
                 <label>closing</label>
             </value>
             <value>
+                <fullName>statement</fullName>
+                <default>false</default>
+                <label>statement</label>
+            </value>
+            <value>
                 <fullName>offering-tile</fullName>
                 <default>false</default>
                 <label>offering-tile</label>

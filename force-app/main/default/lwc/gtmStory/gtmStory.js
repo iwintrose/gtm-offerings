@@ -2,13 +2,13 @@ import { LightningElement, api, track } from 'lwc';
 import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
 // The layout vocabulary is shared with the editor, which has to know what
 // fields a section needs before that section exists. See c/gtmPageLayouts.
-import { FRAME_LAYOUTS, LAYOUT_FIELDS, ctaGlyph } from 'c/gtmPageLayouts';
+import { FRAME_LAYOUTS, LAYOUT_FIELDS, LAYOUT_BAND, ctaGlyph } from 'c/gtmPageLayouts';
 
 const ACCELERATOR_URL =
     'https://orgfarm-5c323065da-dev-ed.develop.my.site.com/gtmaccelerator';
 
 const FONTS_HREF =
-    'https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap';
+    'https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;500;600&family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@300;400;500;700&display=swap';
 
 const OFFERING_KEY = 'migration-accelerator';
 
@@ -165,6 +165,11 @@ const SECTION_FALLBACKS = {
         head: DEFAULTS.closingHead,
         sub: DEFAULTS.closingSub,
         ctaLabel: { label: 'Build a client-specific version', icon: 'arrow' }
+    },
+    'statement': {
+        kicker: 'The pivot',
+        statement: 'Before this, scope was an argument. Now it is a reading of the environment.',
+        attribution: 'Migration Accelerator — the shift, in one line'
     }
 };
 
@@ -174,13 +179,14 @@ const DEFAULT_SECTIONS = [
     { sectionKey: 'header',        layoutType: 'page-header', width: 'standard', label: 'Header' },
     { sectionKey: 'footer',        layoutType: 'page-footer', width: 'standard', label: 'Footer' },
     { sectionKey: 'hero',          layoutType: 'hero',        width: 'standard', label: '' },
-    { sectionKey: 'problem',       layoutType: 'lede-chips',  width: 'standard', label: '' },
+    { sectionKey: 'problem',       layoutType: 'lede-chips',  width: 'standard', label: 'The Problem' },
     { sectionKey: 'mechanism',     layoutType: 'route-proof', width: 'wide',     label: 'The mechanism' },
+    { sectionKey: 'pivot',         layoutType: 'statement',   width: 'standard', label: 'The Pivot' },
     { sectionKey: 'capabilities',  layoutType: 'card-grid',   width: 'standard', label: 'The capabilities' },
     { sectionKey: 'clientProfile', layoutType: 'stat',        width: 'standard', label: 'The client profile' },
     { sectionKey: 'bd',            layoutType: 'use-pitch',   width: 'wide',     label: 'For Business Development and Industry Leaders' },
     { sectionKey: 'faq',           layoutType: 'faq',         width: 'standard', label: 'FAQ' },
-    { sectionKey: 'closing',       layoutType: 'closing',     width: 'standard', label: '' }
+    { sectionKey: 'closing',       layoutType: 'closing',     width: 'standard', label: 'Closing' }
 ];
 
 
@@ -305,8 +311,19 @@ export default class GtmStory extends LightningElement {
     }
 
     _extrasFor(sectionKey, spec) {
+        // All five LAYOUT_FIELDS buckets count as "declared" -- missing
+        // icontext/enum here is why a properly-bound field (closing's
+        // ctaLabel, an icontext) used to leak through a second time as an
+        // orphaned "extra": rendered correctly where it's actually bound,
+        // then again here as a bare label with no value, because none of
+        // isText/isRich/isList/isPairs/isCards matches 'icontext' or 'enum'.
         const declared = new Set(
-            (spec.text || []).concat(spec.rich || [], spec.json || [])
+            (spec.text || []).concat(
+                spec.rich || [],
+                spec.json || [],
+                spec.icontext || [],
+                spec.enum || []
+            )
         );
         const prefix = sectionKey + '::';
         return this._fieldMeta
@@ -366,7 +383,7 @@ export default class GtmStory extends LightningElement {
 
     get sections() {
         const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
-        return rows
+        const list = rows
             .filter((row) => FRAME_LAYOUTS.indexOf(row.layoutType) === -1)
             // A layout this build does not know is skipped rather than drawn.
             // Without this it fell through to the generic path, where every one
@@ -385,9 +402,29 @@ export default class GtmStory extends LightningElement {
             const spec = LAYOUT_FIELDS[t] || { text: [], rich: [], json: [] };
             const fb = SECTION_FALLBACKS[t] || {};
 
+            // The ground this section sits on -- 'page' (white/default),
+            // 'tint' (grey) or 'invert' (black). Drives both the section's own
+            // banding classes and whether a spacer renders after it (§2.4).
+            const band = LAYOUT_BAND[t] || 'page';
+            const widthClass = row.width === 'wide' ? 'sec--wide' : 'sec--standard';
+            const bandClasses = [];
+            if (band === 'invert') {
+                bandClasses.push(t === 'closing' ? 'ps-band--asym' : 'ps-band', 'ps-band--invert');
+            } else if (band === 'tint') {
+                bandClasses.push('ps-band', 'ps-band--tint');
+            }
+            const sectionClass = [
+                t === 'hero' ? 'sec--hero' : '',
+                t === 'closing' ? 'sec--closing' : '',
+                widthClass,
+                ...bandClasses
+            ].filter(Boolean).join(' ');
+
             const s = {
                 key: k,
                 layoutType: t,
+                band,
+                navLabel: row.label || '',
                 isHero: t === 'hero',
                 isLedeChips: t === 'lede-chips',
                 isRouteProof: t === 'route-proof',
@@ -396,9 +433,8 @@ export default class GtmStory extends LightningElement {
                 isUsePitch: t === 'use-pitch',
                 isFaq: t === 'faq',
                 isClosing: t === 'closing',
-                sectionClass: t === 'hero' ? 'hero wrap'
-                    : t === 'closing' ? 'closing wrap'
-                    : row.width === 'wide' ? 'beat wrap wide' : 'beat wrap'
+                isStatement: t === 'statement',
+                sectionClass
             };
 
             // Resolve every field this layout declares: record -> fallback.
@@ -453,6 +489,20 @@ export default class GtmStory extends LightningElement {
 
             return s;
         });
+
+        // Spacer pass (§2.4): deterministic, computed over the drawn sequence
+        // once every section's band is known. A spacer renders after a section
+        // unless it or the next section is self-padded (tint or invert ground)
+        // -- a banded section already carries its own top/bottom rhythm, so a
+        // spacer beside it would double it up.
+        const selfPadded = (s) => s.band !== 'page';
+        list.forEach((s, i) => {
+            s.spacerAfter = (i === list.length - 1)
+                ? !selfPadded(s)
+                : !selfPadded(s) && !selfPadded(list[i + 1]);
+        });
+
+        return list;
     }
 
     // for:each needs a stable key, and a bare string cannot carry one.
@@ -478,6 +528,27 @@ export default class GtmStory extends LightningElement {
 
     // ---- page getters ----
 
+    /**
+     * The page's own beats, in order, for the non-interactive index rendered
+     * beside the hero. Frame layouts (masthead/footer/assistant) are not
+     * beats; a layout this build cannot draw is not on the page; the hero
+     * itself does not list itself; and a row nobody has labelled yet has
+     * nothing to show.
+     */
+    get pageIndex() {
+        const rows = this._sectionRows.length ? this._sectionRows : DEFAULT_SECTIONS;
+        return rows
+            .filter((row) => FRAME_LAYOUTS.indexOf(row.layoutType) === -1)
+            .filter((row) => LAYOUT_FIELDS[row.layoutType])
+            .filter((row) => row.layoutType !== 'hero')
+            .filter((row) => row.label)
+            .map((row, i) => ({
+                id: row.sectionKey,
+                label: row.label,
+                num: String(i + 1).padStart(2, '0')
+            }));
+    }
+
 
     // ---- body getters ----
 
@@ -485,9 +556,9 @@ export default class GtmStory extends LightningElement {
     // ---- misc computed ----
 
     get rootClass() {
-        if (this.theme === 'dark') return 'story-root dark';
-        if (this.theme === 'light') return 'story-root light';
-        return 'story-root';
+        if (this.theme === 'dark') return 'story-root ps-scope dark';
+        if (this.theme === 'light') return 'story-root ps-scope light';
+        return 'story-root ps-scope';
     }
 
     get proofClass() { return this.proofOn ? 'proof rv d3 on' : 'proof rv d3'; }
@@ -585,7 +656,8 @@ export default class GtmStory extends LightningElement {
     }
 
     setupReveal() {
-        const nodes = this.template.querySelectorAll('.rv');
+        // .rv-stagger containers do not carry .rv -- they must be queried too.
+        const nodes = this.template.querySelectorAll('.rv, .rv-stagger');
         if (!nodes || nodes.length === 0) return;
         // In preview the sections live in a transformed, independently scrolled
         // container. IntersectionObserver measures against the browser viewport,
@@ -599,13 +671,25 @@ export default class GtmStory extends LightningElement {
             this._observer = new IntersectionObserver(
                 (entries) => {
                     entries.forEach((entry) => {
-                        if (!entry.isIntersecting) return;
-                        entry.target.classList.add('in');
-                        this._revealed.add(entry.target);
-                        this._observer.unobserve(entry.target);
+                        // PS's threshold is 0.2, but a section taller than
+                        // ~3.5 viewports can never reach 20% visible. The
+                        // [0, 0.2] pair lets a tall element in on height.
+                        const shown = entry.isIntersecting && (
+                            entry.intersectionRatio >= 0.2 ||
+                            entry.intersectionRect.height >= 240
+                        );
+                        // once:false -- PS replays on scroll-back.
+                        if (shown) {
+                            entry.target.classList.add('in');
+                            this._revealed.add(entry.target);
+                        } else if (!entry.isIntersecting) {
+                            entry.target.classList.remove('in');
+                            this._revealed.delete(entry.target);
+                        }
                     });
                 },
-                { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
+                // PS's exact observer options.
+                { threshold: [0, 0.2], rootMargin: '0px 0px -50px 0px' }
             );
         }
         // Observing a node twice is harmless, but tracking what has already
@@ -629,6 +713,16 @@ export default class GtmStory extends LightningElement {
         const doc = document.documentElement;
         const max = doc.scrollHeight - doc.clientHeight;
         this.scrollPct = max > 0 ? (doc.scrollTop / max) * 100 : 0;
+    }
+
+    // The hero's page index doubles as real in-page navigation -- a rep or
+    // prospect can jump straight to a section, not just see its name. Same
+    // [data-section] attribute getSectionRects() already queries, so this
+    // never drifts from what the Content Manager preview considers a section.
+    handleNavClick(event) {
+        const targetKey = event.currentTarget.dataset.target;
+        const el = this.template.querySelector(`[data-section="${targetKey}"]`);
+        if (el) el.scrollIntoView({ behavior: this.reducedMotion ? 'auto' : 'smooth', block: 'start' });
     }
 
     // ---- theme ----

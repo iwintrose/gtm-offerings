@@ -784,6 +784,63 @@
       "Active__c": true,
       "Sort_Order__c": 290,
       "Text_Value__c": "84"
+    },
+    {
+      "attributes": {
+        "type": "GTM_Page_Content__c",
+        "referenceId": "row43"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "pivot",
+      "Field_Key__c": "kicker",
+      "Field_Type__c": "text",
+      "Content_Address__c": "migration-accelerator::story::pivot::kicker",
+      "Active__c": true,
+      "Sort_Order__c": 400,
+      "Text_Value__c": "The pivot",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Kicker",
+      "Help_Text__c": "Small mono label above the statement."
+    },
+    {
+      "attributes": {
+        "type": "GTM_Page_Content__c",
+        "referenceId": "row44"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "pivot",
+      "Field_Key__c": "statement",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::pivot::statement",
+      "Active__c": true,
+      "Sort_Order__c": 410,
+      "Text_Value__c": "",
+      "Rich_Value__c": "Before this, scope was an argument. Now it is a reading of the environment.",
+      "JSON_Value__c": "",
+      "Label__c": "Statement",
+      "Help_Text__c": "The one line, set in display type on the black band."
+    },
+    {
+      "attributes": {
+        "type": "GTM_Page_Content__c",
+        "referenceId": "row45"
+      },
+      "Offering_Key__c": "migration-accelerator",
+      "Template_Type__c": "story",
+      "Section_Key__c": "pivot",
+      "Field_Key__c": "attribution",
+      "Field_Type__c": "rich",
+      "Content_Address__c": "migration-accelerator::story::pivot::attribution",
+      "Active__c": true,
+      "Sort_Order__c": 420,
+      "Text_Value__c": "",
+      "Rich_Value__c": "Migration Accelerator — the shift, in one line",
+      "JSON_Value__c": "",
+      "Label__c": "Attribution",
+      "Help_Text__c": "Who or what the statement is attributed to."
     }
   ]
 }
