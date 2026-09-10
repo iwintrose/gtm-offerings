@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Internal reps: save and list their own configurator links (MA Saved Configuration). Not granted to the guest user.</description>
-    <label>GTM Config Manager</label>
+    <description>Required for every rep: save/list their own configurator links, work the readout editor, and read page content on the GTM_Pages tab. Tab/app visibility is scoped to the GTM Offerings app only. Not granted to the guest user.</description>
+    <label>GTM Offering User</label>
     <applicationVisibilities>
         <application>GTM_Offerings</application>
-        <visible>true</visible>
-    </applicationVisibilities>
-    <applicationVisibilities>
-        <application>GTM_Content_Manager</application>
         <visible>true</visible>
     </applicationVisibilities>
     <classAccesses>
@@ -825,14 +821,6 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
-        <tab>GTM_Content_Home</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
-        <tab>GTM_Content_Manager</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <tabSettings>
         <tab>GTM_Readout__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
@@ -855,8 +843,4 @@
          permission set's Case grant. Revisit if this org's license changes,
          or grant Case access to reps through a different permission set/
          profile whose license does allow it. -->
-    <tabSettings>
-        <tab>GTM_Instrument_Author</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
 </PermissionSet>
