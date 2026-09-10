@@ -199,6 +199,11 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Page_Section__c.Archived__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>GTM_Page_Section__c.Draft_State__c</field>
         <readable>true</readable>
         <editable>true</editable>
@@ -210,6 +215,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <field>GTM_Page_Section__c.Label__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Offering_Status__c</field>
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>

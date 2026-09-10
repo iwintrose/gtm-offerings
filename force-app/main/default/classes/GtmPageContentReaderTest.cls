@@ -309,6 +309,119 @@ private class GtmPageContentReaderTest {
         }
     }
 
+    @IsTest
+    static void getOfferingTiles_excludesAnOfferingWhoseTileSectionIsDraft() {
+        insert new List<GTM_Page_Content__c>{
+            contentRow('migration-accelerator', 'offerings-listing', 'tile', 'name', 'text', 'Migration Accelerator', null, null, null, 0),
+            contentRow('migration-accelerator', 'offerings-listing', 'tile', 'description', 'text', 'Move faster.', null, null, null, 1)
+        };
+        insert new GTM_Page_Section__c(
+            Section_Address__c = 'migration-accelerator::offerings-listing::tile',
+            Offering_Key__c    = 'migration-accelerator',
+            Template_Type__c   = 'offerings-listing',
+            Section_Key__c     = 'tile',
+            Label__c            = 'Offerings page entry',
+            Layout_Type__c      = 'offering-tile',
+            Sort_Order__c       = 10,
+            Active__c           = true,
+            Status__c           = 'Published',
+            Offering_Status__c  = 'Draft'
+        );
+
+        Test.startTest();
+        List<GtmPageContentReader.OfferingTile> tiles = GtmPageContentReader.getOfferingTiles();
+        Test.stopTest();
+
+        for (GtmPageContentReader.OfferingTile t : tiles) {
+            Assert.areNotEqual('migration-accelerator', t.offeringKey,
+                'A tile whose section is set to Draft must be excluded from the dashboard listing');
+        }
+    }
+
+    @IsTest
+    static void getOfferingTiles_excludesAnArchivedOffering() {
+        insert new List<GTM_Page_Content__c>{
+            contentRow('migration-accelerator', 'offerings-listing', 'tile', 'name', 'text', 'Migration Accelerator', null, null, null, 0),
+            contentRow('migration-accelerator', 'offerings-listing', 'tile', 'description', 'text', 'Move faster.', null, null, null, 1)
+        };
+        insert new GTM_Page_Section__c(
+            Section_Address__c = 'migration-accelerator::offerings-listing::tile',
+            Offering_Key__c    = 'migration-accelerator',
+            Template_Type__c   = 'offerings-listing',
+            Section_Key__c     = 'tile',
+            Label__c            = 'Offerings page entry',
+            Layout_Type__c      = 'offering-tile',
+            Sort_Order__c       = 10,
+            Active__c           = true,
+            Status__c           = 'Published',
+            Archived__c         = true
+        );
+
+        Test.startTest();
+        List<GtmPageContentReader.OfferingTile> tiles = GtmPageContentReader.getOfferingTiles();
+        Test.stopTest();
+
+        for (GtmPageContentReader.OfferingTile t : tiles) {
+            Assert.areNotEqual('migration-accelerator', t.offeringKey,
+                'An archived offering must be excluded from the dashboard listing');
+        }
+    }
+
+    @IsTest
+    static void getOfferingTiles_stillIncludesAPublishedNonArchivedOfferingWithATileSection() {
+        // The additive-gate regression this guards: a normal, live tile
+        // section (Published, not archived) must still resolve -- the new
+        // gates must not accidentally exclude the common case.
+        insert new List<GTM_Page_Content__c>{
+            contentRow('migration-accelerator', 'offerings-listing', 'tile', 'name', 'text', 'Migration Accelerator', null, null, null, 0),
+            contentRow('migration-accelerator', 'offerings-listing', 'tile', 'description', 'text', 'Move faster.', null, null, null, 1)
+        };
+        insert new GTM_Page_Section__c(
+            Section_Address__c = 'migration-accelerator::offerings-listing::tile',
+            Offering_Key__c    = 'migration-accelerator',
+            Template_Type__c   = 'offerings-listing',
+            Section_Key__c     = 'tile',
+            Label__c            = 'Offerings page entry',
+            Layout_Type__c      = 'offering-tile',
+            Sort_Order__c       = 10,
+            Active__c           = true,
+            Status__c           = 'Published',
+            Offering_Status__c  = 'Published',
+            Archived__c         = false
+        );
+
+        Test.startTest();
+        List<GtmPageContentReader.OfferingTile> tiles = GtmPageContentReader.getOfferingTiles();
+        Test.stopTest();
+
+        GtmPageContentReader.OfferingTile tile;
+        for (GtmPageContentReader.OfferingTile t : tiles) {
+            if (t.offeringKey == 'migration-accelerator') tile = t;
+        }
+        Assert.isNotNull(tile, 'A published, non-archived offering must still be listed');
+        Assert.isTrue(tile.isLive, 'isLive derivation is unaffected by the new gates');
+    }
+
+    @IsTest
+    static void getOfferingTiles_withNoTileSectionAtAllStillResolvesAsBeforeIsLiveOnly() {
+        // No GTM_Page_Section__c row at all for this offering -- the new
+        // gates must fail open (never exclude) rather than require a tile
+        // section to exist just to be listed. Mirrors
+        // getOfferingTiles_marksLiveOnceDescriptionIsSet above, which this
+        // duplicates the setup of on purpose to isolate the new gate.
+        insert contentRow('migration-accelerator', 'offerings-listing', 'tile', 'description', 'text', 'Move faster.', null, null, null, 0);
+
+        Test.startTest();
+        List<GtmPageContentReader.OfferingTile> tiles = GtmPageContentReader.getOfferingTiles();
+        Test.stopTest();
+
+        GtmPageContentReader.OfferingTile tile;
+        for (GtmPageContentReader.OfferingTile t : tiles) {
+            if (t.offeringKey == 'migration-accelerator') tile = t;
+        }
+        Assert.isNotNull(tile, 'An offering with content but no tile section row must still be listed');
+    }
+
     // ─── getIndustryProfiles ──────────────────────────────────────────────────
 
     @IsTest
@@ -323,11 +436,14 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void getIndustryProfiles_buildsProfileFromScalarFieldsAndStripsSectionPrefix() {
+        // Reads the passed-in offering/template now (not a hardcoded owner),
+        // so the rows are seeded under OFFERING/TMPL -- the same pair the
+        // call below passes.
         insert new List<GTM_Page_Content__c>{
-            contentRow('gtm', 'industry-chooser', 'industry-financial-services', 'industryLabel', 'text', 'Financial Services', null, null, null, 0),
-            contentRow('gtm', 'industry-chooser', 'industry-financial-services', 'problem', 'text', 'Legacy platforms slow deals', null, null, null, 1),
-            contentRow('gtm', 'industry-chooser', 'industry-financial-services', 'solution', 'text', 'Migrate faster', null, null, null, 2),
-            contentRow('gtm', 'industry-chooser', 'industry-financial-services', 'demoRoot', 'text', 'root-object', null, null, null, 3)
+            contentRow(OFFERING, TMPL, 'industry-financial-services', 'industryLabel', 'text', 'Financial Services', null, null, null, 0),
+            contentRow(OFFERING, TMPL, 'industry-financial-services', 'problem', 'text', 'Legacy platforms slow deals', null, null, null, 1),
+            contentRow(OFFERING, TMPL, 'industry-financial-services', 'solution', 'text', 'Migrate faster', null, null, null, 2),
+            contentRow(OFFERING, TMPL, 'industry-financial-services', 'demoRoot', 'text', 'root-object', null, null, null, 3)
         };
 
         Test.startTest();
@@ -347,8 +463,8 @@ private class GtmPageContentReaderTest {
     @IsTest
     static void getIndustryProfiles_parsesJsonListFields() {
         insert new List<GTM_Page_Content__c>{
-            contentRow('gtm', 'industry-chooser', 'industry-retail', 'uniquePoints', 'json', null, null, '["Fast setup","Low cost"]', null, 0),
-            contentRow('gtm', 'industry-chooser', 'industry-retail', 'demoDeps', 'json', null, null, '["dep-a","dep-b"]', null, 1)
+            contentRow(OFFERING, TMPL, 'industry-retail', 'uniquePoints', 'json', null, null, '["Fast setup","Low cost"]', null, 0),
+            contentRow(OFFERING, TMPL, 'industry-retail', 'demoDeps', 'json', null, null, '["dep-a","dep-b"]', null, 1)
         };
 
         Test.startTest();
@@ -366,7 +482,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void getIndustryProfiles_malformedJsonListField_leavesListEmptyInsteadOfFailing() {
-        insert contentRow('gtm', 'industry-chooser', 'industry-retail', 'uniquePoints', 'json', null, null, 'NOT VALID JSON [', null, 0);
+        insert contentRow(OFFERING, TMPL, 'industry-retail', 'uniquePoints', 'json', null, null, 'NOT VALID JSON [', null, 0);
 
         Test.startTest();
         List<GtmPageContentReader.IndustryProfile> profiles =
@@ -379,7 +495,7 @@ private class GtmPageContentReaderTest {
 
     @IsTest
     static void getIndustryProfiles_ignoresSectionsOutsideTheIndustryNamespace() {
-        insert contentRow('gtm', 'industry-chooser', 'hero', 'headline', 'text', 'Not an industry section', null, null, null, 0);
+        insert contentRow(OFFERING, TMPL, 'hero', 'headline', 'text', 'Not an industry section', null, null, null, 0);
 
         Test.startTest();
         List<GtmPageContentReader.IndustryProfile> profiles =
@@ -387,6 +503,52 @@ private class GtmPageContentReaderTest {
         Test.stopTest();
 
         Assert.areEqual(0, profiles.size(), 'Only section keys prefixed industry- should be picked up');
+    }
+
+    @IsTest
+    static void getIndustryProfiles_readsThePassedOwnerAndTemplateNotAHardcodedOne() {
+        // The regression this guards: the method used to ignore its own
+        // arguments and always read gtm/industry-chooser. Seed rows under a
+        // DIFFERENT offering/template pair (mirroring what c/gtmConfigurator
+        // now expects for its own per-offering industry-profile sections) and
+        // confirm they resolve, while the framework's own industry-chooser
+        // rows for the same industry key do NOT leak into this offering's
+        // result.
+        insert new List<GTM_Page_Content__c>{
+            contentRow('ma-migrator', 'configurator', 'industry-fintech', 'problem', 'text', 'Offering-specific problem', null, null, null, 0),
+            contentRow('gtm', 'industry-chooser', 'industry-fintech', 'problem', 'text', 'Framework problem', null, null, null, 0)
+        };
+
+        Test.startTest();
+        List<GtmPageContentReader.IndustryProfile> profiles =
+            GtmPageContentReader.getIndustryProfiles('ma-migrator', 'configurator');
+        Test.stopTest();
+
+        Assert.areEqual(1, profiles.size());
+        Assert.areEqual('Offering-specific problem', profiles[0].problem,
+            'getIndustryProfiles must read the offering/template it was called with, not a hardcoded framework owner');
+    }
+
+    @IsTest
+    static void getIndustryProfiles_chooseIndustryCallStillReadsTheFrameworkTaxonomy() {
+        // c/chooseIndustry always calls with offeringKey='gtm',
+        // templateType='industry-chooser' explicitly -- confirms that exact
+        // call still resolves the shared industry-tile rows exactly as
+        // before, including the industryLabel/pickerBlurb fields that only
+        // industry-tile (not industry-profile) models.
+        insert new List<GTM_Page_Content__c>{
+            contentRow('gtm', 'industry-chooser', 'industry-fintech', 'industryLabel', 'text', 'Financial Services', null, null, null, 0),
+            contentRow('gtm', 'industry-chooser', 'industry-fintech', 'pickerBlurb', 'rich', null, '<p>Blurb</p>', null, null, 1)
+        };
+
+        Test.startTest();
+        List<GtmPageContentReader.IndustryProfile> profiles =
+            GtmPageContentReader.getIndustryProfiles('gtm', 'industry-chooser');
+        Test.stopTest();
+
+        Assert.areEqual(1, profiles.size());
+        Assert.areEqual('Financial Services', profiles[0].industryLabel);
+        Assert.areEqual('<p>Blurb</p>', profiles[0].pickerBlurb);
     }
 
     // ─── getSiteInfo ──────────────────────────────────────────────────────────

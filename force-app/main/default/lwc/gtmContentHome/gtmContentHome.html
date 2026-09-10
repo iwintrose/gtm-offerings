@@ -79,6 +79,9 @@
                             <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
                           </button>
                         </template>
+                        <template if:true={o.manageBadgeText}>
+                          <span class={o.manageBadgeClass}>{o.manageBadgeText}</span>
+                        </template>
                       </h2>
                       <p class="off-key">{o.subtitle}</p>
                     </template>
@@ -157,6 +160,14 @@
                   <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
                   <span>{o.addLabel}</span>
                 </button>
+                <template if:true={o.showManage}>
+                  <button class="off-foot-manage" data-key={o.key}
+                          onclick={handleOpenManage}
+                          title="Set whether this offering appears on the GTM Offerings Dashboard, or archive it">
+                    <lightning-icon icon-name="utility:priority" size="xx-small"></lightning-icon>
+                    <span>Manage offering</span>
+                  </button>
+                </template>
                 <template if:true={o.showSettings}>
                   <button class="off-foot-settings" data-key={o.key} data-template={o.settingsTemplate}
                           onclick={handleOpenSettings} title={o.settingsHint}>
@@ -264,6 +275,62 @@
             <lightning-button label="Cancel" onclick={handleCloseNewPage}></lightning-button>
             <lightning-button label="Open in the editor" variant="brand"
                               disabled={npDisabled} onclick={handleGoToPage}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <template if:true={manageOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="mgTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="mgTitle">Manage "{manageLabel}"</h2>
+            <p>Whether this offering appears on the GTM Offerings Dashboard.</p>
+          </header>
+          <div class="modal-b">
+            <template if:false={manageShowArchiveConfirm}>
+              <div class="mg-row">
+                <p class="modal-note">{manageStatusHint}</p>
+                <lightning-button label={manageStatusButtonLabel}
+                                  disabled={manageBusy}
+                                  onclick={handleToggleOfferingStatus}></lightning-button>
+              </div>
+              <div class="mg-row">
+                <p class="modal-note">
+                  Archiving is a soft hide, never a delete — nothing about this
+                  offering or its pages is removed, and it can be restored here
+                  at any time.
+                </p>
+                <template if:false={manageIsArchived}>
+                  <lightning-button label={manageArchiveButtonLabel} class="modal-danger"
+                                    disabled={manageBusy}
+                                    onclick={handleAskArchive}></lightning-button>
+                </template>
+                <template if:true={manageIsArchived}>
+                  <lightning-button label={manageArchiveButtonLabel}
+                                    disabled={manageBusy}
+                                    onclick={handleConfirmArchiveToggle}></lightning-button>
+                </template>
+              </div>
+            </template>
+            <template if:true={manageShowArchiveConfirm}>
+              <p class="modal-note">
+                Archive "{manageLabel}"? It will disappear from the GTM
+                Offerings Dashboard immediately. Nothing is deleted — you can
+                restore it from this same panel at any time.
+              </p>
+            </template>
+          </div>
+          <footer class="modal-f">
+            <template if:false={manageShowArchiveConfirm}>
+              <lightning-button label="Done" onclick={handleCloseManage}></lightning-button>
+            </template>
+            <template if:true={manageShowArchiveConfirm}>
+              <lightning-button label="Cancel" onclick={handleCancelArchive}></lightning-button>
+              <lightning-button label="Archive this offering" class="modal-danger"
+                                disabled={manageBusy}
+                                onclick={handleConfirmArchiveToggle}></lightning-button>
+            </template>
           </footer>
         </div>
       </section>

@@ -14,11 +14,6 @@
  */
 public without sharing class GtmPageContentReader {
 
-    /** Where industries live: the framework's own industry chooser page. */
-    private static final String INDUSTRY_OWNER    = 'gtm';
-    private static final String INDUSTRY_TEMPLATE = 'industry-chooser';
-
-
     /**
      * Resolves every active content row for a template into a flat map keyed
      * 'section::field'. Industry-scoped rows win over offering-wide defaults
@@ -228,6 +223,27 @@ public without sharing class GtmPageContentReader {
             // A tile counts as live once it says something about itself.
             t.isLive = String.isNotBlank(t.description);
         }
+
+        // Offering_Status__c and Archived__c live on the offering's own tile
+        // section (Section_Key__c='tile', Template_Type__c='offerings-listing'),
+        // not on GTM_Page_Content__c -- they are offering-level flags, not
+        // content. Additive gates alongside isLive, not a replacement for it:
+        // an offering can be "live" content-wise and still excluded from the
+        // dashboard listing because it was explicitly set to Draft or archived.
+        for (GTM_Page_Section__c sec : [
+            SELECT Offering_Key__c, Offering_Status__c, Archived__c
+            FROM   GTM_Page_Section__c
+            WHERE  Template_Type__c = 'offerings-listing'
+            AND    Section_Key__c   = 'tile'
+            AND    Offering_Key__c IN :byKey.keySet()
+            LIMIT  500
+        ]) {
+            OfferingTile t = byKey.get(sec.Offering_Key__c);
+            if (t == null) continue;
+            if (sec.Offering_Status__c == 'Draft' || sec.Archived__c == true) {
+                out.remove(out.indexOf(t));
+            }
+        }
         return out;
     }
 
@@ -257,27 +273,32 @@ public without sharing class GtmPageContentReader {
      * the way declared fields normally do. This is the enumeration query
      * the industry picker needs; a single industry's profile for the
      * configurator is one entry in this same list, matched by key.
+     *
+     * Reads whatever owner/template the caller passes, per-offering:
+     * c/chooseIndustry (the framework's Industry Chooser) always passes
+     * offeringKey='gtm', templateType='industry-chooser' explicitly, so it
+     * keeps reading the shared industry-tile taxonomy exactly as before.
+     * c/gtmConfigurator passes its own offeringKey/templateType('configurator'),
+     * so it now reads that offering's own industry-profile sections instead of
+     * the framework's -- restoring per-offering industry copy. industry-tile
+     * (framework) carries industryLabel/pickerBlurb; industry-profile
+     * (per-offering) does not model those fields at all, so they simply stay
+     * null on a per-offering profile, which is by design (the taxonomy name
+     * stays framework-owned; only what this offering says to that industry is
+     * offering-owned).
      */
     @AuraEnabled(cacheable=true)
     public static List<IndustryProfile> getIndustryProfiles(String offeringKey, String templateType) {
         List<IndustryProfile> out = new List<IndustryProfile>();
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) return out;
 
-        // Industries belong to the framework, not to an offering.
-        //
-        // The arguments are kept because every caller passes them and the
-        // signature is public, but they no longer choose where the copy is
-        // read from: an industry has one home. The configurator draws one
-        // cover, so it had no business holding six industry sections -- the
-        // editor listed six rows for a single element of the page, and the
-        // same industry's copy existed twice.
         Map<String, IndustryProfile> bySection = new Map<String, IndustryProfile>();
         for (GTM_Page_Content__c rec : [
             SELECT Section_Key__c, Field_Key__c, Field_Type__c,
                    Text_Value__c, Rich_Value__c, JSON_Value__c
             FROM   GTM_Page_Content__c
-            WHERE  Offering_Key__c  = :INDUSTRY_OWNER
-            AND    Template_Type__c = :INDUSTRY_TEMPLATE
+            WHERE  Offering_Key__c  = :offeringKey
+            AND    Template_Type__c = :templateType
             AND    Active__c        = true
             AND    Section_Key__c LIKE 'industry-%'
             ORDER BY Section_Key__c

@@ -7,6 +7,8 @@ import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSum
 import renameOffering from '@salesforce/apex/GtmPageContentController.renameOffering';
 import createOffering from '@salesforce/apex/GtmPageContentController.createOffering';
 import renamePage from '@salesforce/apex/GtmPageContentController.renamePage';
+import setOfferingStatus from '@salesforce/apex/GtmPageContentController.setOfferingStatus';
+import setOfferingArchived from '@salesforce/apex/GtmPageContentController.setOfferingArchived';
 
 
 // Every template the picklist allows, so the home can show what an offering
@@ -56,6 +58,15 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     // new offering
     @track newOfferingOpen = false;
     @track newOfferingName = '';
+
+    // manage offering (dashboard Status/Archive -- distinct from Settings)
+    @track manageKey = '';
+    @track manageBusy = false;
+    // Archiving asks for a second click before it runs, the same shape
+    // gtmContentManager's own section-delete confirm uses; un-archiving and
+    // flipping Status need no confirm -- neither one is destructive, and both
+    // are trivially reversible from the same panel.
+    @track manageConfirmArchive = false;
 
     /**
      * Lightning keeps a standard app tab's component alive when you switch
@@ -159,6 +170,20 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                 settingsHint: o.isFramework
                     ? 'Gus: the name, role, greeting and prompts of the assistant every offering’s configurator shares'
                     : 'Swatches, default platforms and demo numbers for this offering’s links',
+                // Whether THIS OFFERING (not any one page/section) shows up on
+                // the GTM Offerings Dashboard listing. The framework is never
+                // one of that listing's tiles, so it gets no Manage control --
+                // same exclusion canRename already applies for the same reason.
+                showManage: !o.isFramework,
+                offeringStatus: o.offeringStatus || 'Published',
+                isDraftStatus: o.offeringStatus === 'Draft',
+                isArchived: o.archived === true,
+                manageBadgeClass: o.archived
+                    ? 'slds-badge slds-theme_warning off-manage-badge'
+                    : (o.offeringStatus === 'Draft'
+                        ? 'slds-badge off-manage-badge'
+                        : ''),
+                manageBadgeText: o.archived ? 'Archived' : (o.offeringStatus === 'Draft' ? 'Draft' : ''),
                 builtCount: built.length,
                 fieldTotal: o.pages.reduce((n, p) => n + (p.fieldCount || 0), 0),
                 summary: built.length === 1
@@ -550,4 +575,116 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     // someone else publishes, and this view does not listen for that -- so
     // this is how you find out without leaving and coming back.
     handleDismissError() { this.loadError = ''; }
+
+    // ─── manage offering (dashboard Status / Archive) ─────────────────────────
+    // Deliberately its own control, not a reuse of the Configurator's
+    // "Settings" link above: that link is about what a rep's configurator
+    // starts from (offering-defaults). This is about whether the offering
+    // appears on the GTM Offerings Dashboard listing at all -- a different
+    // question, asked by a different person (content/BA), so it gets its own
+    // name and its own place on the card rather than hiding inside Settings.
+
+    handleOpenManage(event) {
+        event.stopPropagation();
+        this.manageKey = event.currentTarget.dataset.key;
+        this.manageConfirmArchive = false;
+    }
+
+    handleCloseManage() {
+        this.manageKey = '';
+        this.manageConfirmArchive = false;
+    }
+
+    get manageOpen() { return !!this.manageKey; }
+
+    get manageCard() {
+        return this.cards.find((c) => c.key === this.manageKey) || null;
+    }
+
+    get manageLabel() {
+        return this.manageCard ? this.manageCard.label : '';
+    }
+
+    get manageIsDraft() {
+        return !!(this.manageCard && this.manageCard.isDraftStatus);
+    }
+
+    get manageIsArchived() {
+        return !!(this.manageCard && this.manageCard.isArchived);
+    }
+
+    get manageStatusButtonLabel() {
+        return this.manageIsDraft ? 'Set to Published' : 'Set to Draft';
+    }
+
+    get manageStatusHint() {
+        return this.manageIsDraft
+            ? 'Draft: hidden from the GTM Offerings Dashboard. Publishing shows it there again.'
+            : 'Published: this offering appears on the GTM Offerings Dashboard listing.';
+    }
+
+    get manageArchiveButtonLabel() {
+        return this.manageIsArchived ? 'Restore from archive' : 'Archive this offering';
+    }
+
+    // Reopening the modal always lands back on the plain view, never
+    // mid-confirm -- a confirm step left open from a previous visit would be
+    // easy to click through without reading it.
+    get manageShowArchiveConfirm() {
+        return this.manageConfirmArchive && !this.manageIsArchived;
+    }
+
+    handleToggleOfferingStatus() {
+        const card = this.manageCard;
+        if (!card) return;
+        const offeringKey = card.key;
+        const nextStatus = this.manageIsDraft ? 'Published' : 'Draft';
+        this.manageBusy = true;
+        setOfferingStatus({ offeringKey, status: nextStatus })
+            .then(() => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: nextStatus === 'Published' ? 'Offering published' : 'Offering set to Draft',
+                    message: nextStatus === 'Published'
+                        ? `"${card.label}" now appears on the GTM Offerings Dashboard.`
+                        : `"${card.label}" is hidden from the GTM Offerings Dashboard.`,
+                    variant: 'success'
+                }));
+                return this.load();
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The offering status could not be changed.';
+            })
+            .finally(() => { this.manageBusy = false; });
+    }
+
+    // Archiving is the more consequential of the two levers (it reads as
+    // "this offering is done", not just "not right now"), so it asks first --
+    // same two-step shape as gtmContentManager's section-delete confirm.
+    // Un-archiving needs no confirm: it only ever restores visibility.
+    handleAskArchive() { this.manageConfirmArchive = true; }
+    handleCancelArchive() { this.manageConfirmArchive = false; }
+
+    handleConfirmArchiveToggle() {
+        const card = this.manageCard;
+        if (!card) return;
+        const offeringKey = card.key;
+        const nextArchived = !this.manageIsArchived;
+        this.manageBusy = true;
+        this.manageConfirmArchive = false;
+        setOfferingArchived({ offeringKey, archived: nextArchived })
+            .then(() => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: nextArchived ? 'Offering archived' : 'Offering restored',
+                    message: nextArchived
+                        ? `"${card.label}" is archived and hidden from the GTM Offerings Dashboard.`
+                        : `"${card.label}" is restored and visible again (subject to its Status).`,
+                    variant: 'success'
+                }));
+                return this.load();
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The offering could not be archived.';
+            })
+            .finally(() => { this.manageBusy = false; });
+    }
 }
