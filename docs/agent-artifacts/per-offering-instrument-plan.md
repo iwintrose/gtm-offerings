@@ -188,12 +188,19 @@ with every existing row blank, nothing defaulted unexpectedly).
 
 ### 1.1 Move Migration Accelerator's content into its own directory
 
+> **Historical record of a completed phase.** The paths below are written in
+> their post-ADR-0009 form so this section does not teach a layout that no
+> longer exists. The instrument root has since moved out of
+> `migration-accelerator/` to a top-level `instrument/` (ADR-0009); when this
+> phase was actually executed the root was still the doubled
+> `migration-accelerator/instrument/`.
+
 ```
-git mv migration-accelerator/instrument/dimensions.yaml    migration-accelerator/instrument/migration-accelerator/dimensions.yaml
-git mv migration-accelerator/instrument/complexity.yaml     migration-accelerator/instrument/migration-accelerator/complexity.yaml
-git mv migration-accelerator/instrument/gates.yaml          migration-accelerator/instrument/migration-accelerator/gates.yaml
-git mv migration-accelerator/instrument/pairs               migration-accelerator/instrument/migration-accelerator/pairs
-git mv migration-accelerator/instrument/supplements         migration-accelerator/instrument/migration-accelerator/supplements
+git mv instrument/dimensions.yaml    instrument/migration-accelerator/dimensions.yaml
+git mv instrument/complexity.yaml    instrument/migration-accelerator/complexity.yaml
+git mv instrument/gates.yaml         instrument/migration-accelerator/gates.yaml
+git mv instrument/pairs              instrument/migration-accelerator/pairs
+git mv instrument/supplements        instrument/migration-accelerator/supplements
 ```
 
 **Do not edit file contents in this step.** In particular, do not touch any
@@ -608,8 +615,22 @@ mock.
   `sf apex run --file <ad-hoc script calling GtmAssessmentInstrument.getFrame('migration-accelerator')>`
   before and after the whole change lands — same 8 slots, same band edges,
   same pair count.
+- **First, author the fixture offering record.** `build-instrument.py` runs a
+  pre-flight cross-check (ADR-0009) that fails the build for any instrument
+  directory whose name is not an `Offering_Key__c` on some committed
+  `GTM_Offering__mdt` record. Without this file the build fails loudly before
+  it compiles anything, and the rest of this procedure cannot run. Author
+  `force-app/main/default/customMetadata/GTM_Offering.QA_Fixture_Offering.md-meta.xml`
+  with `Offering_Key__c = qa-fixture-offering` and a `Label__c` such as
+  "QA Fixture Offering".
+
+  > **Never commit or deploy the fixture offering record.** It is created for
+  > the duration of this proof and destroyed in section 5. Committing it to
+  > `main` or deploying it to `gtm-dev` would publish a spurious offering into
+  > Production, where it would surface to BD reps as a real offering.
+
 - Author a minimal second offering directory,
-  `migration-accelerator/instrument/qa-fixture-offering/`, with:
+  `instrument/qa-fixture-offering/`, with:
   - `dimensions.yaml`: a **different** slot count if Phase 1's open call
     was resolved, or the same 8-slot shape with visibly different `key`
     values and wording if it wasn't (either is a valid isolation proof —
@@ -698,7 +719,25 @@ regenerated against the fixture offering or a blank pack.
 ### 5. Clean up the fixture offering
 
 Once QA is recorded, remove `qa-fixture-offering`'s CMDT records from
-`gtm-dev` and delete `migration-accelerator/instrument/qa-fixture-offering/`
-from the repo (or keep it, committed, as a permanent regression fixture for
-future isolation testing — a QA agent's call, not predetermined here; either
-is defensible, but state which was chosen in the QA report).
+`gtm-dev`, then delete **both** halves of the fixture from the repo:
+
+```
+rm -r instrument/qa-fixture-offering/
+rm force-app/main/default/customMetadata/GTM_Offering.QA_Fixture_Offering.md-meta.xml
+```
+
+Neither is a judgement call any more, and the earlier option of keeping the
+fixture directory committed as a permanent regression fixture is **no longer
+available** (ADR-0009):
+
+- The offering record must go because `GTM_Offering__mdt` records are what
+  the app enumerates to present offerings to BD reps. A committed or
+  deployed `qa-fixture-offering` record would publish a fake offering into
+  Production.
+- The instrument directory must therefore go with it, because
+  `build-instrument.py`'s pre-flight cross-check fails any instrument
+  directory with no matching offering record. Keeping the directory while
+  deleting the record would leave `main` with a permanently red build — and
+  keeping both would leave a fake offering in Production. The fixture is
+  created and destroyed inside this procedure, which is exactly what keeps
+  the cross-check absolute in the committed tree.

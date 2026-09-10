@@ -1,11 +1,22 @@
 # Platform capability manifests
 
+> **Reference material — NOT this app's deployable surface.** Nothing in this
+> directory is loaded by any running code in `gtm-offerings`: no Apex, no LWC,
+> no script, no CI job reads it. It is not under `force-app/` deliberately, so
+> `scripts/deploy.sh` (which globs every top-level directory under
+> `force-app/main/default/`) never hands it to `sf project deploy`. These
+> manifests are staged here pending the `ma-migrator` handoff, and their
+> internal paths are written relative to the *ma-migrator* repo root so they
+> read correctly after that move. Relocated from
+> `migration-accelerator/capabilities/` by
+> [ADR-0009](../../docs/architecture/adr/0009-instrument-root-is-offering-neutral.md).
+
 Structured, machine-readable descriptions of what a marketing platform *does*, held
 as data rather than prose so that assessment questions, readout callouts, and
 adapter specs can all be generated from one source of truth.
 
 ```
-capabilities/
+reference/ma-migrator-capabilities/
   README.md              <- this file
   platforms/
     hubspot.yaml         <- HubSpot Marketing Hub, as a migration SOURCE
@@ -143,7 +154,7 @@ not in the manifest.
 
 ## Related files
 
-- `migration-accelerator/instrument/migration-accelerator/supplements/hubspot_context.yaml` — the two
+- `instrument/migration-accelerator/supplements/hubspot_context.yaml` — the two
   unscored HubSpot scope probes in the assessment instrument (`sequences_ownership`,
   `reporting_signoff`). Both map to gap patterns in `hubspot.yaml`
   (`sequences_out_of_scope`, `reporting_no_port_path`) and are cross-referenced from

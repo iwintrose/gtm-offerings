@@ -30,7 +30,7 @@
  *      never fires looks identical to a branch that is simply not needed yet.
  *
  * WHAT IT DOES NOT DO, DELIBERATELY. It does not write to custom metadata.
- * The YAML under migration-accelerator/instrument/ is the source of truth and
+ * The YAML under instrument/ is the source of truth and
  * the custom metadata is a build output (scripts/build-instrument.py); a second
  * write path into the compiled records would mean two authorities for the same
  * question and no way to review either. So the editor emits the YAML fragment
@@ -511,7 +511,7 @@ export default class GtmInstrumentAuthor extends LightningElement {
      * The edits, as the YAML that would go into the pair file.
      *
      * This is the save button. The instrument's source of truth is
-     * migration-accelerator/instrument/pairs/*.yaml, compiled to custom metadata
+     * instrument/migration-accelerator/pairs/*.yaml, compiled to custom metadata
      * by scripts/build-instrument.py — so the way an edit becomes real is by
      * being committed and built, which is also the only way it passes the eleven
      * rules that stop a broken branch reaching a client.
@@ -523,7 +523,7 @@ export default class GtmInstrumentAuthor extends LightningElement {
         }
         const lines = [
             '# Paste into the `overrides:` list of',
-            `# migration-accelerator/instrument/pairs/<pair>.yaml, then run`,
+            `# instrument/<offering-key>/pairs/<pair>.yaml, then run`,
             '#   python3 scripts/build-instrument.py',
             ''
         ];
