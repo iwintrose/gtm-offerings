@@ -428,4 +428,139 @@ private class GtmPageContentControllerTest {
             [SELECT Text_Value__c FROM GTM_Page_Content__c WHERE Id = :other.Id].Text_Value__c,
             'Another page keeps its unpublished draft');
     }
+
+    // ─── setOfferingStatus / setOfferingArchived ───────────────────────────────
+    // Issue #26, item 4: toggling an offering's dashboard Status/Archive flags,
+    // which live on that offering's own tile section (Section_Key__c='tile',
+    // Template_Type__c='offerings-listing') -- offering-level flags scoped to
+    // one section record, not per-section-in-general settings. Ordinary DML,
+    // same instant-effect pattern as setSectionActive.
+
+    @isTest
+    static void setOfferingStatus_createsTheTileSectionWhenNoneExistsYet() {
+        Test.startTest();
+        Boolean result = GtmPageContentController.setOfferingStatus('brand-new-offering', 'Draft');
+        Test.stopTest();
+
+        System.assert(result, 'The call should report success');
+        GTM_Page_Section__c sec = [
+            SELECT Offering_Status__c, Section_Key__c, Template_Type__c
+            FROM GTM_Page_Section__c
+            WHERE Section_Address__c = 'brand-new-offering::offerings-listing::tile'
+        ];
+        System.assertEquals('Draft', sec.Offering_Status__c);
+        System.assertEquals('tile', sec.Section_Key__c);
+        System.assertEquals('offerings-listing', sec.Template_Type__c);
+    }
+
+    @isTest
+    static void setOfferingStatus_updatesAnExistingTileSectionInPlace() {
+        GtmPageContentController.createOffering('Status Toggle Offering');
+        String key = 'status-toggle-offering';
+
+        Test.startTest();
+        GtmPageContentController.setOfferingStatus(key, 'Draft');
+        GtmPageContentController.setOfferingStatus(key, 'Published');
+        Test.stopTest();
+
+        List<GTM_Page_Section__c> secs = [
+            SELECT Offering_Status__c FROM GTM_Page_Section__c
+            WHERE Offering_Key__c = :key AND Section_Key__c = 'tile'
+            AND Template_Type__c = 'offerings-listing'
+        ];
+        System.assertEquals(1, secs.size(), 'Toggling twice must not create a second tile section');
+        System.assertEquals('Published', secs[0].Offering_Status__c);
+    }
+
+    @isTest
+    static void setOfferingStatus_rejectsAnythingOtherThanDraftOrPublished() {
+        Boolean refused = false;
+        Test.startTest();
+        try { GtmPageContentController.setOfferingStatus('ma-migrator', 'Archived'); }
+        catch (Exception e) { refused = true; }
+        Test.stopTest();
+        System.assert(refused, 'Only Draft/Published are valid statuses');
+    }
+
+    @isTest
+    static void setOfferingStatus_refusesTheFramework() {
+        Boolean refused = false;
+        Test.startTest();
+        try { GtmPageContentController.setOfferingStatus('gtm', 'Draft'); }
+        catch (Exception e) { refused = true; }
+        Test.stopTest();
+        System.assert(refused, 'The framework is not an offering and has no dashboard status');
+    }
+
+    @isTest
+    static void setOfferingArchived_setsAndClearsTheFlagOnTheTileSection() {
+        GtmPageContentController.createOffering('Archive Toggle Offering');
+        String key = 'archive-toggle-offering';
+
+        Test.startTest();
+        GtmPageContentController.setOfferingArchived(key, true);
+        Test.stopTest();
+
+        GTM_Page_Section__c sec = [
+            SELECT Archived__c FROM GTM_Page_Section__c
+            WHERE Offering_Key__c = :key AND Section_Key__c = 'tile'
+            AND Template_Type__c = 'offerings-listing'
+        ];
+        System.assertEquals(true, sec.Archived__c);
+
+        GtmPageContentController.setOfferingArchived(key, false);
+        sec = [
+            SELECT Archived__c FROM GTM_Page_Section__c
+            WHERE Offering_Key__c = :key AND Section_Key__c = 'tile'
+            AND Template_Type__c = 'offerings-listing'
+        ];
+        System.assertEquals(false, sec.Archived__c, 'Un-archiving must be reversible from the same method');
+    }
+
+    @isTest
+    static void setOfferingArchived_refusesTheFramework() {
+        Boolean refused = false;
+        Test.startTest();
+        try { GtmPageContentController.setOfferingArchived('gtm', true); }
+        catch (Exception e) { refused = true; }
+        Test.stopTest();
+        System.assert(refused, 'The framework is not an offering and cannot be archived');
+    }
+
+    @isTest
+    static void getHomeSummary_reflectsOfferingStatusAndArchivedFlags() {
+        GtmPageContentController.createOffering('Home Summary Offering');
+        String key = 'home-summary-offering';
+        GtmPageContentController.setOfferingStatus(key, 'Draft');
+        GtmPageContentController.setOfferingArchived(key, true);
+
+        Test.startTest();
+        GtmPageContentController.HomeSummary home = GtmPageContentController.getHomeSummary();
+        Test.stopTest();
+
+        GtmPageContentController.OfferingSummary found;
+        for (GtmPageContentController.OfferingSummary o : home.offerings) {
+            if (o.offeringKey == key) found = o;
+        }
+        System.assertNotEquals(null, found, 'The offering must still appear in the Content Manager home list');
+        System.assertEquals('Draft', found.offeringStatus);
+        System.assertEquals(true, found.archived);
+    }
+
+    @isTest
+    static void getHomeSummary_defaultsOfferingStatusAndArchivedWhenNoTileSectionExists() {
+        // GTM_Offering__mdt ships a "Migration Accelerator" record with no
+        // guarantee its tile section exists in this test's data -- either
+        // way, an offering with no tile row yet must read as Published/not
+        // archived, matching the field defaults so existing offerings are
+        // unaffected by this change.
+        Test.startTest();
+        GtmPageContentController.HomeSummary home = GtmPageContentController.getHomeSummary();
+        Test.stopTest();
+
+        for (GtmPageContentController.OfferingSummary o : home.offerings) {
+            if (o.isFramework) continue;
+            System.assertNotEquals(null, o.offeringStatus, 'offeringStatus must never be null');
+        }
+    }
 }

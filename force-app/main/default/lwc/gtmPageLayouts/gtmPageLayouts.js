@@ -202,7 +202,7 @@ function humaniseFieldKey(key) {
 const TEMPLATE_LAYOUTS = {
     story: ['hero', 'lede-chips', 'route-proof', 'card-grid', 'stat', 'use-pitch', 'faq', 'closing', 'statement'],
     configurator: ['chapter-cards', 'chapter-lede', 'chapter-proof', 'chapter-phases',
-                   'chapter-close', 'offering-defaults'],
+                   'chapter-close', 'offering-defaults', 'industry-profile'],
     'offerings-listing': ['offering-tile'],
     // The offerings page draws its tiles from the offerings themselves, so
     // there is nothing to add to it beyond the chrome it already has.

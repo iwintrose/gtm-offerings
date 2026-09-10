@@ -185,6 +185,32 @@
 .off-foot-settings lightning-icon { --sds-c-icon-color-foreground-default: #706e6b; }
 .off-foot-settings:hover lightning-icon { --sds-c-icon-color-foreground-default: #0176d3; }
 
+/* "Manage offering" (dashboard Status/Archive) sits between the primary
+   "add a page" action and "Settings" -- its own divider on the left keeps it
+   visually distinct from both, so it never reads as a second Settings link
+   or as one more item in the add-a-page action. */
+.off-foot-manage {
+    display: flex; align-items: center; gap: .3rem; flex: none;
+    border: 0; border-left: 1px solid #e5e5e5; background: none; cursor: pointer;
+    padding: .3rem .35rem .3rem .6rem; margin-left: .1rem;
+    font: inherit; font-size: 12px; color: #706e6b; border-radius: 0;
+}
+.off-foot-manage:hover { color: #0176d3; }
+.off-foot-manage lightning-icon { --sds-c-icon-color-foreground-default: #706e6b; }
+.off-foot-manage:hover lightning-icon { --sds-c-icon-color-foreground-default: #0176d3; }
+
+/* The Draft/Archived badge on a card's own title, so a hidden offering reads
+   as hidden without opening Manage to find out. */
+.off-manage-badge { margin-left: .35rem; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+
+/* Manage modal rows: a hint sentence paired with the one button that acts on
+   it, stacked so the consequence is read before the button is reached. */
+.mg-row { display: flex; flex-direction: column; gap: .4rem; }
+.mg-row lightning-button { align-self: flex-start; }
+
+.modal-danger { --slds-c-button-text-color: #ba0517; }
+.modal-danger button { color: #ba0517; }
+
 .pg-icon { flex: none; --sds-c-icon-color-foreground-default: #747474; }
 .side-card { border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
              box-shadow: 0 1px 1px rgba(0,0,0,.05); }

@@ -489,6 +489,30 @@ public without sharing class GtmPageContentController {
         for (OfferingSummary o : home.offerings) {
             o.isFramework = (o.offeringKey == FRAMEWORK_KEY);
             o.canRename   = !o.isFramework;
+            // Field defaults (Published / not archived) cover an offering
+            // whose tile section does not exist yet -- same "not built yet"
+            // shape as every other summary here.
+            o.offeringStatus = 'Published';
+            o.archived = false;
+        }
+
+        // The dashboard-visibility flags, read off the offering's own tile
+        // section (Section_Key__c='tile', Template_Type__c='offerings-listing')
+        // -- offering-level flags that happen to live on that one section
+        // record. This is the read half of setOfferingStatus/setOfferingArchived
+        // below, so c/gtmContentHome's Manage control can show the current
+        // state rather than only being able to set it blind.
+        for (GTM_Page_Section__c sec : [
+            SELECT Offering_Key__c, Offering_Status__c, Archived__c
+            FROM   GTM_Page_Section__c
+            WHERE  Template_Type__c = 'offerings-listing'
+            AND    Section_Key__c   = 'tile'
+            LIMIT  500
+        ]) {
+            OfferingSummary o = byKey.get(sec.Offering_Key__c);
+            if (o == null) continue;
+            o.offeringStatus = String.isNotBlank(sec.Offering_Status__c) ? sec.Offering_Status__c : 'Published';
+            o.archived = sec.Archived__c == true;
         }
 
         // A page's own name, same reserved address renamePage() writes to.
@@ -695,6 +719,95 @@ public without sharing class GtmPageContentController {
         return clean;
     }
 
+    /**
+     * Sets whether an offering appears on the GTM Offerings Dashboard listing.
+     *
+     * Writes to the offering's own tile section (Offering_Status__c on
+     * Section_Key__c='tile', Template_Type__c='offerings-listing') -- an
+     * offering-level flag that happens to live on that one section record,
+     * not a per-section setting. Ordinary DML, same instant-effect pattern as
+     * setSectionActive: this is a real custom field, not custom metadata, so
+     * there is no async deploy step.
+     */
+    @AuraEnabled
+    public static Boolean setOfferingStatus(String offeringKey, String status) {
+        if (String.isBlank(offeringKey)) {
+            throw new AuraHandledException('An offering is required.');
+        }
+        if (offeringKey == FRAMEWORK_KEY) {
+            throw new AuraHandledException('The framework is not an offering and has no dashboard status.');
+        }
+        if (status != 'Draft' && status != 'Published') {
+            throw new AuraHandledException('Status must be Draft or Published.');
+        }
+
+        GTM_Page_Section__c tile = tileSectionFor(offeringKey);
+        tile.Offering_Status__c = status;
+        try {
+            upsert tile Section_Address__c;
+        } catch (DmlException ex) {
+            throw new AuraHandledException('That could not be saved: ' + ex.getMessage());
+        }
+        return true;
+    }
+
+    /**
+     * Sets whether an offering is archived (soft-hidden from the dashboard
+     * listing, never a destructive record delete -- gtm-dev is production).
+     *
+     * Same tile-section pattern as setOfferingStatus: Archived__c and
+     * Offering_Status__c are two independent levers a content author can
+     * reason about separately, and either one alone is enough to exclude the
+     * offering from getOfferingTiles().
+     */
+    @AuraEnabled
+    public static Boolean setOfferingArchived(String offeringKey, Boolean archived) {
+        if (String.isBlank(offeringKey)) {
+            throw new AuraHandledException('An offering is required.');
+        }
+        if (offeringKey == FRAMEWORK_KEY) {
+            throw new AuraHandledException('The framework is not an offering and cannot be archived.');
+        }
+
+        GTM_Page_Section__c tile = tileSectionFor(offeringKey);
+        tile.Archived__c = archived == true;
+        try {
+            upsert tile Section_Address__c;
+        } catch (DmlException ex) {
+            throw new AuraHandledException('That could not be saved: ' + ex.getMessage());
+        }
+        return true;
+    }
+
+    /**
+     * The offering's own tile section, built fresh (but not yet inserted) if
+     * one does not exist yet -- mirrors renameOffering()'s same fallback, so
+     * toggling status/archived is never blocked on the offering having built
+     * its listing page first. Upserted by Section_Address__c by the caller.
+     */
+    private static GTM_Page_Section__c tileSectionFor(String offeringKey) {
+        String sectionAddress = offeringKey + '::offerings-listing::tile';
+        List<GTM_Page_Section__c> secs = [
+            SELECT Id, Section_Address__c, Offering_Status__c, Archived__c
+            FROM   GTM_Page_Section__c
+            WHERE  Section_Address__c = :sectionAddress LIMIT 1
+        ];
+        if (!secs.isEmpty()) return secs[0];
+
+        return new GTM_Page_Section__c(
+            Section_Address__c = sectionAddress,
+            Offering_Key__c    = offeringKey,
+            Template_Type__c   = 'offerings-listing',
+            Section_Key__c     = 'tile',
+            Label__c           = 'Offerings page entry',
+            Layout_Type__c     = 'offering-tile',
+            Width__c           = 'standard',
+            Sort_Order__c      = 10,
+            Active__c          = true,
+            Status__c          = 'Published'
+        );
+    }
+
     public class HomeSummary {
         @AuraEnabled public List<OfferingSummary> offerings = new List<OfferingSummary>();
         @AuraEnabled public List<PageActivity> activity = new List<PageActivity>();
@@ -711,6 +824,11 @@ public without sharing class GtmPageContentController {
         // them, is always shown first, and has no name of its own to change.
         @AuraEnabled public Boolean isFramework = false;
         @AuraEnabled public Boolean canRename   = false;
+        // Dashboard-visibility flags for this offering (see
+        // setOfferingStatus/setOfferingArchived) -- always 'Published'/false
+        // for the framework, which is never listed on the dashboard at all.
+        @AuraEnabled public String  offeringStatus = 'Published';
+        @AuraEnabled public Boolean archived        = false;
         @AuraEnabled public List<PageSummary> pages = new List<PageSummary>();
     }
 

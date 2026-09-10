@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Offering_Status__c</fullName>
+    <externalId>false</externalId>
+    <inlineHelpText>Whether this OFFERING as a whole appears on the GTM Offerings Dashboard listing. Only meaningful on the offering's own tile section (Section_Key__c=&apos;tile&apos;, Template_Type__c=&apos;offerings-listing&apos;) -- it is not a per-section field. Draft hides the offering from the dashboard; Published (the default) shows it. This is NOT the same as Status__c, which means &quot;this section&apos;s own edit is unpublished,&quot; and is NOT the same as Active__c, which hides one section without touching the offering&apos;s dashboard visibility.</inlineHelpText>
+    <label>Offering Status</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Draft</fullName><default>false</default><label>Draft</label></value>
+            <value><fullName>Published</fullName><default>true</default><label>Published</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
