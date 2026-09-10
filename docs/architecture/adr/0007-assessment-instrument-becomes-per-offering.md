@@ -85,6 +85,16 @@ The user has confirmed the design direction (not re-litigated here):
 
 ## Decision
 
+> **Amended by [ADR-0009](0009-instrument-root-is-offering-neutral.md).**
+> §2's *location* statement only — the instrument root moved from
+> `migration-accelerator/instrument/` to a top-level `instrument/`, and the
+> capability manifests moved to `reference/ma-migrator-capabilities/`.
+> Everything else in this ADR remains fully in force: the per-offering
+> directory model, `Offering_Key__c` stamping on all seven objects, the 14
+> validation rules running within one offering directory, and the pair
+> `name:` freeze. Note that §5's phase list at line 197 already wrote the
+> post-ADR-0009 path; only the §2 diagram pinned the old root.
+
 ### 1. Offering scoping is a field, added to exactly seven objects
 
 Add `Offering_Key__c` (`Text(80)`, description "Matches
@@ -108,7 +118,7 @@ touched — see §5.
 ### 2. The instrument YAML tree gets an offering directory level
 
 ```
-migration-accelerator/instrument/                    (existing root, unmoved)
+instrument/                                          (framework-level root; relocated by ADR-0009)
     migration-accelerator/                            NEW directory, MA's content moved in verbatim
         dimensions.yaml
         complexity.yaml
@@ -121,7 +131,7 @@ migration-accelerator/instrument/                    (existing root, unmoved)
 ```
 
 `scripts/build-instrument.py` iterates every subdirectory of
-`migration-accelerator/instrument/` as an independent offering, running all
+`instrument/` as an independent offering, running all
 14 rules **within** each offering directory (never across two), and stamps
 `Offering_Key__c` = the directory name onto every record it emits. An
 offering's `pairs/` directory is optional — an offering that does not want

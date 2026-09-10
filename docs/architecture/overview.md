@@ -183,7 +183,7 @@ the review-Case and triage-queue mechanics, lives in
 
 The assessment questionnaire's content — questions, scoring weights, gates,
 and branching pairs — is authored as YAML under
-`migration-accelerator/instrument/*.yaml`, not hand-edited as metadata.
+`instrument/<offering-key>/*.yaml`, not hand-edited as metadata.
 `scripts/build-instrument.py` compiles that YAML into the custom metadata
 records under `force-app/main/default/customMetadata/GTM_Assessment_*`, which
 then deploy like any other metadata. Run `python3 scripts/build-instrument.py

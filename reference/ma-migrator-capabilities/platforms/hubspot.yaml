@@ -1241,7 +1241,7 @@ gap_patterns:
       - "Establish the licence and budget owner"
       - "Record an explicit in-scope / out-of-scope decision in the engagement scope document"
       - "If out of scope, confirm what happens at HubSpot decommissioning — this is a hard dependency on the CRM decision"
-    cross_reference: "migration-accelerator/instrument/supplements/hubspot_context.yaml — question `sequences_ownership`"
+    cross_reference: "instrument/migration-accelerator/supplements/hubspot_context.yaml — question `sequences_ownership`"
 
   - pattern: subscription_type_model_mismatch
     status: partial
@@ -1396,7 +1396,7 @@ gap_patterns:
       - "Scope the target reporting build as its own workstream with its own budget"
       - "Get written acceptance that pre-cutover attribution history does not migrate"
       - "Retain a read-only HubSpot seat past cutover if historic reporting must remain accessible"
-    cross_reference: "migration-accelerator/instrument/supplements/hubspot_context.yaml — question `reporting_signoff`"
+    cross_reference: "instrument/migration-accelerator/supplements/hubspot_context.yaml — question `reporting_signoff`"
 
   - pattern: operations_hub_custom_code
     status: unsupported
@@ -1574,7 +1574,7 @@ infrastructure:
     sibling_target_manifest: "ma-migrator/capabilities/platforms/sfmc.yaml"
     target_spec_sfmc_next: "ma-migrator/docs/specs/tier-2/sfmc-next-target-adapter.md §5"
     form_scanning_spec: "ma-migrator/docs/specs/tier-2/site-form-scanning.md §C.4.2"
-    assessment_supplement: "migration-accelerator/instrument/supplements/hubspot_context.yaml"
+    assessment_supplement: "instrument/migration-accelerator/supplements/hubspot_context.yaml"
     conduit_profile_model: "project-conduit/packages/profiles/src/types.ts"
 
   sources_consulted:

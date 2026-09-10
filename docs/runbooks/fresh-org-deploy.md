@@ -42,7 +42,7 @@ missing feature.
 | **Platform event** | `GTM_Config_Update__e` |
 | **Additions to standard objects** | `Opportunity.Engagement_Link__c`, `Opportunity.Engagement_Link_Info__c`, `Case.Readout__c`, `Lead.GTM_Account__c` |
 | **Custom metadata types** | `GTM_Assessment_Question__mdt`, `GTM_Assessment_Pair__mdt`, `GTM_Assessment_Dimension_Override__mdt`, `GTM_Assessment_Supplement__mdt`, `GTM_Assessment_Gate__mdt`, `GTM_Migration_Platform__mdt`, `GTM_Migration_Pair__mdt`, `GTM_Offering__mdt`, `GTM_Assessment_Config__mdt` |
-| **Custom metadata records** | 57 under `force-app/main/default/customMetadata/`, 45 of them **generated** from `migration-accelerator/instrument/` by `scripts/build-instrument.py` — edit the YAML, never the XML |
+| **Custom metadata records** | 70 `GTM_Assessment_*` under `force-app/main/default/customMetadata/`, 55 of them **generated** from `instrument/<offering-key>/` by `scripts/build-instrument.py` (the other 14 are the hand-authored `GTM_Assessment_Question.*`) — edit the YAML, never the generated XML |
 | **Apex** | 59 classes (25 of them tests) plus `GtmReadoutApprovalSync.trigger` |
 | **LWC** | 28 bundles |
 | **UI** | 3 flexipages, 11 tabs, 2 apps, 6 layouts, 5 managed content types |
