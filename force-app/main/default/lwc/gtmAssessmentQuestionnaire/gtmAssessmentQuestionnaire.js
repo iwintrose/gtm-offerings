@@ -43,7 +43,20 @@ import submitRequest from '@salesforce/apex/GtmAssessmentRequestController.submi
 import saveDraft from '@salesforce/apex/GtmAssessmentDraftController.saveDraft';
 import resumeDraft from '@salesforce/apex/GtmAssessmentDraftController.resumeDraft';
 import emailResumeLink from '@salesforce/apex/GtmAssessmentDraftController.emailResumeLink';
+import verifyAndIssueToken from '@salesforce/apex/GtmLinkAuthController.verifyAndIssueToken';
 import { resolveSlots, pointsFor } from 'c/gtmPredicate';
+
+/**
+ * Must stay byte-identical to TOKEN_REAUTH_MESSAGE in
+ * GtmAssessmentRequestController.cls. That is the one message every
+ * submission-token failure throws (blank, malformed, wrong record, expired, or
+ * a bad HMAC) -- collapsed into one string on purpose, so this single exact
+ * match is all it takes to detect "needs re-auth" reliably, with no shared
+ * error-code convention to hang it on instead (there isn't one elsewhere in
+ * this codebase).
+ */
+const TOKEN_REAUTH_MESSAGE =
+    'Your session has expired. Please re-enter the access password to send your assessment.';
 
 /**
  * Titles for the three readiness steps, by slot position. Safe to hold in the
@@ -379,6 +392,19 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
     @track emailState = '';
     @track emailMessage = '';
     @track linkCopied = false;
+
+    // ---------------------------------------------------- token re-auth overlay
+    /**
+     * Shown instead of the inline error when submit() fails with
+     * TOKEN_REAUTH_MESSAGE -- the 30-minute password-gate token (separate from,
+     * and far shorter-lived than, the resume link) has gone stale or missing.
+     * Nothing about the form's answers is touched: the same submit() is simply
+     * retried once a fresh token is minted.
+     */
+    @track showReauthOverlay = false;
+    @track reauthPasswordInput = '';
+    @track reauthError = '';
+    @track reauthChecking = false;
 
     platforms = [];
 
@@ -1260,7 +1286,16 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
                 })
             );
         } catch (error) {
-            this.errorMessage = this.readError(error);
+            const message = this.readError(error);
+            // The one recoverable failure: the password-gate token is stale or
+            // missing. Nothing else about the form failed, so this does not set
+            // errorMessage or dispatch submitfailed -- it is not a failure from
+            // the respondent's point of view, just one more thing to enter.
+            if (message === TOKEN_REAUTH_MESSAGE) {
+                this.showReauthOverlay = true;
+                return;
+            }
+            this.errorMessage = message;
             // ADR-0008 section 5.2. A submit can lose a race against a
             // submission that already landed for this link -- another tab,
             // another device -- and the server refuses it. The host has to be
@@ -1279,6 +1314,60 @@ export default class GtmAssessmentQuestionnaire extends LightningElement {
             );
         } finally {
             this.submitting = false;
+        }
+    }
+
+    // ------------------------------------------------- token re-auth overlay
+
+    handleReauthInput(event) {
+        this.reauthPasswordInput = event.currentTarget.value;
+        this.reauthError = '';
+    }
+
+    get reauthSubmitLabel() {
+        return this.reauthChecking ? 'Checking…' : 'Send my assessment';
+    }
+
+    /**
+     * Re-runs the same password check gtmConfigurator's own gate uses, mints a
+     * fresh submission token, caches it under the SAME sessionStorage key
+     * gtmConfigurator reads (`ma-auth-<savedRecordId>`) so a parent re-check
+     * sees it too, then retries the original submit() -- unchanged answers,
+     * one more attempt, no restart.
+     */
+    async handleReauthSubmit(event) {
+        if (event && event.preventDefault) event.preventDefault();
+        const pw = (this.reauthPasswordInput || '').trim();
+        if (!pw) {
+            this.reauthError = 'Please enter the access password.';
+            return;
+        }
+        this.reauthChecking = true;
+        this.reauthError = '';
+        try {
+            const res = await verifyAndIssueToken({
+                recordId: this.savedRecordId,
+                password: pw
+            });
+            if (res && res.matched) {
+                this.submissionToken = res.submissionToken || '';
+                try {
+                    window.sessionStorage.setItem(
+                        `ma-auth-${this.savedRecordId}`,
+                        this.submissionToken
+                    );
+                } catch (e) { /* sessionStorage not available */ }
+                this.showReauthOverlay = false;
+                this.reauthPasswordInput = '';
+                this.reauthChecking = false;
+                await this.submit();
+                return;
+            }
+            this.reauthError = 'Incorrect password. Please try again.';
+        } catch (e) {
+            this.reauthError = 'Something went wrong. Please try again.';
+        } finally {
+            this.reauthChecking = false;
         }
     }
 

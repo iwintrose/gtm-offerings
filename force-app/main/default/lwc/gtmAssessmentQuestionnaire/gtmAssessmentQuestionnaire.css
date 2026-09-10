@@ -598,6 +598,35 @@
     cursor: pointer;
 }
 
+/* ── token re-auth overlay ────────────────────────────────────────────── */
+/* Covers the form rather than replacing it: the whole point is that nothing
+   underneath is unmounted or cleared while this is up. */
+.q-reauth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(16, 16, 16, 0.55);
+}
+.q-reauth-card {
+    width: 100%;
+    max-width: 24rem;
+    box-sizing: border-box;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    padding: 1.4rem 1.4rem 1.5rem;
+}
+.q-reauth-card .q-field {
+    margin: 0.9rem 0 0;
+}
+.q-reauth-submit {
+    width: 100%;
+    margin-top: 1rem;
+}
+
 /* ── phone ────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .q-root {
