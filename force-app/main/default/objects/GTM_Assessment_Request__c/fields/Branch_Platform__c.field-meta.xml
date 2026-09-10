@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Branch_Platform__c</fullName>
+    <label>Branch Platform</label>
+    <description>The Q0 routing answer -- which question variant the requester was shown. Note this only records the variant; the source/target pair the unsupported-pair gate evaluates comes from Current_Platform__c and Target_Platform__c (see GtmMigrationPairs).</description>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>MCE</fullName>
+                <default>false</default>
+                <label>MCE</label>
+            </value>
+            <value>
+                <fullName>MCAE</fullName>
+                <default>false</default>
+                <label>MCAE</label>
+            </value>
+            <value>
+                <fullName>Both</fullName>
+                <default>false</default>
+                <label>Both</label>
+            </value>
+            <value>
+                <fullName>Non-Salesforce</fullName>
+                <default>false</default>
+                <label>Non-Salesforce</label>
+            </value>
+            <value>
+                <fullName>None</fullName>
+                <default>false</default>
+                <label>None</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

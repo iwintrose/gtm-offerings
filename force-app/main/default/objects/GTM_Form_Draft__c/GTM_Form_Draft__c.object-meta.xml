@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <!-- SHARED OBJECT, two guest populations, two access patterns. Ported from
+         claude/salesforce-marketing-maturity-bsxmxs (port-map-ma-to-gtm.md
+         section B/G): this object now holds BOTH the short configurator
+         booking-form draft (Draft_Type__c = 'Booking', GTM_Story_Guest,
+         GtmFormDraftController - unchanged behavior, unchanged callers) AND
+         the long branching assessment-questionnaire draft (Draft_Type__c =
+         'Assessment', GTM_Assessment_Guest, GtmAssessmentDraftController -
+         new). Every WHERE clause in both controllers filters on Draft_Type__c;
+         see each controller's header for why the two populations stay
+         separated despite sharing a table. Deliberately NOT split into two
+         objects: doing so would mean the full Stage-2/3/4 org migration dance
+         (backup / mirror / rewire / delete) for a live object, to improve a
+         name - see the port map for the full reasoning. -->
+    <description>A part-finished configurator booking form or readiness questionnaire, so a prospect who leaves can pick up where they left off. Draft_Type__c discriminates the two populations that share this table. Holds only what that visitor typed on that link; older draft rows for the same session are superseded by the newest one (see each controller for how "newest" is determined).</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <!-- Non-negotiable and load-bearing, unconditionally - NOT tied to the
+         enableReports decision below. Field history retains old field values,
+         so with history on, a revoked Resume_Token__c would stay recoverable
+         from the history table after a submission blanks it, and every
+         intermediate assessment-answers payload would survive where the purge
+         job cannot reach. -->
+    <enableHistory>false</enableHistory>
+    <!-- DECIDED 2026-09-07 by Isiah: true, with two compensating controls
+         (see port-map-ma-to-gtm.md section B.6): Draft_JSON__c is readable
+         only to GTM_Config_Manager (field-level, never a broad reporting
+         profile - see GTM_Config_Manager.permissionset-meta.xml and
+         GTM_Story_Guest / GTM_Assessment_Guest, which never gain it), and
+         Reporting Snapshots on this object are prohibited (documented in
+         docs/runbooks/questionnaire-resume.md) - a Snapshot really does
+         materialize a second, longer-lived copy the purge job cannot reach,
+         which is the hazard `false` was reaching for; a plain report is a
+         live query against the same rows the purge deletes and makes no
+         copy. Taking `false` would have gutted Furthest_Field__c, whose only
+         purpose is reporting where a booking form is abandoned. -->
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <!-- Allow Sharing, Allow Bulk API Access, and Allow Streaming API Access
+         must all be enabled together or all disabled together - confirmed
+         against this org. All three on: the purge batch job needs Bulk API,
+         and Sharing/Streaming follow it rather than being independently
+         toggled off. -->
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <externalSharingModel>Private</externalSharingModel>
+    <label>GTM Draft</label>
+    <pluralLabel>GTM Drafts</pluralLabel>
+    <nameField>
+        <displayFormat>FD-{0000}</displayFormat>
+        <label>Form Draft Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <!-- Was ReadWrite (booking-only). Private now that the object also holds
+         assessment-questionnaire answers - GtmFormDraftController is already
+         `without sharing` specifically because "a guest running with sharing
+         would resolve none of them", so the booking read path is unaffected
+         by this tightening. -->
+    <sharingModel>Private</sharingModel>
+</CustomObject>

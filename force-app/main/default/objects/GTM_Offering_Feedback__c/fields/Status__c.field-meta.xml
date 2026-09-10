@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Status__c</fullName>
+    <description>Where it has got to. "Needs more information" exists because the useful answer to some feedback is a question back, and without it a writer either guesses or lets the note go stale.</description>
+    <label>Status</label>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>New</fullName><default>true</default><label>New</label></value>
+            <value><fullName>Needs More Info</fullName><default>false</default><label>Needs more information</label></value>
+            <value><fullName>In Progress</fullName><default>false</default><label>Being worked on</label></value>
+            <value><fullName>Resolved</fullName><default>false</default><label>Resolved</label></value>
+            <value><fullName>Declined</fullName><default>false</default><label>Not changing this</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

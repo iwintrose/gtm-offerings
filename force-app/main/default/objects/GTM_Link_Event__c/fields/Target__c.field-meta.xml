@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Target__c</fullName>
+    <description>What was interacted with, when the event is an interaction rather than a view: the name of a button, link or reveal. Adobe carries the equivalent as web.webInteraction.name.</description>
+    <label>Target</label>
+    <length>120</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

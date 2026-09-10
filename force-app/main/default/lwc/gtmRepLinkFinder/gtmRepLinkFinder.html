@@ -1,0 +1,153 @@
+<template>
+  <div class="rlf">
+    <div class="rlf-head">
+      <div class="rlf-head-row">
+        <p class="rlf-head-label">Account</p>
+        <div class="rlf-head-search">
+          <lightning-record-picker
+            label="Account"
+            variant="label-hidden"
+            placeholder="Search accounts by name…"
+            object-api-name="Account"
+            value={accountId}
+            onchange={handleAccountChange}
+          ></lightning-record-picker>
+        </div>
+      </div>
+      <template if:true={hasCrumbTrail}>
+        <nav class="rlf-crumbs" aria-label="Steps">
+          <template for:each={crumbs} for:item="c">
+            <button key={c.key} type="button" class="rlf-crumb" data-key={c.key}
+                    disabled={c.disabled} onclick={handleCrumbClick}>{c.label}</button>
+          </template>
+        </nav>
+      </template>
+    </div>
+
+    <template if:true={loadError}>
+      <p class="rlf-msg rlf-msg--err">{loadError}</p>
+    </template>
+
+    <!-- STEP 1: nothing picked yet -- the search that gets you started lives
+         in the header above, always visible, so this is guidance toward it
+         rather than a second copy of the same control. -->
+    <template if:true={isAccountStep}>
+      <div class="rlf-empty-state">
+        <lightning-icon icon-name="utility:search" size="large" class="rlf-empty-ico"></lightning-icon>
+        <p class="rlf-empty-title">Search for an account above</p>
+        <p class="rlf-empty-sub">
+          Find the account this link was sent to, then pick the Contact and the link itself --
+          Account, then Contact, then the link, the same relationship it's already saved against.
+        </p>
+      </div>
+    </template>
+
+    <!-- STEP 2: contact -->
+    <template if:true={isContactStep}>
+      <div class="rlf-card">
+        <template if:true={loadingLinks}>
+          <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+        <template if:false={loadingLinks}>
+          <template if:true={hasContactGroups}>
+            <p class="rlf-step-label">Which Contact is this for?</p>
+            <ul class="rlf-list">
+              <template for:each={contactRows} for:item="c">
+                <li key={c.contactId}>
+                  <button type="button" class="rlf-row" data-id={c.contactId} onclick={handleSelectContact}>
+                    <span class="rlf-row-main">{c.contactName}</span>
+                    <span class="rlf-row-sub">{c.linkCountLabel}</span>
+                  </button>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template if:false={hasContactGroups}>
+            <p class="rlf-empty">
+              No saved Configurator links found for {accountName}. A link shows up here once
+              one is saved against a Contact on this Account.
+            </p>
+          </template>
+        </template>
+        <button type="button" class="rlf-back" onclick={handleBackToAccount}>← Choose a different account</button>
+      </div>
+    </template>
+
+    <!-- STEP 3: link -->
+    <template if:true={isLinkStep}>
+      <div class="rlf-card">
+        <template if:true={hasLinkRows}>
+          <p class="rlf-step-label">Which link?</p>
+          <ul class="rlf-list">
+            <template for:each={linkRows} for:item="l">
+              <li key={l.recordId} class="rlf-row-li">
+                <button type="button" class="rlf-row rlf-row--link" data-id={l.recordId} onclick={handleSelectLink}>
+                  <span class="rlf-row-top">
+                    <span class="rlf-row-main">{l.company}</span>
+                  </span>
+                  <span class="rlf-row-sub">
+                    {l.offeringLabel} · {l.industryLabel}
+                    <template if:true={l.hasDeal}> · {l.dealName} ({l.dealStage})</template>
+                  </span>
+                  <span class="rlf-row-date">Saved {l.createdLabel}</span>
+                </button>
+                <div class="rlf-row-toggle">
+                  <lightning-input
+                    type="toggle"
+                    label={l.statusLabel}
+                    variant="label-hidden"
+                    message-toggle-active="Active"
+                    message-toggle-inactive="Inactive"
+                    checked={l.isActive}
+                    disabled={l.isToggling}
+                    data-id={l.recordId}
+                    data-active={l.isActive}
+                    onchange={handleToggleActive}
+                  ></lightning-input>
+                  <span class={l.statusClass}>{l.statusLabel}</span>
+                </div>
+                <div class="rlf-row-actions">
+                  <lightning-button
+                    icon-name="utility:copy"
+                    label="Copy link"
+                    variant="neutral"
+                    data-url={l.generatedUrl}
+                    onclick={handleCopyLink}
+                  ></lightning-button>
+                  <lightning-button
+                    icon-name="utility:key"
+                    label="New password"
+                    variant="neutral"
+                    data-id={l.recordId}
+                    disabled={l.isRegenerating}
+                    onclick={handleRegeneratePassword}
+                  ></lightning-button>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </template>
+        <button type="button" class="rlf-back" onclick={handleBackToContact}>← Choose a different contact</button>
+      </div>
+    </template>
+
+    <!-- STEP 4: the actual page, rendered exactly as gtmConfigurator renders
+         it for a signed-in rep. -->
+    <template if:true={isViewStep}>
+      <div class="rlf-view">
+        <div class="rlf-view-bar">
+          <button type="button" class="rlf-back" onclick={handleBackToLinks}>← Back to {selectedContactName}'s links</button>
+          <span class="rlf-view-note">Your view of the link sent to {selectedLinkCompany}.</span>
+        </div>
+        <div class="rlf-stage">
+          <c-gtm-configurator
+            offering-key={selectedLinkOfferingKey}
+            template-type="configurator"
+            view-only
+            key={selectedLink.recordId}
+          ></c-gtm-configurator>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>

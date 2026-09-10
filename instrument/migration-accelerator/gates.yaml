@@ -1,0 +1,92 @@
+# GATES — qualifiers, not arithmetic.
+#
+# A gate is a boolean predicate over answers that adds a tier QUALIFIER and a
+# readout block. It never touches the score and never moves the band. That is
+# the whole point of having them: the severity a pair carries is real, but
+# expressing it by bending the number would make two 24s incomparable, and
+# expressing it by suppressing the tier would throw away a true reading. So the
+# readout says both things at once -- "Fast-Track, foundation-gated" is a
+# legitimate and common result, and a rep who reads only half of it is wrong
+# either way.
+#
+# PREDICATE SHAPE. {"all": [clause, ...]} / {"any": [clause, ...]}, nesting
+# allowed. A clause is {"field": <key>, "op": <op>, "value": <v>}.
+#   field  -- "source", "target", any readiness slot key, or any supplement key
+#   op     -- eq | ne | lt | lte | gt | gte | in | not_in
+#   value  -- scalar, or list for in / not_in
+# A field with no answer makes its clause FALSE. A gate that fires on missing
+# data is a gate that warns about something nobody was asked, which reads to a
+# prospect as the tool guessing.
+#
+# scripts/build-instrument.py enforces that every field named here is declared
+# somewhere in the instrument (rule 7) -- a gate keyed on a typo is a gate that
+# silently never fires, which is the failure mode you cannot see.
+
+gates:
+  - key: foundation_gated
+    tier_qualifier: "foundation-gated"
+    severity: blocker
+    predicate:
+      all:
+        - { field: target, op: in, value: [sfmc_next] }
+        - { field: data_cloud_state, op: eq, value: 1 }
+    readout_block: |
+      Marketing Cloud Next runs on Data Cloud. With no Data 360 footprint in
+      place, the Foundation phase gates every other lane — journey, content and
+      campaign work cannot complete before the data layer exists. Budget 8-16
+      weeks of foundation before migration build starts, plus 4 weeks if
+      Identity Resolution is not yet configured. This does not change the
+      readiness score: the estate may well be easy to move, and still not be
+      movable yet.
+    rationale: skills/mce-mcn-helper/references/skills/10-roadmap.md — Step 2, "Foundation always runs first and gates the other swim lanes"; Data Cloud not yet started = 8-16 weeks, Identity Resolution unconfigured = +4 weeks.
+
+  - key: no_core_platform
+    tier_qualifier: "platform-precursor required"
+    severity: blocker
+    predicate:
+      all:
+        - { field: target, op: in, value: [sfmc_next] }
+        - { field: core_footprint, op: eq, value: 1 }
+    readout_block: |
+      The named target sits on Salesforce Core, and there is no Salesforce
+      footprint to sit it on. A platform-precursor project — org, licences,
+      user model, governance — has to land before any marketing migration can
+      be scheduled, and it is a different budget line with a different sponsor.
+      Raise it now rather than at contracting: it is the single most common
+      reason an otherwise-ready migration slips a quarter.
+    rationale: >-
+      skills/mce-mcn-helper/references/skills/10-roadmap.md — "ORG MODEL & TEAM ...
+      governance framework, permission architecture, DevOps pipeline"; and the MCE+
+      SKU / org-model dependencies called out under external dependencies.
+      TARGET LIST NARROWED TO sfmc_next, and for two independent reasons, either of
+      which alone would be enough. First the predicate: core_footprint is declared
+      only in instrument/migration-accelerator/supplements/mcn_readiness.yaml, and
+      that set is fired only by packs whose target is sfmc_next
+      (instrument/migration-accelerator/pairs/any_to_mcn.yaml, hubspot_to_mcn.yaml,
+      sfmc_to_mcn.yaml). No classic-MCE pack fires it — eloqua_to_sfmc.yaml declares no
+      supplement sets and hubspot_to_sfmc.yaml fires sfmc_classic_readiness plus
+      hubspot_context — so on an sfmc target the clause could only ever be false and
+      the gate was dead. Second the readout: skills/mce-mcn-helper/references/framework-reference.md
+      — "Marketing Cloud Connect -> Native Salesforce Core integration (Retired). MCN is on
+      Core" — is a statement about Marketing Cloud NEXT. Classic Marketing Cloud
+      Engagement is not Core-native; it reaches Core through Marketing Cloud Connect,
+      so "the named target sits on Salesforce Core" would have been false had the gate
+      ever fired on sfmc. Both faults are removed by the same edit: the gate now fires
+      only where its predicate is answerable and its prose is true.
+
+  - key: consent_parity_risk
+    tier_qualifier: "consent workstream off critical path"
+    severity: major
+    predicate:
+      all:
+        - { field: target, op: in, value: [sfmc_next] }
+        - { field: consent_portability, op: lte, value: 2 }
+    readout_block: |
+      MCN Consent & Custom Preferences is a Spring '26+ capability and its
+      parity with what you run today is unverified. With permission state this
+      entangled, the preference-centre rebuild must not sit on the critical
+      path: bridge it on the current platform and rebuild after parity is
+      confirmed against a real tenant. Plan 2-4 weeks for a custom consent
+      model on top of the foundation estimate.
+    rationale: >-
+      skills/mce-mcn-helper/references/framework-reference.md — "Custom Preference Center -> MCN Consent & Custom Preferences (Spring '26+) ... Verify current feature parity before committing to rebuild timeline"; skills/mce-mcn-helper/references/skills/10-roadmap.md — "Preference center: bridge on MCE -> rebuild after Spring '26 parity verification. Do not put on critical path until parity confirmed", and "Custom consent model required: add 2-4 weeks".

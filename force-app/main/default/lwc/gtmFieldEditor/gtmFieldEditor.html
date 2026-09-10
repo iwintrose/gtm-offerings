@@ -32,7 +32,9 @@
               </template>
             </span>
           </div>
-          <p class="fld-key">{f.fieldKey}</p>
+          <template if:true={f.showKey}>
+            <p class="fld-key">{f.fieldKey}</p>
+          </template>
 
           <!-- plain text -->
           <template if:true={f.isTextShort}>
@@ -45,6 +47,15 @@
                                 class="fld-area"
                                 data-id={f.id} data-column={f.column}
                                 onchange={handleTextChange}></lightning-textarea>
+          </template>
+
+          <!-- bounded choice: a closed dropdown over a fixed option list, never
+               free text -- the only way this value can change is to pick one
+               of the pre-written options rendered here -->
+          <template if:true={f.isEnum}>
+            <lightning-combobox variant="label-hidden" value={f.value} options={f.options}
+                                 data-id={f.id} data-column={f.column}
+                                 onchange={handleEnumChange}></lightning-combobox>
           </template>
 
           <!-- rich text: markup never shows in the box, and the accent command
@@ -160,10 +171,12 @@
                 </div>
               </template>
 
-              <button class="addbtn" data-id={f.id} onclick={handleItemAdd}
-                      title="Add another item">
-                <span class="addbtn-plus">+</span> Add item
-              </button>
+              <template if:false={f.itemsLocked}>
+                <button class="addbtn" data-id={f.id} onclick={handleItemAdd}
+                        title="Add another item">
+                  <span class="addbtn-plus">+</span> Add item
+                </button>
+              </template>
             </div>
           </template>
 

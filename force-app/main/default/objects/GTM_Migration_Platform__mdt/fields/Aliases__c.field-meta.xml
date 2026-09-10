@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Aliases__c</fullName>
+    <label>Aliases</label>
+    <description>Semicolon-separated spellings that resolve to this platform, e.g. "MCE;ExactTarget;Marketing Cloud Engagement". Matching is case- and punctuation-insensitive (see GtmMigrationPairs.normalize), so "marketing-cloud engagement" hits the same record. This is the one lever that lets Current_Platform__c / Target_Platform__c stay free text: new spellings are a data edit, never a code change.</description>
+    <required>false</required>
+    <length>2000</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

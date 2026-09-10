@@ -1,17 +1,36 @@
-import { LightningElement, track } from 'lwc';
-import { NavigationMixin } from 'lightning/navigation';
-import getHomeSummary from '@salesforce/apex/MaPageContentController.getHomeSummary';
+import { LightningElement, track, wire } from 'lwc';
+import { NavigationMixin, CurrentPageReference } from 'lightning/navigation';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import createPage from '@salesforce/apex/GtmPageSectionController.createPage';
+import { starterFor, templatesFor, TEMPLATE_LABELS } from 'c/gtmPageLayouts';
+import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSummary';
+import renameOffering from '@salesforce/apex/GtmPageContentController.renameOffering';
+import createOffering from '@salesforce/apex/GtmPageContentController.createOffering';
+import renamePage from '@salesforce/apex/GtmPageContentController.renamePage';
 
-const TEMPLATE_LABELS = {
-    story: 'Story',
-    configurator: 'Configurator',
-    'offerings-listing': 'Offerings Listing',
-    'industry-chooser': 'Industry Chooser'
-};
 
 // Every template the picklist allows, so the home can show what an offering
 // has NOT built yet rather than only what it has.
-const ALL_TEMPLATES = ['story', 'configurator', 'industry-chooser', 'offerings-listing'];
+
+// D8: framework templateTypes that are a setting, not a page -- something
+// this app has one fixed instance of, not something a BA composes or a
+// prospect ever sees end to end. They stay registered in FRAMEWORK_TEMPLATES
+// (the editor, the breadcrumb and "what templateTypes exist" all need to know
+// about them) but this view keeps them out of the pages list and the "New
+// framework page" picker, and surfaces them through their own Settings link
+// instead.
+const SETTINGS_TEMPLATES = ['assistant'];
+
+// A page reads as what it is before its name is read.
+const PAGE_ICONS = {
+    'story': 'utility:socialshare',
+    'configurator': 'utility:setup',
+    'offerings-listing': 'utility:tile_card_list',
+    'offerings-page': 'utility:apps',
+    'industry-chooser': 'utility:company',
+    'faq-bd': 'utility:knowledge_base',
+    'faq-content-manager': 'utility:knowledge_base'
+};
 
 export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track offerings = [];
@@ -25,7 +44,33 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
     @track loadError = '';
     @track searchTerm = '';
 
-    connectedCallback() { this.load(); }
+    // rename (offering)
+    @track renamingKey = '';
+    @track renameValue = '';
+
+    // rename (page title override -- see renamePage() on the Apex side)
+    @track renamingPageKey = '';
+    @track renamePageValue = '';
+    @track pageTitles = {};
+
+    // new offering
+    @track newOfferingOpen = false;
+    @track newOfferingName = '';
+
+    /**
+     * Lightning keeps a standard app tab's component alive when you switch
+     * away and back rather than remounting it, so a connectedCallback-only
+     * load left this screen showing whatever it last saw -- an offering
+     * built in Content Manager and switched back to here stayed missing
+     * until a full browser reload. CurrentPageReference fires again on every
+     * navigation to this tab even without a remount, connectedCallback's own
+     * first fire included, so it replaces connectedCallback as the one place
+     * this loads from.
+     */
+    @wire(CurrentPageReference)
+    onPageRef() { this.load(); }
+
+    handleRefresh() { this.load(); }
 
     load() {
         this.isLoading = true;
@@ -34,12 +79,42 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
             .then((data) => {
                 this.offerings = (data && data.offerings) || [];
                 this.activity = (data && data.activity) || [];
+                this.pageTitles = (data && data.pageTitles) || {};
             })
             .catch((err) => {
                 this.loadError = (err && err.body && err.body.message)
                     || err.message || 'The content summary could not be loaded.';
             })
             .finally(() => { this.isLoading = false; });
+    }
+
+    get headerMeta() {
+        const offerings = this.offerings.filter((o) => !o.isFramework).length;
+        const pages = this.offerings.reduce(
+            (n, o) => n + (o.pages || []).filter((p) => (p.sectionCount || 0) > 0).length, 0);
+        const noun = offerings === 1 ? 'offering' : 'offerings';
+        return `Framework · ${offerings} ${noun} · ${pages} pages`;
+    }
+
+    // What a page is called: a rename overrides TEMPLATE_LABELS' generic
+    // default, same precedence an offering's own name already has over its
+    // GTM_Offering__mdt label.
+    pageLabel(offeringKey, templateType) {
+        return this.pageTitles[`${offeringKey}::${templateType}`] || TEMPLATE_LABELS[templateType] || templateType;
+    }
+
+    // What an offering still has left to build, named rather than counted.
+    // Mirrors the same templatesFor()/SETTINGS_TEMPLATES filter the pages
+    // list below uses, so "Still to build" can never name a page the card
+    // itself doesn't also list.
+    nextStepHintFor(offering) {
+        const byType = {};
+        (offering.pages || []).forEach((p) => { byType[p.templateType] = p; });
+        const unbuilt = templatesFor(offering.offeringKey)
+            .filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1)
+            .filter((t) => !(byType[t] && (byType[t].sectionCount || 0) > 0))
+            .map((t) => this.pageLabel(offering.offeringKey, t));
+        return unbuilt.length ? `Still to build: ${unbuilt.join(', ')}.` : '';
     }
 
     get cards() {
@@ -50,32 +125,83 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
             return {
                 key: o.offeringKey,
                 label: o.label,
+                isFramework: o.isFramework === true,
+                canRename: o.canRename === true,
+                isEditing: this.renamingKey === o.offeringKey,
+                icon: o.isFramework ? 'standard:hierarchy' : 'standard:product',
+                // The rail on the card and the icon are the same colour on
+                // purpose: one signal for "what kind of thing is this".
+                subtitle: o.isFramework
+                    ? 'Sits above every offering'
+                    : o.offeringKey,
+                cardClass: o.isFramework
+                    ? 'slds-card off off--framework'
+                    : 'slds-card off',
+                badgeClass: built.length
+                    ? 'slds-badge slds-badge_lightest off-stat'
+                    : 'slds-badge off-stat',
+                addLabel: o.isFramework ? 'New framework page' : 'New page for this offering',
+                // Settings is a direct line into one templateType, bypassing
+                // the pages list, for the same reason on both kinds of card:
+                // what it points to is not a beat of a page a prospect reads
+                // top to bottom, it's a fixed thing this card's owner
+                // configures once. An offering's is the Configurator's
+                // "defaults" section (swatches, default source/target
+                // platform, demo numbers) -- content on that offering's own
+                // configurator page, buried inside a big multi-section
+                // editor. The Framework's is Gus (D8): one assistant shared
+                // by every offering's configurator, addressed
+                // gtm::assistant::assistant rather than any one offering's
+                // page, and deliberately absent from the pages list below
+                // for the same reason -- it isn't one.
+                showSettings: true,
+                settingsTemplate: o.isFramework ? 'assistant' : 'configurator',
+                settingsHint: o.isFramework
+                    ? 'Gus: the name, role, greeting and prompts of the assistant every offering’s configurator shares'
+                    : 'Swatches, default platforms and demo numbers for this offering’s links',
                 builtCount: built.length,
                 fieldTotal: o.pages.reduce((n, p) => n + (p.fieldCount || 0), 0),
                 summary: built.length === 1
                     ? '1 page ready to edit'
                     : `${built.length} pages ready to edit`,
-                pages: ALL_TEMPLATES.map((t) => {
-                    const p = byType[t];
-                    const sections = p ? (p.sectionCount || 0) : 0;
-                    const fields = p ? (p.fieldCount || 0) : 0;
-                    const isBuilt = sections > 0;
-                    return {
-                        id: `${o.offeringKey}-${t}`,
-                        templateType: t,
-                        offeringKey: o.offeringKey,
-                        label: TEMPLATE_LABELS[t] || t,
-                        isBuilt,
-                        detail: isBuilt
-                            ? `${sections} sections · ${fields} fields`
-                            : 'No sections yet — open it to build the first one',
-                        // "Not editable" was wrong: an empty page is exactly
-                        // where you go to build it. It has nothing in it, which
-                        // is a different thing from being closed.
-                        badge: isBuilt ? '' : 'Empty',
-                        rowClass: isBuilt ? 'pg' : 'pg pg--unbuilt'
-                    };
-                })
+                // What's left, named rather than just counted -- so a card
+                // says what to do next, not only how much is done. Reads
+                // straight off the same pages list below, so it can never go
+                // stale relative to what the card actually shows; empty (and
+                // rendered as nothing) once every page is built.
+                nextStepHint: this.nextStepHintFor(o),
+                // Settings templateTypes (currently just 'assistant') are
+                // registered with templatesFor() so the editor and breadcrumb
+                // know what they are, but they are not a page in the sequence
+                // this list is for -- they get their own Settings link below.
+                pages: templatesFor(o.offeringKey)
+                    .filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1)
+                    .map((t) => {
+                        const p = byType[t];
+                        const sections = p ? (p.sectionCount || 0) : 0;
+                        const fields = p ? (p.fieldCount || 0) : 0;
+                        const isBuilt = sections > 0;
+                        const pageKey = `${o.offeringKey}::${t}`;
+                        return {
+                            id: `${o.offeringKey}-${t}`,
+                            templateType: t,
+                            offeringKey: o.offeringKey,
+                            pageKey,
+                            label: this.pageLabel(o.offeringKey, t),
+                            isRenaming: this.renamingPageKey === pageKey,
+                            isBuilt,
+                            detail: isBuilt
+                                ? `${sections} sections · ${fields} fields`
+                                : 'No sections yet — open it to build the first one',
+                            // "Not editable" was wrong: an empty page is
+                            // exactly where you go to build it. It has
+                            // nothing in it, which is a different thing from
+                            // being closed.
+                            badge: isBuilt ? '' : 'Empty',
+                            icon: PAGE_ICONS[t] || 'utility:page',
+                            rowClass: isBuilt ? 'pg' : 'pg pg--unbuilt'
+                        };
+                    })
             };
         });
     }
@@ -139,6 +265,12 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         this.openEditor(offering, template);
     }
 
+    messageFrom(err) {
+        if (!err) return '';
+        if (err.body && err.body.message) return err.body.message;
+        return err.message || '';
+    }
+
     // ─── new page ─────────────────────────────────────────────────────────────
     // Building a page for an offering belongs here, with the pages, rather
     // than on the GTM Offerings overview — that page is a rep's, and its
@@ -148,38 +280,162 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         return this.offerings.map((o) => ({ label: o.label, value: o.offeringKey }));
     }
 
+    // Settings templateTypes are excluded here too: "New page" builds a page
+    // from a starter shape, and a settings templateType is not one -- it has
+    // exactly one instance, already migrated in, reachable through its own
+    // Settings link rather than through "new".
+    //
+    // Filtered to genuinely creatable pages: a template this offering (or the
+    // Framework) has already built does not belong in a "New Offering Page"
+    // modal -- that is where you go to build something, not to reopen it.
+    // createPage itself already refuses to re-seed a page that has sections
+    // (GtmPageSectionController.createPage), so this is a UX filter on top of
+    // a real backend guard, not a substitute for one.
     get templateOptions() {
-        return ALL_TEMPLATES.map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
+        const offering = this.offerings.find((o) => o.offeringKey === this.npOffering);
+        const builtTypes = new Set((offering && offering.pages || [])
+            .filter((p) => (p.sectionCount || 0) > 0)
+            .map((p) => p.templateType));
+        return this.pageTemplatesFor(this.npOffering)
+            .filter((t) => !builtTypes.has(t))
+            .map((t) => ({ label: TEMPLATE_LABELS[t] || t, value: t }));
     }
 
-    get npDisabled() { return !this.npOffering || !this.npTemplate; }
+    get templateOptionsEmpty() { return this.templateOptions.length === 0; }
 
-    get npHint() {
-        if (this.npDisabled) return 'Both are needed to open the editor on the right page.';
-        return 'The editor opens on this page. If it has no sections yet, add the first one there.';
+    pageTemplatesFor(offeringKey) {
+        return templatesFor(offeringKey).filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1);
+    }
+
+    offeringLabelFor(offeringKey) {
+        const o = this.offerings.find((x) => x.offeringKey === offeringKey);
+        return o ? o.label : offeringKey;
+    }
+
+    get npDisabled() {
+        return !this.npOffering || !this.npTemplate || this.templateOptionsEmpty;
+    }
+
+
+    // ─── a new offering ───────────────────────────────────────────────────────
+    // "New page" was the wrong question at this level. A page belongs to an
+    // offering, and every card already offers its own "New page for this
+    // offering"; what the header could not do was start the offering itself.
+
+    handleOpenNewOffering() {
+        this.newOfferingOpen = true;
+        this.newOfferingName = '';
+    }
+
+    handleCloseNewOffering() { this.newOfferingOpen = false; }
+    handleNewOfferingInput(event) { this.newOfferingName = event.target.value; }
+    handleNewOfferingKey(event) {
+        if (event.key === 'Enter') this.handleCreateOffering();
+        if (event.key === 'Escape') this.handleCloseNewOffering();
+    }
+
+    get createOfferingDisabled() { return !(this.newOfferingName || '').trim(); }
+
+    get newOfferingHint() {
+        const name = (this.newOfferingName || '').trim();
+        if (!name) return 'The name is what reps see on the offerings page.';
+        const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        return key
+            ? `Creates its entry on the offerings page, keyed ${key}. Its pages come next.`
+            : 'That name needs at least one letter or number.';
+    }
+
+    handleCreateOffering() {
+        const name = (this.newOfferingName || '').trim();
+        if (!name) return;
+        this.isLoading = true;
+        createOffering({ name })
+            .then((key) => {
+                this.newOfferingOpen = false;
+                this.newOfferingName = '';
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Offering created',
+                    message: `"${name}" is ready — let's build its Story page first.`,
+                    variant: 'success'
+                }));
+                // Straight into Story, the offering's front door -- not
+                // offerings-listing, which auto-seeds a tile the moment the
+                // offering exists and used to be where this landed, ahead of
+                // the one instruction (the hint banner) telling the user to
+                // go to Story instead. Deferred a microtask past the
+                // modal-close writes above so the NavigationMixin dispatch
+                // doesn't land in the same tick as those reactive writes —
+                // the same shape handleGoToPage() below already uses (its
+                // Apex round-trip separates the two).
+                return Promise.resolve().then(() => this.openEditor(key, 'story', /* isNew */ true));
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The offering could not be created.';
+            })
+            .finally(() => { this.isLoading = false; });
     }
 
     handleOpenNewPage() {
         this.newPageOpen = true;
         this.npOffering = this.offerings.length === 1 ? this.offerings[0].offeringKey : '';
-        this.npTemplate = 'story';
+        const options = this.templateOptions;
+        this.npTemplate = options.length ? options[0].value : '';
     }
 
     handleCloseNewPage() { this.newPageOpen = false; }
-    handleNpOffering(event) { this.npOffering = event.detail.value; }
+    handleNpOffering(event) {
+        this.npOffering = event.detail.value;
+        // The framework and an offering own different pages, and the modal
+        // only ever offers what is not already built (see templateOptions),
+        // so the default/allowed set comes from there, not the raw page list.
+        const options = this.templateOptions;
+        if (!options.some((o) => o.value === this.npTemplate)) {
+            this.npTemplate = options.length ? options[0].value : '';
+        }
+    }
     handleNpTemplate(event) { this.npTemplate = event.detail.value; }
+
+    // templateOptions never carries an already-built page, so every choice
+    // here is a genuine creation. A defensive createPage-refusal message can
+    // still surface through the .catch below -- the Apex guard
+    // (GtmPageSectionController.createPage) remains the real backstop.
+    get npHint() {
+        if (!this.npOffering) return 'Choose an offering, then which of its pages to build.';
+        if (this.templateOptionsEmpty) {
+            return `${this.offeringLabelFor(this.npOffering)} has no pages left to create — every page it can have is already built.`;
+        }
+        if (!this.npTemplate) return 'Choose which page to build.';
+        const n = starterFor(this.npTemplate).length;
+        return n
+            ? `Creates ${n} starting sections you can rename, reorder or remove. Nothing is public until you publish.`
+            : 'This page has no starting shape defined yet.';
+    }
 
     handleGoToPage() {
         if (this.npDisabled) return;
+        const offeringKey = this.npOffering;
+        const templateType = this.npTemplate;
         this.newPageOpen = false;
-        this.openEditor(this.npOffering, this.npTemplate);
+        this.isLoading = true;
+        createPage({ offeringKey, templateType, sections: starterFor(templateType) })
+            .then(() => { this.openEditor(offeringKey, templateType); })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The page could not be created.';
+            })
+            .finally(() => { this.isLoading = false; });
     }
 
     // This page already lives in the Content Manager app, so the editor is a
     // tab away rather than an app away; navItemPage keeps the app shell.
-    openEditor(offeringKey, templateType) {
+    // `panel` is a separate one-shot request from `isNew` (c__new is the
+    // post-creation welcome nudge; c__panel is which surface of the editor to
+    // land on, e.g. 'settings') -- kept as its own argument rather than
+    // reusing isNew's slot so the two don't collide.
+    openEditor(offeringKey, templateType, isNew, panel) {
         const state = { c__offering: offeringKey };
         if (templateType) state.c__template = templateType;
+        if (isNew) state.c__new = '1';
+        if (panel) state.c__panel = panel;
         this[NavigationMixin.Navigate]({
             type: 'standard__navItemPage',
             attributes: { apiName: 'GTM_Content_Manager' },
@@ -187,6 +443,111 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         });
     }
 
-    handleRefresh() { this.load(); }
+    // ─── renaming an offering ─────────────────────────────────────────────────
+    // The name is the one on the offering's own tile, so renaming it here
+    // renames it on the offerings page in the same move.
+
+    handleStartRename(event) {
+        event.stopPropagation();
+        const key = event.currentTarget.dataset.key;
+        const hit = this.offerings.find((o) => o.offeringKey === key);
+        this.renamingKey = key;
+        this.renameValue = hit ? hit.label : '';
+    }
+
+    handleRenameInput(event) { this.renameValue = event.target.value; }
+
+    handleRenameKey(event) {
+        if (event.key === 'Enter') this.handleSaveRename();
+        if (event.key === 'Escape') this.handleCancelRename();
+    }
+
+    handleCancelRename() { this.renamingKey = ''; this.renameValue = ''; }
+
+    handleSaveRename() {
+        const offeringKey = this.renamingKey;
+        const name = (this.renameValue || '').trim();
+        if (!offeringKey || !name) return;
+        this.isLoading = true;
+        renameOffering({ offeringKey, name })
+            .then(() => {
+                this.handleCancelRename();
+                this.load();
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The offering could not be renamed.';
+                this.isLoading = false;
+            });
+    }
+
+    // ─── renaming a page ──────────────────────────────────────────────────────
+    // What a page is CALLED, not what's on it -- templateType itself never
+    // changes, so this only ever overrides the label shown here (and on the
+    // breadcrumb/rail, via the same pageTitles map). See renamePage() on the
+    // Apex side for why it can't just be the templateType.
+
+    handleStartPageRename(event) {
+        event.stopPropagation();
+        const { offering, template, current } = event.currentTarget.dataset;
+        this.renamingPageKey = `${offering}::${template}`;
+        this.renamePageValue = current || '';
+    }
+
+    handleRenamePageInput(event) { this.renamePageValue = event.target.value; }
+
+    handleRenamePageKey(event) {
+        if (event.key === 'Enter') this.handleSavePageRename();
+        if (event.key === 'Escape') this.handleCancelPageRename();
+    }
+
+    handleCancelPageRename(event) {
+        if (event) event.stopPropagation();
+        this.renamingPageKey = '';
+        this.renamePageValue = '';
+    }
+
+    handleSavePageRename(event) {
+        if (event) event.stopPropagation();
+        const [offeringKey, templateType] = this.renamingPageKey.split('::');
+        const title = (this.renamePageValue || '').trim();
+        if (!offeringKey || !templateType || !title) return;
+        this.isLoading = true;
+        renamePage({ offeringKey, templateType, title })
+            .then(() => {
+                this.renamingPageKey = '';
+                this.renamePageValue = '';
+                this.load();
+            })
+            .catch((err) => {
+                this.loadError = this.messageFrom(err) || 'The page could not be renamed.';
+                this.isLoading = false;
+            });
+    }
+
+    // The create action on a card already knows which offering it is under, so
+    // it opens the dialog with that answer filled in.
+    handleNewPageFor(event) {
+        const key = event.currentTarget.dataset.key;
+        this.newPageOpen = true;
+        this.npOffering = key;
+        const options = this.templateOptions;
+        this.npTemplate = options.length ? options[0].value : '';
+    }
+
+    // Straight into the settings templateType this card carries -- an
+    // offering's Configurator "defaults" section, or the Framework's
+    // assistant. Opens the same editor the pages list would, on a
+    // templateType that list deliberately does not show, and asks the editor
+    // to land on its customizer-settings panel rather than the first section
+    // (c/gtmContentManager ignores the panel request when there is no such
+    // panel for this templateType, e.g. the Framework's 'assistant').
+    handleOpenSettings(event) {
+        const { key, template } = event.currentTarget.dataset;
+        this.openEditor(key, template, false, 'settings');
+    }
+
+    // Reads the org again. Page counts and the activity feed change when
+    // someone else publishes, and this view does not listen for that -- so
+    // this is how you find out without leaving and coming back.
     handleDismissError() { this.loadError = ''; }
 }

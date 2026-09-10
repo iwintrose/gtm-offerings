@@ -1,0 +1,1596 @@
+platform: hubspot
+display_name: HubSpot Marketing Hub
+version: "0.1"
+
+description: |
+  HubSpot Marketing Hub as a MIGRATION SOURCE.
+
+  Schema: ma-migrator/capabilities/schema/capability.schema.json (Draft-07).
+  Structural model: capabilities/platforms/eloqua.yaml (the other source manifest).
+  Gap-pattern shape: capabilities/platforms/sfmc.yaml.
+  Target-side reference for the gap patterns below:
+  docs/specs/tier-2/sfmc-next-target-adapter.md §5 (sfmc_next) and sfmc.yaml (classic).
+
+  ADAPTER STATUS: **none**. There is no HubSpot source adapter in ma-migrator or in
+  this repo. The MVP source matrix is Eloqua + SFMC. This manifest is platform
+  knowledge only — it drives assessment questions and readout callouts for
+  HubSpot-source engagements, and is spec input for an eventual adapter. Nothing
+  here should be read as a shipped connector capability.
+  See infrastructure.manifest_status.
+
+  The single place HubSpot is already instrumented anywhere in the accelerator is
+  third-party form-embed detection in docs/specs/tier-2/site-form-scanning.md §C.4.2
+  (js.hsforms.net/forms/, hbspt.forms.create(, <div class="hbspt-form">). That is a
+  website crawler signature, not tenant access.
+
+  ACCURACY CONVENTION: entries carrying `verification_required: true` are working
+  assumptions — recalled product facts, tier gating, or limits that HubSpot changes
+  without notice. They must be confirmed against a live tenant or current docs
+  before they drive a client-facing readout. Entries without the flag are asserted
+  with confidence. Same convention as the sfmc_next manifest.
+
+  TIER SENSITIVITY: HubSpot's capability surface is gated by hub AND tier
+  (Marketing Hub Starter / Professional / Enterprise, plus Content Hub, Sales Hub,
+  Service Hub, Operations Hub, and Enterprise-only Smart CRM features). A capability
+  marked `supported` here may be absent from the client's actual subscription.
+  Every scoping conversation must start from the tenant's subscription line-up —
+  see infrastructure.tier_gating.
+
+capabilities:
+
+  # -------------------------------------------------------------------------
+  # OBJECT CATALOG
+  # -------------------------------------------------------------------------
+  # Held under `capabilities` deliberately: the ma-migrator schema sets
+  # additionalProperties:false at the top level, so there is no top-level slot
+  # for a catalog. See the directory README, "Schema fit notes".
+  object_catalog:
+
+    crm_data_model:
+      contacts:
+        status: supported
+        native_type: "contact (CRM object 0-1)"
+        gloss: |
+          The person record. Unlike Eloqua/SFMC, this is a CRM record, not a
+          marketing-database row — the same record serves marketing, sales and
+          service. Migration must decide whether the CRM stays in HubSpot,
+          moves to Salesforce Sales Cloud, or is split.
+        api: "CRM API — contacts"
+        migration_note: "Root canonical object. Identity key is contact id + email."
+      contact_properties:
+        status: supported
+        gloss: |
+          Typed fields on the contact. Includes HubSpot-defined properties,
+          custom properties, calculated/rollup properties, and enumeration
+          options. Grouped into property groups for UI organisation.
+        subtypes:
+          - hubspot_defined_properties
+          - custom_properties
+          - calculation_properties
+          - rollup_properties
+          - property_groups
+        api: "CRM API — properties (per object type)"
+        migration_note: |
+          Property *definitions* export cleanly. Calculation/rollup properties
+          export as a formula string whose semantics do not port — see gap
+          pattern `calculated_property_formula`.
+      companies:
+        status: supported
+        native_type: "company (CRM object 0-2)"
+        gloss: "Account record; contact↔company association is first-class."
+      deals:
+        status: supported
+        native_type: "deal (CRM object 0-3)"
+        gloss: |
+          Pipeline record with stages. Marketing workflows routinely branch on
+          deal stage — a marketing-only migration that leaves deals behind
+          breaks those branches.
+      tickets:
+        status: supported
+        native_type: "ticket (CRM object 0-5)"
+        gloss: "Service Hub object. In scope only if marketing automation references it."
+      custom_objects:
+        status: supported
+        tier: "Enterprise (any hub) — Professional and below cannot create them"
+        verification_required: true
+        gloss: |
+          Customer-defined CRM object types with their own properties and
+          associations. Commonly reported ceiling is 10 custom object
+          definitions with up to 1,000 properties each; treat the numbers as
+          unverified.
+        api: "CRM API — schemas / objects"
+        migration_note: "Maps to a Salesforce custom object or a Data Cloud DMO depending on target."
+      associations:
+        status: supported
+        gloss: |
+          Typed, labelled, many-to-many relationships between any two CRM object
+          types (incl. association labels and cardinality). This is HubSpot's
+          relationship graph and it is richer than an Eloqua contact/account link.
+        api: "CRM API — associations v4"
+        migration_note: "Model as IR relationships; labels are semantic and must be preserved."
+      lifecycle_stages:
+        status: supported
+        gloss: |
+          Ordered contact/company stage property (Subscriber → Lead → MQL → SQL →
+          Opportunity → Customer → Evangelist → Other), customisable in Enterprise.
+          Deeply wired into HubSpot: workflows set it, reports segment by it,
+          and stage-change timestamps are auto-stamped properties.
+        verification_required: true
+      lead_object:
+        status: supported
+        gloss: |
+          Newer first-class Lead object used by the 2025 prospecting/lead workspace.
+          Distinct from the legacy "lead" lifecycle stage.
+        verification_required: true
+
+    audiences:
+      lists_smart:
+        status: supported
+        native_type: "ACTIVE list"
+        gloss: |
+          Continuously re-evaluated membership. Contacts join and LEAVE as they
+          match/stop matching filter criteria. Semantically an Eloqua shared
+          filter / SFMC filtered DE, not a static extract.
+        api: "Lists API v3"
+      lists_static:
+        status: supported
+        native_type: "STATIC list"
+        gloss: "Point-in-time membership; contacts added/removed explicitly."
+      list_filter_branches:
+        status: supported
+        gloss: |
+          Filter grammar over CRM properties, event history, list membership,
+          page views, form submissions, ads interactions, and association-scoped
+          criteria ("contact associated with a company where..."). Nested AND/OR.
+        migration_note: "The filter grammar is the hardest audience artefact to port faithfully."
+      ads_audiences:
+        status: supported
+        gloss: |
+          Synced audiences pushed to Google/Meta/LinkedIn ad accounts from HubSpot
+          lists. The sync connection itself is a live integration, not an asset.
+        migration_note: "No port path — rebuild in the target's ads/activation surface."
+
+    automation:
+      workflows:
+        status: supported
+        tier: "Marketing Hub Professional and above"
+        gloss: |
+          HubSpot's orchestration primitive, equivalent in role to Eloqua Campaign
+          Canvas / SFMC Journey Builder. Object-scoped: contact-, company-, deal-,
+          ticket-, quote-, and custom-object-based workflows exist.
+        api: "Automation API v4 (public beta) — v3 for legacy read"
+        subtypes:
+          - contact_based
+          - company_based
+          - deal_based
+          - ticket_based
+          - custom_object_based
+      workflow_actions:
+        status: supported
+        gloss: |
+          Includes: send marketing email, send internal email/notification,
+          set property value, add/remove from list, enrol in another workflow,
+          create/update CRM record, create task, rotate lead to owner, delay
+          (fixed / until date-time / until event), if/then branch, value-equals
+          branch, go-to-action, webhook (Operations Hub), custom code action
+          (Operations Hub), send in-app/SMS (add-on), copy property value,
+          manage subscription status, ad-audience add/remove.
+        verification_required: true
+      sequences:
+        status: supported
+        tier: "Sales Hub Professional and above — NOT Marketing Hub"
+        gloss: |
+          1:1 rep-sent email cadences with task steps, enrolled and sent from a
+          rep's connected mailbox. Sales-engagement tooling, not marketing
+          orchestration. Frequently discovered mid-engagement and frequently
+          out of scope and off-budget. See gap pattern `sequences_out_of_scope`.
+      lead_scoring:
+        status: supported
+        gloss: |
+          Two generations coexist. Legacy: the manual `hubspotscore` property with
+          positive/negative attribute rules, plus custom score properties.
+          Current (rolled out around August 2025): a rebuilt scoring tool modelling
+          Fit and Engagement separately, with time frames, decay, thresholds and
+          association-scoped criteria.
+        verification_required: true
+        migration_note: "Rule definitions are readable in the UI; see gap pattern `lead_scoring_model_no_export`."
+      predictive_lead_scoring:
+        status: supported
+        tier: "Marketing Hub / Sales Hub Enterprise"
+        verification_required: true
+        gloss: |
+          ML-derived properties (commonly "Likelihood to close" and "Contact
+          priority") trained on the tenant's own closed-won/closed-lost history.
+          Only materialises with sufficient training data.
+        migration_note: "The MODEL cannot be exported. Only current property values can. Hard gap."
+
+    content:
+      marketing_emails:
+        status: supported
+        gloss: |
+          Drag-and-drop, rich-text, or coded (HTML+HubL) emails. Types include
+          regular, automated (workflow-triggered), blog/RSS, A/B, and
+          follow-up. Carry subscription type, sender identity, and smart content rules.
+        api: "Marketing Emails API v3 (v1 sunset 2025-11-01)"
+        verification_required: true
+      email_templates:
+        status: supported
+        gloss: "HubL + HTML templates in the design manager, with drag-and-drop or coded layouts."
+      custom_modules:
+        status: supported
+        gloss: |
+          Reusable, parameterised content components (fields + HubL + HTML + CSS + JS)
+          used across templates, pages, and emails. The core of a mature HubSpot
+          CMS build and the hardest content artefact to port.
+        api: "CMS API — source code / design manager"
+      hubl:
+        status: supported
+        gloss: |
+          HubSpot's Jinja-derived templating language. Used in emails, templates,
+          modules, and pages. Supports variables, filters, functions, loops,
+          conditionals, HubDB queries, and CRM object queries (crm_object,
+          crm_associations) at render time.
+        migration_note: "Direct analogue of the AMPscript problem in the sfmc_next manifest."
+      hubdb:
+        status: supported
+        tier: "Content Hub Professional and above (formerly CMS Hub)"
+        verification_required: true
+        gloss: |
+          Relational tables inside HubSpot, queried from HubL and used to drive
+          dynamic pages, email content, and module data. A HubDB-backed estate
+          has a data dependency that no Salesforce marketing target reproduces.
+        api: "CMS API — HubDB (tables, rows, draft/published states)"
+      landing_pages:
+        status: supported
+        gloss: "HubSpot-hosted conversion pages built from templates/modules; carry forms and CTAs."
+        api: "CMS API — pages"
+      site_pages:
+        status: supported
+        tier: "Content Hub"
+        gloss: "Website pages hosted on HubSpot CMS."
+      blog:
+        status: supported
+        gloss: "Blogs, blog posts, authors, tags, and RSS-driven email."
+        api: "CMS API — blog posts"
+      forms:
+        status: supported
+        gloss: |
+          HubSpot-native forms rendered by an embed script on HubSpot pages OR on
+          customer-owned domains. Field types map to contact properties. Support
+          progressive/queued fields, dependent fields, smart fields, and
+          follow-up actions. Non-HubSpot forms can also post in via the Forms API
+          or the collected-forms tracking feature.
+        api: "Forms API"
+        cross_reference: |
+          docs/specs/tier-2/site-form-scanning.md §C.4.2 — off-tenant HubSpot embeds
+          are detectable by crawler signature (js.hsforms.net/forms/,
+          hbspt.forms.create(, <div class="hbspt-form">) even with no HubSpot adapter.
+      ctas:
+        status: supported
+        gloss: |
+          Two generations coexist. Legacy CTAs (the old editor) and the current CTA
+          tool. As of 2025-09-01 new CTAs must use the new editor, but the sunset of
+          EXISTING legacy CTAs was postponed indefinitely and the migrate-legacy
+          option was withdrawn — so real estates typically contain both, with
+          analytics history split across the two.
+        verification_required: true
+        subtypes:
+          - legacy_cta
+          - cta_new_editor
+          - smart_cta
+      smart_content:
+        status: supported
+        gloss: |
+          Personalisation rules that swap content by list membership, lifecycle
+          stage, referral source, device type, country, preferred language, or
+          ad source. Applies to emails, pages, CTAs, and forms.
+        verification_required: true
+      snippets:
+        status: supported
+        gloss: "Short reusable text blocks, primarily for sales email/CRM use."
+      files_and_assets:
+        status: supported
+        gloss: "File manager assets referenced by absolute HubSpot CDN URLs inside content."
+        migration_note: "Every ported asset needs URL rewriting; see gap pattern `hubspot_hosted_asset_urls`."
+
+    consent_and_identity:
+      subscription_types:
+        status: supported
+        gloss: |
+          Named categories of marketing communication (newsletter, product updates,
+          events...) that carry the lawful basis to email. Every marketing email is
+          assigned exactly one. Ceiling commonly stated as 1,000 per account.
+        api: "Communication preferences / subscriptions API"
+        verification_required: true
+      subscription_status_per_contact:
+        status: supported
+        gloss: |
+          Per-contact, per-subscription-type opt-in/opt-out state with a legal-basis
+          value and source timestamp. Plus an account-level global unsubscribe/
+          suppression ("do not email") and hard-bounce suppression.
+        migration_note: "Consent state is the highest-risk data to move; it must be moved, not re-derived."
+      preference_pages:
+        status: supported
+        gloss: |
+          Hosted subscription preference and unsubscribe pages, per-brand-domain and
+          per-language, referenced by every marketing email footer token.
+      tracking_code:
+        status: supported
+        gloss: |
+          The HubSpot JS tracking script deployed across customer web properties.
+          Sets the hubspotutk cookie and feeds page views, original-source
+          attribution, and form de-anonymisation.
+        migration_note: |
+          Removing it terminates original-source attribution and returning-visitor
+          identity. It is a website change, not a tenant change — plan it as its own
+          workstream with the client's web team.
+      gdpr_and_double_optin:
+        status: supported
+        gloss: "Optional GDPR mode, double opt-in per subscription type, and consent-to-process tracking."
+        verification_required: true
+
+    campaigns_and_measurement:
+      campaigns:
+        status: supported
+        gloss: |
+          A grouping/tagging object that ties emails, pages, forms, CTAs, ads, blog
+          posts and social posts to a named initiative with a UTM budget/goal.
+          Reporting construct rather than an execution container — a HubSpot
+          "campaign" is NOT an Eloqua campaign canvas.
+        api: "Marketing campaigns API"
+      reports_and_dashboards:
+        status: supported
+        gloss: |
+          Custom report builder over CRM + marketing objects, saved reports and
+          dashboards. Attribution report types (contact create, deal create,
+          revenue) are tier-gated, with deal-create/revenue attribution commonly
+          Marketing Hub Enterprise.
+        verification_required: true
+      analytics_tools:
+        status: supported
+        gloss: "Traffic analytics, sources, page performance, email performance, and campaign rollups."
+      ads:
+        status: supported
+        gloss: "Connected ad accounts, ad campaign sync, and ads attribution reports."
+
+  # -------------------------------------------------------------------------
+  # FLOW CONTROL — the workflow runtime, compared against JB / Flow
+  # -------------------------------------------------------------------------
+  flow_control:
+    loops:
+      status: supported
+      gloss: |
+        The "go to action" step jumps execution to any other step in the same
+        workflow, including a preceding one — a real backward edge. Combined with
+        branch conditions this expresses genuine loops (poll-until-true,
+        retry-N-times, hold-until-eligible).
+      verification_required: true
+      migration_note: |
+        Both classic SFMC Journey Builder and SFMC Next Flow are forward-only.
+        This is the single most consequential structural asymmetry.
+    waits:
+      duration:
+        status: supported
+        max_duration: "unverified"
+        verification_required: true
+        gloss: "Fixed delay (minutes/hours/days) via the delay action."
+      until_date:
+        status: supported
+        supports_attribute_expression: true
+        gloss: |
+          Delay until a date/time held in a contact/company/deal property, with an
+          optional offset before/after and a target time of day.
+      until_event:
+        status: supported
+        gloss: |
+          "Delay until event happens or time has passed" — pauses until a specified
+          event occurs (e.g. form submitted, email clicked, property changed) with
+          a maximum wait.
+        verification_required: true
+      until_scheduled_window:
+        status: supported
+        gloss: "Execution windows — restrict a workflow to run only on set days/times."
+        verification_required: true
+    branching:
+      status: supported
+      max_branches: "unverified"
+      verification_required: true
+      gloss: |
+        Two branch flavours: if/then branch (a list of filter-defined branches
+        evaluated in order, plus a none-met branch) and value-equals branch (switch
+        on one property's value). Branches are nestable and can be rejoined with
+        go-to-action.
+      supports_nested: true
+    reenrollment:
+      status: supported
+      gloss: |
+        A record can re-enter a workflow when re-enrolment is explicitly enabled and
+        its trigger criteria are met again. A currently-enrolled record is not
+        re-enrolled until it completes. Filter-based re-enrolment triggers are
+        Professional/Enterprise-gated.
+      verification_required: true
+      migration_note: "No equivalent construct in Journey Builder or SFMC Next Flow."
+    goal_criteria:
+      status: supported
+      gloss: |
+        A contact-based workflow can declare a goal filter. A contact meeting it is
+        automatically unenrolled before the next action, and the goal drives the
+        workflow's conversion-rate metric. Contacts already meeting the goal at
+        enrolment time are not enrolled.
+      migration_note: "Both a flow-control construct AND a reporting construct. No SFMC analogue for either half."
+    suppression_and_exit:
+      status: supported
+      gloss: |
+        Explicit unenrolment/suppression lists, and "remove from other workflows"
+        actions. Distinct from goal-based exit.
+      verification_required: true
+    concurrent_enrolment:
+      status: supported
+      gloss: "A contact can be enrolled in many workflows simultaneously; ordering across workflows is not guaranteed."
+
+  # -------------------------------------------------------------------------
+  # DECISIONS
+  # -------------------------------------------------------------------------
+  decisions:
+    field_compare:
+      status: supported
+      operators:
+        - is_equal_to
+        - is_not_equal_to
+        - is_any_of
+        - is_none_of
+        - contains
+        - does_not_contain
+        - starts_with
+        - ends_with
+        - is_greater_than
+        - is_less_than
+        - is_between
+        - is_known
+        - is_unknown
+        - has_ever_been_equal_to
+        - has_never_been_equal_to
+        - was_updated_in_last
+      gloss: |
+        Operator set is materially richer than SFMC's. In particular the
+        `has_ever_been` / `has_never_been` / `was_updated_in_last` family reads
+        PROPERTY HISTORY, which no SFMC decision element can do at runtime.
+      verification_required: true
+    engagement_split:
+      status: supported
+      types:
+        - email_opened
+        - email_clicked
+        - email_bounced
+        - email_replied
+        - form_submitted
+        - page_viewed
+        - cta_clicked
+        - ad_interaction
+        - meeting_booked
+      scope: any_asset_any_time
+      lookback_period: "full retained history"
+      gloss: |
+        Engagement is queried against the contact's whole timeline, not just the
+        current workflow. Equivalent in power to Eloqua's cross-campaign lookback,
+        and broader in signal types (page views, CTA clicks, ad interactions).
+      verification_required: true
+    list_membership:
+      status: supported
+      runtime_evaluation: true
+      gloss: "Workflow branches can test active-list membership at runtime."
+      migration_note: "Directly triggers sfmc.yaml's `filter_membership_runtime` gap."
+    association_scoped_criteria:
+      status: supported
+      gloss: |
+        Branch on properties of an ASSOCIATED record — "contact whose associated
+        company has industry = X", "deal whose associated line item...". Traverses
+        the CRM association graph inside the decision.
+      verification_required: true
+      migration_note: "Requires a pre-joined attribute or Calculated Insight on any Salesforce target."
+    random_split:
+      status: partial
+      gloss: |
+        No first-class random-split action. Achieved with A/B email variants, or by
+        branching on a random-valued custom property populated by a custom code
+        action (Operations Hub).
+      verification_required: true
+    ai_criteria:
+      status: partial
+      gloss: "Breeze/AI-assisted criteria surfaces exist and change quickly; treat any specific behaviour as unverified."
+      verification_required: true
+
+  # -------------------------------------------------------------------------
+  # ACTIONS
+  # -------------------------------------------------------------------------
+  actions:
+    email_send:
+      status: supported
+      personalization: true
+      dynamic_content: true
+      templating: hubl
+      gloss: "Send an automated marketing email; the email carries its own subscription type."
+    internal_notification:
+      status: supported
+      gloss: "Send internal email / in-app notification to a user or team."
+    field_update:
+      status: supported
+      gloss: "Set / clear / copy / increment property values on the enrolled record or an associated one."
+      verification_required: true
+    crm_record_create:
+      status: supported
+      gloss: "Create deals, tasks, tickets, or associated records from inside a marketing workflow."
+      migration_note: "A marketing-only migration cannot reproduce this without CRM write access in the target."
+    list_membership_change:
+      status: supported
+      gloss: "Add to / remove from static list."
+    workflow_enrol:
+      status: supported
+      gloss: "Enrol into another workflow — HubSpot's equivalent of SFMC Fire Event."
+    subscription_manage:
+      status: supported
+      gloss: "Set subscription status for a subscription type (opt in / opt out)."
+      verification_required: true
+    lead_rotation:
+      status: supported
+      gloss: "Rotate record owner across a set of users."
+    webhook:
+      status: partial
+      tier: "Operations Hub Professional and above"
+      verification_required: true
+      gloss: "Outbound HTTP webhook action. Not available on Marketing Hub alone."
+    custom_code:
+      status: partial
+      tier: "Operations Hub Professional and above"
+      verification_required: true
+      gloss: |
+        Serverless Node.js / Python action executing inside the workflow with access
+        to the enrolled record and secrets. Where the hard-to-port logic hides.
+      migration_note: "Read every custom code action; it is arbitrary business logic with no declarative equivalent."
+    ads_audience_change:
+      status: supported
+      gloss: "Add/remove from a synced ads audience."
+    sms_send:
+      status: partial
+      gloss: "SMS is an add-on / regional capability, not a Marketing Hub default."
+      verification_required: true
+    data_sync_writeback:
+      status: partial
+      gloss: "Salesforce (and other) data sync connectors can write back; behaviour depends on sync rules, not the workflow."
+      verification_required: true
+
+  # -------------------------------------------------------------------------
+  # ENTRY SOURCES (workflow enrolment triggers)
+  # -------------------------------------------------------------------------
+  entry_sources:
+    - filter_criteria          # property/behaviour filter, continuously evaluated
+    - list_membership
+    - form_submission
+    - page_view
+    - email_engagement
+    - cta_click
+    - ad_interaction
+    - lifecycle_stage_change
+    - deal_stage_change
+    - property_value_change
+    - custom_event
+    - webhook_or_api_enrolment
+    - manual_enrolment
+    - workflow_action_enrolment
+    - meeting_or_call_activity
+
+  # -------------------------------------------------------------------------
+  # AUDIENCE SEMANTICS
+  # -------------------------------------------------------------------------
+  audience_semantics:
+    continuous_reevaluation:
+      status: supported
+      gloss: |
+        Active (smart) lists re-evaluate continuously — membership is a live
+        function of criteria, and contacts leave a list when they stop matching.
+        There is no "refresh the list" step in a HubSpot estate.
+      migration_note: |
+        SFMC filtered DEs refresh on a schedule; SFMC Next segments refresh on a
+        segment schedule/activation. The client's mental model ("the list is
+        always right") does not survive the move without an explicit conversation.
+    membership_history:
+      status: partial
+      gloss: "List add/remove events appear on the contact timeline; historic membership snapshots are not first-class."
+      verification_required: true
+    identity_grain:
+      status: supported
+      gloss: |
+        One CRM contact per person, keyed by email with HubSpot-managed dedup, plus
+        cookie-level (hubspotutk) anonymous identity stitched on form submission.
+      migration_note: "Compare against SFMC SubscriberKey and SFMC Next Unified Individual."
+    global_suppression:
+      status: supported
+      gloss: "Account-level unsubscribe, hard-bounce, spam-report, and manual suppression lists."
+
+  # -------------------------------------------------------------------------
+  # PERSONALISATION / TEMPLATING
+  # -------------------------------------------------------------------------
+  personalization:
+    hubl:
+      status: supported
+      gloss: |
+        Full templating language in emails, templates, modules and pages:
+        variables, filters, macros, loops, conditionals, includes.
+      migration_note: "Structurally the same migration problem AMPscript poses in sfmc_next."
+    personalization_tokens:
+      status: supported
+      gloss: "{{ contact.firstname }}-style tokens over contact/company/deal/custom-object properties, with default values."
+    crm_object_queries_in_template:
+      status: supported
+      gloss: |
+        HubL can query CRM objects and associations at render time
+        (crm_object / crm_objects / crm_associations), pulling live related-record
+        data into an email or page.
+      verification_required: true
+      migration_note: "Runtime CRM joins inside a template have no Salesforce marketing equivalent."
+    hubdb_driven_content:
+      status: supported
+      gloss: "HubL queries a HubDB table at render time to build tables, listings, and dynamic pages."
+    smart_content_rules:
+      status: supported
+      gloss: "Rule-based content variants by list, lifecycle stage, device, country, language, referrer, or ad source."
+      verification_required: true
+    custom_modules:
+      status: supported
+      gloss: "Parameterised components with typed fields; the reusable unit of a HubSpot content system."
+    programmable_email:
+      status: partial
+      gloss: "HubL-driven dynamic email content including HubDB and CRM-object-backed blocks."
+      verification_required: true
+    ab_testing:
+      status: supported
+      gloss: "A/B on emails, CTAs, and (tier-gated) pages; adaptive testing on pages."
+      verification_required: true
+
+  # -------------------------------------------------------------------------
+  # CONSENT MODEL
+  # -------------------------------------------------------------------------
+  consent:
+    model: "subscription_type_per_contact"
+    gloss: |
+      Consent is (contact × subscription type) → status + legal basis, plus an
+      account-level suppression layer. Every marketing email declares exactly one
+      subscription type; sends are filtered by that type's opt-out state, then by
+      global suppression.
+    lawful_basis_tracking:
+      status: supported
+      verification_required: true
+    double_optin:
+      status: supported
+      verification_required: true
+      gloss: "Configurable per subscription type when GDPR features are enabled."
+    hosted_preference_centre:
+      status: supported
+      gloss: "HubSpot-hosted, per-domain and per-language preference and unsubscribe pages."
+    migration_note: |
+      Consent must be MIGRATED, never re-derived. Subscription types map to
+      SFMC Publication Lists / Business Units, or to SFMC Next consent objects —
+      confirm the target's model before designing the mapping.
+
+  # -------------------------------------------------------------------------
+  # SENDING MODEL
+  # -------------------------------------------------------------------------
+  sending:
+    domains:
+      status: supported
+      gloss: "Connected email sending domains with DKIM/SPF; optional dedicated IP as an add-on."
+      verification_required: true
+    send_types:
+      - one_off_marketing_email
+      - automated_workflow_email
+      - blog_rss_email
+      - ab_test_email
+      - sales_one_to_one_email
+    send_windows:
+      status: supported
+      gloss: "Scheduled send, time-zone-aware send, and (tier-gated) AI send-time optimisation."
+      verification_required: true
+    frequency_capping:
+      status: supported
+      gloss: |
+        Account-level marketing email frequency cap (a maximum number of marketing
+        emails per contact per period), with per-email override.
+      verification_required: true
+      migration_note: |
+        Classic SFMC has no native cap — the accelerator's own
+        `ENT - Email Frequency Suppression` DE infrastructure exists to fill it.
+        SFMC Next has native Activation Limits. Target-dependent; see gap pattern.
+    deliverability_tooling:
+      status: supported
+      gloss: "Bounce/spam handling, engagement-based sending recommendations, graymail suppression."
+      verification_required: true
+
+  # -------------------------------------------------------------------------
+  # EXTRACTION POSTURE — API surface, what is reachable, what is not
+  # -------------------------------------------------------------------------
+  extraction:
+    adapter_exists: false
+    realistic_tier: "assessment-grade inventory only, via ad-hoc scripts"
+    gloss: |
+      With no HubSpot adapter, the only extraction available today is an operator
+      running scripts against HubSpot's public APIs with a private-app token, or an
+      operator exporting from the UI. Anything richer requires building the adapter.
+      Sequence a HubSpot engagement accordingly: the discovery workshop and the
+      site-form scan carry the load that a source adapter would otherwise carry.
+
+    auth:
+      private_app_token:
+        status: supported
+        gloss: |
+          The standard mechanism for a single-tenant integration. A private app in
+          the client's portal, scoped to the required OAuth scopes, issuing a bearer
+          access token. This is what an adapter would use.
+      oauth:
+        status: supported
+        gloss: "Standard OAuth 2.0 authorisation-code flow for multi-tenant public apps."
+      api_keys:
+        status: unsupported
+        gloss: |
+          Legacy HubSpot API keys (hapikey) are retired. New keys stopped being
+          issuable in July 2022 and the mechanism was sunset from November 2022.
+          Any client integration still described as "our HubSpot API key" is either
+          a private-app token by another name or already broken.
+      scopes:
+        status: supported
+        gloss: |
+          Fine-grained OAuth scopes per surface (crm.objects.contacts.read,
+          content, forms, automation, business-intelligence, ...). Some scopes are
+          subscription-gated — e.g. subscription-preference write scopes are
+          reported as requiring Marketing Hub Enterprise.
+        verification_required: true
+        migration_note: "Scope grants must be agreed with the client BEFORE the extraction window; this is a lead-time item."
+
+    apis:
+      crm_api:
+        status: supported
+        gloss: |
+          Objects, properties, associations, owners, pipelines, schemas, plus
+          batch endpoints, a search endpoint, and bulk imports/exports.
+          Covers contacts, companies, deals, tickets, and custom objects.
+      lists_api:
+        status: supported
+        gloss: "Lists v3 — definitions, filter branches, and membership."
+        verification_required: true
+      automation_api:
+        status: partial
+        gloss: |
+          v4 Automation API is in PUBLIC BETA. It adds non-contact-object
+          workflows, returns full details for actions that v3 reported as
+          UNSUPPORTED_ACTION, adds update/batch endpoints, and provides
+          v3-id → v4-id mapping endpoints. v3 remains available but returns
+          opaque action types for newer actions.
+        verification_required: true
+        migration_note: |
+          This is the single most important extraction fact for a HubSpot source
+          adapter: full workflow fidelity depends on a BETA API. Beta means the
+          shape can change under us and there is no support commitment. Plan a
+          re-verification gate before any adapter build starts.
+      marketing_emails_api:
+        status: supported
+        gloss: "Marketing Emails v3 (GA). v1 was sunset around 2025-11-01."
+        verification_required: true
+      forms_api:
+        status: supported
+        gloss: "Form definitions, field groups, and submission ingestion."
+      cms_api:
+        status: supported
+        gloss: "Pages, blog posts, HubDB tables/rows, source code (design manager), domains, URL redirects."
+        verification_required: true
+      hubdb_api:
+        status: supported
+        gloss: "Table schemas and rows, with draft/published states."
+      campaigns_api:
+        status: supported
+        verification_required: true
+      subscriptions_api:
+        status: partial
+        gloss: |
+          Communication-preferences endpoints read/write subscription definitions and
+          per-contact status. Write scopes are reported as Marketing Hub Enterprise-gated.
+        verification_required: true
+      events_api:
+        status: partial
+        gloss: "Custom behavioural events and the (Enterprise) events/analytics read surface."
+        verification_required: true
+      analytics_reporting_api:
+        status: partial
+        gloss: |
+          Aggregate analytics endpoints exist, but saved reports, dashboards and
+          attribution report DEFINITIONS are not comprehensively exposed.
+        verification_required: true
+        migration_note: "Reporting is effectively unextractable — see gap pattern `reporting_no_port_path`."
+      ctas_api:
+        status: partial
+        gloss: |
+          Legacy-CTA endpoints exist; coverage for the current CTA tool is
+          incomplete. Assume CTA inventory needs a UI-assisted pass.
+        verification_required: true
+      sequences_api:
+        status: unsupported
+        gloss: "No adequate public CRUD surface for Sales Hub Sequences."
+        verification_required: true
+
+    limits:
+      burst:
+        value: "commonly reported as 190 requests / 10 seconds per app"
+        verification_required: true
+      daily:
+        value: "commonly reported as 650,000/day (Professional) and 1,000,000/day (Enterprise), shared across all apps in the account"
+        verification_required: true
+      search_api:
+        value: "materially lower than standard endpoints, with a paging depth ceiling"
+        verification_required: true
+        gloss: "Do not build extraction on the search endpoint; use list + batch endpoints."
+      add_on:
+        value: "an API-limit-increase add-on exists"
+        verification_required: true
+      gloss: |
+        ALL numbers here are unverified recall. Confirm against
+        developers.hubspot.com and the client's own usage dashboard before sizing
+        an extraction window. A wrong number here produces a wrong extraction plan.
+
+    pagination:
+      style: "cursor (`after` / `paging.next.after`), limit-capped per endpoint"
+      verification_required: true
+    versioning:
+      style: |
+        Historically /v3/ path versions. HubSpot has since introduced DATE-BASED
+        API versions in a /YYYY-MM/ form (e.g. 2026-03) alongside the v3 paths, and
+        the official SDKs were updated to support it.
+      verification_required: true
+      migration_note: "Pin an explicit version in any adapter client; do not rely on 'latest'."
+
+    not_reachable:
+      - "Predictive lead-scoring MODELS (values only, never the model)"
+      - "Saved report, dashboard, and attribution-report definitions (no comprehensive API)"
+      - "Sales Hub Sequences (no adequate public CRUD surface)"
+      - "Ads-audience sync CONNECTIONS (the live integration state, as opposed to the list)"
+      - "Rendered output of HubL/HubDB-driven content (source is extractable, rendered result is not)"
+      - "Historical analytics at raw-event grain beyond HubSpot's own retention window"
+      - "Deleted/archived record history beyond the recycle window"
+
+# ---------------------------------------------------------------------------
+# GAP PATTERNS — HubSpot capability that a Salesforce marketing target lacks.
+# Severity is stated per target where it differs: `severity` is the worst case,
+# `severity_by_target` narrates the split. Follows sfmc.yaml's shape.
+# ---------------------------------------------------------------------------
+gap_patterns:
+
+  - pattern: crm_lives_inside_hubspot
+    status: unsupported
+    severity: blocker
+    category: data_model
+    issue: "Marketing automation reads and writes CRM records that live in HubSpot's own CRM, not in an external system of record"
+    gloss: |
+      In an Eloqua or SFMC estate the CRM is somewhere else and the MA platform
+      syncs to it. In HubSpot the CRM IS the platform. Contacts, companies, deals,
+      tickets, associations, owners and pipelines are the same objects marketing
+      automates on. A "marketing migration" therefore has to answer a question that
+      never arises for Eloqua: where does the CRM go? Three outcomes — HubSpot stays
+      as CRM and the target integrates to it; the CRM moves to Sales Cloud; or the
+      estate is split, with marketing on Salesforce and sales still in HubSpot.
+      Each has completely different scope, cost, and cutover risk.
+    severity_by_target: |
+      Blocker for both classic SFMC and SFMC Next. SFMC Next is arguably harsher:
+      it assumes Data Cloud Unified Individual as the person model, so the CRM
+      decision must be made before Identity Resolution can even be configured.
+    workaround: |
+      This is a scoping decision, not a technical workaround. Force it to the
+      surface in the Assess phase and get it decided before Blueprint. Emit it as
+      a [DECISION NEEDED] on every HubSpot-source engagement.
+    manual_steps:
+      - "Inventory which CRM objects marketing automation actually reads/writes"
+      - "Establish whether Sales/Service will remain on HubSpot post-migration"
+      - "Decide: HubSpot stays as CRM / CRM moves to Sales Cloud / estate splits"
+      - "If HubSpot stays, design the integration and name its owner and budget"
+      - "If the CRM moves, add a CRM migration workstream — it is not in the marketing scope"
+
+  - pattern: workflow_reenrollment
+    status: unsupported
+    severity: major
+    category: flow_control
+    issue: "Source workflow has re-enrolment enabled — records re-enter on repeat trigger matches"
+    gloss: |
+      HubSpot re-enrolment lets a record run the same workflow again every time its
+      trigger criteria are re-met. Neither Journey Builder nor SFMC Next Flow has a
+      re-enrolment concept; entry is per-injection, and the source of repeated entry
+      has to be rebuilt outside the journey.
+    severity_by_target: |
+      Major for both. Classic SFMC: a re-entry-enabled journey plus a scheduled
+      Automation Studio query approximates it. SFMC Next: a segment activation
+      schedule approximates it, but activation cadence is coarser than HubSpot's
+      near-real-time re-evaluation, so behaviourally-triggered re-enrolment
+      degrades noticeably.
+    workaround: |
+      Replace re-enrolment with an external re-entry mechanism: a recurring
+      audience refresh that injects qualifying records, plus a re-entry guard
+      attribute so a record cannot enter twice within the intended window.
+    manual_steps:
+      - "Record each workflow's re-enrolment triggers and observed re-enrolment frequency"
+      - "Enable re-entry on the target journey/flow"
+      - "Build a scheduled audience refresh (Automation Studio query, or Data Cloud segment schedule) that injects re-qualifiers"
+      - "Add a last-entered-date attribute and guard the injection against it"
+      - "Validate re-entry cadence against the source's real behaviour, not its config"
+
+  - pattern: workflow_goal_criteria
+    status: unsupported
+    severity: major
+    category: flow_control
+    issue: "Source workflow declares goal criteria that both auto-unenrol records and define the conversion metric"
+    gloss: |
+      A HubSpot goal does two jobs at once: it exits the record the moment it
+      converts, and it supplies the workflow's headline conversion rate. Salesforce
+      targets provide neither natively. Losing the exit half means records keep
+      receiving nurture after they convert — a visible, embarrassing defect. Losing
+      the metric half means the client's existing performance reporting cannot be
+      reproduced.
+    severity_by_target: |
+      Major for both. Classic SFMC: goal exit is approximated with an Exit Criteria
+      evaluation on the journey. SFMC Next: approximated with a decision on a
+      Calculated Insight, which adds a CI to build and maintain per goal.
+    workaround: |
+      Split the goal in two. Model the exit half as journey exit criteria (classic)
+      or a decision on a derived attribute / Calculated Insight (Next). Model the
+      metric half as a reporting requirement handed to whoever owns reporting —
+      it does not come along with the journey.
+    manual_steps:
+      - "Extract the goal filter for every workflow that has one"
+      - "Implement the exit half as exit criteria or an early decision-and-exit branch"
+      - "Confirm evaluation frequency — HubSpot's is near-continuous, the target's may not be"
+      - "Hand the conversion-metric definition to the reporting workstream explicitly"
+      - "Flag any workflow whose goal is its ONLY success measure — that report will otherwise vanish"
+
+  - pattern: workflow_loop_go_to_action
+    status: unsupported
+    severity: blocker
+    category: flow_control
+    issue: "Source workflow uses a go-to-action step that jumps backwards, forming a loop"
+    gloss: |
+      Journey Builder and SFMC Next Flow are strictly forward-only — records never
+      move backwards. This is the same constraint sfmc.yaml already captures as
+      `loopback_flow`; HubSpot hits it from the source side. Typical HubSpot loops
+      are poll-until-qualified, retry-N-times, and hold-until-eligible.
+    severity_by_target: "Blocker for both classic SFMC and SFMC Next — the constraint is identical."
+    workaround: |
+      Same resolution shape as sfmc.yaml's `loopback_flow`: classify the loop, then
+      convert it. Poll-until-true → Wait By Attribute / Wait element on a
+      pre-calculated datetime. Retry-N-times → an unrolled fixed-count sequence, or
+      a re-injecting scheduled audience. Hold-until-eligible → frequency-capping
+      infrastructure, not a loop.
+    manual_steps:
+      - "Trace every go-to-action edge and mark which ones point backwards"
+      - "Classify each backward edge: poll / retry / hold"
+      - "For poll: pre-calculate the exit datetime or boolean into the entry audience"
+      - "For retry: unroll to a fixed maximum count and document the truncation"
+      - "For hold: route to the target's frequency-capping mechanism instead"
+      - "Where nothing else fits, split into multiple journeys chained by Fire Event (classic) or platform event (Next)"
+
+  - pattern: hubl_templating
+    status: unsupported
+    severity: major
+    category: personalization
+    issue: "Email, template, or module contains HubL beyond simple token substitution"
+    gloss: |
+      HubL is a full templating language. Simple {{ contact.firstname }} tokens port
+      to merge fields trivially; loops, conditionals, macros, filters, includes, and
+      HubDB/CRM queries do not. This is the exact shape of the `ampscript_block` gap
+      in the sfmc_next manifest, mirrored from the source side.
+    severity_by_target: |
+      Major for both, for different reasons. Classic SFMC: AMPscript is comparably
+      expressive, so most HubL constructs have SOME analogue — it is a rewrite, not
+      a redesign. SFMC Next: there is no scripting language at all, so expressive
+      HubL escalates toward blocker and must be re-modelled as merge fields,
+      Calculated Insights, or Einstein Personalization.
+    workaround: |
+      Classify every HubL construct before estimating:
+        1. Plain token → merge field. Mechanical.
+        2. Conditional/loop over the contact's own attributes → dynamic content
+           block (classic) or segment-driven dynamic block (Next).
+        3. HubDB or CRM-object query → the data must be pre-joined; see
+           `hubdb_dependency` and `hubl_runtime_crm_query`.
+        4. Macro/include/filter chains → rebuild as a target-native module.
+      Estimate by construct count, not by email count.
+    manual_steps:
+      - "Pull template and module source via the CMS API and inventory HubL constructs"
+      - "Classify each construct into the four buckets above"
+      - "Rebuild in Content Builder (classic) or Content Studio (Next)"
+      - "Render-diff the output against production samples for the top-volume emails"
+
+  - pattern: custom_modules
+    status: unsupported
+    severity: major
+    category: personalization
+    issue: "Content is assembled from custom modules — parameterised HubL components with typed fields"
+    gloss: |
+      A mature HubSpot content system is a module library, not a set of emails.
+      Editors compose from modules; the modules carry the logic. Neither Content
+      Builder nor Content Studio has an equivalent component model with typed
+      fields, so the abstraction flattens: what was one module used in forty emails
+      becomes forty inlined blocks unless a target-side component library is built
+      first.
+    severity_by_target: |
+      Major for both. Classic SFMC: content blocks and template slots recover part
+      of the reuse. SFMC Next: Content Studio's reuse model differs again and is
+      itself worth verifying against the tenant.
+    workaround: |
+      Do not port module-by-module. Inventory modules by USAGE COUNT, build a small
+      target-side component library covering the high-usage modules, and inline the
+      long tail. Budget the library build as its own task before content migration
+      starts.
+    manual_steps:
+      - "Export module source and field definitions via the CMS API"
+      - "Rank modules by usage count across emails, templates and pages"
+      - "Design a target component library covering the top modules"
+      - "Inline or retire the long tail, and record what was dropped"
+      - "Warn the client that editor workflow changes — this is a change-management item, not just a build item"
+
+  - pattern: hubdb_dependency
+    status: unsupported
+    severity: blocker
+    category: data_model
+    issue: "Content or automation depends on HubDB tables queried at render time"
+    gloss: |
+      HubDB is a relational store inside HubSpot that HubL queries while rendering.
+      Nothing in the Salesforce marketing stack renders content from an arbitrary
+      queried table at send time. The data has to be moved AND the render-time
+      query has to be replaced by pre-computation.
+    severity_by_target: |
+      Blocker for both. Classic SFMC: the table becomes a Data Extension and the
+      render-time query becomes AMPscript Lookup — closest analogue, still a
+      rebuild. SFMC Next: no DEs and no scripting; the table becomes a DMO and the
+      query becomes a Calculated Insight or a pre-joined attribute. Strictly harder.
+    workaround: |
+      Split into a data problem and a rendering problem. Move each HubDB table to
+      the target's store (DE or DMO). Then replace each render-time query with
+      either an AMPscript lookup (classic) or a pre-computed attribute /
+      Calculated Insight (Next). Where the query is genuinely dynamic per recipient,
+      pre-compute the resolved value into the send audience.
+    manual_steps:
+      - "Inventory HubDB tables and every HubL query against them"
+      - "Classify each query: static lookup / per-recipient dynamic / listing"
+      - "Model each table as a DE (classic) or DMO contract (Next)"
+      - "Replace static lookups with AMPscript Lookup or a merge field"
+      - "Pre-compute per-recipient dynamic values into the entry audience"
+      - "Rebuild listing-style content as a target-native dynamic block, or accept reduced fidelity"
+
+  - pattern: hubl_runtime_crm_query
+    status: unsupported
+    severity: major
+    category: personalization
+    issue: "Template queries CRM objects or associations at render time (crm_object / crm_associations HubL)"
+    gloss: |
+      HubL can walk the CRM association graph while rendering — "list this contact's
+      associated deals", "pull the owning rep's details". Salesforce marketing
+      targets resolve personalisation against a flat send audience; there is no
+      render-time association traversal.
+    severity_by_target: |
+      Major for both. Classic SFMC: AMPscript Lookup/LookupRows against a DE gets
+      close if the join is pre-materialised. SFMC Next: requires a Calculated
+      Insight per traversal, each of which is a modelled artefact to build and own.
+    workaround: "Pre-join the required related-record attributes into the send audience; treat each distinct traversal as its own build item."
+    manual_steps:
+      - "Inventory every crm_object / crm_associations call in template source"
+      - "For each, identify the traversal path and the attributes actually consumed"
+      - "Pre-join those attributes into the entry DE (classic) or model a Calculated Insight (Next)"
+      - "Where the traversal returns a variable-length list, redesign the content — a flat audience cannot carry it"
+
+  - pattern: smart_list_continuous_reevaluation
+    status: partial
+    severity: major
+    category: audience
+    issue: "Automation depends on active (smart) list membership that is continuously re-evaluated, including automatic removal"
+    gloss: |
+      HubSpot active lists are live: contacts join and LEAVE as criteria stop
+      matching, with no refresh step. Filtered DEs (classic) refresh on a schedule
+      and SFMC Next segments refresh on a segment/activation cadence. The gap is not
+      "can we express the filter" — usually we can — it is that membership becomes
+      stale between refreshes, and the automatic-removal behaviour is the half
+      clients do not realise they depend on.
+    severity_by_target: |
+      Major for both, and it is a latency gap rather than an expressiveness gap.
+      Confirm the target's actual refresh cadence per audience before promising
+      equivalence.
+    workaround: |
+      Convert each active list to a scheduled-refresh audience, and set the refresh
+      cadence from the automation's real sensitivity, not from a default. Where
+      automatic REMOVAL is load-bearing (suppression lists especially), implement
+      removal explicitly — a stale suppression list sends emails to people who
+      opted out.
+    manual_steps:
+      - "Inventory active lists and their consuming workflows"
+      - "For each, determine how quickly membership changes must propagate"
+      - "Set refresh cadence per audience from that sensitivity"
+      - "Identify lists whose REMOVAL behaviour matters and implement removal explicitly"
+      - "Audit suppression-role lists first — these are the compliance-relevant ones"
+
+  - pattern: list_membership_runtime_branch
+    status: unsupported
+    severity: major
+    category: decisions
+    issue: "Workflow branches on active-list membership at runtime"
+    gloss: |
+      Mirrors sfmc.yaml's existing `filter_membership_runtime` gap from the source
+      side. HubSpot evaluates list membership inside the branch; SFMC cannot.
+    severity_by_target: "Major for both; SFMC Next needs a Calculated Insight rather than a query-populated boolean."
+    workaround: "Pre-calculate membership as a boolean attribute on the entry audience — see sfmc.yaml `filter_membership_runtime`."
+    manual_steps:
+      - "Identify each runtime list-membership branch"
+      - "Add a boolean attribute per list to the entry audience"
+      - "Populate via Query Activity (classic) or Calculated Insight (Next)"
+      - "Confirm the pre-calculation cadence is tight enough for the branch's purpose"
+
+  - pattern: property_history_criteria
+    status: unsupported
+    severity: major
+    category: decisions
+    issue: "Branch or list filter reads property HISTORY (has ever been / has never been / was updated in last N days)"
+    gloss: |
+      HubSpot retains per-property change history and exposes it to filters and
+      branches. Salesforce marketing targets evaluate current attribute values.
+      This is easy to miss in a config read because it looks like an ordinary
+      operator, and it silently changes meaning if ported as a current-value test.
+    severity_by_target: "Major for both. Classic SFMC needs a history DE; SFMC Next needs the history ingested to Data Cloud and a Calculated Insight over it."
+    workaround: |
+      Materialise the needed history as explicit attributes — first_became_MQL_date,
+      ever_was_customer, industry_last_changed — and branch on those instead.
+    manual_steps:
+      - "Grep every filter and branch for has-ever/has-never/was-updated operators"
+      - "For each, define the explicit history attribute it implies"
+      - "Extract the historical values from HubSpot's property history while tenant access still exists"
+      - "Load into the target store and re-point the branch"
+      - "NOTE: property history is only extractable BEFORE decommissioning — sequence this early"
+
+  - pattern: association_scoped_criteria
+    status: unsupported
+    severity: major
+    category: decisions
+    issue: "Branch or list filter traverses CRM associations (e.g. contact whose associated company matches X)"
+    gloss: |
+      HubSpot's association graph is queryable from inside automation criteria.
+      Salesforce marketing targets branch on flat audience attributes.
+    severity_by_target: "Major for both; the pre-join is a DE join (classic) or a Calculated Insight / DMO relationship (Next)."
+    workaround: "Pre-join the traversed attributes into the entry audience; one build item per distinct traversal."
+    manual_steps:
+      - "Inventory association-scoped criteria across workflows and lists"
+      - "Reduce to a distinct set of traversal paths"
+      - "Materialise each as a pre-joined attribute"
+      - "Verify cardinality — a one-to-many traversal cannot flatten without a stated rule"
+
+  - pattern: lifecycle_stage_semantics
+    status: partial
+    severity: major
+    category: data_model
+    issue: "Automation and reporting depend on HubSpot lifecycle stages and their auto-stamped transition dates"
+    gloss: |
+      Lifecycle stage is not just a picklist. HubSpot enforces forward progression
+      by default, auto-stamps a date property per stage entry, and wires those dates
+      into funnel reporting. Ported as a plain picklist, the automation still works
+      and the reporting quietly breaks.
+    severity_by_target: |
+      Major for both. On Sales Cloud there is a lead/contact status model with
+      different semantics; on SFMC Next the stage is just a Data Cloud attribute
+      with no built-in transition stamping.
+    workaround: |
+      Migrate the stage value AND the per-stage transition-date properties as
+      first-class attributes, and re-implement stage-entry stamping in the target
+      before it is needed — retro-stamping is not possible.
+    manual_steps:
+      - "Export the lifecycle stage property and every stage-entry date property"
+      - "Confirm whether backward stage movement is permitted in the source"
+      - "Map stages to the target's status model and record the mapping explicitly"
+      - "Implement stage-entry date stamping in the target"
+      - "Re-point funnel reports and validate against a known historic cohort"
+
+  - pattern: lead_scoring_model_no_export
+    status: unsupported
+    severity: major
+    category: scoring
+    issue: "Estate uses HubSpot lead scoring; predictive scores in particular have no exportable model"
+    gloss: |
+      Two distinct problems. Manual/rule-based scoring (the legacy hubspotscore
+      property, custom score properties, and the newer fit/engagement scoring tool)
+      is READABLE — the rules can be transcribed and rebuilt, though decay,
+      time-frame and association-scoped criteria have no direct target analogue.
+      Predictive scoring is NOT exportable at all: only current values come out.
+      The model is HubSpot-trained on HubSpot-held history and cannot be moved.
+    severity_by_target: |
+      Major for both. Classic SFMC has no native scoring engine, so scoring has to
+      live in a query/automation or upstream in the CRM. SFMC Next can reach Einstein
+      scoring, but it is a different model with different inputs — not a port, a
+      replacement that needs its own training data and validation period.
+    workaround: |
+      Rule-based: transcribe the rules and rebuild them target-side, accepting that
+      decay and time-frame criteria may need explicit date attributes.
+      Predictive: migrate the current values as a frozen snapshot for continuity,
+      declare an explicit end-of-life date for that snapshot, and plan a replacement
+      model as a post-migration workstream with its own budget.
+    manual_steps:
+      - "Screenshot / transcribe every scoring rule set before tenant access ends"
+      - "Identify which downstream automation and routing depends on score thresholds"
+      - "Rebuild rule-based scoring in the target and reconcile against a sample cohort"
+      - "Export current predictive values as a dated snapshot"
+      - "Agree an expiry date for the snapshot and name the owner of the replacement model"
+      - "Warn sales explicitly — score-driven routing degrading is a sales-visible failure"
+
+  - pattern: sequences_out_of_scope
+    status: unsupported
+    severity: major
+    category: scope
+    issue: "Estate uses HubSpot Sequences — a Sales Hub capability outside the marketing migration's scope and budget"
+    gloss: |
+      Sequences are rep-sent 1:1 cadences from a connected mailbox, licensed under
+      Sales Hub, owned by Sales, and usually not in the marketing migration's
+      statement of work. They are also not marketing automation, so the natural
+      Salesforce counterpart is Sales Engagement / Sales Cloud — a different product,
+      a different budget line, and often a different buyer. Discovering this late
+      turns into an awkward scope conversation at exactly the wrong moment.
+    severity_by_target: |
+      Target-independent. The severity comes from the scope and budget boundary,
+      not from a technical asymmetry.
+    workaround: |
+      Surface it in Assess, not Execute. Establish who owns Sequences, whether
+      anyone considers them in scope, and what happens to them at HubSpot
+      decommissioning. If out of scope, get that written down.
+    manual_steps:
+      - "Ask Sales — not Marketing — whether Sequences are in use and how heavily"
+      - "Establish the licence and budget owner"
+      - "Record an explicit in-scope / out-of-scope decision in the engagement scope document"
+      - "If out of scope, confirm what happens at HubSpot decommissioning — this is a hard dependency on the CRM decision"
+    cross_reference: "instrument/migration-accelerator/supplements/hubspot_context.yaml — question `sequences_ownership`"
+
+  - pattern: subscription_type_model_mismatch
+    status: partial
+    severity: blocker
+    category: consent
+    issue: "Consent is modelled as per-contact status against named subscription types with a lawful basis"
+    gloss: |
+      Consent state is the one artefact that must be moved correctly or the
+      migration is a compliance incident. HubSpot's model — subscription type ×
+      contact × status × legal basis, over an account-level suppression layer —
+      does not line up cleanly with either Salesforce target. Classic SFMC uses
+      Publication Lists and per-Business-Unit subscriber status; SFMC Next uses
+      Data Cloud consent objects. Mapping many subscription types onto either is a
+      modelling exercise with legal consequences.
+    severity_by_target: |
+      Blocker for both. The failure modes differ: classic SFMC risks collapsing
+      granular subscription types into coarser publication lists (over-mailing
+      people who opted out of one thing); SFMC Next's consent model should be
+      confirmed against the tenant rather than assumed.
+    workaround: |
+      Map subscription types explicitly and conservatively. Where two HubSpot types
+      collapse onto one target construct, take the MORE restrictive status. Never
+      default an unknown status to opted-in. Get the mapping reviewed by whoever
+      owns marketing compliance, in writing, before load.
+    manual_steps:
+      - "Export every subscription type and its per-contact status and legal basis"
+      - "Export account-level suppression: unsubscribes, bounces, spam reports, manual suppressions"
+      - "Design the type → target construct mapping and mark every many-to-one collapse"
+      - "Apply the most-restrictive rule at every collapse"
+      - "Have marketing compliance / legal sign the mapping off before load"
+      - "Reconcile opt-out counts source vs target post-load and investigate ANY variance"
+
+  - pattern: preference_page_rebuild
+    status: unsupported
+    severity: major
+    category: consent
+    issue: "HubSpot-hosted subscription preference and unsubscribe pages are referenced from every email footer"
+    gloss: |
+      The preference centre is a HubSpot-hosted page on a HubSpot-served domain,
+      linked by token from every marketing email. Decommissioning HubSpot breaks
+      every one of those links, including links in emails already delivered and
+      sitting in inboxes.
+    severity_by_target: "Major for both — the target's hosted-preference surface differs but the rebuild and the redirect problem are the same."
+    workaround: |
+      Rebuild the preference centre target-side with equivalent granularity, then
+      keep the HubSpot-hosted URLs resolving via redirects for as long as delivered
+      mail can plausibly be actioned. Do not decommission the domain on cutover day.
+    manual_steps:
+      - "Inventory preference pages per brand domain and per language"
+      - "Rebuild target-side with matching subscription granularity"
+      - "Put redirects in place from the old URLs to the new ones"
+      - "Keep the redirects live well past cutover — 12 months is a defensible default"
+      - "Verify unsubscribe works end-to-end from a real delivered email before cutover"
+
+  - pattern: forms_and_ctas_rebuild
+    status: unsupported
+    severity: major
+    category: content
+    issue: "HubSpot forms and CTAs are embedded across customer-owned web properties"
+    gloss: |
+      HubSpot forms and CTAs are embed scripts served from HubSpot and dropped into
+      pages the marketing team may not own — the corporate site, partner microsites,
+      a WordPress instance nobody has credentials for. Every embed is a website
+      change managed by someone else. The CTA problem is compounded by two
+      generations of CTA coexisting with analytics history split across them.
+    severity_by_target: |
+      Major for both, and largely target-independent — the hard part is the customer's
+      web estate, not the target platform.
+    workaround: |
+      Run the site form scan FIRST — it is the one HubSpot capability the accelerator
+      already has. It finds embeds on customer-owned domains that no tenant export
+      will ever show you, using the signatures in site-form-scanning.md §C.4.2.
+      Then disposition each discovered embed: port / bridge / rebuild / retire.
+      Bridging (keep the HubSpot form posting, relay submissions to the target) is
+      often the only way to avoid a big-bang website change.
+    manual_steps:
+      - "Run a site form scan across all customer-owned domains before scoping forms"
+      - "Reconcile discovered embeds against the in-tenant form inventory — the delta is the real risk"
+      - "Identify who owns each hosting web property and whether they have capacity"
+      - "Disposition each form and CTA: port / bridge / rebuild / retire"
+      - "Inventory legacy vs new-editor CTAs separately and state what happens to each one's analytics history"
+      - "Plan the embed-swap as a website release, on the web team's schedule, not marketing's"
+    cross_reference: "docs/specs/tier-2/site-form-scanning.md §C.4.2 — HubSpot embed signatures (js.hsforms.net/forms/, hbspt.forms.create(, <div class=\"hbspt-form\">)"
+
+  - pattern: hubspot_hosted_asset_urls
+    status: unsupported
+    severity: minor
+    category: content
+    issue: "Content references images, files, and page URLs on HubSpot-served domains"
+    gloss: |
+      Every ported email and page carries absolute HubSpot CDN URLs. They keep
+      working right up until the portal is decommissioned, then every historic email
+      loses its images at once.
+    severity_by_target: "Minor for both, but only if handled — it becomes a visible failure at decommissioning, not at cutover."
+    workaround: "Rehost assets on the target CDN and rewrite URLs during content migration; keep the HubSpot domain resolving through the decommissioning window."
+    manual_steps:
+      - "Inventory HubSpot-hosted asset URLs referenced by migrated content"
+      - "Rehost to the target CDN"
+      - "Rewrite URLs in ported content and verify by rendering"
+      - "Do not release the HubSpot-served domains at cutover — sequence that separately"
+
+  - pattern: tracking_code_removal
+    status: unsupported
+    severity: major
+    category: analytics
+    issue: "The HubSpot tracking script is deployed across customer web properties and underpins attribution and visitor identity"
+    gloss: |
+      The tracking code sets the hubspotutk cookie, which is what turns an anonymous
+      visitor into a known contact on form submission, and what supplies original-source
+      attribution. Removing it ends both. Leaving it in place after decommissioning
+      leaves a dead script and, potentially, a consent-notice inaccuracy.
+    severity_by_target: "Major for both — this is a website and analytics problem, not a marketing-platform one."
+    workaround: |
+      Deploy the target's tracking mechanism BEFORE removing HubSpot's, accept an
+      overlap window, and tell stakeholders in advance that pre-cutover
+      original-source attribution does not migrate.
+    manual_steps:
+      - "Inventory every property carrying the HubSpot tracking script"
+      - "Deploy the target's tracking alongside it and validate collection"
+      - "Agree an overlap period before removal"
+      - "Update the cookie/consent notice to match what is actually deployed"
+      - "State plainly in the readout that historic original-source attribution is not portable"
+
+  - pattern: reporting_no_port_path
+    status: unsupported
+    severity: blocker
+    category: reporting
+    issue: "Saved reports, dashboards, and attribution reports have no export path and no target equivalent"
+    gloss: |
+      HubSpot's custom report builder spans marketing AND CRM objects in one query
+      surface, because they are one database. Multi-touch attribution reports depend
+      on HubSpot-held interaction history. There is no comprehensive API for report
+      or dashboard DEFINITIONS, and no Salesforce marketing target reproduces the
+      unified marketing+CRM query surface without a Data Cloud / CRM Analytics build
+      that is its own project.
+      This is the gap most likely to be discovered after go-live, by an executive
+      whose dashboard is empty.
+    severity_by_target: |
+      Blocker for both, and arguably worse for classic SFMC, which has materially
+      weaker native reporting than HubSpot. SFMC Next plus Data Cloud can eventually
+      exceed HubSpot's reporting, but only after a modelling and build effort that
+      must be scoped, budgeted and staffed as a separate workstream.
+    workaround: |
+      Treat reporting as a parallel workstream from day one, not a migration
+      deliverable. Inventory the reports that are actually used — usually far fewer
+      than the number that exist — rebuild those, and get explicit acceptance that
+      historical attribution does not come with them.
+    manual_steps:
+      - "Inventory dashboards and saved reports; identify which are genuinely viewed, by whom"
+      - "Screenshot and document definitions manually — there is no reliable export"
+      - "Establish who signs off marketing reporting; in a HubSpot estate this is frequently outside marketing"
+      - "Scope the target reporting build as its own workstream with its own budget"
+      - "Get written acceptance that pre-cutover attribution history does not migrate"
+      - "Retain a read-only HubSpot seat past cutover if historic reporting must remain accessible"
+    cross_reference: "instrument/migration-accelerator/supplements/hubspot_context.yaml — question `reporting_signoff`"
+
+  - pattern: operations_hub_custom_code
+    status: unsupported
+    severity: major
+    category: flow_control
+    issue: "Workflows contain Operations Hub custom code actions — arbitrary Node.js/Python executing mid-flow"
+    gloss: |
+      A custom code action is a black box holding business logic that nobody wrote
+      down anywhere else: an external API call, a calculation, a data-quality fix, a
+      routing rule. It never surfaces in a capability comparison because it is not a
+      capability — it is code. It is routinely the reason a "simple" workflow cannot
+      be ported.
+    severity_by_target: |
+      Major for both. Classic SFMC: a Script Activity or an external service. SFMC Next:
+      an Apex invocable or an HTTP callout to something the client must host and own.
+    workaround: |
+      Extract and read every custom code action. Classify as: replaceable by a native
+      target action, re-hostable as an external service, or genuinely obsolete.
+      Estimate per action — they do not average out.
+    manual_steps:
+      - "Extract custom code action bodies via the Automation API v4 (v3 will not return them in full)"
+      - "Read each one and document what it actually does"
+      - "Classify: native replacement / re-host externally / retire"
+      - "Identify secrets and external endpoints each one depends on"
+      - "Budget re-hosting separately — it needs an owner and a runtime after go-live"
+
+  - pattern: frequency_cap_semantics
+    status: partial
+    severity: minor
+    category: sending
+    issue: "Account-level marketing email frequency cap is configured in HubSpot"
+    gloss: |
+      HubSpot caps marketing email volume per contact natively, with per-email
+      override. The target's mechanism differs, so the cap is a configuration to
+      restate rather than an asset to port.
+    severity_by_target: |
+      Minor for SFMC Next — native Activation Limits cover it (see the sfmc_next
+      manifest's `classic_frequency_cap_proxy`). Minor-to-major for classic SFMC,
+      which has no native cap: the accelerator's `ENT - Email Frequency Suppression`
+      infrastructure (sfmc.yaml `infrastructure.frequency_capping`) must be stood up
+      and populated, and any per-email override has to be modelled explicitly.
+    workaround: "Restate the cap policy in the target's mechanism; do not attempt to port the configuration object."
+    manual_steps:
+      - "Record the cap policy and every per-email override"
+      - "Classic SFMC: configure the frequency-suppression DE and automation per sfmc.yaml infrastructure"
+      - "SFMC Next: configure channel-level Activation Limits"
+      - "Confirm which sends are exempt in the source and reproduce those exemptions"
+
+  - pattern: ads_audience_sync
+    status: unsupported
+    severity: minor
+    category: audience
+    issue: "Lists are synced as audiences to connected Google / Meta / LinkedIn ad accounts"
+    gloss: |
+      The synced audience is a live integration between HubSpot and the ad platform,
+      not an asset. It cannot be ported — the connection must be rebuilt from the
+      target, and the ad accounts re-authorised by whoever owns them.
+    severity_by_target: "Minor for both; the work is in the ad platforms and their ownership, not the marketing platform."
+    workaround: "Rebuild audience sync from the target's activation surface; re-authorise each ad account."
+    manual_steps:
+      - "Inventory synced audiences and their destination ad accounts"
+      - "Identify who owns each ad account — frequently an external agency"
+      - "Rebuild the sync from the target and re-authorise"
+      - "Expect an audience re-warming period and set expectations with the ads owner"
+
+  - pattern: calculated_property_formula
+    status: unsupported
+    severity: minor
+    category: data_model
+    issue: "Contact/company properties are calculation or rollup properties defined by a HubSpot formula"
+    gloss: |
+      Calculated properties export as a formula string in HubSpot's own syntax over
+      HubSpot's own object graph. The current VALUE ports fine; the definition does
+      not, so the property silently freezes at its migration-day value unless
+      recalculation is rebuilt.
+    severity_by_target: "Minor for both, provided it is caught — the failure mode is a stale field nobody notices for months."
+    workaround: "Port current values, then rebuild recalculation target-side (formula field, Calculated Insight, or scheduled job) for every property that must stay live."
+    manual_steps:
+      - "List calculation and rollup properties and their formulas"
+      - "Determine which are consumed by automation, segmentation or reporting"
+      - "Rebuild recalculation for the consumed ones"
+      - "Mark the rest explicitly as frozen historical snapshots"
+
+  - pattern: no_hubspot_source_adapter
+    status: unsupported
+    severity: blocker
+    category: tooling
+    issue: "The accelerator has no HubSpot source adapter — automated extraction and IR generation are not available"
+    gloss: |
+      The MVP source matrix is Eloqua and SFMC. A HubSpot-source engagement gets no
+      automated inventory, no canonical IR generation, and no adapter-driven
+      disposition. Everything upstream of Blueprint is manual or script-assisted.
+      This is a delivery-capability gap, not a platform gap, and it belongs in the
+      manifest so no readout implies a connector that does not exist.
+    severity_by_target: "Target-independent."
+    workaround: |
+      Either scope a manual/script-assisted assessment with an explicitly reduced
+      fidelity claim, or fund the adapter build. This manifest is the spec input for
+      that build. Note that full workflow fidelity depends on the v4 Automation API,
+      which is in public beta — re-verify its status before committing to it.
+    manual_steps:
+      - "Set expectations in the SOW: HubSpot assessment is workshop-led, not adapter-led"
+      - "Provision a scoped private-app token early — scope approval is a lead-time item"
+      - "Run the site form scan for off-tenant forms — the one automated HubSpot capability that exists"
+      - "Use UI exports plus ad-hoc API scripts for the object inventory"
+      - "If the adapter is to be built, re-verify the v4 Automation API's beta status and every verification_required entry in this manifest first"
+
+# ---------------------------------------------------------------------------
+# INFRASTRUCTURE / MANIFEST METADATA
+# ---------------------------------------------------------------------------
+# The schema forbids additional TOP-LEVEL keys, so manifest status and provenance
+# live here. See the directory README, "Schema fit notes".
+infrastructure:
+
+  manifest_status:
+    adapter_status: none
+    adapter_repo: null
+    source_matrix_note: "ma-migrator MVP source adapters are Eloqua and SFMC only. HubSpot is not implemented."
+    role: "platform knowledge — drives assessment questions and readout callouts; spec input for a future source adapter"
+    authored: "2026-09-06"
+    authored_in: "gtm-offerings (Salesforce repo), pending alignment with the ma-migrator team"
+    intended_home: "ma-migrator/capabilities/platforms/hubspot.yaml"
+    confidence: |
+      Object catalog and capability shape: high confidence, stable product surface.
+      Tier gating, numeric limits, and anything renamed since 2025: flagged
+      verification_required throughout. Nothing in this file has been validated
+      against a live HubSpot tenant.
+
+  verification_policy:
+    convention: "verification_required: true marks a working assumption, per the sfmc_next manifest"
+    review_before: "any client-facing readout, and before any adapter build begins"
+    highest_risk_unverified:
+      - "API rate limits (burst, daily, search) — all recalled, none confirmed"
+      - "Tier gating for HubDB, custom objects, custom code, webhooks, attribution reporting"
+      - "Automation API v4 beta status and shape"
+      - "Workflow branch/wait ceilings — left as 'unverified' rather than guessed"
+      - "Lead scoring tooling post-2025 rework"
+      - "Date-based API versioning (/YYYY-MM/) rollout scope vs the v3 paths"
+
+  tier_gating:
+    gloss: |
+      HubSpot capability is gated by hub AND tier. Establish the tenant's exact
+      subscription line-up before trusting any `supported` status in this manifest.
+    known_or_suspected_gates:
+      workflows: "Marketing Hub Professional+"
+      filter_based_reenrollment: "Professional/Enterprise"
+      custom_objects: "Enterprise (any hub)"
+      hubdb: "Content Hub Professional+"
+      predictive_lead_scoring: "Marketing Hub / Sales Hub Enterprise"
+      custom_code_and_webhook_actions: "Operations Hub Professional+"
+      sequences: "Sales Hub Professional+"
+      deal_create_and_revenue_attribution: "Marketing Hub Enterprise"
+      subscription_preference_write_scopes: "Marketing Hub Enterprise"
+    verification_required: true
+
+  known_instrumentation:
+    site_form_scanning:
+      spec: "docs/specs/tier-2/site-form-scanning.md"
+      section: "C.4.2 — third-party form-service detection"
+      signatures:
+        - "<script src> contains js.hsforms.net/forms/"
+        - "script body contains hbspt.forms.create("
+        - "DOM contains <div class=\"hbspt-form\">"
+      gloss: |
+        The only place HubSpot is instrumented anywhere in the accelerator today.
+        It detects HubSpot form embeds on CUSTOMER-OWNED domains without any HubSpot
+        tenant access, which makes it the highest-value first move on a HubSpot
+        engagement — it finds the forms an eventual adapter would still miss, because
+        they live outside the tenant.
+      limitation: "v1 reads server-returned HTML only; JS-rendered HubSpot forms yield an embed signal, not enumerated fields."
+
+  references:
+    schema: "ma-migrator/capabilities/schema/capability.schema.json"
+    sibling_source_manifest: "ma-migrator/capabilities/platforms/eloqua.yaml"
+    sibling_target_manifest: "ma-migrator/capabilities/platforms/sfmc.yaml"
+    target_spec_sfmc_next: "ma-migrator/docs/specs/tier-2/sfmc-next-target-adapter.md §5"
+    form_scanning_spec: "ma-migrator/docs/specs/tier-2/site-form-scanning.md §C.4.2"
+    assessment_supplement: "instrument/migration-accelerator/supplements/hubspot_context.yaml"
+    conduit_profile_model: "project-conduit/packages/profiles/src/types.ts"
+
+  sources_consulted:
+    gloss: "Web-verified 2026-09-06. Everything not listed here is unverified recall and is flagged inline."
+    checked:
+      - "developers.hubspot.com/changelog — date-based API versioning (/YYYY-MM/) confirmed real; SDKs updated to support it"
+      - "developers.hubspot.com/changelog — Automation API v4 in public beta; adds non-contact-object workflows, full action detail vs v3 UNSUPPORTED_ACTION, update/batch endpoints, v3→v4 id mapping"
+      - "developers.hubspot.com/changelog — legacy CTA sunset: new CTAs must use the new editor from 2025-09-01; sunset of EXISTING legacy CTAs postponed indefinitely and the migrate option withdrawn"
+      - "developers.hubspot.com/changelog — API key sunset: no new keys from 2022-07-15, mechanism sunset from 2022-11-30"
+      - "developers.hubspot.com/changelog — Marketing Email API v3 GA, v1 sunset 2025-11-01"
+      - "knowledge.hubspot.com — workflow goals: goal-met records auto-unenrol before the next action; records already meeting the goal at enrolment are not enrolled"
+      - "knowledge.hubspot.com — re-enrolment off by default; a currently-enrolled record cannot re-enrol until it completes; filter-based re-enrolment is Professional/Enterprise"
+      - "knowledge.hubspot.com — subscription types carry the lawful basis to email; ceiling reported as 1,000 per account"
+      - "knowledge.hubspot.com — attribution report types gated by tier; deal-create attribution reported as Marketing Hub Enterprise"
+      - "community.hubspot.com — August 2025 lead-scoring rework replacing legacy score properties with fit/engagement modelling"
+    unverified_secondary:
+      - "Rate limit numbers (190/10s; 650k and 1M daily) — third-party blog aggregation, NOT confirmed against HubSpot docs"
+      - "Custom object ceilings (10 definitions / 1,000 properties) — third-party aggregation"
+      - "HubDB tier gating — not directly confirmed in this pass"

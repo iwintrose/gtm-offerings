@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Agentforce action: apply a partial config delta to the LWC panel.
-  Backed by MaAgentApplyConfigUpdate.execute() (@InvocableMethod).
+  Backed by GtmAgentApplyConfigUpdate.execute() (@InvocableMethod).
   REQUIRES: Agentforce provisioned on the org.
 -->
 <GenAiPlugin xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -9,7 +9,7 @@
     <masterLabel>Apply GTM Configurator Update</masterLabel>
     <pluginType>Invocable</pluginType>
     <invocableActionType>apex</invocableActionType>
-    <invocableActionName>MaAgentApplyConfigUpdate</invocableActionName>
+    <invocableActionName>GtmAgentApplyConfigUpdate</invocableActionName>
     <genAiPluginInstructions>
         Call this action to update one or more fields on the GTM Configurator page.
         Always pass the sessionToken from the session variables — it routes the update to the correct panel.

@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>GTM_Account__c</fullName>
     <label>GTM Account</label>
-    <description>Resolved automatically from this Lead's Company at creation time via MaAssessmentRequestController -- lets a rep jump straight to the Account this Lead is already tied to, without running Convert Lead first. Standard Lead.Company never links to Account until conversion; this is a same-feature convenience, not a replacement for that standard flow.</description>
+    <description>Resolved automatically from this Lead's Company at creation time via GtmAssessmentRequestController -- lets a rep jump straight to the Account this Lead is already tied to, without running Convert Lead first. Standard Lead.Company never links to Account until conversion; this is a same-feature convenience, not a replacement for that standard flow.</description>
     <type>Lookup</type>
     <referenceTo>Account</referenceTo>
     <relationshipLabel>GTM Leads</relationshipLabel>

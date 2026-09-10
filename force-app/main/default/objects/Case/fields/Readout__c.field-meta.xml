@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Readout__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>The readout this case reviews. Case.ParentId only accepts another Case, so a custom-object relationship has to be a lookup; it lives on Case so GTM_Readout__c gets a native Cases related list. The oldest case on a readout is the review case that carries the recipient comment thread.</description>
+    <label>GTM Readout</label>
+    <referenceTo>GTM_Readout__c</referenceTo>
+    <relationshipLabel>Cases</relationshipLabel>
+    <relationshipName>Cases</relationshipName>
+    <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

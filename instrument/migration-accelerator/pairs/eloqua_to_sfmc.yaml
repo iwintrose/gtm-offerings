@@ -1,0 +1,114 @@
+# ELOQUA -> SALESFORCE MARKETING CLOUD.
+#
+# The one pair with a real capability manifest behind it. Posture is ASSISTED,
+# not instrumented: the canonical IR and the SFMC gap-pattern catalogue are
+# real, the extraction is operator-run rather than a live connector. So the
+# gap patterns below are quoted from the manifest verbatim rather than authored
+# here -- a callout a consultant wrote by hand and a callout derived from
+# capabilities/platforms/sfmc.yaml render identically on the readout, which is
+# the only way a reader can trust either.
+
+name: eloqua_to_sfmc
+source: eloqua
+target: sfmc
+specificity: 1
+active: true
+version: "2026.09.1"
+
+capability_posture: assisted
+source_posture: assisted
+target_posture: assisted
+posture_statement: >-
+  Before you start, one thing about how we will read your answers. We have a
+  mapping model and a gap catalogue for this move, and an operator runs the
+  extraction rather than a live connector. Estate figures are illustrative until
+  the extract is taken; the gaps we name in your readout are not — they are
+  structural properties of Journey Builder and will be true of your estate
+  whatever its size.
+
+emphasis_slots: [orchestration_portability, content_portability]
+supplement_sets: []
+
+overrides:
+  - dimension: orchestration_portability
+    layer: reword
+    question: >-
+      How much of your Eloqua automation is campaign canvas and program builder
+      steps that map to a decision or a wait, versus listeners, shared
+      services, and loops that do not exist in Journey Builder?
+    evidence_prompt: "Ask for the count of active campaigns and programs, and whether any of them loop."
+    rationale: capabilities/platforms/sfmc.yaml — the loopback_flow and traffic_control_loop gap patterns, both blockers, both structural to Journey Builder ("Journey Builder does not support loopbacks - contacts only move forward"). Anchors are unchanged from base; only the examples are Eloqua's, which is layer 1.
+
+  - dimension: content_portability
+    layer: reword
+    question: >-
+      How much of your email content is standard templates and shared content,
+      versus dynamic content rules and cloud content that has to be rebuilt
+      against a different personalisation engine?
+    rationale: capabilities/platforms/sfmc.yaml — actions.email_send declares personalization and dynamic_content supported, so the risk here is rule translation rather than loss of capability. Reword only.
+
+callouts:
+  - pattern: loopback_flow
+    status: unsupported
+    severity: blocker
+    category: flow_control
+    issue: "Journey contains loopback/loop pattern"
+    gloss: "Journey Builder does not support loopbacks"
+    workaround: >-
+      Convert to Wait By Attribute or split into multiple journeys. Pre-calculate
+      exit condition as datetime or boolean in Entry DE.
+    manual_steps:
+      - "Analyze loop logic to understand exit conditions"
+      - "Add exit condition field to Entry Data Extension"
+      - "Replace loop with Wait By Attribute or Decision Split"
+      - "If needed, split into multiple journeys connected by Fire Event"
+    rationale: capabilities/platforms/sfmc.yaml — gap_patterns[0], quoted verbatim.
+
+  - pattern: cross_journey_engagement
+    status: unsupported
+    severity: blocker
+    category: decisions
+    issue: "Email engagement decision references email from another journey"
+    gloss: "Engagement Split is journey-lifetime; there is no cross-journey lookback"
+    workaround: >-
+      Pre-calculate engagement as boolean field in Entry DE by querying SFMC
+      Data Views (_Open, _Click) for the prior send.
+    manual_steps:
+      - "Identify prior email send (JobID/SendID)"
+      - "Create Query Activity to check _Open/_Click data views"
+      - "Add boolean field (e.g., HasOpened_EmailXXX) to Entry DE"
+      - "Replace Engagement Split with Decision Split on boolean field"
+    rationale: capabilities/platforms/sfmc.yaml — gap_patterns[1]; gloss drawn from decisions.engagement_split ("journey-lifetime, no cross-journey lookback").
+
+  - pattern: traffic_control_loop
+    status: unsupported
+    severity: blocker
+    category: flow_control
+    issue: "Traffic control loop for frequency capping"
+    gloss: "Frequency capping is infrastructure in SFMC, not a loop in the journey"
+    workaround: >-
+      Use SFMC's native frequency capping via Wait By Attribute. Configure
+      ENT - Email Frequency Suppression DE with NextEligibleDate field.
+    manual_steps:
+      - "Ensure frequency capping DE exists (ENT - Email Frequency Suppression)"
+      - "Configure Wait By Attribute on NextEligibleDate field"
+      - "Set timezone and wait interval appropriately"
+    rationale: capabilities/platforms/sfmc.yaml — gap_patterns[3], plus the infrastructure.frequency_capping block that names the DE and field the workaround depends on.
+
+  - pattern: filter_membership_runtime
+    status: unsupported
+    severity: major
+    category: decisions
+    issue: "Filter membership check cannot be done at runtime"
+    gloss: "Cannot evaluate filter membership at runtime"
+    workaround: >-
+      Pre-calculate filter membership as boolean field in Entry DE. Use
+      Automation Studio Query Activity to populate before journey entry.
+    manual_steps:
+      - "Add boolean field (e.g., PassesFilter_XXX) to Entry DE"
+      - "Create Query Activity to evaluate filter criteria"
+      - "Schedule automation to run before journey entry"
+      - "Replace filter check with Decision Split on boolean field"
+    rationale: capabilities/platforms/sfmc.yaml — gap_patterns[2]; severity major rather than blocker because the workaround is a pre-compute, not a redesign.
+
+rationale: capabilities/platforms/sfmc.yaml — the whole pack is derived from this manifest; capabilities/schema/capability.schema.json defines the callout shape reused verbatim.

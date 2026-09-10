@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>New_Key__c</fullName>
+    <label>New Key</label>
+    <description>Replacement slot key. Substitutions only. The new key is what Section_Scores__c stores, which is why that field takes arbitrary JSON keys and needs no migration when a substitution is added.</description>
+    <required>false</required>
+    <type>Text</type>
+    <length>80</length>
+    <unique>false</unique>
+</CustomField>

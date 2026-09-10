@@ -1,0 +1,2486 @@
+{
+ "packSfmcToMcn": {
+  "version": "2026.09.1",
+  "targetPosture": "interview_only",
+  "targetKey": "sfmc_next",
+  "supplements": [
+   {
+    "sortOrder": 10.0,
+    "setKey": "mcn_readiness",
+    "scored": true,
+    "question": "Where is Data Cloud / Data 360 today \u2014 not procured, procured but not in production, or live and already serving segments?",
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Not procured, or procured and untouched. No DMOs, no identity resolution, no segments.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Procured and in build. Some data streams landed; nothing yet activates a campaign.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Live and load-bearing. Segments and Calculated Insights already drive real campaigns.",
+      "available": true
+     }
+    ],
+    "key": "data_cloud_state",
+    "indexKey": "mcn_readiness_index",
+    "horizonDriver": true,
+    "horizonByValue": {
+     "3": "Foundation phase 4-8 weeks; the data layer is reusable rather than net-new.",
+     "2": "Foundation phase 8-12 weeks; the data layer exists but is not yet the audience source of truth.",
+     "1": "Foundation phase 8-16 weeks; add 4 weeks if Identity Resolution is not configured."
+    }
+   },
+   {
+    "sortOrder": 20.0,
+    "setKey": "mcn_readiness",
+    "scored": true,
+    "question": "What Salesforce Core presence exists today \u2014 none, another cloud in use by another team, or an org marketing already works in?",
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "None. Salesforce is not in the estate, or is a shell nobody administers.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Sales or Service runs on Core, owned by another team, with its own governance and release train.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Marketing already works inside the Core org \u2014 shared objects, shared admins, an existing release process.",
+      "available": true
+     }
+    ],
+    "key": "core_footprint",
+    "indexKey": "mcn_readiness_index",
+    "horizonDriver": false,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 30.0,
+    "setKey": "mcn_readiness",
+    "scored": true,
+    "question": "Who signs off brand voice, compliance rules and approval workflow today, and could they express those as platform-level policy rather than as per-campaign review?",
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Review is per-campaign and informal. Nothing is written down that an agent could operate inside.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Brand and compliance rules exist as documents, applied by people at review gates.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Named owners and written policy already configured as platform rules somewhere \u2014 approvals, tone, exclusions.",
+      "available": true
+     }
+    ],
+    "key": "ai_guardrail_readiness",
+    "indexKey": "mcn_readiness_index",
+    "horizonDriver": false,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 40.0,
+    "setKey": "mcn_readiness",
+    "scored": true,
+    "question": "Has anyone modelled what your current send and activity volume costs under a consumption (Credits) licence rather than a committed one?",
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "No. Budget is an annual line item and variable cost has not been discussed with finance.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Aware it changes; no rates from the AE and no model built.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Consumption rates in hand and a volume model built; finance has seen it.",
+      "available": true
+     }
+    ],
+    "key": "consumption_literacy",
+    "indexKey": "mcn_readiness_index",
+    "horizonDriver": false,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 50.0,
+    "setKey": "mcn_readiness",
+    "scored": false,
+    "question": "Across your active workflows/campaigns, how many enrol from the same audience definition?",
+    "options": [],
+    "key": "shared_audience_definitions",
+    "indexKey": null,
+    "horizonDriver": false,
+    "horizonByValue": {}
+   }
+  ],
+  "sourcePosture": "instrumented",
+  "sourceKey": "sfmc",
+  "slots": [
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": false,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "How much is actually running today, and across how many business units or instances?",
+    "position": 1,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "500+ active campaigns or programs, or six or more business units / separate instances",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "150-500 active campaigns or programs, or three to five business units",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "40-150 active campaigns or programs across one or two business units",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Fewer than 40 active campaigns or programs in a single business unit",
+      "available": true
+     }
+    ],
+    "measures": "Campaign/program volume and business-unit sprawl",
+    "maxAttainable": 4,
+    "layer": null,
+    "label": "Estate Scale & Structure",
+    "key": "estate_scale",
+    "evidencePrompt": null,
+    "ceilingReason": null,
+    "baseKey": "estate_scale"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "Do you have working API credentials for the platform you are leaving and the one you are moving to?",
+    "position": 2,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "No API access to the source platform, and no clear owner who could get it",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Someone could probably get source access eventually; target access has not been discussed",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Source access exists or is one short approval away; target access is being provisioned",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Working API credentials exist for both, with an owner who can hand them over this week",
+      "available": true
+     }
+    ],
+    "measures": "Whether credentials/API access exist to actually scan the source and write to the target",
+    "maxAttainable": 4,
+    "layer": null,
+    "label": "Source & Target Access Readiness",
+    "key": "source_access",
+    "evidencePrompt": null,
+    "ceilingReason": null,
+    "baseKey": "source_access"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "How complex are the journeys, flows and automations that are live today?",
+    "position": 3,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Heavily branched journeys with custom scripting and real-time triggers \u2014 most would be rebuilt from scratch",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "A mix, including several long-running journeys whose logic nobody has documented",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Mostly scheduled or simply-triggered flows, with a few complex exceptions",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "A small number of straightforward, mostly scheduled flows that map cleanly onto the target",
+      "available": true
+     }
+    ],
+    "measures": "Whether flows/journeys survive the move or have to be rebuilt",
+    "maxAttainable": 4,
+    "layer": null,
+    "label": "Orchestration Portability",
+    "key": "orchestration_portability",
+    "evidencePrompt": null,
+    "ceilingReason": null,
+    "baseKey": "orchestration_portability"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "How much of your email content is template and copy that can be rebuilt as-is, versus AMPscript, SSJS and Cloud Pages that have no equivalent on the target?",
+    "position": 4,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Heavy AMPscript and SSJS throughout, plus Cloud Pages doing customer-facing work. Content is an application, not a template set.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "AMPscript in most sends \u2014 lookups and conditional blocks \u2014 and at least one Cloud Page that matters.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "AMPscript confined to simple attribute substitution; no SSJS; Cloud Pages absent or disposable.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Templates and copy only. Personalisation is merge fields, and the template count is small enough to rebuild deliberately.",
+      "available": true
+     }
+    ],
+    "measures": "Template governance versus bespoke code and scripting depth",
+    "maxAttainable": 4,
+    "layer": "recalibrate",
+    "label": "Content & Code Portability",
+    "key": "content_portability",
+    "evidencePrompt": "Ask for a count of email assets containing %%[ ]%% or %%= =%%, and whether any Cloud Page is customer-facing.",
+    "ceilingReason": null,
+    "baseKey": "content_portability"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "How much of your data model is Data Extensions doing data-model work, versus something that already resolves to one person across sources?",
+    "position": 5,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Hundreds of DEs, journey-specific, no shared key. The model is whatever the last campaign needed.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Relational DEs exist but are per-journey; Contact Builder links are manual and partly stale.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A documented, shared audience layer in DEs, reused across journeys, with a stable Subscriber Key.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Data Cloud already in use with identity resolution configured; segments and Calculated Insights are live.",
+      "available": true
+     }
+    ],
+    "measures": "Schema documentation and audience reuse versus per-campaign silos",
+    "maxAttainable": 4,
+    "layer": "recalibrate",
+    "label": "Data & Audience Model Readiness",
+    "key": "data_model_readiness",
+    "evidencePrompt": null,
+    "ceilingReason": null,
+    "baseKey": "data_model_readiness"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "What else writes into the platform \u2014 external forms, integrations, third-party tools?",
+    "position": 6,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Many external systems and third-party forms post in, and nobody has a full list",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Several known integrations plus some third-party forms; the list is roughly known",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A handful of documented integrations; forms are mostly native to the platform",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Effectively self-contained \u2014 native forms and one or two documented integrations",
+      "available": true
+     }
+    ],
+    "measures": "External forms and integrations posting into the platform",
+    "maxAttainable": 4,
+    "layer": null,
+    "label": "Integration Containment",
+    "key": "integration_containment",
+    "evidencePrompt": null,
+    "ceilingReason": null,
+    "baseKey": "integration_containment"
+   },
+   {
+    "variants": [
+     {
+      "variants": [],
+      "variantKey": "default",
+      "substitutable": true,
+      "showWhenJson": null,
+      "respondentHint": null,
+      "question": "How is subscription and consent state modelled in Marketing Cloud today \u2014 Subscriptions and Publication Lists, or a custom preference centre backed by Data Extensions?",
+      "position": 7,
+      "options": [
+       {
+        "value": 1,
+        "unavailableReason": null,
+        "points": 1,
+        "label": "A custom preference centre on Cloud Pages, backed by DEs, with AMPscript writing the state. Nobody has reproduced its rules on paper.",
+        "available": true
+       },
+       {
+        "value": 2,
+        "unavailableReason": null,
+        "points": 2,
+        "label": "Custom preference centre, but the rules are documented and the state is a small number of fields.",
+        "available": true
+       },
+       {
+        "value": 3,
+        "unavailableReason": null,
+        "points": 3,
+        "label": "Native Subscriptions and Publication Lists, used as intended, with lawful basis recorded.",
+        "available": true
+       },
+       {
+        "value": 4,
+        "unavailableReason": null,
+        "points": 4,
+        "label": "Consent is already a cross-channel policy outside the send platform, and Marketing Cloud reads it rather than owning it.",
+        "available": true
+       }
+      ],
+      "measures": "Preference-centre and suppression complexity",
+      "maxAttainable": 4,
+      "layer": "recalibrate",
+      "label": "Consent & Preference Portability",
+      "key": "consent_portability",
+      "evidencePrompt": "Ask whether unsubscribe writes to a DE or to All Subscribers. The answer decides whether this is a rebuild or a re-point.",
+      "ceilingReason": null,
+      "baseKey": "consent_portability"
+     },
+     {
+      "variants": [],
+      "variantKey": "consent_owned_elsewhere",
+      "substitutable": true,
+      "showWhenJson": "{\"all\":[{\"field\":\"integration_containment\",\"op\":\"lte\",\"value\":2}]}",
+      "respondentHint": null,
+      "question": "You have just told us the estate reaches well outside Marketing Cloud. Who actually MASTERS consent \u2014 the CRM, a CDP, a preference service \u2014 and is that system in scope for this migration or somebody else's roadmap?",
+      "position": 7,
+      "options": [
+       {
+        "value": 1,
+        "unavailableReason": null,
+        "points": 1,
+        "label": "Nobody is sure. Consent state exists in more than one system and they are known to disagree.",
+        "available": true
+       },
+       {
+        "value": 2,
+        "unavailableReason": null,
+        "points": 1,
+        "label": "Another team's system masters it, it is out of scope for this programme, and no one from that team has been in these conversations.",
+        "available": true
+       },
+       {
+        "value": 3,
+        "unavailableReason": null,
+        "points": 3,
+        "label": "Another system masters it, the owner is named and engaged, and the interface is documented.",
+        "available": true
+       },
+       {
+        "value": 4,
+        "unavailableReason": null,
+        "points": 4,
+        "label": "A single system masters consent, it is in scope, and the migration can re-point to it without renegotiating ownership.",
+        "available": true
+       }
+      ],
+      "measures": "Preference-centre and suppression complexity",
+      "maxAttainable": 4,
+      "layer": "substitute",
+      "label": "Consent Ownership Outside the Platform",
+      "key": "consent_ownership_outside_platform",
+      "evidencePrompt": "Get a name, not a system. 'Who do we call when a customer disputes a consent record' is the question that produces one.",
+      "ceilingReason": null,
+      "baseKey": "consent_portability"
+     }
+    ],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "How is subscription and consent state modelled in Marketing Cloud today \u2014 Subscriptions and Publication Lists, or a custom preference centre backed by Data Extensions?",
+    "position": 7,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "A custom preference centre on Cloud Pages, backed by DEs, with AMPscript writing the state. Nobody has reproduced its rules on paper.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Custom preference centre, but the rules are documented and the state is a small number of fields.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Native Subscriptions and Publication Lists, used as intended, with lawful basis recorded.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Consent is already a cross-channel policy outside the send platform, and Marketing Cloud reads it rather than owning it.",
+      "available": true
+     }
+    ],
+    "measures": "Preference-centre and suppression complexity",
+    "maxAttainable": 4,
+    "layer": "recalibrate",
+    "label": "Consent & Preference Portability",
+    "key": "consent_portability",
+    "evidencePrompt": "Ask whether unsubscribe writes to a DE or to All Subscribers. The answer decides whether this is a rebuild or a re-point.",
+    "ceilingReason": null,
+    "baseKey": "consent_portability"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": false,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "Who decides what moves, what is retired and what is rebuilt \u2014 and who validates it afterwards?",
+    "position": 8,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "No named owner for those decisions, and nobody free to validate the result",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "An owner exists in principle but has little time; validation would fall to one already-busy person",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A named owner per area, with some capacity set aside to review and test",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "A named decision owner and named validators, with time formally allocated to the migration",
+      "available": true
+     }
+    ],
+    "measures": "Whether humans exist to make disposition decisions and to validate the result",
+    "maxAttainable": 4,
+    "layer": null,
+    "label": "Decision Ownership & Validation Capacity",
+    "key": "decision_readiness",
+    "evidencePrompt": null,
+    "ceilingReason": null,
+    "baseKey": "decision_readiness"
+   }
+  ],
+  "resolutionNote": null,
+  "resolutionChain": [
+   "base",
+   "any_to_mcn",
+   "sfmc_to_mcn"
+  ],
+  "postureStatement": "Before you start, one thing about how we will read your answers. We can read your current Marketing Cloud estate directly, so the journey, data extension and automation figures in your readout are measured rather than described. Nothing writes to Marketing Cloud Next yet, so the target-side model is the accelerator's working picture of the platform and several entries are pending verification against a real tenant.",
+  "posture": "interview_only",
+  "pairKey": "sfmc_to_mcn",
+  "gates": [
+   {
+    "tierQualifier": "consent workstream off critical path",
+    "severity": "major",
+    "readoutBlock": "MCN Consent & Custom Preferences is a Spring '26+ capability and its parity with what you run today is unverified. With permission state this entangled, the preference-centre rebuild must not sit on the critical path: bridge it on the current platform and rebuild after parity is confirmed against a real tenant. Plan 2-4 weeks for a custom consent model on top of the foundation estimate.",
+    "predicate": {
+     "all": [
+      {
+       "value": [
+        "sfmc_next"
+       ],
+       "op": "in",
+       "field": "target"
+      },
+      {
+       "value": 2,
+       "op": "lte",
+       "field": "consent_portability"
+      }
+     ]
+    },
+    "key": "consent_parity_risk"
+   },
+   {
+    "tierQualifier": "foundation-gated",
+    "severity": "blocker",
+    "readoutBlock": "Marketing Cloud Next runs on Data Cloud. With no Data 360 footprint in place, the Foundation phase gates every other lane \u2014 journey, content and campaign work cannot complete before the data layer exists. Budget 8-16 weeks of foundation before migration build starts, plus 4 weeks if Identity Resolution is not yet configured. This does not change the readiness score: the estate may well be easy to move, and still not be movable yet.",
+    "predicate": {
+     "all": [
+      {
+       "value": [
+        "sfmc_next"
+       ],
+       "op": "in",
+       "field": "target"
+      },
+      {
+       "value": 1,
+       "op": "eq",
+       "field": "data_cloud_state"
+      }
+     ]
+    },
+    "key": "foundation_gated"
+   },
+   {
+    "tierQualifier": "platform-precursor required",
+    "severity": "blocker",
+    "readoutBlock": "The named target sits on Salesforce Core, and there is no Salesforce footprint to sit it on. A platform-precursor project \u2014 org, licences, user model, governance \u2014 has to land before any marketing migration can be scheduled, and it is a different budget line with a different sponsor. Raise it now rather than at contracting: it is the single most common reason an otherwise-ready migration slips a quarter.",
+    "predicate": {
+     "all": [
+      {
+       "value": [
+        "sfmc_next"
+       ],
+       "op": "in",
+       "field": "target"
+      },
+      {
+       "value": 1,
+       "op": "eq",
+       "field": "core_footprint"
+      }
+     ]
+    },
+    "key": "no_core_platform"
+   }
+  ],
+  "estateFiguresIllustrative": false,
+  "emphasisSlots": [
+   "content_portability",
+   "data_model_readiness",
+   "consent_portability"
+  ],
+  "complexityDimensions": [
+   {
+    "respondentHint": null,
+    "question": "Roughly how many journeys or automated programs are live, and how are they triggered?",
+    "position": 1,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Fewer than 20 active journeys, mostly scheduled",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "20-80 journeys, a mix of triggered and scheduled",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "80+ journeys, heavily API-triggered with complex branching",
+      "available": true
+     }
+    ],
+    "measures": "Volume and trigger mix of live journeys",
+    "layer": null,
+    "label": "Journey Footprint",
+    "key": "journey_footprint",
+    "evidencePrompt": null,
+    "baseKey": "journey_footprint"
+   },
+   {
+    "respondentHint": null,
+    "question": "How large and how relational is the data model behind your sends?",
+    "position": 2,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Mostly flat send lists, fewer than 30 tables in total",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Some relational structure, 30-100 tables, moderate SQL",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A complex relational model, 100+ tables, heavy SQL automation",
+      "available": true
+     }
+    ],
+    "measures": "Volume and relational depth of the data model",
+    "layer": null,
+    "label": "Data Model Complexity",
+    "key": "data_extension_complexity",
+    "evidencePrompt": null,
+    "baseKey": "data_extension_complexity"
+   },
+   {
+    "respondentHint": null,
+    "question": "How much custom scripting sits inside your emails, pages and automations?",
+    "position": 3,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Minimal scripting, no server-side code, no custom hosted pages",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Moderate scripting, with one to five server-side scripts or hosted pages",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Extensive scripting, server-side code throughout, hosted pages in active use",
+      "available": true
+     }
+    ],
+    "measures": "How much custom code is embedded in assets and pages",
+    "layer": null,
+    "label": "Scripting Depth",
+    "key": "scripting_depth",
+    "evidencePrompt": null,
+    "baseKey": "scripting_depth"
+   },
+   {
+    "respondentHint": null,
+    "question": "How is the account split across business units or child accounts?",
+    "position": 4,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "A single business unit, or a simple parent-child pair",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Two to five business units with some shared assets",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Six or more business units, or complex cross-unit content sharing",
+      "available": true
+     }
+    ],
+    "measures": "How many business units and how much they share",
+    "layer": null,
+    "label": "Business Unit Structure",
+    "key": "business_unit_structure",
+    "evidencePrompt": null,
+    "baseKey": "business_unit_structure"
+   },
+   {
+    "respondentHint": null,
+    "question": "How much of the platform is wired into other systems?",
+    "position": 5,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Basic native CRM sync only",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Native sync plus a few API integrations",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Custom REST/SOAP integrations across multiple external systems",
+      "available": true
+     }
+    ],
+    "measures": "Breadth of external systems wired into the platform",
+    "layer": null,
+    "label": "Integration Surface",
+    "key": "integration_surface",
+    "evidencePrompt": null,
+    "baseKey": "integration_surface"
+   },
+   {
+    "respondentHint": null,
+    "question": "How custom is the consent and suppression handling?",
+    "position": 6,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Standard publication or subscription lists only",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Some custom suppression logic on top of the standard model",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A custom preference centre with complex suppression rules",
+      "available": true
+     }
+    ],
+    "measures": "Depth of custom preference and suppression logic",
+    "layer": null,
+    "label": "Consent / Suppression Model",
+    "key": "consent_suppression_model",
+    "evidencePrompt": null,
+    "baseKey": "consent_suppression_model"
+   }
+  ],
+  "callouts": [
+   {
+    "workaround": "Track flow entry in a DMO and use it as a segment exclusion.",
+    "verificationRequired": false,
+    "status": "partial",
+    "severity": "major",
+    "pattern": "no_reentry_equivalent",
+    "manualSteps": [],
+    "issue": "Source orchestration relies on re-entry rules or entry suppression",
+    "gloss": "Campaign Flow has no 'No Re-entry' equivalent yet",
+    "category": "flow_control"
+   },
+   {
+    "workaround": "Generate a Calculated Insight per required engagement signal and reference it in the Decision element.",
+    "verificationRequired": true,
+    "status": "partial",
+    "severity": "major",
+    "pattern": "engagement_split_partial",
+    "manualSteps": [],
+    "issue": "Source branches on email open/click behaviour",
+    "gloss": "There is no Engagement Split element; engagement is a Calculated Insight read by a Decision element",
+    "category": "decisions"
+   },
+   {
+    "workaround": "Pre-calculate segment-membership boolean as a Calculated Insight.",
+    "verificationRequired": false,
+    "status": "partial",
+    "severity": "major",
+    "pattern": "filter_membership_partial",
+    "manualSteps": [],
+    "issue": "Source evaluates segment/filter membership at runtime",
+    "gloss": "Segment membership is evaluable via Calculated Insight, not at Flow runtime directly",
+    "category": "decisions"
+   },
+   {
+    "workaround": "Confirm platform event configuration and wait granularity in the tenant before relying on either.",
+    "verificationRequired": true,
+    "status": "partial",
+    "severity": "minor",
+    "pattern": "flow_wait_semantics",
+    "manualSteps": [],
+    "issue": "Source relies on precise wait timing or event-based pauses",
+    "gloss": "Wait element semantics and event-based pause behaviour are working assumptions in the accelerator's model",
+    "category": "flow_control"
+   },
+   {
+    "workaround": "Start SMS re-provisioning immediately and in parallel; do not wait for the Foundation phase.",
+    "verificationRequired": true,
+    "status": "partial",
+    "severity": "major",
+    "pattern": "channel_reprovisioning",
+    "manualSteps": [],
+    "issue": "SMS, push or short-code sending is in scope",
+    "gloss": "Senders and short codes are re-provisioned, never transferred, and this is the longest lead time in the programme",
+    "category": "actions"
+   },
+   {
+    "workaround": "Three resolution paths, in preference order: a single-attribute read becomes a merge field; a lookup or calculation becomes a Calculated Insight referenced in the template; a recommendation becomes an Einstein Personalization slot. Each gap needs human review.",
+    "verificationRequired": true,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "ampscript_block",
+    "manualSteps": [
+     "Inventory AMPscript constructs in source email",
+     "Classify each as merge-field / CI / Einstein",
+     "Rebuild the email asset in Content Studio with the chosen primitive",
+     "Validate rendered output against samples"
+    ],
+    "issue": "Email asset contains AMPscript that has no direct SFMC Next equivalent",
+    "gloss": "AMPscript does not exist in SFMC Next",
+    "category": "personalization"
+   },
+   {
+    "workaround": "Re-model the DE as a DMO. The accelerator emits a DMO contract (schema only); the operator wires Data Cloud ingestion.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "blocker",
+    "pattern": "data_extension_dependency",
+    "manualSteps": [
+     "Review emitted dmo_<name>.json",
+     "Create DMO in Data Cloud workspace",
+     "Configure DLO + ingestion stream OR mapping from existing DMO",
+     "Run Identity Resolution if the DMO joins on Individual"
+    ],
+    "issue": "Journey reads from or writes to a Data Extension (no DE concept in SFMC Next)",
+    "gloss": "DEs are replaced by DMOs in Data Cloud",
+    "category": "data_model"
+   },
+   {
+    "workaround": "Reject the source journey; the operator configures Activation Limits in the tenant.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "blocker",
+    "pattern": "classic_frequency_cap_proxy",
+    "manualSteps": [
+     "Mark source journey as rejected in IR",
+     "Configure Activation Limits per channel in Marketing Cloud Growth Setup",
+     "Document weekly/monthly cap policy in tenant runbook"
+    ],
+    "issue": "Source journey is a frequency-capping proxy (DE-driven cap logic)",
+    "gloss": "SFMC Next has native channel-level Activation Limits",
+    "category": "flow_control"
+   },
+   {
+    "workaround": "Rearchitect each query as a Data 360 transform or Calculated Insight; complex SQL is a redesign, not a port.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "automation_studio_sql",
+    "manualSteps": [],
+    "issue": "Audience preparation depends on Automation Studio SQL",
+    "gloss": "Batch SQL is largely replaced by declarative transforms, Calculated Insights and Flow",
+    "category": "data_model"
+   }
+  ]
+ },
+ "packHubToSfmc": {
+  "version": "2026.09.1",
+  "targetPosture": "instrumented",
+  "targetKey": "sfmc",
+  "supplements": [
+   {
+    "sortOrder": 10.0,
+    "setKey": "sfmc_classic_readiness",
+    "scored": true,
+    "question": "What does the destination tenant look like today \u2014 is there an MCE instance, does it have a business-unit structure, and is it agreed which brand or region lands in which BU?",
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "No MCE tenant provisioned, or one exists that nobody administers. Business-unit structure is undecided.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "A tenant and some business units exist, but which brand, region or source instance lands where has not been agreed.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Tenant and business units are live and administered, and every brand or region has an agreed destination BU.",
+      "available": true
+     }
+    ],
+    "key": "target_bu_structure",
+    "indexKey": "sfmc_classic_readiness_index",
+    "horizonDriver": true,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 20.0,
+    "setKey": "sfmc_classic_readiness",
+    "scored": true,
+    "question": "In Marketing Cloud, is there an agreed subscriber key and a modelled set of sendable data extensions \u2014 or would the audience model be designed from scratch as part of this migration?",
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Nothing modelled. No agreed subscriber key, no sendable data extensions, no attribute sets.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Some sendable DEs exist for tactical sends, built ad hoc. No agreed subscriber key and no attribute-set design.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A subscriber key is agreed, sendable DEs and attribute sets are modelled, and Contact Builder is the audience source of truth.",
+      "available": true
+     }
+    ],
+    "key": "contact_builder_state",
+    "indexKey": "sfmc_classic_readiness_index",
+    "horizonDriver": false,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 30.0,
+    "setKey": "sfmc_classic_readiness",
+    "scored": true,
+    "question": "Is there a send-frequency policy, and does the suppression infrastructure that enforces it exist in the target tenant yet?",
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "No policy and no infrastructure. How often a contact is mailed is whatever the campaign calendar produces.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "A cap policy exists \u2014 in the current platform's settings or on paper \u2014 but nothing is built target-side to enforce it.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "The suppression data extension and its automation are in place target-side, and the cap windows are agreed.",
+      "available": true
+     }
+    ],
+    "key": "frequency_capping_infrastructure",
+    "indexKey": "sfmc_classic_readiness_index",
+    "horizonDriver": false,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 40.0,
+    "setKey": "sfmc_classic_readiness",
+    "scored": false,
+    "question": "Looking past this migration: is there anything you are hoping to get from the wider Salesforce stack later \u2014 Marketing Cloud Next capabilities, or Data 360 / Data Cloud as the eventual home for your data model \u2014 rather than from Marketing Cloud Engagement itself? Tell us which use cases those ambitions are attached to.",
+    "options": [],
+    "key": "forward_looking_ambitions",
+    "indexKey": null,
+    "horizonDriver": false,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 10.0,
+    "setKey": "hubspot_context",
+    "scored": false,
+    "question": "Does Sales own HubSpot Sequences, and does anyone consider them in scope for this migration?",
+    "options": [],
+    "key": "sequences_ownership",
+    "indexKey": null,
+    "horizonDriver": false,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 20.0,
+    "setKey": "hubspot_context",
+    "scored": false,
+    "question": "When marketing reporting changes shape, who signs it off?",
+    "options": [],
+    "key": "reporting_signoff",
+    "indexKey": null,
+    "horizonDriver": false,
+    "horizonByValue": {}
+   },
+   {
+    "sortOrder": 30.0,
+    "setKey": "hubspot_context",
+    "scored": false,
+    "question": "Do you expect your landing pages, site pages, blog or any HubDB-driven content to move as part of this \u2014 and if they do not, what happens to HubSpot CMS afterwards: kept and paid for, or replaced on its own timeline?",
+    "options": [],
+    "key": "cms_scope_expectation",
+    "indexKey": null,
+    "horizonDriver": false,
+    "horizonByValue": {}
+   }
+  ],
+  "sourcePosture": "interview_only",
+  "sourceKey": "hubspot",
+  "slots": [
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": false,
+    "showWhenJson": null,
+    "respondentHint": "Useful to have to hand: your counts of active workflows, lists, marketing emails published in the last 12 months, live landing pages and live forms, and the number of portals you run.",
+    "question": "Roughly how much is live in HubSpot today \u2014 active workflows, lists, marketing emails, landing pages and forms \u2014 and across how many business units or portals?",
+    "position": 1,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "500+ active campaigns or programs, or six or more business units / separate instances",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "150-500 active campaigns or programs, or three to five business units",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "40-150 active campaigns or programs across one or two business units",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Fewer than 40 active campaigns or programs in a single business unit",
+      "available": true
+     }
+    ],
+    "measures": "Campaign/program volume and business-unit sprawl",
+    "maxAttainable": 4,
+    "layer": "reword",
+    "label": "Estate Scale",
+    "key": "estate_scale",
+    "evidencePrompt": "Ask for five numbers, not an adjective: active workflows, lists, marketing emails published in the last 12 months, live landing pages, live forms. Then ask how many portals and (Enterprise only) how many business units.",
+    "ceilingReason": null,
+    "baseKey": "estate_scale"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": "Worth checking before you answer: who holds HubSpot Super Admin, whether your security team allows private apps at all, and who would create the Marketing Cloud installed package. That last one is often a different team.",
+    "question": "If we started next week, how would an extract of your HubSpot estate actually be produced, who would do it \u2014 and does anyone hold the Marketing Cloud side yet?",
+    "position": 2,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "No HubSpot admin access, no owner, nobody has exported anything before \u2014 and no Marketing Cloud tenant or credentials to write to.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "A HubSpot super admin exists; private-app tokens have not been created and would need approval. Marketing Cloud access has not been discussed.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A super admin can create a scoped private app this week and someone can run an operator-led extract; the Marketing Cloud installed package is provisioned or one approval away.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": "No HubSpot connector ships today. The best available path is an operator-run extract against a scoped private app, which is what a 3 describes \u2014 so a 4 is not on offer for this pair, for anyone. The Marketing Cloud end is not what caps this: a server-to-server installed package is a real, obtainable credential, and a 3 assumes it.",
+      "points": 4,
+      "label": "A supported connector reads the source directly with no operator in the loop.",
+      "available": false
+     }
+    ],
+    "measures": "Whether credentials/API access exist to actually scan the source and write to the target",
+    "maxAttainable": 3,
+    "layer": "recalibrate",
+    "label": "Source & Target Access Readiness",
+    "key": "source_access",
+    "evidencePrompt": "Ask who holds HubSpot Super Admin and whether their security team permits private apps at all. Separately, ask who would create the Marketing Cloud installed package \u2014 it is frequently a different person in a different team, and that is the lead-time item.",
+    "ceilingReason": "No HubSpot connector ships today. The best available path is an operator-run extract against a scoped private app, which is what a 3 describes \u2014 so a 4 is not on offer for this pair, for anyone. The Marketing Cloud end is not what caps this: a server-to-server installed package is a real, obtainable credential, and a 3 assumes it.",
+    "baseKey": "source_access"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": "If you are not sure, open one of your busier workflows: 're-enrol contacts' and 'goal' are checkboxes in its settings, and a go-to-action step is visible on the canvas.",
+    "question": "How much of your workflow logic depends on re-enrolment, goal criteria, or go-to-action steps that jump backwards \u2014 as opposed to a straight sequence of branches and delays?",
+    "position": 3,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Re-enrolment is on across most workflows, goals drive exits, and at least one workflow loops backwards. The re-entry behaviour IS the programme.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Several workflows re-enrol or use goal criteria; removing them would change what the programme does. Maybe one backwards jump.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Mostly linear branch-and-delay logic; re-enrolment is on in a handful of places and is not load-bearing. No loops.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Linear, single-entry flows throughout. No goals, no loops, no re-enrolment anywhere.",
+      "available": true
+     }
+    ],
+    "measures": "Whether flows/journeys survive the move or have to be rebuilt",
+    "maxAttainable": 4,
+    "layer": "recalibrate",
+    "label": "Orchestration Portability",
+    "key": "orchestration_portability",
+    "evidencePrompt": "Ask them to open one workflow and read out its enrolment settings \u2014 're-enrol contacts' and 'goal' are checkboxes, so this is a factual answer rather than an impression. Then ask whether any workflow has a go-to-action step, and where it points.",
+    "ceilingReason": null,
+    "baseKey": "orchestration_portability"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": "Useful to have to hand: how many email templates you have used in the last 12 months, which custom modules appear in those emails, and how many of the templates exist in more than one language.",
+    "question": "Thinking only about your marketing emails, which would be rebuilt as Content Builder templates and assets: how many email templates are in real use, how much of each is custom modules and HubL doing real logic rather than standard modules and copy, and how many language variants are maintained? Landing pages and site pages are a separate question later on, so leave them out here.",
+    "position": 4,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "A large template and module library that emails are assembled from, with HubL macros, includes and loops doing real logic inside the email, and every template maintained in several language variants.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "A module library editors compose emails from, with HubL conditionals and CRM-association lookups doing real work. Reuse is genuine, so the target-side block library has to exist before content moves.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Some custom modules and conditional HubL in emails, but the logic is over the contact's own properties and rewrites cleanly into AMPscript and a Data Extension lookup.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Templates and copy only, few enough to rebuild deliberately, with personalisation that is merge fields and nothing more.",
+      "available": true
+     }
+    ],
+    "measures": "Template governance versus bespoke code and scripting depth",
+    "maxAttainable": 4,
+    "layer": "recalibrate",
+    "label": "Email Content Portability",
+    "key": "content_portability",
+    "evidencePrompt": "Ask for two counts and one ratio: email templates used in the last 12 months, modules ranked by usage IN EMAILS (not across the site), and how many of those templates exist in more than one language. The estimate is per construct and per template, not per email. Do NOT count landing pages, site pages or blog templates here \u2014 whether any of that is even moving is the cms_scope_expectation probe, not this slot.",
+    "ceilingReason": null,
+    "baseKey": "content_portability"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": "Two things worth knowing before you answer: who logs into HubSpot who is not in marketing and what they do there, and whether you could name the single field that would identify a subscriber in the new platform.",
+    "question": "In HubSpot, the CRM and the marketing platform are the same product. How much of your customer data model would have to move with the marketing estate, who else is using it, and does the part marketing needs decompose into a subscriber and a set of sendable tables?",
+    "position": 5,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "HubSpot IS the CRM. Sales works in it daily, deals and pipeline live there, and nobody can say which properties marketing actually sends on.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "HubSpot CRM is in real use by at least one non-marketing team, and custom objects, associations or shared properties are read by marketing automation.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Marketing's audience needs are known and mostly contact-level: a subscriber key is identifiable and the rest would land as a handful of sendable tables.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "The system of record for the customer is already elsewhere and in scope; HubSpot holds marketing attributes that decompose cleanly into a subscriber plus sendable data extensions.",
+      "available": true
+     }
+    ],
+    "measures": "Schema documentation and audience reuse versus per-campaign silos",
+    "maxAttainable": 4,
+    "layer": "substitute",
+    "label": "CRM & Data Model Entanglement",
+    "key": "crm_and_data_model_entanglement",
+    "evidencePrompt": "Ask who logs into HubSpot who is not in marketing, and what they do there. Then ask what would be the subscriber key \u2014 if the answer is a discussion rather than a field name, this is not a 3.",
+    "ceilingReason": null,
+    "baseKey": "data_model_readiness"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": "Worth knowing before you answer: which teams own the integrations connected to HubSpot, and whether any of your forms or CTAs are embedded on pages another team looks after.",
+    "question": "Of the things wired into HubSpot \u2014 app-marketplace integrations, forms and CTAs embedded on sites you do not control, webhooks, Operations Hub custom code, ad-audience syncs \u2014 how many are owned by a team outside marketing, and how many would have to be re-pointed by someone else before you could switch off HubSpot?",
+    "position": 6,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Several are owned outside marketing, including forms or CTAs embedded on sites another team controls, and nobody has a full list of who owns what.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "The main ones are known and at least one sits with another team, so cutover depends on a schedule marketing does not set.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A small number of integrations, all with a named owner inside or beside marketing, and any embedded forms are on pages we control.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "Nothing outside marketing depends on HubSpot. Forms are on our own pages and the integrations we have could be re-pointed by this team alone.",
+      "available": true
+     }
+    ],
+    "measures": "External forms and integrations posting into the platform",
+    "maxAttainable": 4,
+    "layer": "recalibrate",
+    "label": "Integration Containment",
+    "key": "integration_containment",
+    "evidencePrompt": "Ask for the installed-apps list, the connected ad accounts, and the count of forms embedded outside their own domain. The last one is the number they will not have. Then ask, per item, who would have to do the work \u2014 the answer that matters is the owner, not the count, which Integration Surface already collects.",
+    "ceilingReason": null,
+    "baseKey": "integration_containment"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": true,
+    "showWhenJson": null,
+    "respondentHint": "Useful to have to hand: whether your subscription records show when and how consent was given, and whether anything outside HubSpot also holds that state.",
+    "question": "Where does subscription and consent state live \u2014 HubSpot subscription types with a lawful basis, the account-level suppression layer, or somewhere outside the platform entirely \u2014 and how many distinct subscription types are in use?",
+    "position": 7,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Consent is subscription types plus list membership, with no record of when or how it was given, and nobody is sure how many types are live.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Subscription types are used properly and lawful basis is recorded, but only inside HubSpot, and there are more types than a publication-list model would absorb without collapsing some together.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Subscription state has provenance and a small enough type set to map one-to-one onto publication lists, or is mirrored outside HubSpot and could be re-established.",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "A system in scope already masters consent as cross-channel policy, verified against current sending behaviour, and Marketing Cloud would consume it rather than own it.",
+      "available": true
+     }
+    ],
+    "measures": "Preference-centre and suppression complexity",
+    "maxAttainable": 4,
+    "layer": "recalibrate",
+    "label": "Consent & Preference Portability",
+    "key": "consent_portability",
+    "evidencePrompt": "Ask for the count of subscription types and the count of publication lists the target would have. Where the first number is bigger than the second, ask which types would be merged \u2014 that merge is the compliance risk, and it is a decision someone has to sign.",
+    "ceilingReason": null,
+    "baseKey": "consent_portability"
+   },
+   {
+    "variants": [],
+    "variantKey": "default",
+    "substitutable": false,
+    "showWhenJson": null,
+    "respondentHint": null,
+    "question": "Who decides what moves, what is retired and what is rebuilt \u2014 and who validates it afterwards?",
+    "position": 8,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "No named owner for those decisions, and nobody free to validate the result",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "An owner exists in principle but has little time; validation would fall to one already-busy person",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A named owner per area, with some capacity set aside to review and test",
+      "available": true
+     },
+     {
+      "value": 4,
+      "unavailableReason": null,
+      "points": 4,
+      "label": "A named decision owner and named validators, with time formally allocated to the migration",
+      "available": true
+     }
+    ],
+    "measures": "Whether humans exist to make disposition decisions and to validate the result",
+    "maxAttainable": 4,
+    "layer": null,
+    "label": "Decision Ownership & Validation Capacity",
+    "key": "decision_readiness",
+    "evidencePrompt": null,
+    "ceilingReason": null,
+    "baseKey": "decision_readiness"
+   }
+  ],
+  "resolutionNote": null,
+  "resolutionChain": [
+   "base",
+   "hubspot_to_sfmc"
+  ],
+  "postureStatement": "Before you start, one thing about how we will read your answers. The two ends of this move are not equally known. Nothing reads HubSpot \u2014 there is no source connector, so every count you give us is your description of the estate rather than a measurement of it. The destination is the opposite: Marketing Cloud Engagement has a real capability manifest, a target adapter that scaffolds against it, and live tenant access. So we treat the estate figures as illustrative and the named gaps as not: they are structural properties of Journey Builder, Content Builder and Data Extensions, and they will be true of your estate whatever its size turns out to be.",
+  "posture": "interview_only",
+  "pairKey": "hubspot_to_sfmc",
+  "gates": [
+   {
+    "tierQualifier": "consent workstream off critical path",
+    "severity": "major",
+    "readoutBlock": "MCN Consent & Custom Preferences is a Spring '26+ capability and its parity with what you run today is unverified. With permission state this entangled, the preference-centre rebuild must not sit on the critical path: bridge it on the current platform and rebuild after parity is confirmed against a real tenant. Plan 2-4 weeks for a custom consent model on top of the foundation estimate.",
+    "predicate": {
+     "all": [
+      {
+       "value": [
+        "sfmc_next"
+       ],
+       "op": "in",
+       "field": "target"
+      },
+      {
+       "value": 2,
+       "op": "lte",
+       "field": "consent_portability"
+      }
+     ]
+    },
+    "key": "consent_parity_risk"
+   },
+   {
+    "tierQualifier": "foundation-gated",
+    "severity": "blocker",
+    "readoutBlock": "Marketing Cloud Next runs on Data Cloud. With no Data 360 footprint in place, the Foundation phase gates every other lane \u2014 journey, content and campaign work cannot complete before the data layer exists. Budget 8-16 weeks of foundation before migration build starts, plus 4 weeks if Identity Resolution is not yet configured. This does not change the readiness score: the estate may well be easy to move, and still not be movable yet.",
+    "predicate": {
+     "all": [
+      {
+       "value": [
+        "sfmc_next"
+       ],
+       "op": "in",
+       "field": "target"
+      },
+      {
+       "value": 1,
+       "op": "eq",
+       "field": "data_cloud_state"
+      }
+     ]
+    },
+    "key": "foundation_gated"
+   },
+   {
+    "tierQualifier": "platform-precursor required",
+    "severity": "blocker",
+    "readoutBlock": "The named target sits on Salesforce Core, and there is no Salesforce footprint to sit it on. A platform-precursor project \u2014 org, licences, user model, governance \u2014 has to land before any marketing migration can be scheduled, and it is a different budget line with a different sponsor. Raise it now rather than at contracting: it is the single most common reason an otherwise-ready migration slips a quarter.",
+    "predicate": {
+     "all": [
+      {
+       "value": [
+        "sfmc_next"
+       ],
+       "op": "in",
+       "field": "target"
+      },
+      {
+       "value": 1,
+       "op": "eq",
+       "field": "core_footprint"
+      }
+     ]
+    },
+    "key": "no_core_platform"
+   }
+  ],
+  "estateFiguresIllustrative": true,
+  "emphasisSlots": [
+   "orchestration_portability",
+   "crm_and_data_model_entanglement",
+   "consent_portability"
+  ],
+  "complexityDimensions": [
+   {
+    "respondentHint": "Your workflows list shows the active count directly, and each workflow's enrolment trigger is on its first step.",
+    "question": "Roughly how many workflows are switched on in HubSpot right now, and how many of those start from something happening rather than from a schedule?",
+    "position": 1,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Fewer than 20 active workflows, mostly list-based or scheduled enrolment.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Between 20 and 80 active workflows, a mix of list-based enrolment and event or form triggers.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "More than 80 active workflows, with enrolment driven mostly by events, webhooks or API calls.",
+      "available": true
+     }
+    ],
+    "measures": "How many automated programmes are live, and how they start",
+    "layer": "recalibrate",
+    "label": "Workflow Footprint",
+    "key": "journey_footprint",
+    "evidencePrompt": null,
+    "baseKey": "journey_footprint"
+   },
+   {
+    "respondentHint": "Settings then Properties gives you the count per object, and Data Model lists any custom objects.",
+    "question": "How much customer data sits behind your sends \u2014 roughly how many contact properties are in use, and do you have custom objects as well as contacts and companies?",
+    "position": 2,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Contacts and companies with mostly HubSpot-standard properties; a few dozen custom properties at most, and no custom objects.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "A few hundred custom properties in use, deals or tickets read by marketing, and perhaps one or two custom objects.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Custom properties in the high hundreds or more, several custom objects with their own associations, and calculated or rollup properties feeding segmentation.",
+      "available": true
+     }
+    ],
+    "measures": "How much audience data there is, and how many pieces it is in",
+    "layer": "recalibrate",
+    "label": "Data Model Size",
+    "key": "data_extension_complexity",
+    "evidencePrompt": null,
+    "baseKey": "data_extension_complexity"
+   },
+   {
+    "respondentHint": "Design Manager lists your custom modules, and custom code and webhook actions appear as steps inside workflows.",
+    "question": "How much hand-written code is there inside your HubSpot estate \u2014 HubL in templates and custom modules, and custom code or webhook actions inside workflows?",
+    "position": 3,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "Drag-and-drop and rich-text throughout. No custom modules of our own, and no custom code actions in workflows.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "A handful of custom modules, some HubL in templates, and up to about five custom code or webhook actions across all workflows.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "A custom module library that most content is built from, HubL doing real work in templates, and custom code or webhook actions in regular use.",
+      "available": true
+     }
+    ],
+    "measures": "How much hand-written code is embedded in the estate",
+    "layer": "recalibrate",
+    "label": "Custom Code Footprint",
+    "key": "scripting_depth",
+    "evidencePrompt": null,
+    "baseKey": "scripting_depth"
+   },
+   {
+    "respondentHint": "Business units are an Enterprise feature, so if you have never seen the setting, the answer is almost certainly one portal.",
+    "question": "How many HubSpot portals do you run, and are they split into business units inside one account?",
+    "position": 4,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "One portal, with no business units.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Two to five portals or business units, sharing some content and property definitions.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Six or more portals or business units, or brands that share content and audiences across several of them.",
+      "available": true
+     }
+    ],
+    "measures": "How many separate tenancies or brand containers there are",
+    "layer": "reword",
+    "label": "Account Structure",
+    "key": "business_unit_structure",
+    "evidencePrompt": null,
+    "baseKey": "business_unit_structure"
+   },
+   {
+    "respondentHint": "Your installed-apps list and connected ad accounts are both under Settings then Integrations.",
+    "question": "How many other systems are connected to HubSpot \u2014 marketplace apps, connected ad accounts, and anything built against the API?",
+    "position": 5,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "A CRM or ad-account connection or two from the marketplace, and nothing custom.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Several marketplace apps plus one or two things built against the HubSpot API, and some connected ad accounts.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Many connected apps and ad accounts, plus custom integrations built against the API, and forms embedded on sites beyond our own.",
+      "available": true
+     }
+    ],
+    "measures": "How many other systems are wired in",
+    "layer": "recalibrate",
+    "label": "Connected Systems",
+    "key": "integration_surface",
+    "evidencePrompt": null,
+    "baseKey": "integration_surface"
+   },
+   {
+    "respondentHint": "Your subscription types are listed under Marketing then Email then Subscription Types, with a count at the top.",
+    "question": "How many subscription types are in use, and how many places hold opt-out or suppression state \u2014 HubSpot alone, or other systems as well?",
+    "position": 6,
+    "options": [
+     {
+      "value": 1,
+      "unavailableReason": null,
+      "points": 1,
+      "label": "A handful of subscription types, and HubSpot's own opt-out and suppression state is the only record.",
+      "available": true
+     },
+     {
+      "value": 2,
+      "unavailableReason": null,
+      "points": 2,
+      "label": "Ten or more subscription types, or a preference page we have customised, or one other system that also holds opt-outs.",
+      "available": true
+     },
+     {
+      "value": 3,
+      "unavailableReason": null,
+      "points": 3,
+      "label": "Dozens of subscription types, per-language or per-brand preference pages, and opt-out state held in more than one other system as well.",
+      "available": true
+     }
+    ],
+    "measures": "How many permission categories exist, and how many places they live",
+    "layer": "recalibrate",
+    "label": "Permission Model Size",
+    "key": "consent_suppression_model",
+    "evidencePrompt": null,
+    "baseKey": "consent_suppression_model"
+   }
+  ],
+  "callouts": [
+   {
+    "workaround": "Convert each active list to a scheduled-refresh audience and set the refresh cadence from the automation's real sensitivity rather than from a default. Where membership is read inside a decision, pre-calculate it as a boolean on the entry Data Extension. Where automatic REMOVAL is load-bearing \u2014 suppression lists above all \u2014 implement the removal explicitly: a stale suppression list mails people who opted out.",
+    "verificationRequired": false,
+    "status": "partial",
+    "severity": "major",
+    "pattern": "smart_list_continuous_reevaluation",
+    "manualSteps": [
+     "Inventory active lists and the workflows that consume them",
+     "For each, establish how fast membership changes must propagate \u2014 in minutes, hours or days",
+     "Set a refresh cadence per audience from that answer, and write it down as a commitment",
+     "Add a boolean per list to the entry DE where a decision reads membership, populated by a Query Activity before entry",
+     "Identify every list whose REMOVAL behaviour matters and implement removal explicitly",
+     "Audit suppression-role lists first \u2014 those are the compliance-relevant ones"
+    ],
+    "issue": "Automation depends on active (smart) list membership that is continuously re-evaluated, including automatic removal",
+    "gloss": "HubSpot active lists are live \u2014 contacts join AND LEAVE as criteria stop matching. Marketing Cloud cannot evaluate filter membership at runtime, so an active list becomes a scheduled Automation Studio query and membership is stale between runs.",
+    "category": "audience"
+   },
+   {
+    "workaround": "This is a scoping decision, not a technical workaround. Three outcomes, with completely different cost and cutover risk: HubSpot stays as the CRM and Marketing Cloud integrates to it via Marketing Cloud Connect; the CRM moves to Sales Cloud; or the estate splits, marketing on Salesforce and sales still in HubSpot. Force it to the surface in Assess and get it decided before Blueprint.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "blocker",
+    "pattern": "crm_lives_inside_hubspot",
+    "manualSteps": [
+     "Inventory which CRM objects marketing automation actually reads and writes",
+     "Establish whether Sales and Service will remain on HubSpot post-migration",
+     "Decide: HubSpot stays as CRM / CRM moves to Sales Cloud / the estate splits",
+     "If HubSpot stays, design the integration and name its owner and its budget",
+     "If the CRM moves, add a CRM migration workstream \u2014 it is not in the marketing scope"
+    ],
+    "issue": "Marketing automation reads and writes CRM records that live in HubSpot's own CRM, not in an external system of record",
+    "gloss": "In an Eloqua or SFMC estate the CRM is somewhere else and the marketing platform syncs to it. In HubSpot the CRM IS the platform, so a marketing migration has to answer a question that never arises otherwise: where does the CRM go?",
+    "category": "data_model"
+   },
+   {
+    "workaround": "Classify each backward edge, then convert it. Poll-until-true becomes Wait By Attribute on a pre-calculated datetime. Retry-N-times becomes an unrolled fixed-count sequence, and the truncation gets documented. Hold-until-eligible is not a loop at all \u2014 it routes to the frequency- capping infrastructure. Where nothing fits, split into multiple journeys chained by Fire Event.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "blocker",
+    "pattern": "workflow_loop_go_to_action",
+    "manualSteps": [
+     "Trace every go-to-action edge and mark the ones that point backwards",
+     "Classify each backward edge: poll / retry / hold",
+     "For poll: pre-calculate the exit datetime or boolean into the entry DE",
+     "For retry: unroll to a fixed maximum count and document the truncation",
+     "For hold: route to the frequency-capping suppression DE instead",
+     "Where nothing else fits, split into multiple journeys connected by Fire Event"
+    ],
+    "issue": "Source workflow uses a go-to-action step that jumps backwards, forming a loop",
+    "gloss": "Journey Builder is strictly forward-only \u2014 contacts never move backwards. Typical HubSpot loops are poll-until-qualified, retry-N-times and hold-until-eligible.",
+    "category": "flow_control"
+   },
+   {
+    "workaround": "Enable re-entry on the target journey, then build a scheduled Automation Studio query that injects re-qualifying contacts, plus a last-entered-date attribute the injection guards against so nobody enters twice inside the intended window. Validate the cadence against the source's REAL re-enrolment frequency, not against its configuration.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "workflow_reenrollment",
+    "manualSteps": [
+     "Record each workflow's re-enrolment triggers and its observed re-enrolment frequency",
+     "Enable re-entry on the target journey",
+     "Build a scheduled Automation Studio query that injects re-qualifiers",
+     "Add a last-entered-date attribute and guard the injection against it",
+     "Validate re-entry cadence against the source's real behaviour"
+    ],
+    "issue": "Source workflow has re-enrolment enabled \u2014 records re-enter on repeat trigger matches",
+    "gloss": "Journey Builder has no re-enrolment concept. Entry is per-injection, so the source of repeated entry is rebuilt outside the journey as a scheduled query.",
+    "category": "flow_control"
+   },
+   {
+    "workaround": "Split the goal in two. The exit half becomes journey Exit Criteria, and its evaluation frequency has to be confirmed rather than assumed \u2014 HubSpot's is near-continuous. The metric half is a reporting requirement handed to whoever owns reporting; it does not travel with the journey. Flag any workflow whose goal is its only success measure, because that report otherwise disappears silently.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "workflow_goal_criteria",
+    "manualSteps": [
+     "Extract the goal filter for every workflow that has one",
+     "Implement the exit half as journey Exit Criteria",
+     "Confirm the target's evaluation frequency against HubSpot's near-continuous one",
+     "Hand the conversion-metric definition to the reporting workstream explicitly",
+     "Flag any workflow whose goal is its ONLY success measure"
+    ],
+    "issue": "Source workflow declares goal criteria that both auto-unenrol records and define the conversion metric",
+    "gloss": "A HubSpot goal does two jobs \u2014 it exits the record on conversion and it supplies the workflow's headline conversion rate. Journey Builder provides the first as Exit Criteria and the second not at all.",
+    "category": "flow_control"
+   },
+   {
+    "workaround": "Settle the scope question first \u2014 read the cms_scope_expectation answer before pricing any of this. If HubSpot CMS is being kept, record the boundary, confirm nothing in the EMAIL estate queries HubDB, and stop here. If the content is expected to move, or an email does query a table, split it into a data problem and a rendering problem. Each HubDB table becomes a Data Extension. Each render-time query becomes either an AMPscript Lookup, for a static lookup, or a value pre-computed into the send audience where it is dynamic per recipient. Listing-style content \u2014 a variable-length list rendered from a table \u2014 is the case that does not convert; rebuild it as a dynamic block or accept reduced fidelity.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "blocker",
+    "pattern": "hubdb_dependency",
+    "manualSteps": [
+     "Read the cms_scope_expectation answer first: is HubSpot CMS being kept, moved, or moved as a separate programme?",
+     "Confirm separately whether any MARKETING EMAIL renders from a HubDB query \u2014 that half is in scope whatever happens to the website",
+     "If the content stays on HubSpot CMS, write the boundary into the scope document and stop",
+     "Inventory HubDB tables and every HubL query against them",
+     "Classify each query: static lookup / per-recipient dynamic / listing",
+     "Model each table as a Data Extension",
+     "Replace static lookups with AMPscript Lookup or a merge field",
+     "Pre-compute per-recipient dynamic values into the entry audience",
+     "Rebuild listing-style content as a dynamic block, or accept reduced fidelity"
+    ],
+    "issue": "CONDITIONAL ON SCOPE \u2014 where HubDB-backed content is expected to move, that content depends on tables queried at render time",
+    "gloss": "HubDB is a relational store HubL queries WHILE RENDERING, and most of what it backs is HubSpot CMS \u2014 landing pages, site pages, blog listings. Whether any of that is in this migration is the cms_scope_expectation probe, not an assumption this callout gets to make. Where the answer is that it stays on HubSpot CMS, this is a boundary to write down and nothing more. Where the answer is that it moves, or where an EMAIL renders from a HubDB query, it is a blocker: nothing in Marketing Cloud renders from an arbitrary queried table at send time, so the data moves to a Data Extension and the render-time query becomes an AMPscript Lookup or a pre-computed value.",
+    "category": "data_model"
+   },
+   {
+    "workaround": "Classify every HubL construct before estimating, and estimate by construct count rather than by email count. Plain token becomes a merge field, mechanically. Conditional or loop over the contact's own attributes becomes a dynamic content block. A HubDB or CRM-object query needs the data pre-joined first. Macro, include and filter chains are rebuilt as a target-native block. Render-diff the top-volume emails against production samples rather than trusting the rewrite.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "hubl_templating",
+    "manualSteps": [
+     "Pull template and module source via the CMS API and inventory HubL constructs",
+     "Classify each construct: token / attribute conditional / data query / macro chain",
+     "Rebuild in Content Builder, using AMPscript where the construct needs logic",
+     "Render-diff the output against production samples for the top-volume emails"
+    ],
+    "issue": "Email, template, or module contains HubL beyond simple token substitution",
+    "gloss": "HubL is a full templating language. Plain tokens port to merge fields trivially; loops, conditionals, macros, filters, includes and HubDB or CRM queries do not. Against classic Marketing Cloud this is a rewrite into AMPscript, not a redesign.",
+    "category": "personalization"
+   },
+   {
+    "workaround": "Do not port module by module. Inventory modules by USAGE COUNT, build a small library of content blocks and templates covering the high-usage ones, and inline the long tail with a record of what was dropped. Budget the library build as its own task BEFORE content migration starts, and warn the client that the editor's workflow changes \u2014 that is a change-management item, not a build item.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "custom_modules",
+    "manualSteps": [
+     "Export module source and field definitions via the CMS API",
+     "Rank modules by usage count across emails and email templates; rank site usage separately and only if cms_scope_expectation says the web estate is moving",
+     "Design a Content Builder block and template library covering the top modules",
+     "Inline or retire the long tail, and record what was dropped",
+     "Brief the content team on the editing-experience change before cutover"
+    ],
+    "issue": "Content is assembled from custom modules \u2014 parameterised HubL components with typed fields",
+    "gloss": "A mature HubSpot content system is a module library, not a set of emails. Content Builder has content blocks and template slots, which recover part of the reuse but not the typed-field component model, so the abstraction flattens unless a target-side library is built first.",
+    "category": "personalization"
+   },
+   {
+    "workaround": "Run the site form scan FIRST \u2014 it is the one HubSpot capability the accelerator already has, and it finds embeds on customer-owned domains that no tenant export will ever show you. Reconcile what it finds against the in-tenant form inventory; the delta is the real risk. Then disposition each embed: port to a CloudPage with Web Collect, bridge it (keep the HubSpot form posting and relay submissions), rebuild, or retire. Bridging is often the only way to avoid a big-bang website change.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "forms_and_ctas_rebuild",
+    "manualSteps": [
+     "Run a site form scan across all customer-owned domains before scoping forms",
+     "Reconcile discovered embeds against the in-tenant form inventory",
+     "Identify who owns each hosting web property and whether they have capacity",
+     "Disposition each form and CTA: port / bridge / rebuild / retire",
+     "Inventory legacy versus new-editor CTAs separately and state what happens to each one's analytics history",
+     "Plan the embed swap as a website release, on the web team's schedule, not marketing's"
+    ],
+    "issue": "HubSpot forms and CTAs are embedded across customer-owned web properties",
+    "gloss": "Forms and CTAs are embed scripts served from HubSpot and dropped into pages marketing may not own. Target-side they become CloudPages plus Web Collect, and every swap is a website release on somebody else's schedule.",
+    "category": "content"
+   },
+   {
+    "workaround": "Transcribe rule-based scoring and rebuild it target-side, accepting that decay and time-frame criteria may need explicit date attributes. Migrate predictive values as a dated, frozen snapshot for continuity, declare an explicit end-of-life for that snapshot, and plan the replacement model as a post-migration workstream with its own budget. Warn Sales explicitly: score-driven routing degrading is a sales-visible failure.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "lead_scoring_model_no_export",
+    "manualSteps": [
+     "Transcribe every scoring rule set before tenant access ends",
+     "Identify which downstream automation and routing depends on score thresholds",
+     "Decide where scoring will live \u2014 Automation Studio query, or upstream in the CRM",
+     "Rebuild rule-based scoring and reconcile against a sample cohort",
+     "Export current predictive values as a dated snapshot and agree its expiry",
+     "Name the owner of the replacement model, and brief Sales"
+    ],
+    "issue": "Estate uses HubSpot lead scoring; predictive scores in particular have no exportable model",
+    "gloss": "Rule-based scoring is readable and can be transcribed. Predictive scoring is not exportable at all \u2014 only current values come out, and classic Marketing Cloud has no native scoring engine to receive either, so scoring lands in a query, an automation, or upstream in the CRM.",
+    "category": "scoring"
+   },
+   {
+    "workaround": "Decide explicitly whether Sequences are in or out, in Assess rather than Execute. If in, they route to the Sales Cloud workstream rather than being absorbed here. If out, get it written down, and confirm what happens to them at HubSpot decommissioning \u2014 that is a hard dependency on the CRM decision above.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "major",
+    "pattern": "sequences_out_of_scope",
+    "manualSteps": [
+     "Ask Sales \u2014 not Marketing \u2014 whether Sequences are in use and how heavily",
+     "Establish the licence and budget owner",
+     "Record an explicit in-scope / out-of-scope decision in the engagement scope document",
+     "If out of scope, confirm what happens at HubSpot decommissioning"
+    ],
+    "issue": "Estate uses HubSpot Sequences \u2014 a Sales Hub capability outside the marketing migration's scope and budget",
+    "gloss": "Sequences are rep-sent 1:1 cadences from a connected mailbox, licensed under Sales Hub and owned by Sales. The Salesforce counterpart is Sales Engagement \u2014 a different product, a different budget line, usually a different buyer.",
+    "category": "scope"
+   },
+   {
+    "workaround": "Treat reporting as a parallel workstream from day one rather than a migration deliverable. Inventory the reports actually VIEWED \u2014 usually far fewer than the number that exist \u2014 rebuild those, and get written acceptance that pre-cutover attribution history does not come along. Retain a read-only HubSpot seat past cutover if historic reporting must stay reachable.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "blocker",
+    "pattern": "reporting_no_port_path",
+    "manualSteps": [
+     "Inventory dashboards and saved reports; identify which are genuinely viewed, and by whom",
+     "Screenshot and document definitions manually \u2014 there is no reliable export",
+     "Establish who signs off marketing reporting; in a HubSpot estate this is frequently outside marketing",
+     "Scope the target reporting build as its own workstream with its own budget",
+     "Get written acceptance that pre-cutover attribution history does not migrate",
+     "Retain a read-only HubSpot seat past cutover if historic reporting must remain accessible"
+    ],
+    "issue": "Saved reports, dashboards, and attribution reports have no export path and no target equivalent",
+    "gloss": "HubSpot's report builder spans marketing AND CRM objects in one query surface because they are one database. There is no API for report definitions, and classic Marketing Cloud's native reporting is materially weaker \u2014 so this is the gap most likely to be found after go-live, by an executive whose dashboard is empty.",
+    "category": "reporting"
+   },
+   {
+    "workaround": "Scope a workshop-led assessment with an explicitly reduced fidelity claim, or fund the adapter build. Either way, set the expectation in the SOW rather than at the first status meeting. The site form scan is the one automated HubSpot capability that does exist and it should be run early, because it finds the things no tenant export shows.",
+    "verificationRequired": false,
+    "status": "unsupported",
+    "severity": "blocker",
+    "pattern": "no_hubspot_source_adapter",
+    "manualSteps": [
+     "Set expectations in the SOW: HubSpot assessment is workshop-led, not adapter-led",
+     "Provision a scoped private-app token early \u2014 scope approval is a lead-time item",
+     "Run the site form scan for off-tenant forms",
+     "Use UI exports plus ad-hoc API scripts for the object inventory",
+     "Re-verify every verification_required entry in the HubSpot manifest before it drives a client-facing number"
+    ],
+    "issue": "The accelerator has no HubSpot source adapter \u2014 automated extraction and IR generation are not available",
+    "gloss": "The MVP source matrix is Eloqua and SFMC. A HubSpot-source engagement gets no automated inventory, no canonical IR generation and no adapter-driven disposition. This is a delivery-capability gap, not a platform gap, and it is why the source end of this readout is interview-only.",
+    "category": "tooling"
+   }
+  ]
+ },
+ "questionnaire": {
+  "readinessMaxScore": 32,
+  "readiness": [
+   {
+    "sortOrder": 10.0,
+    "scored": true,
+    "questionText": "How much is actually running today, and across how many business units or instances?",
+    "options": [
+     {
+      "value": 1,
+      "label": "500+ active campaigns or programs, or six or more business units / separate instances"
+     },
+     {
+      "value": 2,
+      "label": "150-500 active campaigns or programs, or three to five business units"
+     },
+     {
+      "value": 3,
+      "label": "40-150 active campaigns or programs across one or two business units"
+     },
+     {
+      "value": 4,
+      "label": "Fewer than 40 active campaigns or programs in a single business unit"
+     }
+    ],
+    "measures": "Campaign/program volume and business-unit sprawl",
+    "maxAnswerValue": 4,
+    "instrument": "Readiness",
+    "dimensionName": "Estate Scale & Structure",
+    "dimensionKey": "estate_scale"
+   },
+   {
+    "sortOrder": 20.0,
+    "scored": true,
+    "questionText": "Do you have working API credentials for the platform you are leaving and the one you are moving to?",
+    "options": [
+     {
+      "value": 1,
+      "label": "No API access to the source platform, and no clear owner who could get it"
+     },
+     {
+      "value": 2,
+      "label": "Someone could probably get source access eventually; target access has not been discussed"
+     },
+     {
+      "value": 3,
+      "label": "Source access exists or is one short approval away; target access is being provisioned"
+     },
+     {
+      "value": 4,
+      "label": "Working API credentials exist for both, with an owner who can hand them over this week"
+     }
+    ],
+    "measures": "Whether credentials/API access exist to actually scan the source and write to the target",
+    "maxAnswerValue": 4,
+    "instrument": "Readiness",
+    "dimensionName": "Source & Target Access Readiness",
+    "dimensionKey": "source_access"
+   },
+   {
+    "sortOrder": 30.0,
+    "scored": true,
+    "questionText": "How complex are the journeys, flows and automations that are live today?",
+    "options": [
+     {
+      "value": 1,
+      "label": "Heavily branched journeys with custom scripting and real-time triggers \u2014 most would be rebuilt from scratch"
+     },
+     {
+      "value": 2,
+      "label": "A mix, including several long-running journeys whose logic nobody has documented"
+     },
+     {
+      "value": 3,
+      "label": "Mostly scheduled or simply-triggered flows, with a few complex exceptions"
+     },
+     {
+      "value": 4,
+      "label": "A small number of straightforward, mostly scheduled flows that map cleanly onto the target"
+     }
+    ],
+    "measures": "Whether flows/journeys survive the move or have to be rebuilt",
+    "maxAnswerValue": 4,
+    "instrument": "Readiness",
+    "dimensionName": "Orchestration Portability",
+    "dimensionKey": "orchestration_portability"
+   },
+   {
+    "sortOrder": 40.0,
+    "scored": true,
+    "questionText": "How are your emails, landing pages and templates built?",
+    "options": [
+     {
+      "value": 1,
+      "label": "Bespoke code throughout \u2014 scripting embedded in most assets, no template governance"
+     },
+     {
+      "value": 2,
+      "label": "A governed template set exists, but many one-off assets have drifted away from it"
+     },
+     {
+      "value": 3,
+      "label": "Most sends come from a maintained template library; scripting is limited to a handful of assets"
+     },
+     {
+      "value": 4,
+      "label": "A small governed template set with no meaningful custom scripting"
+     }
+    ],
+    "measures": "Template governance versus bespoke code and scripting depth",
+    "maxAnswerValue": 4,
+    "instrument": "Readiness",
+    "dimensionName": "Content & Code Portability",
+    "dimensionKey": "content_portability"
+   },
+   {
+    "sortOrder": 50.0,
+    "scored": true,
+    "questionText": "How well is your data model documented, and are audiences reused or rebuilt each time?",
+    "options": [
+     {
+      "value": 1,
+      "label": "No current schema documentation; audiences are built per campaign and rarely reused"
+     },
+     {
+      "value": 2,
+      "label": "Partial documentation; some shared audiences, but plenty of per-campaign duplicates"
+     },
+     {
+      "value": 3,
+      "label": "The core schema is documented and most audiences come from a shared, reusable set"
+     },
+     {
+      "value": 4,
+      "label": "Documented schema with a named owner, and audiences defined once and reused across campaigns"
+     }
+    ],
+    "measures": "Schema documentation and audience reuse versus per-campaign silos",
+    "maxAnswerValue": 4,
+    "instrument": "Readiness",
+    "dimensionName": "Data & Audience Model Readiness",
+    "dimensionKey": "data_model_readiness"
+   },
+   {
+    "sortOrder": 60.0,
+    "scored": true,
+    "questionText": "What else writes into the platform \u2014 external forms, integrations, third-party tools?",
+    "options": [
+     {
+      "value": 1,
+      "label": "Many external systems and third-party forms post in, and nobody has a full list"
+     },
+     {
+      "value": 2,
+      "label": "Several known integrations plus some third-party forms; the list is roughly known"
+     },
+     {
+      "value": 3,
+      "label": "A handful of documented integrations; forms are mostly native to the platform"
+     },
+     {
+      "value": 4,
+      "label": "Effectively self-contained \u2014 native forms and one or two documented integrations"
+     }
+    ],
+    "measures": "External forms and integrations posting into the platform",
+    "maxAnswerValue": 4,
+    "instrument": "Readiness",
+    "dimensionName": "Integration Containment",
+    "dimensionKey": "integration_containment"
+   },
+   {
+    "sortOrder": 70.0,
+    "scored": true,
+    "questionText": "How are consent, preferences and suppressions handled today?",
+    "options": [
+     {
+      "value": 1,
+      "label": "A custom-built preference centre plus bespoke suppression logic nobody fully owns"
+     },
+     {
+      "value": 2,
+      "label": "A customised preference centre with several suppression rules, only partly documented"
+     },
+     {
+      "value": 3,
+      "label": "Light customisation on top of standard preference handling; suppression rules are documented"
+     },
+     {
+      "value": 4,
+      "label": "Standard out-of-the-box preference and suppression handling only"
+     }
+    ],
+    "measures": "Preference-centre and suppression complexity",
+    "maxAnswerValue": 4,
+    "instrument": "Readiness",
+    "dimensionName": "Consent & Preference Portability",
+    "dimensionKey": "consent_portability"
+   },
+   {
+    "sortOrder": 80.0,
+    "scored": true,
+    "questionText": "Who decides what moves, what is retired and what is rebuilt \u2014 and who validates it afterwards?",
+    "options": [
+     {
+      "value": 1,
+      "label": "No named owner for those decisions, and nobody free to validate the result"
+     },
+     {
+      "value": 2,
+      "label": "An owner exists in principle but has little time; validation would fall to one already-busy person"
+     },
+     {
+      "value": 3,
+      "label": "A named owner per area, with some capacity set aside to review and test"
+     },
+     {
+      "value": 4,
+      "label": "A named decision owner and named validators, with time formally allocated to the migration"
+     }
+    ],
+    "measures": "Whether humans exist to make disposition decisions and to validate the result",
+    "maxAnswerValue": 4,
+    "instrument": "Readiness",
+    "dimensionName": "Decision Ownership & Validation Capacity",
+    "dimensionKey": "decision_readiness"
+   }
+  ],
+  "complexityMaxScore": 18,
+  "complexity": [
+   {
+    "sortOrder": 10.0,
+    "scored": true,
+    "questionText": "Roughly how many journeys or automated programs are live, and how are they triggered?",
+    "options": [
+     {
+      "value": 1,
+      "label": "Fewer than 20 active journeys, mostly scheduled"
+     },
+     {
+      "value": 2,
+      "label": "20-80 journeys, a mix of triggered and scheduled"
+     },
+     {
+      "value": 3,
+      "label": "80+ journeys, heavily API-triggered with complex branching"
+     }
+    ],
+    "measures": "Volume and trigger mix of live journeys",
+    "maxAnswerValue": 3,
+    "instrument": "Complexity",
+    "dimensionName": "Journey Footprint",
+    "dimensionKey": "journey_footprint"
+   },
+   {
+    "sortOrder": 20.0,
+    "scored": true,
+    "questionText": "How large and how relational is the data model behind your sends?",
+    "options": [
+     {
+      "value": 1,
+      "label": "Mostly flat send lists, fewer than 30 tables in total"
+     },
+     {
+      "value": 2,
+      "label": "Some relational structure, 30-100 tables, moderate SQL"
+     },
+     {
+      "value": 3,
+      "label": "A complex relational model, 100+ tables, heavy SQL automation"
+     }
+    ],
+    "measures": "Volume and relational depth of the data model",
+    "maxAnswerValue": 3,
+    "instrument": "Complexity",
+    "dimensionName": "Data Model Complexity",
+    "dimensionKey": "data_extension_complexity"
+   },
+   {
+    "sortOrder": 30.0,
+    "scored": true,
+    "questionText": "How much custom scripting sits inside your emails, pages and automations?",
+    "options": [
+     {
+      "value": 1,
+      "label": "Minimal scripting, no server-side code, no custom hosted pages"
+     },
+     {
+      "value": 2,
+      "label": "Moderate scripting, with one to five server-side scripts or hosted pages"
+     },
+     {
+      "value": 3,
+      "label": "Extensive scripting, server-side code throughout, hosted pages in active use"
+     }
+    ],
+    "measures": "How much custom code is embedded in assets and pages",
+    "maxAnswerValue": 3,
+    "instrument": "Complexity",
+    "dimensionName": "Scripting Depth",
+    "dimensionKey": "scripting_depth"
+   },
+   {
+    "sortOrder": 40.0,
+    "scored": true,
+    "questionText": "How is the account split across business units or child accounts?",
+    "options": [
+     {
+      "value": 1,
+      "label": "A single business unit, or a simple parent-child pair"
+     },
+     {
+      "value": 2,
+      "label": "Two to five business units with some shared assets"
+     },
+     {
+      "value": 3,
+      "label": "Six or more business units, or complex cross-unit content sharing"
+     }
+    ],
+    "measures": "How many business units and how much they share",
+    "maxAnswerValue": 3,
+    "instrument": "Complexity",
+    "dimensionName": "Business Unit Structure",
+    "dimensionKey": "business_unit_structure"
+   },
+   {
+    "sortOrder": 50.0,
+    "scored": true,
+    "questionText": "How much of the platform is wired into other systems?",
+    "options": [
+     {
+      "value": 1,
+      "label": "Basic native CRM sync only"
+     },
+     {
+      "value": 2,
+      "label": "Native sync plus a few API integrations"
+     },
+     {
+      "value": 3,
+      "label": "Custom REST/SOAP integrations across multiple external systems"
+     }
+    ],
+    "measures": "Breadth of external systems wired into the platform",
+    "maxAnswerValue": 3,
+    "instrument": "Complexity",
+    "dimensionName": "Integration Surface",
+    "dimensionKey": "integration_surface"
+   },
+   {
+    "sortOrder": 60.0,
+    "scored": true,
+    "questionText": "How custom is the consent and suppression handling?",
+    "options": [
+     {
+      "value": 1,
+      "label": "Standard publication or subscription lists only"
+     },
+     {
+      "value": 2,
+      "label": "Some custom suppression logic on top of the standard model"
+     },
+     {
+      "value": 3,
+      "label": "A custom preference centre with complex suppression rules"
+     }
+    ],
+    "measures": "Depth of custom preference and suppression logic",
+    "maxAnswerValue": 3,
+    "instrument": "Complexity",
+    "dimensionName": "Consent / Suppression Model",
+    "dimensionKey": "consent_suppression_model"
+   }
+  ]
+ },
+ "platforms": [
+  {
+   "label": "HubSpot",
+   "key": "hubspot",
+   "family": "inbound_suite"
+  },
+  {
+   "label": "Marketing Cloud Account Engagement",
+   "key": "mcae",
+   "family": "enterprise_ma"
+  },
+  {
+   "label": "Marketing Cloud Next",
+   "key": "sfmc_next",
+   "family": "core_native"
+  },
+  {
+   "label": "Oracle Eloqua",
+   "key": "eloqua",
+   "family": "enterprise_ma"
+  },
+  {
+   "label": "Salesforce Marketing Cloud Engagement",
+   "key": "sfmc",
+   "family": "enterprise_ma"
+  }
+ ]
+}

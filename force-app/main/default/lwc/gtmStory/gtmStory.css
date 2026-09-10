@@ -1,0 +1,1206 @@
+@import 'c/gtmBrandTokens';
+
+/* Migration Accelerator — The Story
+   Port of gtm-offerings/migration-accelerator/story.html
+   :root -> .story-root (LWC shadow DOM has no :root) */
+
+:host {
+  display: block;
+  /* The page responds to the width of its container, not the browser window.
+     On the site those are the same thing; inside the GTM Content Manager the
+     container is the preview frame, which is what makes a phone-width preview
+     actually render the phone layout instead of a narrow desktop one.
+     Height has no container equivalent without fixing the block size, so the
+     two viewport-height rules read this variable and the preview overrides it. */
+  container-type: inline-size;
+  container-name: story;
+  --story-vh: 100vh;
+}
+
+.story-root {
+  /* Local names kept so the ~900 rules below don't all have to change; each
+     now resolves to a --ps-* from c/gtmBrandTokens. Dark/light no longer
+     redeclare these aliases — they override the --ps-* values instead, and
+     these resolve against whatever is set on this element. One palette now,
+     not four copies of one. */
+  --bg: var(--ps-surface-100);
+  --paper: var(--ps-white);
+  --ink: var(--ps-ink);
+  --ink-soft: var(--ps-ink-strong);
+  --ink-faint: var(--ps-ink-muted);
+  --line: var(--ps-border);
+  --panel: var(--ps-surface-alt);
+  --panel-line: var(--ps-border-subtle);
+  --accent: var(--ps-red);
+  --accent-ink: var(--ps-red-hover);
+  --accent-soft: var(--ps-red-soft);
+  --good: var(--ps-good);
+  --good-ring: var(--ps-good-ring);
+  --warn: var(--ps-warn);
+  --shadow: var(--ps-shadow);
+  --shadow-soft: var(--ps-shadow-soft);
+
+  display: block;
+  min-height: var(--story-vh);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--ps-font-body);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+  .story-root:not(.light) {
+    --ps-red: #ff3355;
+    --ps-red-hover: #ff6b83;
+    --ps-red-soft: rgba(255, 51, 85, 0.14);
+    --ps-ink: #ecebf3;
+    --ps-ink-strong: #aba9bc;
+    --ps-ink-muted: #8f8f8f;
+    --ps-white: #1c1a28;
+    --ps-surface-100: #14131c;
+    --ps-surface-alt: #201e2e;
+    --ps-border: #2c2a3b;
+    --ps-border-subtle: #2c2a3b;
+    --ps-good: #5fbf8e;
+    --ps-warn: #e0ac5c;
+    --ps-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
+    --ps-shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
+
+    /* The page is near-black here, so the band that breaks the rhythm has to
+       be light (§3.1). Mirrored from c/gtmBrandTokens's own
+       @media(dark) :host(:not(.light)) block -- :host there means gtmStory's
+       OWN custom-element host, not this internal .story-root div, so it never
+       actually matches; this redeclaration is what makes it real, exactly
+       like every other --ps-* value already re-declared in this block. */
+    --ps-invert-bg: #ffffff;
+    --ps-invert-fg: #000000;
+    --ps-invert-fg-muted: #555555;
+    --ps-invert-border: #dddddd;
+  }
+}
+
+.story-root.dark {
+  --ps-red: #ff3355;
+  --ps-red-hover: #ff6b83;
+  --ps-red-soft: rgba(255, 51, 85, 0.14);
+  --ps-ink: #ecebf3;
+  --ps-ink-strong: #aba9bc;
+  --ps-ink-muted: #8f8f8f;
+  --ps-white: #1c1a28;
+  --ps-surface-100: #14131c;
+  --ps-surface-alt: #201e2e;
+  --ps-border: #2c2a3b;
+  --ps-border-subtle: #2c2a3b;
+  --ps-good: #5fbf8e;
+  --ps-warn: #e0ac5c;
+  --ps-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
+  --ps-shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
+
+  --ps-invert-bg: #ffffff;
+  --ps-invert-fg: #000000;
+  --ps-invert-fg-muted: #555555;
+  --ps-invert-border: #dddddd;
+}
+
+.story-root.light {
+  --ps-red: #e90130;
+  --ps-red-hover: #be0128;
+  --ps-red-soft: rgba(233, 1, 48, 0.09);
+  --ps-ink: #000000;
+  --ps-ink-strong: #444444;
+  --ps-ink-muted: #666666;
+  --ps-white: #ffffff;
+  --ps-surface-100: #f5f5f5;
+  --ps-surface-alt: #f6f6f6;
+  --ps-border: #dddddd;
+  --ps-border-subtle: #eeeeee;
+
+  /* Light theme keeps the default black band (§3.1). */
+  --ps-invert-bg: #000000;
+  --ps-invert-fg: #ffffff;
+  --ps-invert-fg-muted: #a8a8a8;
+  --ps-invert-border: #333333;
+}
+
+.story-root * {
+  box-sizing: border-box;
+}
+
+.mono {
+  font-family: var(--ps-font-mono);
+}
+
+/* ---------- top bar ---------- */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 52px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.bar-in {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+.bar-wm {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+.bar-wm .tick {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--accent);
+  flex: none;
+}
+.bar-tag {
+  font-family: var(--ps-font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+@container story (max-width: 560px) {
+  .bar-tag {
+    display: none;
+  }
+}
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.tbtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+.tbtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.progress {
+  position: sticky;
+  top: 52px;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  width: 0;
+  z-index: 39;
+  transition: width 0.1s linear;
+}
+
+/* ---------- admin edit mode ---------- */
+.admin-edit-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.625rem clamp(1.1rem, 4cqi, 2rem);
+  background: rgba(1, 118, 211, 0.06);
+  border-bottom: 1px solid rgba(1, 118, 211, 0.18);
+}
+.aes-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--ps-font-body);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5625rem;
+  border-radius: 4px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.aes-chip--bld {
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #0ea5e9;
+}
+.aes-chip--bld:hover { background: rgba(14, 165, 233, 0.22); }
+.aes-chip--cms {
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  color: #7c3aed;
+}
+.aes-chip--cms:hover { background: rgba(124, 58, 237, 0.2); }
+.aes-chip--bdy {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+}
+.aes-chip--bdy:hover { background: rgba(16, 185, 129, 0.2); }
+.faq-edit-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  color: #7c3aed;
+  font-size: 0.75rem;
+  text-decoration: none;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.faq-edit-link:hover { background: rgba(124, 58, 237, 0.22); }
+
+/* ---------- hero ---------- */
+.sec--hero {
+  /* No bottom padding -- the spacer after hero (§2.4) supplies the rhythm
+     below it instead. */
+  padding-top: 64px;
+}
+@container story (min-width: 1024px) {
+  .sec--hero { padding-top: 96px; }
+}
+.eyebrow {
+  font-family: var(--ps-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1.3rem;
+}
+.eyebrow .bead {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  flex: none;
+}
+h1.hero-h {
+  font-family: var(--ps-font-display);
+  font-weight: var(--ps-fw-light);
+  font-size: clamp(2.1rem, 7cqi, 3.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.2rem;
+}
+h1.hero-h .accent {
+  color: var(--accent);
+}
+.hero-sub {
+  font-size: clamp(1rem, 2.6cqi, 1.16rem);
+  color: var(--ink-soft);
+  max-width: 34rem;
+  margin: 0;
+}
+.scroll-cue {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2.6rem;
+  font-family: var(--ps-font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.scroll-cue .ln {
+  width: 26px;
+  height: 1px;
+  background: var(--ink-faint);
+  position: relative;
+  overflow: hidden;
+}
+.scroll-cue .ln::after {
+  content: '';
+  position: absolute;
+  left: -60%;
+  top: 0;
+  width: 60%;
+  height: 100%;
+  background: var(--accent);
+  animation: drift 1.8s ease-in-out infinite;
+}
+@keyframes drift {
+  0% {
+    left: -60%;
+  }
+  60%,
+  100% {
+    left: 100%;
+  }
+}
+
+/* The hero's own reveal is slower than the rest of the page (§4.1), and its
+   nav strip lags 0.2s behind the text -- both PS's exact timing, not this
+   page's usual 0.7s / 0.15s pair. */
+.sec--hero .rv {
+  transition-duration: 1.5s;
+}
+.sec--hero .hero-nav {
+  transition-delay: 0.2s;
+}
+
+/* Real in-page navigation, not a decorative list -- a click scrolls to the
+   section (handleNavClick, wired to [data-section]). Runs full-width on its
+   own row BELOW the hero text/CTA, at every width including mobile: a
+   horizontal strip of buttons reads naturally at any size, unlike the
+   earlier vertical list that only existed >=1024 filling a column gap. */
+.hero-nav {
+  list-style: none;
+  margin: var(--ps-s-40) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.hero-nav li {
+  flex: 1 1 auto;
+  border-right: 1px solid var(--line);
+}
+.hero-nav li:last-child {
+  border-right: none;
+}
+.hero-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font: inherit;
+  font-family: var(--ps-font-mono);
+  font-size: 12px;
+  letter-spacing: var(--ps-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 16px var(--ps-s-16);
+  text-align: left;
+  transition: background var(--ps-duration) var(--ps-ease), color var(--ps-duration) var(--ps-ease);
+}
+.hero-nav-btn:hover,
+.hero-nav-btn:focus-visible {
+  background: var(--ps-surface-alt);
+  color: var(--ink);
+}
+.hero-nav-btn .hr-n {
+  color: var(--ps-red-on-grey);
+}
+
+/* Width__c keeps both its existing values and stays meaningful (§2.5): rather
+   than a third value, 'standard' / 'wide' now modulate how far the rail body
+   spans, overriding the primitives' default .pc-railbody span (5/span7).
+   'mechanism' and 'bd' are the only two sections seeded 'wide' today. */
+@container story (min-width: 1024px) {
+  .sec--standard .pc-railbody { grid-column: 5 / span 7; }
+  .sec--wide     .pc-railbody { grid-column: 5 / span 8; }
+}
+
+/* .pc-rail's own display:none-below-1024 (primitives) and .eyebrow's own
+   display:flex (below, unconditional) are equal specificity (one class
+   each); source order alone would let .eyebrow win at every width, since
+   this file's rules come after the @import. The compound selector here
+   out-specifies both so the rail still disappears below 1024. */
+.pc-rail.eyebrow {
+  display: none;
+}
+@container story (min-width: 1024px) {
+  .pc-rail.eyebrow {
+    display: flex;
+  }
+}
+
+/* ---------- beat rhythm ----------
+   No section-level padding here on purpose (§2.3: "own padding: none" for
+   every page-ground beat) -- the rhythm between these sections comes from the
+   spacer pass (§2.4) and, where two page-ground beats sit back to back with
+   no spacer, from nothing at all. h2.beat-h and p.lede are typography rules
+   only now; they used to be scoped under a shared .beat wrapper class that no
+   longer exists (every beat's own banding is expressed on the <section> via
+   .ps-band* / .sec--* instead), so they are declared unscoped. */
+.beat-h {
+  font-family: var(--ps-font-display);
+  font-weight: var(--ps-fw-light);
+  font-size: clamp(1.5rem, 4.6cqi, 2.15rem);
+  line-height: 1.16;
+  margin: 0 0 0.9rem;
+  letter-spacing: -0.01em;
+}
+.lede {
+  font-size: clamp(1rem, 2.4cqi, 1.08rem);
+  color: var(--ink-soft);
+  max-width: 38rem;
+  margin: 0 0 1.6rem;
+}
+
+/* ---------- problem chips ----------
+   PS's actual pattern here is a stacked list of hairline-ruled lines, not
+   pills -- same content, restyled. The extras block below (§2.6) still reuses
+   .chip-row/.chip for a generic undeclared-field list, so the pill look isn't
+   deleted, only overridden for the problem section's own chip-row. */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 1.6rem 0;
+}
+.chip {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  padding: 0.6rem 1.05rem;
+  font-size: 0.92rem;
+  box-shadow: var(--shadow-soft);
+}
+.chip b {
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: 0.3rem;
+}
+.pc-media.chip-row {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
+  margin: 0;
+}
+.pc-media.chip-row .chip {
+  background: none;
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid var(--line);
+  box-shadow: none;
+  padding: 0.85rem 0;
+  margin: 0;
+}
+.pc-media.chip-row .chip:first-child {
+  border-top: none;
+}
+.close-line {
+  font-size: 1.02rem;
+  color: var(--ink);
+  max-width: 36rem;
+  margin: 1.6rem 0 0;
+}
+
+/* ---------- route diagram ---------- */
+.route {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin: 2.2rem 0 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.route-node {
+  flex: 1;
+  min-width: 7.2rem;
+  text-align: center;
+  position: relative;
+  padding: 0 0.4rem;
+}
+.route-node .rdot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--accent);
+  margin: 0 auto 0.7rem;
+  position: relative;
+  z-index: 1;
+}
+.route-node .rt {
+  font-weight: 700;
+  font-size: 0.86rem;
+  margin-bottom: 0.3rem;
+}
+.route-node .rd {
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  line-height: 1.35;
+}
+.route-line {
+  position: absolute;
+  top: 6px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: var(--line);
+  z-index: 0;
+}
+.route-node:first-child .route-line {
+  display: none;
+}
+@container story (max-width: 700px) {
+  .route {
+    flex-wrap: nowrap;
+  }
+  .route-node {
+    min-width: 6.4rem;
+  }
+}
+
+/* ---------- proof panel ---------- */
+.proof {
+  margin-top: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.proof-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.proof-bar .pd {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.proof-bar .pt {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-family: var(--ps-font-mono);
+}
+.proof-body {
+  padding: 1.5rem;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+.proof-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex: 1;
+  text-align: center;
+  color: var(--ink-soft);
+}
+.proof-cta p {
+  max-width: 22rem;
+  margin: 0;
+}
+.proof-result {
+  display: none;
+}
+.proof.on .proof-cta {
+  display: none;
+}
+.proof.on .proof-result {
+  display: block;
+}
+.btn {
+  font-family: var(--ps-font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 9px;
+  padding: 0.65rem 1.2rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  transition: filter 0.15s, transform 0.1s;
+  display: inline-block;
+  text-decoration: none;
+}
+.btn:hover {
+  filter: brightness(1.06);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.9rem;
+  margin-bottom: 1.3rem;
+}
+@container story (max-width: 560px) {
+  .proof-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.p-stat {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.95rem 1rem;
+  background: var(--panel);
+}
+.p-stat.row {
+  display: flex;
+  align-items: center;
+}
+.p-stat .ps-n {
+  font-family: var(--ps-font-mono);
+  font-weight: var(--ps-fw-regular);
+  font-size: 28px;
+}
+.p-stat .ps-l {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  margin-top: 0.2rem;
+}
+.p-stat .ps-l.flush {
+  margin-top: 0;
+}
+.gauge-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  margin-right: 0.6rem;
+  background: conic-gradient(
+    var(--accent) calc(var(--pct, 0) * 1%),
+    var(--panel-line) 0
+  );
+}
+.gauge-mini span {
+  background: var(--panel);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ps-font-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.p-dep {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.76rem;
+}
+.p-node {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0.35rem 0.6rem;
+  background: var(--panel);
+  opacity: 0;
+  transform: translateY(6px);
+}
+.p-node.root {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.proof.on .p-node {
+  animation: rise 0.45s forwards;
+}
+.proof.on .p-node:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.proof.on .p-node:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.proof.on .p-node:nth-child(4) {
+  animation-delay: 0.45s;
+}
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.p-status-wrap {
+  margin-top: 1.1rem;
+}
+.p-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--ps-font-mono);
+  font-size: 0.8rem;
+}
+.p-status .lv {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 0 3px var(--good-ring);
+}
+
+/* ---------- capability cards ---------- */
+.cap-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  margin-top: 1.8rem;
+}
+@container story (min-width: 768px) {
+  .cap-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@container story (min-width: 1024px) {
+  .cap-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.cap-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.1rem 1.15rem;
+  box-shadow: var(--shadow-soft);
+}
+.cap-card .cc-ic {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.86rem;
+  margin-bottom: 0.7rem;
+  font-family: var(--ps-font-display);
+}
+.cap-card.new .cc-ic {
+  background: var(--accent);
+  color: #fff;
+}
+.cap-card .cc-t {
+  font-weight: 700;
+  font-size: 0.96rem;
+  margin-bottom: 0.35rem;
+}
+.cap-card .cc-d {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.bonus-card {
+  margin-top: 0.9rem;
+  border: 1px dashed var(--accent);
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  background: var(--accent-soft);
+}
+.bonus-card strong {
+  color: var(--ink);
+}
+
+/* ---------- stat callout ---------- */
+.stat-figure {
+  margin: 0;
+}
+.stat-big {
+  font-family: var(--ps-font-mono);
+  font-weight: var(--ps-fw-light);
+  font-size: clamp(48px, 12cqi, 96px);
+  /* --ps-red on --ps-surface-100 (this section's own ground, §2.6) is
+     4.31:1 and fails AA -- --ps-red-on-grey is 6.03:1. */
+  color: var(--ps-red-on-grey);
+  line-height: 1;
+}
+.stat-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.stat-desc {
+  font-size: 0.98rem;
+  color: var(--ink-soft);
+  max-width: 26rem;
+}
+.note-line {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  max-width: 36rem;
+  margin: 0;
+}
+.note-line.spaced {
+  margin-top: 1.6rem;
+}
+
+/* ---------- BD cards + comparison ---------- */
+.use-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.9rem;
+  margin: 1.8rem 0;
+}
+@container story (max-width: 720px) {
+  .use-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.use-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 1.05rem 1.15rem;
+  box-shadow: var(--shadow-soft);
+}
+.use-card .uc-t {
+  font-weight: 700;
+  font-size: 0.98rem;
+  margin-bottom: 0.4rem;
+}
+.use-card .uc-d {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.pitch-shift {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin: 1.8rem 0;
+  flex-wrap: wrap;
+}
+.ps-col {
+  flex: 1;
+  min-width: 13rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ps-label {
+  font-family: var(--ps-font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  margin-bottom: 0.2rem;
+}
+.ps-chip {
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.85rem;
+}
+.ps-col.old .ps-chip {
+  background: var(--panel);
+  color: var(--ink-soft);
+  border: 1px solid var(--panel-line);
+}
+.ps-col.new .ps-chip {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border: 1px solid var(--accent);
+  font-weight: 500;
+}
+.ps-arrow {
+  font-size: 1.3rem;
+  color: var(--ink-faint);
+  flex: none;
+}
+@container story (max-width: 620px) {
+  .ps-arrow {
+    transform: rotate(90deg);
+    align-self: center;
+  }
+}
+@container story (min-width: 1024px) {
+  /* .pitch-shift is .pc-full (§2.6): old at col 1/span 5, new at col 7/span
+     6, the arrow absolutely placed in the empty col 6 between them. */
+  .pitch-shift {
+    position: relative;
+    gap: 0;
+  }
+  .ps-col.old {
+    flex: 0 1 auto;
+    width: calc((5 / 12) * 100%);
+  }
+  .ps-col.new {
+    flex: 0 1 auto;
+    width: calc((6 / 12) * 100%);
+    margin-left: auto;
+  }
+  .pitch-shift .ps-arrow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* ---------- FAQ accordion ---------- */
+.faq {
+  margin-top: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.faq-q {
+  width: 100%;
+  text-align: left;
+  font-family: var(--ps-font-body);
+  font-weight: 600;
+  font-size: 0.94rem;
+  color: var(--ink);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.95rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.faq-q .fq-plus {
+  flex: none;
+  font-family: var(--ps-font-display);
+  font-weight: 400;
+  font-size: 1.2rem;
+  color: var(--accent);
+  transition: transform 0.2s;
+  display: inline-block;
+}
+.faq-item.open .fq-plus {
+  transform: rotate(45deg);
+}
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.faq-a-in {
+  padding: 0 1.1rem 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.faq-item.open .faq-a {
+  max-height: 240px;
+}
+.faq-verdict {
+  display: inline-block;
+  font-family: var(--ps-font-mono);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  margin-left: 0.6rem;
+  white-space: nowrap;
+}
+.faq-verdict.yes {
+  color: var(--good);
+  border: 1px solid var(--good);
+}
+.faq-verdict.qualified {
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+/* ---------- closing ----------
+   Band background/padding now come entirely from .ps-band--asym /
+   .ps-band--invert on the <section> (§2.1, §2.3); .pc-narrative (col 3/span
+   8, from the shared primitives) is the only grid placement this needs.
+   text-align: center below 768, left at >=768, per §2.6. */
+.sec--closing .pc-narrative {
+  text-align: center;
+}
+@container story (min-width: 768px) {
+  .sec--closing .pc-narrative {
+    text-align: left;
+  }
+}
+.pc-narrative h2 {
+  font-family: var(--ps-font-display);
+  font-weight: var(--ps-fw-light);
+  font-size: clamp(1.6rem, 5cqi, 2.4rem);
+  line-height: 1.14;
+  margin: 0 0 1.1rem;
+  max-width: 34rem;
+}
+.sec--closing .pc-narrative {
+  margin-inline: auto;
+}
+.pc-narrative p {
+  /* .pc-narrative is only ever drawn by 'closing' (§1.1), which is always on
+     the invert band -- var(--ps-invert-fg-muted) here, not --ink-soft, or
+     this reads as page-ground grey text on a black band. */
+  color: var(--ps-invert-fg-muted);
+  max-width: 30rem;
+  margin: 0;
+  font-size: 1rem;
+}
+.sec--closing .pc-narrative h2,
+.sec--closing .pc-narrative p {
+  margin-inline: auto;
+}
+@container story (min-width: 768px) {
+  .sec--closing .pc-narrative h2,
+  .sec--closing .pc-narrative p {
+    margin-inline: 0;
+  }
+}
+.pc-narrative p.cta-line {
+  margin-top: 1.8rem;
+}
+
+/* ---------- statement (pivot) ----------
+   .st-kicker carries .ps-eyebrow already (mono/bold/uppercase/tracking), and
+   the invert band mutes it via .ps-band--invert .ps-eyebrow (primitives) --
+   nothing more to add. .st-line carries .ps-display (Lexend Deca 300, the
+   36->50px step), and the .ps-eyebrow + .ps-display adjacent-sibling rule
+   (primitives) already supplies its margin-top. Only the attribution line
+   needs its own rule: mono, muted, its own top margin. */
+.st-attr {
+  font-family: var(--ps-font-mono);
+  font-size: 12px;
+  color: var(--ps-invert-fg-muted);
+  margin-top: var(--ps-s-32);
+}
+
+.pf {
+  padding-block: 1.6rem 2.4rem;
+  font-family: var(--ps-font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--line);
+}
+.pf-in {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The .rv clause moved to c/gtmBrandTokens's primitives block (§4.1), which
+     covers .rv, .rv-l, .rv-r and .rv-stagger > * in one place -- keeping a
+     second copy here would only drift. */
+  .scroll-cue .ln::after {
+    animation: none;
+  }
+  .proof.on .p-node {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Shown when a content callout fails. Deliberately visible rather than
+   console-only: both data paths on this page failed silently for months
+   because the only signal was a console warning nobody was watching.
+   No max-width/margin of its own -- it now carries .boxed too (§2.6), which
+   supplies the width, centering and gutter alignment shared by every other
+   band on the page. */
+.load-error {
+    margin-block: 0.75rem 0;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--warn, #B4842E);
+    border-left-width: 3px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--warn, #B4842E) 8%, transparent);
+    color: var(--ink-soft, #5B5A6B);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+/* ---------- undeclared fields ----------
+   Drawn after a section's own content when an editor has added a field the
+   layout does not define. Deliberately quieter than the designed blocks: it
+   should read as content someone added, not as a new part of the design. */
+.extras {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2.2rem;
+  padding-top: 1.8rem;
+  border-top: 1px solid var(--line);
+}
+.extra-h {
+  margin: 0 0 0.5rem;
+  font-family: var(--ps-font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.extra-p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  max-width: 62ch;
+}
+.extra-pairs { margin: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+.extra-pair { display: block; }
+.extra-pair dt {
+  font-family: var(--ps-font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+.extra-pair dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  max-width: 62ch;
+}
+.extra-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+.extra-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.1rem 1.2rem;
+}
+.extra-badge {
+  display: inline-block;
+  font-family: var(--ps-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.extra-card h4 {
+  margin: 0 0 0.35rem;
+  font-family: var(--ps-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.extra-card p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}

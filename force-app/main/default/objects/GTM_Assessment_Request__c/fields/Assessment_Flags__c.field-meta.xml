@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Assessment_Flags__c</fullName>
+    <label>Assessment Flags</label>
+    <description>JSON array of non-blocking annotations raised by the scorer, e.g. [{"code":"high_rebuild_ratio","message":"..."}]. Annotations do not change the score or the tier -- they are things a rep needs to say out loud even when the headline number looks good. Written by GtmAssessmentScoring; rendered by GtmReadoutController.</description>
+    <length>4000</length>
+    <trackHistory>false</trackHistory>
+    <type>LongTextArea</type>
+    <visibleLines>5</visibleLines>
+</CustomField>

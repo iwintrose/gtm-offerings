@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Instrument_Branch_Path__c</fullName>
+    <label>Instrument Branch Path</label>
+    <description>Which question actually filled each slot, as JSON: base slot key -&gt; variant key (or &quot;default&quot; where no branch fired). Instrument_Pair__c says which pack was used; this says which PATH through it was walked, and the two together are what let a year-old Section_Scores__c blob be read back as the eight questions the prospect was really asked. Server-derived from the submitted answers; a client cannot influence it except through the answers themselves.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>4096</length>
+    <visibleLines>4</visibleLines>
+</CustomField>

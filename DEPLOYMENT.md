@@ -9,6 +9,23 @@ different org, or bringing it back after this Developer Edition org expires,
 is the same operation as every deploy already done tonight -- there's no
 separate "export" step.
 
+**This runbook covers an org that already has its Experience Cloud sites and
+base setup** — the path actually run against `gtm-dev` every time so far. For
+a genuinely from-zero org, see `docs/runbooks/fresh-org-deploy.md` instead —
+it's far more detailed, but less battle-tested; read its own caveat before
+relying on it.
+
+**Current status (D6 `MA_` → `GTM_` rename):** Complete. All five stages are
+done and the repo is purely `GTM_`-only -- `MA_Saved_Configuration__c`, its
+flow, and every permission-set/profile reference to it have been deleted.
+The handful of already-distributed guest URLs that predate the rename keep
+working through `GtmLegacyConfigId.resolve()`, which falls back to a
+`Legacy_Id__c` lookup on `GTM_Saved_Configuration__c` -- it does not depend
+on the old object existing. `scripts/data/migrate-saved-configuration-to-
+gtm.apex` is kept as a historical record of the one-time data migration,
+matching the convention for every other stage's migration script; it is not
+part of a fresh-org deploy path and doesn't need to be run again.
+
 ## Quick start
 
 ```bash
@@ -16,12 +33,16 @@ sf org login web --alias my-new-org      # authenticate once
 ./scripts/deploy.sh my-new-org --run-tests
 ```
 
-That deploys every object, field, permission set, Apex class, LWC, the
-Experience Cloud site pages/theme, the CSP trusted site, and the seeded
-custom metadata (`MA_Offering__mdt`) -- everything built this session --
-into whatever org you point it at. See `scripts/deploy.sh` for the plain
-`sf project deploy start` command it wraps, if you'd rather run it by hand
-or drop it into a CI job.
+That deploys every top-level folder under `force-app/main/default/` --
+objects, fields, permission sets, Apex, LWCs, flows, flexipages, bots,
+profiles, remote site settings, the Experience Cloud site pages/theme, the
+CSP trusted site, and the seeded custom metadata (`GTM_Offering__mdt`) --
+into whatever org you point it at. It builds that folder list by scanning
+the directory rather than hand-listing it, specifically so a new metadata
+type added to the repo later can't silently drop out of the deploy the way
+an earlier, hand-maintained version of this script did. See
+`scripts/deploy.sh` for the plain `sf project deploy start` command it
+wraps, if you'd rather run it by hand or drop it into a CI job.
 
 The script deploys in two passes (everything, then the custom metadata
 *records* separately) because bundling a custom metadata *type* and its
@@ -33,7 +54,7 @@ within a couple of attempts, so pass 2 retries itself automatically (up to
 4 attempts, 10s apart) rather than making you notice a failure and re-run
 a command by hand -- you'll only see it surface as a real problem if all
 of those fail, at which point it prints the exact 3 fields to punch into
-Setup by hand (Custom Metadata Types → MA Offering → Manage Records → New),
+Setup by hand (Custom Metadata Types → GTM Offering → Manage Records → New),
 which is faster than continuing to fight a flaky deploy for one record.
 Everything else deployed reliably throughout tonight's build with no such
 flakiness.
@@ -44,69 +65,34 @@ Metadata deploy moves configuration; it doesn't touch a handful of
 org-specific things that only make sense to set up once you're looking at
 the actual target org:
 
-- **Permission set assignments** -- `MA_Config_Manager` (reps) and
-  `MA_Config_View_All` (stackable, "see everyone's links") need assigning to
-  actual users. `MA_Assessment_Guest` needs assigning to the target
+- **Permission set assignments** -- `GTM_Config_Manager` (reps) and
+  `GTM_Config_View_All` (stackable, "see everyone's links") need assigning to
+  actual users. `GTM_Assessment_Guest` needs assigning to the target
   Experience Cloud site's **Guest User** profile specifically (Setup →
   Digital Experiences → your site → Administration → Pages, or via the
   guest user's own profile page).
+- **The Claude API key** -- `GTM_Agent_Settings__c.Claude_API_Key__c` backs
+  the GTM Configurator AI assistant (`GtmAgentProxyController`) and is
+  deliberately never committed to source. Set it per org: Setup → Custom
+  Settings → GTM Agent Settings → Manage → New.
 - **Site activation** -- a freshly deployed Experience Cloud site starts
   inactive. Setup → Digital Experiences → All Sites → Activate, then
   Experience Builder → Publish.
-- **Offering targets** -- `MA_Offering__mdt`'s seeded `Migration Accelerator`
+- **Offering targets** -- `GTM_Offering__mdt`'s seeded `Migration Accelerator`
   record ships with placeholder Monthly/Annual targets ($20k / $250k).
-  Real numbers go in Setup → Custom Metadata Types → MA Offering → Manage
+  Real numbers go in Setup → Custom Metadata Types → GTM Offering → Manage
   Records.
+- **Page content records** -- the public offering pages read their editorial
+  copy from `GTM_Page_Content__c` / `GTM_Page_Section__c` /
+  `GTM_Page_Content_Version__c` rows (schema only -- these are regular
+  custom objects, so the schema itself travels with `scripts/deploy.sh`
+  like any other object, but the actual content rows are data and don't).
+  `scripts/seed-ma-page-content.apex` seeds a baseline set; run it with
+  `sf apex run --file scripts/seed-ma-page-content.apex --target-org
+  my-new-org` after the metadata deploy.
 - **My Domain** -- if the target org doesn't have My Domain enabled yet,
   enable it before deploying the Experience Cloud site (Salesforce
   requires it for Digital Experiences).
-- **The GTM Offerings CMS Workspace** -- `force-app/main/default/managedContentTypes/`
-  defines the *schema* for the offering's editorial content (five types:
-  `ma_industry_story`, `ma_faq_item`, `ma_story_setting`, `ma_story_page`,
-  `ma_story_body`), but a CMS **Workspace** to actually author content into
-  (`ManagedContentSpace`) has no Metadata API representation at all, so it
-  can never travel with `scripts/deploy.sh`. Run
-  `./scripts/setup-cms-workspace.sh <org-alias>` after deploying -- it's
-  idempotent (safe to re-run, does nothing if the Workspace already exists)
-  and uses the Connect REST API directly since there's no metadata type to
-  deploy. Once it exists, the 5 content types are immediately usable in it.
-  Still manual either way: granting CMS Workspace access (Contributor/
-  Publisher) to whoever authors this content -- that's its own permission
-  system, separate from every Profile/PermissionSet grant elsewhere in this
-  doc, and needs setting per person in Setup > Digital Experiences > CMS
-  Workspaces > GTM Offerings > Access.
-
-- **CMS content records + `MA_CMS_Content_Index__c` rows** -- the LWC story
-  page reads editorial copy entirely from CMS. Deploying the schema and
-  Workspace isn't enough: someone has to create the actual content records,
-  **publish** each to the GTM Offerings Channel, and then insert one
-  `MA_CMS_Content_Index__c` row per record so the Apex controller can find
-  them (the CMS delivery API has no "list by type" query, so the index object
-  is the bridge). A blank org gets the hardcoded DEFAULTS fallbacks in
-  `maStory.js` until those records exist and are indexed. The seeding process:
-
-  1. In Setup → Digital Experiences → CMS Workspaces → GTM Offerings → Content,
-     create records for each type using the Salesforce UI or the Connect REST
-     authoring API (`POST /services/data/v66.0/connect/cms/contents`).
-     The body must include both a top-level `title` field and `title` inside
-     `contentBody` (the NAMEFIELD), plus `contentSpaceOrFolderId`.
-  2. Publish each record to the **GTM Offerings Channel** (the delivery API
-     only serves published content -- draft records return 404).
-  3. For each published record, insert one `MA_CMS_Content_Index__c` row:
-     ```bash
-     sf data create record --target-org <alias> --sobject MA_CMS_Content_Index__c \
-       --values "CMS_Record_Id__c=<managedContentId> Content_Type__c=<type> \
-                 Offering_Key__c=migration-accelerator Display_Order__c=1 Active__c=true"
-     ```
-  4. Set `MA_Offering__mdt.CMS_Channel_Id__c` to the channel's ID (find it via
-     `GET /services/data/v66.0/connect/cms/delivery/channels` or the Workspace
-     API -- it's an 18-character ID starting with `0ap`). Without this the
-     Apex controller throws before ever touching the index.
-
-  The PATCH endpoint for updating a published CMS record's `contentBody` is
-  not exposed (`GET, HEAD` only) -- to update an existing record, create a new
-  one with the corrected content, publish it, and point the index row at the
-  new `managedContentId`.
 - **Experience Cloud site membership** -- separate from every permission
   above, and easy to miss: a profile also needs to be an explicit *member*
   of the site (Setup → Digital Experiences → your site → Administration →
@@ -130,6 +116,30 @@ the actual target org:
 
 None of these are things a script should guess at on your behalf --
 wrong values here are org-specific judgment calls, not defaults to bake in.
+
+## Sample / demo data
+
+A fresh deploy carries schema and the one seeded `GTM_Offering__mdt` record
+(the product's own real offering copy -- not sample data, that's what
+every org running this app is actually selling) but no client-shaped
+records: no engagement links, no accounts tied to this app, nothing to
+demo with. Two scripts fill that gap, both built entirely through this
+app's own real Apex entry points (`saveConfiguration`, `submitRequest`) so
+they can't drift out of sync with real validation, scoring, or FLS:
+
+- **`scripts/data/reset-accelerator-demo.apex`** -- four fictional clients
+  (`Northlight Media Group (Demo)`, `Ashford Capital Bank (Demo)`, `Solara
+  Health Systems (Demo)`, `Harborline Transit Authority (Demo)`, clearly
+  labeled as such), spread across industries and source
+  platforms, three converted to a scored assessment request and one that
+  opened the link and dropped off -- a deliberately non-uniform, realistic
+  spread rather than four identical "perfect" records. Safe to keep, edit
+  the `spec` list for your own demo needs, or delete -- delete-then-rebuild,
+  matched by name, and touches nothing else in the org.
+
+```bash
+sf apex run --file scripts/data/reset-accelerator-demo.apex --target-org my-new-org
+```
 
 ## If this needs to go to *many* orgs, not just one
 

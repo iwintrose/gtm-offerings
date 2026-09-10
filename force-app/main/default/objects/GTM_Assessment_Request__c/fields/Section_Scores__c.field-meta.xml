@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Section_Scores__c</fullName>
+    <label>Section Scores</label>
+    <description>JSON blob of per-dimension scores from the migration-readiness questionnaire, e.g. {"estate_scale":3,"source_access":2}. Keys are the eight dimensions in GtmAssessmentScoring.DIMENSIONS; the human wording for each lives in GTM_Assessment_Question__mdt. Opaque to Apex except for readout templating.</description>
+    <length>32768</length>
+    <trackHistory>false</trackHistory>
+    <type>LongTextArea</type>
+    <visibleLines>5</visibleLines>
+</CustomField>

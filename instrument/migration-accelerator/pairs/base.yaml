@@ -1,0 +1,36 @@
+# BASE — the pack every resolution ends at.
+#
+# It overrides nothing. The eight base slots keep the wording that lives in
+# GTM_Assessment_Question__mdt, which is where a consultant rewords a base
+# question without deploying anything. Base exists so that a pair nobody has
+# authored still resolves to a complete, honest, eight-slot instrument rather
+# than to an error -- and so that "Not decided yet" as a target has somewhere
+# to land.
+#
+# Its posture is interview_only at both ends, and that is not pessimism: for an
+# unauthored pair we genuinely have no adapter reading anything, so every estate
+# figure on the readout is what the prospect told us. Saying so is cheaper than
+# being caught.
+
+name: base
+source: "*"
+target: "*"
+specificity: 4
+active: true
+version: "2026.09.1"
+
+capability_posture: interview_only
+source_posture: interview_only
+target_posture: interview_only
+posture_statement: >-
+  Before you start, one thing about how we will read your answers. No adapter
+  reads this combination today, so what you tell us is the picture we work
+  from, structured — treat the estate figures as illustrative until a scan or a
+  working session confirms them.
+
+emphasis_slots: []
+supplement_sets: []
+callouts: []
+overrides: []
+
+rationale: docs/runbooks/assessment-instrument.md — the fixed-frame decision; base is the fallback the resolution chain terminates at, and the "Not decided yet" target resolves here by design.

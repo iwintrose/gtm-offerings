@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Instrument__c</fullName>
+    <label>Instrument</label>
+    <description>Which instrument this override belongs to: Readiness (the eight scored slots, 1-4) or Complexity (the six estate-complexity dimensions, 1-3). Blank means Readiness, so every override written before complexity became adaptive keeps its meaning without being rewritten.</description>
+    <required>false</required>
+    <type>Text</type>
+    <length>40</length>
+    <unique>false</unique>
+</CustomField>

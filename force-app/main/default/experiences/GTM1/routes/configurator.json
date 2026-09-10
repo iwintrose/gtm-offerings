@@ -1,0 +1,12 @@
+{
+  "activeViewId" : "f5566dab-fcc9-4490-9691-2b7d7c876b7c",
+  "appPageId" : "2ccc52cc-3526-4666-b109-aff8cc07e506",
+  "configurationTags" : [ ],
+  "devName" : "Configurator__c",
+  "id" : "23857df7-522f-48c5-a5e9-b5f0a7782ce5",
+  "label" : "Configurator",
+  "pageAccess" : "UseParent",
+  "routeType" : "custom-configurator",
+  "type" : "route",
+  "urlPrefix" : "configurator"
+}

@@ -1,0 +1,37 @@
+<template>
+  <lightning-card title="How far they read" icon-name="standard:record_lookup">
+    <div class="body">
+      <template if:true={loading}>
+        <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+      </template>
+
+      <template if:true={error}>
+        <p class="msg msg--err">{error}</p>
+      </template>
+
+      <template if:true={showEmpty}>
+        <p class="msg">No activity recorded yet. Once the recipient opens this link, every chapter they reach shows here.</p>
+      </template>
+
+      <template if:true={hasNodes}>
+        <p class="summary">{summary}</p>
+        <ol class="map">
+          <template for:each={nodes} for:item="n">
+            <li key={n.key} class={n.rowClass}>
+              <div class="node-top">
+                <span class="node-label">{n.label}</span>
+                <span class="node-n">{n.readersLabel}</span>
+              </div>
+              <div class="track"><div class={n.barClass} style={n.barStyle}></div></div>
+              <div class="node-meta">
+                <template if:true={n.dwellLabel}><span>{n.dwellLabel}</span></template>
+                <template if:true={n.clicksLabel}><span class="node-click">{n.clicksLabel}</span></template>
+                <template if:true={n.isLastSeen}><span class="node-stop">reading stops here</span></template>
+              </div>
+            </li>
+          </template>
+        </ol>
+      </template>
+    </div>
+  </lightning-card>
+</template>

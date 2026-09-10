@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Agentforce action: read current GTM Configurator page state.
-  Backed by MaAgentGetConfigState.execute() (@InvocableMethod).
+  Backed by GtmAgentGetConfigState.execute() (@InvocableMethod).
   REQUIRES: Agentforce provisioned on the org.
 -->
 <GenAiPlugin xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -9,7 +9,7 @@
     <masterLabel>Get GTM Configurator State</masterLabel>
     <pluginType>Invocable</pluginType>
     <invocableActionType>apex</invocableActionType>
-    <invocableActionName>MaAgentGetConfigState</invocableActionName>
+    <invocableActionName>GtmAgentGetConfigState</invocableActionName>
     <genAiPluginInstructions>
         Call this action to read the current state of the GTM Configurator page.
         Pass the configId from the session variables if available; leave blank for unsaved sessions.

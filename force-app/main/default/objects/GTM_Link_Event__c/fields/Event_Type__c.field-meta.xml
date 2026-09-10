@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Event_Type__c</fullName>
+    <label>Event Type</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Page View</fullName><default>false</default><label>Page View</label></value>
+            <value><fullName>Form Opened</fullName><default>false</default><label>Form Opened</label></value>
+            <value><fullName>Form Submitted</fullName><default>false</default><label>Form Submitted</label></value>
+            <value><fullName>Drop-off</fullName><default>false</default><label>Drop-off</label></value>
+            <value>
+                <fullName>Section Viewed</fullName>
+                <default>false</default>
+                <label>Section Viewed</label>
+            </value>
+            <value>
+                <fullName>CTA Clicked</fullName>
+                <default>false</default>
+                <label>CTA Clicked</label>
+            </value>
+            <value>
+                <fullName>Form Field</fullName>
+                <default>false</default>
+                <label>Form Field</label>
+            </value>
+            <value>
+                <fullName>Form Resumed</fullName>
+                <default>false</default>
+                <label>Form Resumed</label>
+            </value>
+            <value>
+                <fullName>Session End</fullName>
+                <default>false</default>
+                <label>Session End</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

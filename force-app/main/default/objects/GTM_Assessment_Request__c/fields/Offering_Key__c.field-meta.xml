@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Offering_Key__c</fullName>
+    <label>Offering Key</label>
+    <description>Which GTM offering this assessment was scored against.
+        Set once, server-side, at insert -- never client-supplied. Matches
+        GTM_Offering__mdt.Offering_Key__c. Deliberately required=false: this
+        object already holds real production rows with no value here yet;
+        see scripts/data/backfill-assessment-offering-key.apex and ADR-0007
+        section 3 for why this stays optional at the schema level rather
+        than being flipped to required after backfill.
+    </description>
+    <required>false</required>
+    <length>80</length>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

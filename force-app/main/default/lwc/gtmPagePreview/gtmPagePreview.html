@@ -32,17 +32,126 @@
       <span class="zoomread">{zoomLabel}</span>
     </div>
 
-    <div class="pv-stage">
+    <template if:true={previewNote}>
+      <div class="pv-note">{previewNote}</div>
+    </template>
+
+    <template if:true={showSettingsPreview}>
+      <div class="pv-settings">
+        <template if:true={hasSettingsPlatforms}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Starts from</h3>
+            <p class="pvs-line">{settingsSourcePlatform} &rarr; {settingsTargetPlatform}</p>
+          </div>
+        </template>
+
+        <template if:true={hasSettingsPresets}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Size presets</h3>
+            <div class="pvs-presets">
+              <template for:each={settingsPresets} for:item="p">
+                <div key={p.key} class="pvs-preset">
+                  <span class="pvs-preset-key">{p.key}</span>
+                  <span class="pvs-preset-label">{p.label}</span>
+                  <span class="pvs-preset-sub">{p.sub}</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={hasSettingsSwatches}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Swatches</h3>
+            <div class="pvs-swatches">
+              <template for:each={settingsSwatches} for:item="s">
+                <span key={s.key} class="pvs-swatch" title={s.name}>
+                  <span class="pvs-dot" style={s.style}></span>{s.name}
+                </span>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={hasSettingsChips}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Generic chips</h3>
+            <div class="pvs-chips">
+              <template for:each={settingsChips} for:item="c">
+                <span key={c} class="pvs-chip">{c}</span>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={settingsDemoRoot}>
+          <div class="pvs-block">
+            <h3 class="pvs-h">Demo campaign</h3>
+            <p class="pvs-line">{settingsDemoRoot}</p>
+            <template if:true={hasSettingsDemoDeps}>
+              <div class="pvs-chips">
+                <template for:each={settingsDemoDeps} for:item="d">
+                  <span key={d} class="pvs-chip pvs-chip--dep">{d}</span>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <div class="pv-stage" if:false={showSettingsPreview}>
       <div class="pv-scroll" onscroll={handleScroll} onwheel={handleIntent}
            onpointerdown={handleIntent} onkeydown={handleIntent}>
-        <div class="dev-slot">
+        <!-- Clicks are swallowed here, at the frame, rather than in each
+             renderer: the preview is a picture of the page, and an editor who
+             taps a call-to-action while reading their own copy should not be
+             navigated away from the editor -- or, worse, taken to a live
+             prospect page in the same tab. Capture phase, so it lands before
+             any handler inside the page. -->
+        <div class="dev-slot" onclickcapture={handlePreviewClick}>
           <div class="device" onscroll={handleScroll} onwheel={handleIntent}
                onpointerdown={handleIntent} onkeydown={handleIntent}>
-            <c-ma-story
-              offering-key={offeringKey}
-              preview-sections={sections}
-              preview-content={content}
-              preview-field-meta={fieldMeta}></c-ma-story>
+            <!-- The renderer follows the page being edited: each page is
+                 previewed through the component that actually draws it, fed
+                 the draft, so what is on screen is the page itself. -->
+            <template if:true={isStory}>
+              <c-gtm-story
+                offering-key={offeringKey}
+                preview-sections={sections}
+                preview-content={content}
+                preview-field-meta={fieldMeta}></c-gtm-story>
+            </template>
+            <template if:true={isOfferings}>
+              <c-offering-chooser
+                offering-key={offeringKey}
+                preview-content={offeringsContent}
+                preview-tile={previewTile}></c-offering-chooser>
+            </template>
+            <template if:true={isIndustry}>
+              <c-choose-industry
+                offering-key={offeringKey}
+                preview-content={content}></c-choose-industry>
+            </template>
+            <template if:true={isConfigurator}>
+              <c-gtm-configurator
+                offering-key={offeringKey}
+                preview-section-key={activeKey}
+                preview-content={content}></c-gtm-configurator>
+            </template>
+            <template if:true={isUnknown}>
+              <div class="pv-none">
+                <p class="pv-none-h">This page has no renderer yet.</p>
+                <p class="pv-none-sub">
+                  Your edits are saved and appear on the live page once published.
+                </p>
+                <template if:true={pageUrl}>
+                  <a class="pv-none-link" href={pageUrl} target="_blank" rel="noopener">
+                    Open the live page &#8599;
+                  </a>
+                </template>
+              </div>
+            </template>
           </div>
           <button class="grip" aria-label="Drag to resize the viewport"
                   title="Drag to resize the viewport" onpointerdown={handleGripDown}></button>

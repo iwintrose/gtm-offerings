@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Target_Key__c</fullName>
+    <label>Target Key</label>
+    <description>Platform_Key__c of the target, or * for any target. A prospect who has not picked a target resolves to * and therefore to base, with a note on the readout saying so.</description>
+    <required>true</required>
+    <type>Text</type>
+    <length>80</length>
+    <unique>false</unique>
+</CustomField>

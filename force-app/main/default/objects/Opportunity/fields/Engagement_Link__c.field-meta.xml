@@ -2,9 +2,9 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Engagement_Link__c</fullName>
     <label>Engagement Link</label>
-    <description>The shared client link (MA_Saved_Configuration__c) this Opportunity was created from or is attached to. Set by MaAssessmentRequestController.ensureOpportunity and MaSavedConfigurationController.saveConfiguration so the relationship survives even once the Opportunity has its own life -- see Engagement_Link_Info__c for the human-readable, clickable version shown on the page layout.</description>
+    <description>The shared client link (GTM_Saved_Configuration__c) this Opportunity was created from or is attached to. Set by GtmAssessmentRequestController.ensureOpportunity and GtmSavedConfigurationController.saveConfiguration so the relationship survives even once the Opportunity has its own life -- see Engagement_Link_Info__c for the human-readable, clickable version shown on the page layout.</description>
     <type>Lookup</type>
-    <referenceTo>MA_Saved_Configuration__c</referenceTo>
+    <referenceTo>GTM_Saved_Configuration__c</referenceTo>
     <relationshipLabel>Opportunities</relationshipLabel>
     <relationshipName>Opportunities</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>

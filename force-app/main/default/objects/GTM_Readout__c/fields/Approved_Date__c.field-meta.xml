@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Approved_Date__c</fullName>
+    <label>Approved Date</label>
+    <description>Stamped by the GtmReadoutApprovalSync trigger when Status__c moves into Approved -- which in production is the GTM_Readout_Approval process's final-approval field update. ProcessInstance.CompletedDate is the audit record; this field exists so list views and reports can sort on it without a subquery.</description>
+    <trackHistory>true</trackHistory>
+    <type>DateTime</type>
+</CustomField>

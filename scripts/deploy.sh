@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Deploys the MA Accelerator (this repo's force-app/ tree) to any Salesforce
+# Deploys GTM Offerings (this repo's force-app/ tree) to any Salesforce
 # org you're already authenticated to with the Salesforce CLI (`sf`).
 #
 # This repo is standard Salesforce DX source format -- nothing here is tied
@@ -39,7 +39,52 @@ fi
 
 cd "$(dirname "$0")/.."
 
-# Deployed in two passes, not one: bundling the MA_Offering__mdt custom
+# Pass 1's --source-dir list is built from whatever top-level folders
+# actually exist under force-app/main/default/ (minus customMetadata, which
+# is its own pass -- see below), instead of a hand-maintained list. A fixed
+# list silently drifts as the repo grows -- it did: flexipages, flows,
+# bots, genAiPlugins, labels, profiles, and remoteSiteSettings had all been
+# added to the repo without ever being added here, so a from-scratch deploy
+# would have silently skipped every flow, record page, and remote site
+# setting the org actually needs.
+#
+# EXCLUDE_DIRS (optional env var, comma-separated top-level folder names)
+# is the one deliberate escape hatch from that everything-by-default rule,
+# for a directory whose CONTENT the org cannot accept at all -- not a
+# validation error, a hard "this feature is not provisioned here". Confirmed
+# against gtm-dev: bots/ and genAiPlugins/ (the GTM Configurator Assistant
+# Agentforce action) fail deploy with "Not available for deploy for this
+# organization" / "'Invocable' is not a valid value for the enum
+# 'PluginType'" -- both mean Agentforce/Bots is not provisioned on this org,
+# confirmed separately by `SELECT ... FROM BotDefinition` itself failing
+# with INVALID_TYPE. That is an edition/licensing fact about one org, not a
+# defect in the source, so the fix is not to remove bots/genAiPlugins from
+# the repo -- another instance with Agentforce provisioned needs them. Usage
+# for an org missing that provisioning:
+#   EXCLUDE_DIRS=bots,genAiPlugins ./scripts/deploy.sh my-org
+SOURCE_DIRS=()
+IFS=',' read -ra _EXCLUDED <<< "${EXCLUDE_DIRS:-}"
+for d in force-app/main/default/*/; do
+  name="$(basename "$d")"
+  if [ "$name" = "customMetadata" ]; then
+    continue
+  fi
+  skip=0
+  for x in "${_EXCLUDED[@]}"; do
+    if [ "$name" = "$x" ]; then
+      skip=1
+      break
+    fi
+  done
+  if [ "$skip" -eq 0 ]; then
+    SOURCE_DIRS+=(--source-dir "force-app/main/default/$name")
+  fi
+done
+if [ -n "${EXCLUDE_DIRS:-}" ]; then
+  echo "==> Excluding from this deploy (EXCLUDE_DIRS): ${EXCLUDE_DIRS}"
+fi
+
+# Deployed in two passes, not one: bundling the GTM_Offering__mdt custom
 # metadata TYPE and its seeded RECORD in the same transaction as everything
 # else is unreliable (observed firsthand -- identical content that deploys
 # cleanly on its own intermittently fails with a generic UNKNOWN_EXCEPTION
@@ -50,31 +95,13 @@ echo "==> Pass 1/2: everything except custom metadata records"
 if [ "$RUN_TESTS" = "--run-tests" ]; then
   echo "==> Running local Apex tests as part of the deploy"
   sf project deploy start \
-    --source-dir force-app/main/default/applications \
-    --source-dir force-app/main/default/classes \
-    --source-dir force-app/main/default/cspTrustedSites \
-    --source-dir force-app/main/default/experiences \
-    --source-dir force-app/main/default/layouts \
-    --source-dir force-app/main/default/lwc \
-    --source-dir force-app/main/default/managedContentTypes \
-    --source-dir force-app/main/default/objects \
-    --source-dir force-app/main/default/permissionsets \
-    --source-dir force-app/main/default/tabs \
+    "${SOURCE_DIRS[@]}" \
     --target-org "$TARGET_ORG" \
     --test-level RunLocalTests \
     --wait 60
 else
   sf project deploy start \
-    --source-dir force-app/main/default/applications \
-    --source-dir force-app/main/default/classes \
-    --source-dir force-app/main/default/cspTrustedSites \
-    --source-dir force-app/main/default/experiences \
-    --source-dir force-app/main/default/layouts \
-    --source-dir force-app/main/default/lwc \
-    --source-dir force-app/main/default/managedContentTypes \
-    --source-dir force-app/main/default/objects \
-    --source-dir force-app/main/default/permissionsets \
-    --source-dir force-app/main/default/tabs \
+    "${SOURCE_DIRS[@]}" \
     --target-org "$TARGET_ORG" \
     --wait 60
   echo ""
@@ -83,7 +110,7 @@ else
 fi
 
 echo ""
-echo "==> Pass 2/2: custom metadata records (MA_Offering__mdt seed data)"
+echo "==> Pass 2/2: custom metadata records (GTM_Offering__mdt seed data)"
 
 # This specific step has been observed failing intermittently with a
 # generic UNKNOWN_EXCEPTION even on unchanged, previously-successful
@@ -110,7 +137,7 @@ if [ "$CMDT_OK" -ne 1 ]; then
   echo "Pass 2 failed after $CMDT_ATTEMPTS attempts. Pass 1 (everything else)"
   echo "already succeeded -- this is the only piece left, and it's one record"
   echo "with three fields, faster to create by hand than to keep retrying:"
-  echo "  Setup -> Custom Metadata Types -> MA Offering -> Manage Records -> New"
+  echo "  Setup -> Custom Metadata Types -> GTM Offering -> Manage Records -> New"
   echo "    DeveloperName:    Migration_Accelerator"
   echo "    Offering_Key__c:  migration-accelerator"
   echo "    Label__c:         Migration Accelerator"
@@ -120,11 +147,10 @@ fi
 
 echo ""
 echo "==> Done. Manual steps this script can't do for you (see DEPLOYMENT.md):"
-echo "    - Assign MA_Config_Manager to whichever users should manage links"
-echo "    - Assign MA_Assessment_Guest to the target Experience Cloud site's Guest User profile"
+echo "    - Assign GTM_Config_Manager to whichever users should manage links"
+echo "    - Assign GTM_Assessment_Guest to the target Experience Cloud site's Guest User profile"
 echo "    - Activate + publish the Experience Cloud site in Setup > Digital Experiences"
-echo "    - Edit the MA_Offering__mdt 'Migration Accelerator' record's target"
+echo "    - Edit the GTM_Offering__mdt 'Migration Accelerator' record's target"
 echo "      values (Setup > Custom Metadata Types) -- the seeded numbers are placeholders"
-echo "    - Run ./scripts/setup-cms-workspace.sh $TARGET_ORG to create the CMS"
-echo "      Workspace the ManagedContentType schema just deployed needs before"
-echo "      any content can be authored against it"
+echo "    - Set GTM_Agent_Settings__c.Claude_API_Key__c (Setup > Custom Settings ->"
+echo "      GTM Agent Settings -> Manage -> New) -- deliberately never committed to source"

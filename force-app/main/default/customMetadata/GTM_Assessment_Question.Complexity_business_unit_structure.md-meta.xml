@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Business Unit Structure</label>
+    <protected>false</protected>
+    <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
+        <field>Instrument__c</field>
+        <value xsi:type="xsd:string">Complexity</value>
+    </values>
+    <values>
+        <field>Dimension_Key__c</field>
+        <value xsi:type="xsd:string">business_unit_structure</value>
+    </values>
+    <values>
+        <field>Dimension_Name__c</field>
+        <value xsi:type="xsd:string">Business Unit Structure</value>
+    </values>
+    <values>
+        <field>Measures__c</field>
+        <value xsi:type="xsd:string">How many business units and how much they share</value>
+    </values>
+    <values>
+        <field>Question_Text__c</field>
+        <value xsi:type="xsd:string">How is the account split across business units or child accounts?</value>
+    </values>
+    <values>
+        <field>Option_1_Label__c</field>
+        <value xsi:type="xsd:string">A single business unit, or a simple parent-child pair</value>
+    </values>
+    <values>
+        <field>Option_2_Label__c</field>
+        <value xsi:type="xsd:string">Two to five business units with some shared assets</value>
+    </values>
+    <values>
+        <field>Option_3_Label__c</field>
+        <value xsi:type="xsd:string">Six or more business units, or complex cross-unit content sharing</value>
+    </values>
+    <values>
+        <field>Option_4_Label__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Max_Answer_Value__c</field>
+        <value xsi:type="xsd:double">3.0</value>
+    </values>
+    <values>
+        <field>Sort_Order__c</field>
+        <value xsi:type="xsd:double">40.0</value>
+    </values>
+    <values>
+        <field>Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+</CustomMetadata>

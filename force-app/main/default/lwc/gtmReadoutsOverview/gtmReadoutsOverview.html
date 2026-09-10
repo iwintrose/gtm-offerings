@@ -1,0 +1,41 @@
+<template>
+  <div class="ov">
+    <header class="ov-bar">
+      <h1 class="ov-title">Readouts</h1>
+      <lightning-button-icon icon-name="utility:refresh" variant="border-filled"
+                              alternative-text="Refresh" title="Refresh"
+                              onclick={handleRefresh}></lightning-button-icon>
+    </header>
+
+    <template if:true={loadError}>
+      <div class="ov-err">{loadError}</div>
+    </template>
+
+    <template if:true={isLoading}>
+      <div class="ov-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+    </template>
+
+    <template if:true={hasReadouts}>
+      <div class="cards">
+        <template for:each={readouts} for:item="r">
+          <button key={r.key} class="rcard" data-id={r.id} onclick={handleOpenReadout}>
+            <div class="rcard-top">
+              <span class="rcard-name">{r.name}</span>
+              <span class={r.statusClass}>{r.statusLabel}</span>
+            </div>
+            <p class="rcard-meta">{r.meta}</p>
+            <p class="rcard-modified">Updated {r.modified}</p>
+          </button>
+        </template>
+      </div>
+    </template>
+
+    <template if:true={showEmpty}>
+      <p class="ov-empty">
+        No draft or approved readouts right now. A readout appears here once
+        one has been generated for an assessment request and is awaiting
+        review or publish.
+      </p>
+    </template>
+  </div>
+</template>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Estate_Complexity_Dimensions__c</fullName>
+    <label>Estate Complexity Dimensions</label>
+    <description>JSON blob of per-dimension complexity scores, e.g. {"journey_footprint":2,"scripting_depth":3}. Same shape and same handling as Section_Scores__c, for the complexity instrument rather than the readiness one.</description>
+    <length>32768</length>
+    <trackHistory>false</trackHistory>
+    <type>LongTextArea</type>
+    <visibleLines>5</visibleLines>
+</CustomField>

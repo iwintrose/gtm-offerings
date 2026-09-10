@@ -18,7 +18,7 @@ const MAX_W = 1920;
  * The page is drawn at a true CSS width and then scaled, rather than being
  * squeezed into whatever space is left. That distinction is the whole point of
  * a device preview — a 414px-wide render tells you about the phone layout, a
- * squashed 414px-wide panel tells you about nothing. c/maStory carries
+ * squashed 414px-wide panel tells you about nothing. c/gtmStory carries
  * container queries so it responds to this frame rather than to the browser.
  */
 export default class GtmPagePreview extends LightningElement {
@@ -28,6 +28,15 @@ export default class GtmPagePreview extends LightningElement {
     @api fieldMeta = [];
     @api pageUrl = '';
     @api hasDrafts = false;
+
+    // Set by c/gtmContentManager while its "Customizer settings" panel is
+    // open, so the note above the stage explains what this preview is
+    // showing instead of the ordinary configurator caption -- the fields
+    // being edited in that mode drive the rep's link wizard, not this page.
+    @api settingsMode = false;
+
+    /** Which page is being edited. Decides which renderer to preview with. */
+    @api templateType = 'story';
 
     // The section the editor has selected. Setting it scrolls the canvas.
     @api
@@ -52,6 +61,123 @@ export default class GtmPagePreview extends LightningElement {
     _suppress = false;
     _suppressTimer;
     _queued = false;
+
+    // ─── which renderer ───────────────────────────────────────────────────────
+    // Every page previews through the component that actually renders it, fed
+    // the draft being edited. A stand-in that only approximated the page would
+    // drift from it, and "no preview available" is not an answer when the
+    // whole point of the editor is seeing the change.
+
+    get isStory() { return this.templateType === 'story'; }
+    get isOfferings() {
+        // An offerings-listing is one tile on the offerings page, so it is
+        // previewed in the page it appears on rather than on its own.
+        return this.templateType === 'offerings-page'
+            || this.templateType === 'offerings-listing';
+    }
+    get isIndustry() { return this.templateType === 'industry-chooser'; }
+    get isConfigurator() { return this.templateType === 'configurator'; }
+    get isUnknown() {
+        return !this.isStory && !this.isOfferings && !this.isIndustry && !this.isConfigurator;
+    }
+
+    /**
+     * "Customizer settings" edits offering-defaults content -- the rep's
+     * link wizard's starting values (swatches, size presets, generic chips,
+     * default platforms, the demo campaign) -- which is never drawn on the
+     * page itself. Rendering the ordinary scrollable configurator page
+     * underneath it was worse than just misleading: that page has no
+     * "defaults" section (it is a setting, not a beat of the page, so it
+     * never gets a section rect), so scrolling always landed on some other
+     * real section, fired sectionchange, and the parent read that as "the
+     * user picked a different section" and closed Customizer settings out
+     * from under them. This mode replaces the scrollable page with a
+     * dedicated, non-scrolling summary of what the wizard actually starts
+     * from, so there is nothing page-shaped left to scroll.
+     */
+    get showSettingsPreview() { return this.settingsMode && this.isConfigurator; }
+
+    _settingsJson(key) {
+        try {
+            const raw = (this.content || {})[`defaults::${key}`];
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) { return []; }
+    }
+
+    _settingsText(key) { return (this.content || {})[`defaults::${key}`] || ''; }
+
+    get settingsSwatches() {
+        return this._settingsJson('swatches').map((s, i) => ({
+            key: `${s.name || ''}-${i}`,
+            name: s.name || '',
+            hex: s.hex || '',
+            style: `background:#${(s.hex || 'ccc').replace('#', '')};`
+        }));
+    }
+    get hasSettingsSwatches() { return this.settingsSwatches.length > 0; }
+
+    get settingsPresets() {
+        return this._settingsJson('sizePresets').map((p, i) => ({
+            key: p.key || String(i),
+            label: p.label || p.key || '',
+            sub: p.sub || '',
+            assetCount: p.assetCount,
+            dependencyCount: p.dependencyCount,
+            healthScore: p.healthScore
+        }));
+    }
+    get hasSettingsPresets() { return this.settingsPresets.length > 0; }
+
+    get settingsChips() { return this._settingsJson('genericChips'); }
+    get hasSettingsChips() { return this.settingsChips.length > 0; }
+
+    get settingsDemoDeps() { return this._settingsJson('genericDemoDeps'); }
+    get hasSettingsDemoDeps() { return this.settingsDemoDeps.length > 0; }
+
+    get settingsSourcePlatform() { return this._settingsText('defaultSourcePlatform'); }
+    get settingsTargetPlatform() { return this._settingsText('defaultTargetPlatform'); }
+    get hasSettingsPlatforms() {
+        return !!(this.settingsSourcePlatform || this.settingsTargetPlatform);
+    }
+    get settingsDemoRoot() { return this._settingsText('genericDemoRoot'); }
+
+    /**
+     * The offerings page draws its tiles from every offering, so when the tile
+     * itself is what is being edited, the draft is handed in and takes that
+     * offering's place in the grid.
+     */
+    get previewTile() {
+        if (this.templateType !== 'offerings-listing') return null;
+        const c = this.content || {};
+        return {
+            offeringKey: this.offeringKey,
+            mark: c['tile::mark'] || '',
+            name: c['tile::name'] || '',
+            description: c['tile::description'] || '',
+            isLive: true
+        };
+    }
+
+    /** The offerings page's own copy is framework content, not this page's. */
+    get offeringsContent() {
+        return this.templateType === 'offerings-page' ? this.content : {};
+    }
+
+    get previewNote() {
+        if (this.settingsMode && this.templateType === 'configurator') {
+            return 'These values configure the rep’s link wizard — they are not drawn on this page.';
+        }
+        if (this.templateType === 'offerings-listing') {
+            return 'Shown in place on the offerings page — the other tiles are live.';
+        }
+        if (this.templateType === 'configurator') {
+            return 'Shown as a prospect sees it, using the first industry on this page. '
+                 + 'The “Ask Gus” bubble is configured at the Framework level, not here — '
+                 + 'see the Framework card’s Settings to change its name, tone or opening line.';
+        }
+        return '';
+    }
 
     // ─── head ─────────────────────────────────────────────────────────────────
 
@@ -217,6 +343,30 @@ export default class GtmPagePreview extends LightningElement {
         window.addEventListener('pointerup', up);
     }
 
+    /**
+     * The preview is for reading, not for using.
+     *
+     * Everything in it is real: real anchors to the live site, real buttons
+     * that open a booking modal or reveal a panel. An editor clicking one while
+     * checking their copy either loses the editor or fires an action meant for
+     * a prospect. Stopped at the frame so no renderer has to know it is being
+     * previewed.
+     *
+     * Scrolling, selecting and the rail's own scroll-spy are untouched: this
+     * only cancels a click that would navigate or act.
+     */
+    handlePreviewClick(event) {
+        // Every click, not just the ones that look actionable. Checking the
+        // target with closest() does not work here: the page renders inside its
+        // own shadow root, so a click on an anchor in there is retargeted to
+        // the host element by the time it reaches this handler, and the check
+        // would pass exactly the links it was meant to stop.
+        //
+        // Selecting text still works -- that is mousedown and drag, not click.
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     // ─── scroll sync ──────────────────────────────────────────────────────────
 
     handleIntent() {
@@ -238,9 +388,18 @@ export default class GtmPagePreview extends LightningElement {
     }
 
     rects() {
-        const story = this.template.querySelector('c-ma-story');
-        if (!story || typeof story.getSectionRects !== 'function') return [];
-        return story.getSectionRects();
+        const el = this.template.querySelector(
+            'c-gtm-story, c-offering-chooser, c-choose-industry, c-gtm-configurator'
+        );
+        if (!el || typeof el.getSectionRects !== 'function') return [];
+
+        // Only sections this page actually has. An offerings-listing is
+        // previewed inside the offerings page, so the renderer reports that
+        // page's header, intro and footer -- none of which belong to the page
+        // being edited. Scrolling then selected a section the editor did not
+        // have, and the tile being edited vanished from the panel.
+        const own = new Set((this.sections || []).map((s) => s.sectionKey));
+        return el.getSectionRects().filter((r) => own.has(r.sectionKey));
     }
 
     /**
@@ -265,6 +424,11 @@ export default class GtmPagePreview extends LightningElement {
     }
 
     syncFromScroll() {
+        // Belt and suspenders alongside showSettingsPreview removing the
+        // scrollable page from the DOM entirely in this mode: nothing here
+        // should ever again read a scroll position as "the user changed
+        // section" while Customizer settings is open.
+        if (this.settingsMode) return;
         const { el: sc } = this.scroller();
         const rects = this.rects();
         if (!sc || !rects.length) return;

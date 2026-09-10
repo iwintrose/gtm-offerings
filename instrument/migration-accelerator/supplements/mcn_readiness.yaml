@@ -1,0 +1,99 @@
+# SUPPLEMENT SET — mcn_readiness. Fires whenever the target is Marketing Cloud
+# Next.
+#
+# These four questions are OUTSIDE the 32. They produce their own named index
+# (4-12) and never touch a readiness dimension, because they measure something
+# different in kind: not "how hard is this estate to move" but "does the target
+# platform's own prerequisite stack exist yet". A client can have a trivially
+# portable estate and still be a year from being able to receive it. Folding
+# that into the readiness total would make the number mean two things at once
+# and comparable to nothing.
+#
+# The build script enforces the separation (rule 6): a supplement key that
+# collides with a dimension key is a build failure, not a runtime surprise.
+#
+# The fifth entry is deliberately UNSCORED. It is a verbatim probe -- the
+# consultant records what the prospect actually said, and nothing is computed
+# from it. Some of the most load-bearing signals in this diagnostic do not
+# survive being turned into a 1-3.
+
+set_key: mcn_readiness
+index_key: mcn_readiness_index
+label: Marketing Cloud Next prerequisite readiness
+
+questions:
+  - key: data_cloud_state
+    sort_order: 10
+    scored: true
+    horizon_driver: true
+    question: >-
+      Where is Data Cloud / Data 360 today — not procured, procured but not in
+      production, or live and already serving segments?
+    options:
+      - value: 1
+        label: "Not procured, or procured and untouched. No DMOs, no identity resolution, no segments."
+        horizon: "Foundation phase 8-16 weeks; add 4 weeks if Identity Resolution is not configured."
+      - value: 2
+        label: "Procured and in build. Some data streams landed; nothing yet activates a campaign."
+        horizon: "Foundation phase 8-12 weeks; the data layer exists but is not yet the audience source of truth."
+      - value: 3
+        label: "Live and load-bearing. Segments and Calculated Insights already drive real campaigns."
+        horizon: "Foundation phase 4-8 weeks; the data layer is reusable rather than net-new."
+    rationale: >-
+      skills/mce-mcn-helper/references/skills/10-roadmap.md — Step 2, "Data Cloud already in use: Foundation phase = 4-8 weeks / Data Cloud not yet started: 8-16 weeks / Identity Resolution not configured: add 4 weeks". Also skills/mce-mcn-helper/references/skills/02-maturity.md, which reads a live Data Cloud connection as the Stage 3 signal.
+
+  - key: core_footprint
+    sort_order: 20
+    scored: true
+    question: >-
+      What Salesforce Core presence exists today — none, another cloud in use
+      by another team, or an org marketing already works in?
+    options:
+      - value: 1
+        label: "None. Salesforce is not in the estate, or is a shell nobody administers."
+      - value: 2
+        label: "Sales or Service runs on Core, owned by another team, with its own governance and release train."
+      - value: 3
+        label: "Marketing already works inside the Core org — shared objects, shared admins, an existing release process."
+    rationale: skills/mce-mcn-helper/references/framework-reference.md — "Marketing Cloud Connect -> Native Salesforce Core integration (Retired). MCN is on Core." skills/mce-mcn-helper/references/skills/10-roadmap.md — the ORG MODEL & TEAM lane (governance, permission architecture, DevOps pipeline, admin collaboration model) "runs throughout - not a one-time workstream".
+
+  - key: ai_guardrail_readiness
+    sort_order: 30
+    scored: true
+    question: >-
+      Who signs off brand voice, compliance rules and approval workflow today,
+      and could they express those as platform-level policy rather than as
+      per-campaign review?
+    options:
+      - value: 1
+        label: "Review is per-campaign and informal. Nothing is written down that an agent could operate inside."
+      - value: 2
+        label: "Brand and compliance rules exist as documents, applied by people at review gates."
+      - value: 3
+        label: "Named owners and written policy already configured as platform rules somewhere — approvals, tone, exclusions."
+    rationale: >-
+      skills/mce-mcn-helper/references/skills/06-business-case.md — "You configure brand voice, compliance policy, and approval workflows once. Agents operate within those guardrails across all campaigns", and the reframe from "turn on Send Time Optimisation" to "set the guardrails; the agent decides". skills/mce-mcn-helper/references/skills/10-roadmap.md — "Agentforce guardrail design: before first Agentforce feature activation".
+
+  - key: consumption_literacy
+    sort_order: 40
+    scored: true
+    question: >-
+      Has anyone modelled what your current send and activity volume costs
+      under a consumption (Credits) licence rather than a committed one?
+    options:
+      - value: 1
+        label: "No. Budget is an annual line item and variable cost has not been discussed with finance."
+      - value: 2
+        label: "Aware it changes; no rates from the AE and no model built."
+      - value: 3
+        label: "Consumption rates in hand and a volume model built; finance has seen it."
+    rationale: skills/mce-mcn-helper/references/skills/06-business-case.md — "Super Messages model (MCE) vs Salesforce Credits model (MCN)"; "Point 1 - Get consumption rates from the AE first"; and the "consumption model is too unpredictable" objection. skills/mce-mcn-helper/references/skills/10-roadmap.md — risk register entry "Consumption-based licensing cost overrun".
+
+  - key: shared_audience_definitions
+    sort_order: 50
+    scored: false
+    question: >-
+      Across your active workflows/campaigns, how many enrol from the same
+      audience definition?
+    rationale: >-
+      skills/mce-mcn-helper/references/skills/02-maturity.md — the single hardest co-pilot scenario, verbatim: "Ask them 'Across your active journeys, how many of them share the same audience definition?' - the answer will tell you whether sophistication is real or journey-scoped." Left UNSCORED on purpose. It is the best Stage-2-vs-Stage-3 discriminator in the diagnostic precisely because the answer is a number in context ("six of forty, and they were cloned"), and every 1-3 banding of it that was tried lost the thing that made it discriminating. The consultant records what was said.

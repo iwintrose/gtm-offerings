@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Complexity_Bands_JSON__c</fullName>
+    <label>Complexity Bands JSON</label>
+    <description>This offering&apos;s estate-complexity bands, same shape as
+        Bands_JSON__c. Blank or unusable falls back to GtmEstateComplexity&apos;s
+        compiled Light/Moderate/Heavy edges.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>4096</length>
+    <visibleLines>8</visibleLines>
+</CustomField>

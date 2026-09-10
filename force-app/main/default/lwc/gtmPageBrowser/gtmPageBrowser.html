@@ -1,0 +1,27 @@
+<template>
+  <div class="pb">
+    <div class="pb-head">
+      <div class="pb-head-row">
+        <div class="pb-head-title">
+          <lightning-icon icon-name="standard:contact_list" size="medium" class="pb-ico"></lightning-icon>
+          <div class="pb-head-text">
+            <p class="pb-eyebrow">Pages</p>
+            <h1 class="pb-title">{headerTitle}</h1>
+          </div>
+        </div>
+        <template if:true={isStoryMode}>
+          <button type="button" class="pb-back" onclick={handleBackToPages}>← Back to Pages</button>
+        </template>
+      </div>
+    </div>
+
+    <template if:true={isStoryMode}>
+      <div class="pb-stage">
+        <c-gtm-story offering-key={storyOfferingKey} key={storyOfferingKey}></c-gtm-story>
+      </div>
+    </template>
+    <template if:false={isStoryMode}>
+      <c-gtm-rep-link-finder></c-gtm-rep-link-finder>
+    </template>
+  </div>
+</template>

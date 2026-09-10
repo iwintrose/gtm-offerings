@@ -8,6 +8,11 @@ the AI chat assistant (see `agentforce-customizer-v2.md`) both stay reachable
 from the wizard for a rep who prefers them.
 **Design reference:** [Prospect Page Setup Wizard — artifact mockup](https://claude.ai/code/artifact/52d8f87a-4fb7-429c-965f-8309b07c183c)
 
+> **Stale:** written before the `MA_`→`GTM_` rename (see `docs/backlog.md` D6);
+> verify current object/component names in code before treating this as
+> ground truth. This wizard shipped under the name `gtmConfigWizard`, not
+> `MaConfigWizard` as referenced below.
+
 ---
 
 ## 1. Problem statement

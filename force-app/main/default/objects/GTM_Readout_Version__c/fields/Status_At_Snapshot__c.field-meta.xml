@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Status_At_Snapshot__c</fullName>
+    <description>Whether this snapshot was taken at Approve or Publish</description>
+    <externalId>false</externalId>
+    <label>Status At Snapshot</label>
+    <length>40</length>
+    <trackHistory>false</trackHistory>
+    <type>Text</type>
+</CustomField>

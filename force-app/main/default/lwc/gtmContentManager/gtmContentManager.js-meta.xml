@@ -8,7 +8,7 @@
     </targets>
     <targetConfigs>
         <targetConfig targets="lightning__AppPage">
-            <property name="offeringKey" type="String" label="Offering Key" description="Offering key, matching MA_Offering__mdt.Offering_Key__c." default="migration-accelerator"/>
+            <property name="offeringKey" type="String" label="Offering Key" description="Offering key, matching GTM_Offering__mdt.Offering_Key__c." default="migration-accelerator"/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>

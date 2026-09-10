@@ -42,7 +42,7 @@ TEMPLATES = [
     {
         "name": "story",
         "js": LAYOUTS_JS,
-        "html": "force-app/main/default/lwc/maStory/maStory.html",
+        "html": "force-app/main/default/lwc/gtmStory/gtmStory.html",
         "sections": "data/seed/migration-accelerator.story.sections.json",
         "content": "data/seed/migration-accelerator.story.records.json",
     },
@@ -73,9 +73,18 @@ def parse_layout_fields(js):
     return out
 
 
-# Layouts drawn outside the section loop (page chrome), so they legitimately
-# have no is<Layout> branch inside it.
-NON_SEQUENCE_LAYOUTS = {"page-header", "page-footer"}
+def parse_frame_layouts(js):
+    """The layouts drawn outside the section loop, read from the same module.
+
+    Page chrome — the masthead, the footer, the assistant — legitimately has no
+    is<Layout> branch inside the sequence. Which layouts those are is already
+    declared once in FRAME_LAYOUTS; hardcoding a second copy here is how the two
+    drift, and the drift shows up as a false failure the day a layout is added.
+    """
+    m = re.search(r"const FRAME_LAYOUTS = \[(.*?)\];", js, re.S)
+    if not m:
+        raise SystemExit("FRAME_LAYOUTS not found in %s" % LAYOUTS_JS)
+    return set(re.findall(r"'([\w-]+)'", m.group(1)))
 
 
 def rendered_layouts(html):
@@ -90,7 +99,9 @@ def main():
     failures = []
     for tpl in TEMPLATES:
         name = tpl["name"]
-        layouts = parse_layout_fields(read(tpl["js"]))
+        js = read(tpl["js"])
+        layouts = parse_layout_fields(js)
+        non_sequence = parse_frame_layouts(js)
         drawn = rendered_layouts(read(tpl["html"]))
         sections = json.loads(read(tpl["sections"]))["records"]
         content = json.loads(read(tpl["content"]))["records"]
@@ -110,7 +121,7 @@ def main():
                     % (name, sec["Section_Key__c"], layout)
                 )
                 continue
-            if layout not in NON_SEQUENCE_LAYOUTS and camel(layout) not in drawn:
+            if layout not in non_sequence and camel(layout) not in drawn:
                 failures.append(
                     "%s: layout '%s' is declared but no branch in the template draws it"
                     % (name, layout)

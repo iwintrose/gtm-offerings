@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Decision Ownership &amp; Validation Capacity</label>
+    <protected>false</protected>
+    <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
+        <field>Instrument__c</field>
+        <value xsi:type="xsd:string">Readiness</value>
+    </values>
+    <values>
+        <field>Dimension_Key__c</field>
+        <value xsi:type="xsd:string">decision_readiness</value>
+    </values>
+    <values>
+        <field>Dimension_Name__c</field>
+        <value xsi:type="xsd:string">Decision Ownership &amp; Validation Capacity</value>
+    </values>
+    <values>
+        <field>Measures__c</field>
+        <value xsi:type="xsd:string">Whether humans exist to make disposition decisions and to validate the result</value>
+    </values>
+    <values>
+        <field>Question_Text__c</field>
+        <value xsi:type="xsd:string">Who decides what moves, what is retired and what is rebuilt — and who validates it afterwards?</value>
+    </values>
+    <values>
+        <field>Option_1_Label__c</field>
+        <value xsi:type="xsd:string">No named owner for those decisions, and nobody free to validate the result</value>
+    </values>
+    <values>
+        <field>Option_2_Label__c</field>
+        <value xsi:type="xsd:string">An owner exists in principle but has little time; validation would fall to one already-busy person</value>
+    </values>
+    <values>
+        <field>Option_3_Label__c</field>
+        <value xsi:type="xsd:string">A named owner per area, with some capacity set aside to review and test</value>
+    </values>
+    <values>
+        <field>Option_4_Label__c</field>
+        <value xsi:type="xsd:string">A named decision owner and named validators, with time formally allocated to the migration</value>
+    </values>
+    <values>
+        <field>Max_Answer_Value__c</field>
+        <value xsi:type="xsd:double">4.0</value>
+    </values>
+    <values>
+        <field>Sort_Order__c</field>
+        <value xsi:type="xsd:double">80.0</value>
+    </values>
+    <values>
+        <field>Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+</CustomMetadata>

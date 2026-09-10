@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Layer__c</fullName>
+    <label>Layer</label>
+    <description>reword = same anchors, pair-specific examples (layer 1). recalibrate = the anchors move, so a 4 is harder or easier to earn (layer 2). substitute = a different question in the same position carrying the same risk theme (layer 3). Author at the lowest layer that does the job; every layer up costs comparability.</description>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>reword</fullName>
+                <default>true</default>
+                <label>reword</label>
+            </value>
+            <value>
+                <fullName>recalibrate</fullName>
+                <default>false</default>
+                <label>recalibrate</label>
+            </value>
+            <value>
+                <fullName>substitute</fullName>
+                <default>false</default>
+                <label>substitute</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
