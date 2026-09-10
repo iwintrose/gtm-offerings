@@ -88,11 +88,13 @@ Any newly introduced field, object, or tab will be completely invisible to profi
 
 Ensure new schema additions are mapped across the 5 core project permission sets located in `force-app/main/default/permissionsets/`:
 
-- `GTM_Config_Manager`
-- `GTM_Config_View_All`
-- `GTM_Assessment_Guest`
-- `GTM_Story_Guest`
-- `GTM_Platform_Visibility`
+- `GTM_Offering_User` -- required for every rep: their own configurator links, readout editor, GTM_Offerings app tabs only.
+- `GTM_Offering_Admin` -- full CRUD/FLS/View All/Modify All on every GTM object this app owns (never org-wide Modify/View All Data). Also holds the GUS Claude API key setting.
+- `GTM_Content_Manager` -- required for content/BA roles: page/section content objects, GTM_Content_Manager app tabs only.
+- `GTM_Content_Admin` -- full CRUD/FLS/View All/Modify All on the page/section content objects (never org-wide Modify/View All Data).
+- `GTM_Guest` -- guest-only, assigned to each site's Guest User Profile in Setup (not to any internal user).
+
+A new object/field needs an explicit grant in the matching User/Manager set, and its Admin counterpart needs the same field added with `viewAllRecords`/`modifyAllRecords` left at the object's existing setting. A required or MasterDetail field cannot take an explicit `fieldPermissions` entry at all (`sf` deploy fails with "You cannot deploy to a required field") -- it is implicitly visible to anyone with object-level access.
 
 ### 👥 Duplicate-Detection Interceptions
 

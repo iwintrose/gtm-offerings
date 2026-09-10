@@ -47,7 +47,7 @@ missing feature.
 | **LWC** | 28 bundles |
 | **UI** | 3 flexipages, 11 tabs, 2 apps, 6 layouts, 5 managed content types |
 | **Automation** | `GTM_Readout_Approval` approval process, its 3 workflow field updates, the `GTM_Readout_Triage` queue, `GTM_Config_Send_To_Client` flow |
-| **Access** | `GTM_Config_Manager`, `GTM_Config_View_All`, `GTM_Assessment_Guest`, `GTM_Story_Guest`, `GTM_Platform_Visibility` |
+| **Access** | `GTM_Offering_User`, `GTM_Offering_Admin`, `GTM_Content_Manager`, `GTM_Content_Admin`, `GTM_Guest` |
 | **Sites** | `GTM_Accelerator1` (`/gtmaccelerator`) and `GTM_Story1` (`/gtmstory`) — **ExperienceBundle only, see §3** |
 | **Callouts** | `Anthropic_API` and five other remote site settings; 2 CSP trusted sites |
 | **Optional** | `bots/` + `genAiPlugins/` (need Agentforce), `profiles/` (see §7) |
@@ -267,11 +267,9 @@ Experience Cloud sites created by hand.
 |---|---|---|---|
 | 1 | **Activate** both sites | Setup → Digital Experiences → All Sites → Activate | every public URL 404s |
 | 2 | **Publish** both sites | Experience Builder → Publish | the deploy only updated the *draft*. Guests see the previous version, or nothing. **Do this after every future deploy that touches `experiences/`** |
-| 3 | Assign `GTM_Assessment_Guest` to the **GTM Accelerator** site's guest user profile | Builder → ⚙ Settings → General → Guest User Profile → Permission Set Assignments | the questionnaire and the `/readout` page both fail for anonymous visitors. Guest profiles are created per site by Salesforce and are not in source |
-| 4 | Assign `GTM_Story_Guest` to the **GTM Story** site's guest user profile | same, on the other site | the story page fails for anonymous visitors |
+| 3 | Assign `GTM_Guest` to **both** the GTM Accelerator and GTM Story sites' guest user profiles | Builder → ⚙ Settings → General → Guest User Profile → Permission Set Assignments | the questionnaire, `/readout`, and the story page all fail for anonymous visitors. Guest profiles are created per site by Salesforce and are not in source |
 | 5 | Confirm **Page Access** on `/readout`, `/assessment`, `/configurator`, `/industry` reads *Public — inherited from site* | Builder → ⚙ Settings → Pages | a login screen instead of the page. `pageAccess: "UseParent"` deploys as this, but check it |
-| 6 | Assign `GTM_Config_Manager` to every rep; `GTM_Config_View_All` to whoever should see everyone's links | Setup → Permission Sets → Manage Assignments | reps cannot open the readout editor |
-| 7 | Assign `GTM_Platform_Visibility` if you have Standard Platform User licences | same | those users see no tabs |
+| 6 | Assign `GTM_Offering_User` + `GTM_Content_Manager` to every rep/content author; `GTM_Offering_Admin`/`GTM_Content_Admin` to whoever needs full CRUD + View/Modify All on this app's own objects | Setup → Permission Sets → Manage Assignments | reps cannot open the readout editor, or an admin can't see records outside their own |
 | 8 | **Add members to the `Unassigned Readouts` queue** | Setup → Queues → Unassigned Readouts → Queue Members | `GTM_Readout__c` is Private and queue-owned readouts are then visible to **nobody**. Direct bookings land here. Queue membership is data, not metadata |
 | 9 | Add every rep profile as a **site member** of GTM Accelerator | Builder → ⚙ Settings → *Members* (or Setup → Digital Experiences → site → Administration → Members) | an authenticated rep hits the site as if logged out, no matter what else is granted. This is `NetworkMemberGroup`, a record, not metadata |
 | 10 | Set the **Manager** field on every user who will submit a readout | Setup → Users | they cannot submit for approval at all |
