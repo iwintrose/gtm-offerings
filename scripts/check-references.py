@@ -724,7 +724,8 @@ def audit(problems, warnings):
     KEY_RE = re.compile(r"\b(?:sk-ant-[\w-]{10,}|AKIA[0-9A-Z]{16}|"
                         r"xox[baprs]-[\w-]{10,}|gh[pousr]_[A-Za-z0-9]{20,})")
     scan_roots = [SRC, os.path.join(ROOT, "data"), os.path.join(ROOT, "scripts"),
-                  os.path.join(ROOT, "docs"), os.path.join(ROOT, "migration-accelerator")]
+                  os.path.join(ROOT, "docs"), os.path.join(ROOT, "instrument"),
+                  os.path.join(ROOT, "reference")]
     scan_files = []
     for rt in scan_roots:
         if os.path.isdir(rt):
@@ -1244,7 +1245,7 @@ def inventory():
         print("        %-14s %s" % (o, ", ".join(fields(o)) or "(no custom fields)"))
     print("  custom fields total   %d" % sum(len(fields(o)) for o in objs))
     print("  custom metadata records %d   (%s generated from "
-          "migration-accelerator/instrument/)"
+          "instrument/)"
           % (count("customMetadata", lambda f: f.endswith(".md-meta.xml")),
              count("customMetadata",
                    lambda f: f.startswith("GTM_Assessment_") and f.endswith(".md-meta.xml"))))

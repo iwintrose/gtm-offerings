@@ -137,8 +137,8 @@ overrides:
       Einstein slots. HubL and custom modules are source-side platform knowledge held
       by the authoring consultant, which is precisely what interview_only posture
       declares. THE BANDING IS DELIBERATELY ONE HARSHER THAN
-      migration-accelerator/instrument/migration-accelerator/pairs/hubspot_to_sfmc.yaml's slot 4, and stays so
-      after the rescope: migration-accelerator/capabilities/platforms/hubspot.yaml,
+      instrument/migration-accelerator/pairs/hubspot_to_sfmc.yaml's slot 4, and stays so
+      after the rescope: reference/ma-migrator-capabilities/platforms/hubspot.yaml,
       hubl_templating severity_by_target — "SFMC Next: there is no scripting language
       at all, so expressive HubL escalates toward blocker" — which is why custom modules
       plus expressive HubL sit at 2 here and at 3 there. THE RESCOPE, applied here for
@@ -148,7 +148,7 @@ overrides:
       which a marketing-automation migration does not move — so scoring readiness on
       them marked a client down for content nobody was proposing to touch. HubDB has
       left these anchors and is asked instead, unscored, as cms_scope_expectation in
-      migration-accelerator/instrument/migration-accelerator/supplements/hubspot_context.yaml, which this pack
+      instrument/migration-accelerator/supplements/hubspot_context.yaml, which this pack
       already fires; the hubdb_dependency callout below is reframed to read as
       conditional on that answer rather than as an assumed blocker.
 
@@ -201,7 +201,7 @@ overrides:
       to HubSpot, and whether any of your forms are embedded on pages another
       team looks after.
     rationale: >-
-      skills/mce-mcn-helper/references/skills/10-roadmap.md — the external-dependency and risk-register framing, where integrations owned outside marketing are the items that set the roadmap's outer bound, which is the anchor this scale is now built on. RECALIBRATED FROM LAYER 1, for the same reason and by the same edit as migration-accelerator/instrument/migration-accelerator/pairs/hubspot_to_sfmc.yaml: the base anchors counted integrations, and this pack now also asks for that count on the complexity axis (integration_surface, below), so a respondent met the same question twice. Complexity asks HOW MANY are wired in; readiness asks WHO OWNS THEM and whether cutover waits on somebody else. Only the scale moved — the named examples are unchanged.
+      skills/mce-mcn-helper/references/skills/10-roadmap.md — the external-dependency and risk-register framing, where integrations owned outside marketing are the items that set the roadmap's outer bound, which is the anchor this scale is now built on. RECALIBRATED FROM LAYER 1, for the same reason and by the same edit as instrument/migration-accelerator/pairs/hubspot_to_sfmc.yaml: the base anchors counted integrations, and this pack now also asks for that count on the complexity axis (integration_surface, below), so a respondent met the same question twice. Complexity asks HOW MANY are wired in; readiness asks WHO OWNS THEM and whether cutover waits on somebody else. Only the scale moved — the named examples are unchanged.
 
   # ---- Slot 7. Layer 2 + a visible ceiling. ----
   - dimension: consent_portability
@@ -231,7 +231,7 @@ overrides:
 # ESTATE COMPLEXITY — the second axis, in HubSpot's nouns.
 #
 # The source half of this block is identical in substance to the one in
-# migration-accelerator/instrument/migration-accelerator/pairs/hubspot_to_sfmc.yaml, and deliberately so:
+# instrument/migration-accelerator/pairs/hubspot_to_sfmc.yaml, and deliberately so:
 # complexity measures the SOURCE estate, and the source is the same HubSpot
 # estate whichever Salesforce platform it is heading for. Sizing it differently
 # per target would mean a client's complexity band moved when they changed their
@@ -245,7 +245,7 @@ overrides:
 # rationales so a reader can see the divergence was considered and rejected.
 #
 # Every option is a count or a volume — see the rule in
-# migration-accelerator/instrument/migration-accelerator/complexity.yaml.
+# instrument/migration-accelerator/complexity.yaml.
 
 complexity_overrides:
   - dimension: journey_footprint
@@ -266,7 +266,7 @@ complexity_overrides:
       Your workflows list shows the active count directly, and each workflow's
       enrolment trigger is on its first step.
     rationale: >-
-      migration-accelerator/capabilities/platforms/hubspot.yaml — automation.workflows and entry_sources' webhook_or_api_enrolment. Identical to the hubspot__sfmc wording on purpose: the estate being counted is the same estate, and a complexity band that moved when the destination changed would be measuring the target rather than the client. skills/mce-mcn-helper/references/skills/03-org-scoring.md — the count-the-artefacts method. Counts and trigger mix only; how much of the workflow logic survives is slot 3.
+      reference/ma-migrator-capabilities/platforms/hubspot.yaml — automation.workflows and entry_sources' webhook_or_api_enrolment. Identical to the hubspot__sfmc wording on purpose: the estate being counted is the same estate, and a complexity band that moved when the destination changed would be measuring the target rather than the client. skills/mce-mcn-helper/references/skills/03-org-scoring.md — the count-the-artefacts method. Counts and trigger mix only; how much of the workflow logic survives is slot 3.
 
   - dimension: data_extension_complexity
     layer: recalibrate
@@ -287,7 +287,7 @@ complexity_overrides:
       Settings then Properties gives you the count per object, and Data Model
       lists any custom objects.
     rationale: >-
-      migration-accelerator/capabilities/platforms/hubspot.yaml — object_catalog.crm_data_model: contact_properties with its calculation and rollup subtypes, companies, deals, tickets, custom_objects and associations. The base wording asked about "30-100 tables, moderate SQL", which is Marketing Cloud's Data Extension vocabulary and doubly wrong here, since this target's person model is Data Cloud's Unified Individual rather than a table count at all. What is COUNTED is the same as on hubspot__sfmc and unchanged by that: the client has the properties and objects they have. Whether the model must be resolved into a unified profile before anything can be configured is slot 5's substituted question on this pair, and is not asked again here.
+      reference/ma-migrator-capabilities/platforms/hubspot.yaml — object_catalog.crm_data_model: contact_properties with its calculation and rollup subtypes, companies, deals, tickets, custom_objects and associations. The base wording asked about "30-100 tables, moderate SQL", which is Marketing Cloud's Data Extension vocabulary and doubly wrong here, since this target's person model is Data Cloud's Unified Individual rather than a table count at all. What is COUNTED is the same as on hubspot__sfmc and unchanged by that: the client has the properties and objects they have. Whether the model must be resolved into a unified profile before anything can be configured is slot 5's substituted question on this pair, and is not asked again here.
 
   - dimension: scripting_depth
     layer: recalibrate
@@ -308,7 +308,7 @@ complexity_overrides:
       Design Manager lists your custom modules, and custom code and webhook
       actions appear as steps inside workflows.
     rationale: >-
-      migration-accelerator/capabilities/platforms/hubspot.yaml — content.hubl, content.custom_modules, and gap pattern operations_hub_custom_code; infrastructure names custom_code_and_webhook_actions as "Operations Hub Professional+", so an account without that tier answers 1 truthfully. The base wording asked about "server-side code" and "hosted pages", which are Marketing Cloud's SSJS and CloudPages — and on THIS target neither exists at all, so the base scale was not merely foreign, it named two things the destination cannot offer. Counts artefacts only; that this target has no scripting language, and what that costs, is slot 4's recalibration.
+      reference/ma-migrator-capabilities/platforms/hubspot.yaml — content.hubl, content.custom_modules, and gap pattern operations_hub_custom_code; infrastructure names custom_code_and_webhook_actions as "Operations Hub Professional+", so an account without that tier answers 1 truthfully. The base wording asked about "server-side code" and "hosted pages", which are Marketing Cloud's SSJS and CloudPages — and on THIS target neither exists at all, so the base scale was not merely foreign, it named two things the destination cannot offer. Counts artefacts only; that this target has no scripting language, and what that costs, is slot 4's recalibration.
 
   - dimension: business_unit_structure
     layer: reword
@@ -328,7 +328,7 @@ complexity_overrides:
       Business units are an Enterprise feature, so if you have never seen the
       setting, the answer is almost certainly one portal.
     rationale: >-
-      migration-accelerator/capabilities/platforms/hubspot.yaml — the tenancy nouns the object catalogue and infrastructure.tier_gating use (portals, and Enterprise-only business units), replacing the base wording's "child accounts", which is not a HubSpot construct. LAYER 1: the bands are untouched because the thing counted is the same thing. The one complexity dimension with no readiness slot beside it, so there was nothing to disentangle.
+      reference/ma-migrator-capabilities/platforms/hubspot.yaml — the tenancy nouns the object catalogue and infrastructure.tier_gating use (portals, and Enterprise-only business units), replacing the base wording's "child accounts", which is not a HubSpot construct. LAYER 1: the bands are untouched because the thing counted is the same thing. The one complexity dimension with no readiness slot beside it, so there was nothing to disentangle.
 
   - dimension: integration_surface
     layer: recalibrate
@@ -348,7 +348,7 @@ complexity_overrides:
       Your installed-apps list and connected ad accounts are both under Settings
       then Integrations.
     rationale: >-
-      migration-accelerator/capabilities/platforms/hubspot.yaml — extraction.authentication's private-app model, gap patterns ads_audience_sync and forms_and_ctas_rebuild, and object_catalog.audiences.ads_audiences, whose gloss is why connected ad accounts are counted separately: "The sync connection itself is a live integration, not an asset." The base wording's "Custom REST/SOAP integrations" describes a Marketing Cloud estate. COUNT ONLY: slot 6 on this pair was moved off counting and onto ownership in the same edit, so the two stop asking the same thing.
+      reference/ma-migrator-capabilities/platforms/hubspot.yaml — extraction.authentication's private-app model, gap patterns ads_audience_sync and forms_and_ctas_rebuild, and object_catalog.audiences.ads_audiences, whose gloss is why connected ad accounts are counted separately: "The sync connection itself is a live integration, not an asset." The base wording's "Custom REST/SOAP integrations" describes a Marketing Cloud estate. COUNT ONLY: slot 6 on this pair was moved off counting and onto ownership in the same edit, so the two stop asking the same thing.
 
   - dimension: consent_suppression_model
     layer: recalibrate
@@ -368,7 +368,7 @@ complexity_overrides:
       Your subscription types are listed under Marketing then Email then
       Subscription Types, with a count at the top.
     rationale: >-
-      migration-accelerator/capabilities/platforms/hubspot.yaml — consent.model, object_catalog.consent_and_identity.subscription_types and preference_pages. The base wording's bottom option, "standard publication or subscription lists", is a Marketing Cloud construct and on THIS target it is not even the target's own construct: MCN's consent model is a Spring '26+ capability whose parity is unverified, which is why slot 7 here carries a ceiling. That ceiling belongs on the readiness axis and is not repeated here — how many permission categories the client has is a fact about the client, and it does not become a smaller number because the destination is unfinished. COUNTS AND PLACES ONLY.
+      reference/ma-migrator-capabilities/platforms/hubspot.yaml — consent.model, object_catalog.consent_and_identity.subscription_types and preference_pages. The base wording's bottom option, "standard publication or subscription lists", is a Marketing Cloud construct and on THIS target it is not even the target's own construct: MCN's consent model is a Spring '26+ capability whose parity is unverified, which is why slot 7 here carries a ceiling. That ceiling belongs on the readiness axis and is not repeated here — how many permission categories the client has is a fact about the client, and it does not become a smaller number because the destination is unfinished. COUNTS AND PLACES ONLY.
 
 callouts:
   - pattern: hubdb_dependency
@@ -409,7 +409,7 @@ callouts:
       callout is kept rather than dropped because it is a real gap the moment the
       client expects that content to travel, and that expectation is now asked directly
       as cms_scope_expectation in
-      migration-accelerator/instrument/migration-accelerator/supplements/hubspot_context.yaml, which this
+      instrument/migration-accelerator/supplements/hubspot_context.yaml, which this
       pack fires.
 
   - pattern: workflow_reenrolment

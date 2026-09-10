@@ -2,11 +2,11 @@
 """
 Compiles the instrument authoring files into Salesforce custom metadata.
 
-    migration-accelerator/instrument/<offering-key>/dimensions.yaml    the 8-slot frame
-    migration-accelerator/instrument/<offering-key>/complexity.yaml    the 6-dimension frame
-    migration-accelerator/instrument/<offering-key>/gates.yaml         tier qualifiers
-    migration-accelerator/instrument/<offering-key>/supplements/*.yaml layer-4 question sets
-    migration-accelerator/instrument/<offering-key>/pairs/*.yaml       one file per pair
+    instrument/<offering-key>/dimensions.yaml    the 8-slot frame
+    instrument/<offering-key>/complexity.yaml    the 6-dimension frame
+    instrument/<offering-key>/gates.yaml         tier qualifiers
+    instrument/<offering-key>/supplements/*.yaml layer-4 question sets
+    instrument/<offering-key>/pairs/*.yaml       one file per pair
 
         ->  force-app/main/default/customMetadata/GTM_Assessment_Pair.*.md-meta.xml
             force-app/main/default/customMetadata/GTM_Assessment_Dimension_Override.*.md-meta.xml
@@ -93,6 +93,7 @@ Usage:  python3 scripts/build-instrument.py [--check]
 Exit:   0 = clean, 1 = a rule was violated or output is stale
 """
 import argparse
+import glob
 import hashlib
 import json
 import os
@@ -106,7 +107,7 @@ except ImportError:
     sys.exit("PyYAML is required: pip install pyyaml")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INSTRUMENT = os.path.join(ROOT, "migration-accelerator", "instrument")
+INSTRUMENT = os.path.join(ROOT, "instrument")
 CMD_DIR = os.path.join(ROOT, "force-app", "main", "default", "customMetadata")
 QUESTION_GLOB = "GTM_Assessment_Question."
 
@@ -188,6 +189,71 @@ def offering_dirs():
         if os.path.isdir(path) and os.path.exists(os.path.join(path, "dimensions.yaml")):
             out.append((name, path))
     return out
+
+
+OFFERING_GLOB = "GTM_Offering.*.md-meta.xml"
+
+
+def offering_keys_from_cmdt():
+    """Every Offering_Key__c on a committed GTM_Offering__mdt record.
+
+    Source of truth for the PRE-FLIGHT cross-check in main(): an instrument
+    directory must correspond to an offering that actually exists. Reads the
+    committed XML only -- no org connection, no `sf` CLI, no DML -- so it
+    behaves identically in CI and on a laptop with no authenticated org.
+
+    Returns (keys, record_count). A record_count of 0 means the offering
+    source itself is missing, which is a different failure from a directory
+    that does not match any offering, and main() reports it as such.
+    """
+    keys = set()
+    files = sorted(glob.glob(os.path.join(CMD_DIR, OFFERING_GLOB)))
+    for path in files:
+        try:
+            tree = ET.parse(path)
+        except ET.ParseError as exc:
+            fail(os.path.relpath(path, ROOT),
+                 "is not parseable XML, so its offering key cannot be read: %s" % exc)
+            continue
+        for values in tree.getroot().findall("{%s}values" % NS):
+            field = values.find("{%s}field" % NS)
+            value = values.find("{%s}value" % NS)
+            if field is not None and (field.text or "").strip() == "Offering_Key__c":
+                if value is not None and (value.text or "").strip():
+                    keys.add(value.text.strip())
+    return keys, len(files)
+
+
+def check_offerings_exist(offerings):
+    """PRE-FLIGHT, not a 15th rule.
+
+    offering_dirs() admits a directory on filesystem evidence alone -- a
+    dimensions.yaml is enough -- so a directory named for an offering that has
+    no GTM_Offering__mdt record behind it would compile and stamp
+    Offering_Key__c onto a full scored instrument for an offering the app does
+    not have. That is a precondition on the inputs rather than a property of
+    an instrument's contents, which is why it runs once, here, and not inside
+    build_offering() (which deliberately cannot see outside its own directory).
+    """
+    keys, record_count = offering_keys_from_cmdt()
+    if record_count == 0:
+        # ONE error, naming the missing source. Emitting one per offering
+        # directory would bury the actual cause under a cascade.
+        fail(os.path.relpath(CMD_DIR, ROOT),
+             "no GTM_Offering__mdt records found (no %s). Every instrument "
+             "directory is cross-checked against the committed offering "
+             "records, so the offering source cannot be absent." % OFFERING_GLOB)
+        return
+    for name, _path in offerings:
+        if name not in keys:
+            fail("instrument/%s/" % name,
+                 "no GTM_Offering__mdt record has Offering_Key__c = '%s'. An "
+                 "instrument directory must correspond to a committed "
+                 "offering. Add force-app/main/default/customMetadata/"
+                 "GTM_Offering.<Name>.md-meta.xml with Offering_Key__c = "
+                 "'%s', or rename the directory to an existing offering key "
+                 "(known keys: %s)."
+                 % (name, name, ", ".join(sorted(keys)) or "none"))
 
 
 # --------------------------------------------------------------- source root
@@ -478,7 +544,7 @@ def value_block(field, value):
 
 HEADER = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
           "<!-- GENERATED by scripts/build-instrument.py from "
-          "migration-accelerator/instrument/. Do not hand-edit: the next build "
+          "instrument/. Do not hand-edit: the next build "
           "overwrites it, and the YAML is the reviewable artifact. -->\n"
           "<CustomMetadata xmlns=\"http://soap.sforce.com/2006/04/metadata\" "
           "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
@@ -1241,8 +1307,26 @@ def main():
     if not offerings:
         _offering_prefix = ""
         fail("instrument/", "no offering directories found. Each offering is an "
-                            "immediate subdirectory of migration-accelerator/"
-                            "instrument/ containing a dimensions.yaml.")
+                            "immediate subdirectory of instrument/ containing "
+                            "a dimensions.yaml.")
+
+    # ---- PRE-FLIGHT: every instrument directory names a real offering.
+    # Runs before the build loop so a directory with no GTM_Offering__mdt
+    # record behind it never gets as far as being compiled and stamped.
+    _offering_prefix = ""
+    check_offerings_exist(offerings)
+
+    # A precondition failure ABORTS rather than accumulating. The build loop
+    # below assumes a well-formed offering directory and will raise IOError on
+    # a half-authored one, so continuing past a failed pre-flight would
+    # replace a named, actionable error with a traceback.
+    if errors:
+        print("INSTRUMENT BUILD FAILED\n")
+        for e in errors:
+            print("  x " + e)
+        for w in warnings:
+            print("  ! " + w)
+        return 1
 
     # ---- validate and emit, one offering at a time, in its own scope.
     out = {}

@@ -45,7 +45,13 @@ const HARDCODED_INDUSTRIES = [
     { industryKey: 'lifesci',    industryLabel: 'Life Sciences' },
     { industryKey: 'media',      industryLabel: 'Media & Entertainment' },
     { industryKey: 'transport',  industryLabel: 'Transportation & Logistics' },
-    { industryKey: 'government', industryLabel: 'Government & Public Sector' }
+    { industryKey: 'government', industryLabel: 'Government & Public Sector' },
+    // Added for a metals/materials prospect; no GTM_Page_Content__c rows are
+    // tagged with this key yet, so a viewer who picks it sees the offering
+    // defaults (Industry_Key__c = null rows), not industry-specific copy —
+    // GtmPageContentReader/GtmPageContentController's filter already falls
+    // back that way, so this degrades safely rather than rendering blank.
+    { industryKey: 'energy-commodities', industryLabel: 'Energy & Commodities' }
 ];
 
 // The floor: what the page says before any record exists.

@@ -136,19 +136,9 @@ they can't drift out of sync with real validation, scoring, or FLS:
   spread rather than four identical "perfect" records. Safe to keep, edit
   the `spec` list for your own demo needs, or delete -- delete-then-rebuild,
   matched by name, and touches nothing else in the org.
-- **`scripts/data/seed-cmc-sample.apex`** -- a single richer walkthrough
-  (Commercial Metals Company, a real company used here only as a stand-in;
-  nothing in it represents an actual engagement) exercising the full
-  BD-rep-to-recipient flow end to end: engagement link with a password,
-  guest read, token-gated submission, server-scored readout. Idempotent --
-  re-running it after the Account already exists just prints the existing
-  record Ids instead of duplicating. Portable: it's a self-contained script
-  with no dependency on any specific org's existing data, so it runs the
-  same way in any org this app is deployed to.
 
 ```bash
 sf apex run --file scripts/data/reset-accelerator-demo.apex --target-org my-new-org
-sf apex run --file scripts/data/seed-cmc-sample.apex --target-org my-new-org
 ```
 
 ## If this needs to go to *many* orgs, not just one

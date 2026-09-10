@@ -20,7 +20,7 @@ working MC Next target adapter in either repo, so presenting it as the
 destination would be a promise nothing can keep.
 
 **The gaps are not invented.** Every row in `gaps` is lifted from
-`migration-accelerator/capabilities/platforms/hubspot.yaml` — its `pattern`,
+`reference/ma-migrator-capabilities/platforms/hubspot.yaml` — its `pattern`,
 `status`, `severity`, `issue` and `workaround` — read against the classic-SFMC
 half of each pattern's `severity_by_target`. If that manifest changes, this
 fixture is stale and should be re-derived from it rather than edited to taste.
