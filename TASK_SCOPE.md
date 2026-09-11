@@ -1,53 +1,163 @@
-# TASK SCOPE — ISSUE #26
+# TASK SCOPE — ISSUE #40
 
 ## 1. Requirements Breakdown
 
-- **Target Objective:** Two related content-authoring gaps in the GTM Content Manager, reported by the product owner:
-  1. An author must be able to create a brand-new `industry-profile` section (an offering's own pitch to one industry) from the Content Manager UI, and clicking an existing `industry-profile` section must show its real fields rather than a blank state.
-  2. Each offering needs a Settings affordance in `gtmContentHome` exposing an explicit **Status** (Draft/Published — gates whether the offering appears on the GTM Offering Dashboard listing) and a **Delete** action (soft-hide/archive only — never a destructive record delete, since `gtm-dev` is production per `CLAUDE.md` §1). This must be visibly distinct from the Configurator's existing per-link Customize wizard.
+- **Target Objective:** A Content Manager (GTM_Content_Manager permission
+  set) user should be able to rename what a page is *called* in the
+  Content Manager's own page picker/editor — today `TEMPLATE_LABELS` in
+  `force-app/main/default/lwc/gtmPageLayouts/gtmPageLayouts.js` is a
+  hardcoded JS constant (`story: 'Story'`, `'faq-bd': 'BD App Help (FAQ)'`,
+  etc.) with no authoring path.
 
-  **Verified against actual code (not just the issue text or `docs/backlog.md`), three findings that change the shape of item 1:**
+  **Important finding — verify before designing anything new.** The
+  content-model decision the issue and `docs/backlog.md` B6 both describe
+  as still-open ("needs a content-model decision... own field vs. a new
+  addressable content key, same shape as B1") **has already been made and
+  built, and is live on `main`.** Confirmed via
+  `git merge-base --is-ancestor 1b525bf HEAD` against current `main`
+  (`838dac9`) — commit `1b525bf` ("feat: page names editable from the
+  offering/framework card (B6)"):
+  - Added `GtmPageContentController.renamePage(offeringKey, templateType,
+    title)`, which writes the override to a reserved, never-rendered
+    content address `<offeringKey>::<templateType>::page::title`
+    (`Section_Key__c = 'page'`, `Field_Key__c = 'title'` on the existing
+    `GTM_Page_Content__c` object) — explicitly modeled on the existing
+    `renameOffering`, and, per its own commit message, the same
+    reuse-the-existing-object pattern B1 used for the CMS-editable FAQ
+    widget (commit `8171624`: "reuses the existing `MA_Page_Content__c` /
+    `MA_Page_Section__c` content-address mechanism rather than a new
+    object" — i.e. an addressable content key, not a new field).
+  - Added a `pageTitles` map (`GtmPageContentController.HomeSummary`,
+    keyed `"<offeringKey>::<templateType>"`) returned from
+    `getHomeSummary()`, read back as an override over `TEMPLATE_LABELS`.
+  - Wired a rename icon + inline Save/Cancel row into
+    `gtmContentHome.js`/`.html`/`.css` (the Content Manager home
+    dashboard's page list) only.
+  - Its commit message states "No new permission-set grants needed —
+    reuses `GTM_Page_Content__c` columns already fully granted."
 
-  - **(a) Confirmed bug, JS layer:** `force-app/main/default/lwc/gtmPageLayouts/gtmPageLayouts.js`, `TEMPLATE_LAYOUTS.configurator` (lines 204–205) whitelists only `['chapter-cards', 'chapter-lede', 'chapter-proof', 'chapter-phases', 'chapter-close', 'offering-defaults']` — **`'industry-profile'` is not in this list.** `addableLayouts('configurator')` (line 245) filters strictly against this whitelist for a listed template, so the "Add section" modal on the Configurator page never offers Industry angle as a layout choice at all. This is a distinct, narrower bug from `docs/backlog.md` D12, which is about the `industry-chooser` framework template being *deliberately* closed off (correct, out of scope, do not touch) — D12 does not mention or explain the Configurator's own whitelist gap. The fix here is additive: add `'industry-profile'` to the `configurator` array. `LAYOUT_FIELDS['industry-profile']`, `LAYOUT_LABELS`, `LAYOUT_HINTS`, and `SECTION_ICONS['industry-profile']` (in `gtmContentManager.js`) are all already fully defined and unaffected — only the whitelist entry is missing.
-  - **(b) Deeper drift, Apex layer — the issue's own premise is stale:** `GtmPageContentReader.getIndustryProfiles(offeringKey, templateType)` (`force-app/main/default/classes/GtmPageContentReader.cls`, ~line 262) **ignores both of its parameters for the actual query.** It hardcodes `INDUSTRY_OWNER = 'gtm'` and `INDUSTRY_TEMPLATE = 'industry-chooser'` (lines 18–19) and always reads the **framework's** `industry-<key>` sections (i.e. the same generic `industry-tile` content shown on the Choose Your Industry page), never an offering-scoped `industry-profile` row. The method's own doc comment explains this was a deliberate consolidation: "Industries belong to the framework, not to an offering... an industry has one home... The configurator draws one cover, so it had no business holding six industry sections." **This directly contradicts the issue's stated premise** that `industry-profile` is "already wired into `gtmConfigurator.js` via `getIndustryProfiles(offeringKey=this.offeringKey)`" — the offering key is accepted but never used to select which industry copy is shown. No documented decision record for this consolidation was found in `docs/backlog.md`, `docs/architecture/`, or `docs/specs/` — it exists only as a code comment. **This is exactly the kind of spec/code drift `CLAUDE.md`/`AGENTS.md` warn about**, and it means: even if (a) is fixed and an author successfully authors a new per-offering `industry-profile` section, it will *still never render* on the live Configurator, because the read path that feeds the page does not look at it. Restoring the per-offering read path (or deciding the framework-level consolidation is in fact still the intended architecture, and the ask is instead to re-open per-offering industry copy as a considered reversal of that decision) is an architectural call, not a one-line bug fix, and belongs to the Architect step, not this scope file.
-  - **(c) "Clicking an existing section shows blank" — unconfirmed root cause.** `GtmPageSectionController.getEditorSections` and `gtmContentManager.js`'s field-editor bridge (`activeSection`/`records` filtered by `sectionKey`) show no code path that would blank an existing row's fields once its `GTM_Page_Content__c` records exist — the mechanism should work like any other layout. The most likely explanation, given (b), is that any existing `industry-profile` section a user finds already has no content rows behind it (never seeded, or seeded then abandoned once the framework-consolidation in (b) landed and stopped being read) — but this was not directly reproduced against `gtm-dev` data. **Flagging as unconfirmed** rather than presenting a guessed cause as settled.
+  **So there is no unresolved content-model fork left for the Architect
+  to decide from scratch.** The correct Architect action is to *ratify*
+  "reuse the existing address scheme exactly as built in `1b525bf`," not
+  re-open a field-vs.-addressable-key debate a prior pass already closed
+  and shipped. Picking a different mechanism now (e.g. a dedicated field)
+  would create a second, conflicting way to name a page alongside the one
+  already live in `gtm-dev`.
 
-- **System Component Impacted:** LWC (`gtmPageLayouts`, `gtmContentManager`, `gtmContentHome`, `gtmConfigurator`) + Apex (`GtmPageSectionController`, `GtmPageContentReader`, `GtmPageContentController`) + Custom Metadata (`GTM_Offering__mdt`, pending the data-model fork below) + possibly `GTM_Page_Section__c` (new field, pending the same fork).
+  **What issue #40 is actually still asking for, once `1b525bf` is
+  accounted for:** `1b525bf` only wired the override into `gtmContentHome`
+  (the Content Manager's home/dashboard page list). Every other
+  `TEMPLATE_LABELS` consumer still reads the hardcoded constant directly
+  and ignores `pageTitles`, so a page renamed from the home dashboard
+  still shows its old hardcoded name everywhere else — including "their
+  own picker," which is literally what the issue title calls out (the
+  Content Manager editor's own template picker is a *different* component
+  from the home dashboard `1b525bf` touched). Confirmed by reading each
+  consumer:
+  - `force-app/main/default/lwc/gtmContentManager/gtmContentManager.js`
+    (line 277, `loadTemplates()`'s card labels; line 701,
+    `selectedTemplateLabel` getter/breadcrumb) — the Content Manager
+    editor's own template-picker cards and header. **Not touched by
+    `1b525bf` at all**, and this is the surface the issue title names.
+    It already has `this.selectedOffering` in scope, so it has what it
+    needs to look up an override — it just doesn't ask for one.
+  - `force-app/main/default/lwc/gtmOverview/gtmOverview.js` (line 11) —
+    defines its own **second, independently hardcoded** `TEMPLATE_LABELS`
+    object rather than importing the one from `gtmPageLayouts.js`. It is
+    already out of sync even from the old hardcoded baseline (missing
+    `offerings-page`, `faq-bd`, `faq-content-manager`, `assistant`
+    entirely — those templateTypes fall back to raw slug text there
+    today), and applies no override either.
+  - `force-app/main/default/lwc/gtmFeedbackQueue/gtmFeedbackQueue.js`
+    (line 45) — imports the real `TEMPLATE_LABELS` from `gtmPageLayouts`
+    but applies no `pageTitles`-style override, so a renamed page's
+    feedback-queue entries still show the old name.
+  - `GtmPageContentController.cls` only populates `pageTitles` inside
+    `getHomeSummary()` (lines ~518-535) — there is no equivalent exposed
+    from `getTemplateSummary()` (what `gtmContentManager` calls to build
+    its picker) or from any Apex method `gtmOverview`/`gtmFeedbackQueue`
+    call, so those three surfaces have no server-side data to read a
+    rename from even if their JS asked for one.
 
----
-
-### Open design fork — data model for offering Status/Delete (Architect/human decision, not resolved here)
-
-No Status/Delete surface exists anywhere today — verified: `GTM_Offering__mdt` has only `Site_Path__c`, `Monthly_Target__c`, `CMS_Channel_Id__c`, `Label__c`, `Offering_Key__c`, `Annual_Target__c` (no status/active/delete field of any kind). `gtmContentHome.js` and `gtmContentManager.js` have no delete/archive/status action on an offering. The only "is this live" signal today is `GtmPageContentReader.getOfferingTiles()`'s derived `isLive = String.isNotBlank(t.description)` — confirmed, a heuristic off content presence, not an explicit flag.
-
-**Two candidate homes for the new flag, with tradeoffs, presented rather than chosen:**
-
-1. **New field on `GTM_Offering__mdt` (Custom Metadata):** Matches where every other offering-level attribute already lives (`Site_Path__c`, targets, etc.) and keeps "what offerings exist and their top-level attributes" in one metadata type. Downside, confirmed by `CLAUDE.md` §5: Custom Metadata changes are Metadata-API deploys (`./scripts/deploy.sh`, two-pass with retries for `GTM_Offering__mdt` specifically, called out as flaky), not an instant DML update — a poor fit for a toggle a content author expects to click and see take effect immediately, the way every other Content Manager edit (`saveDrafts`, `setSectionActive`, etc.) already works via ordinary DML.
-2. **Reuse/extend `GTM_Page_Section__c.Status__c` on the offering's `offering-tile` (i.e. `tile`/`offerings-listing`) section specifically:** `Status__c` is a real, already-deployed Picklist (`Draft`/`Published`, confirmed via field-meta.xml) and DML-editable instantly via the same `setSectionActive`-style pattern already in `GtmPageSectionController`. But **confirmed semantic conflict**: `Status__c`'s existing, documented meaning (per its own `inlineHelpText`) is "draft until published — a section created in the editor is Draft and does not appear on the public page until Publish runs," i.e. it already means *this section's own content edit is unpublished*, not *this whole offering should be hidden from the dashboard*. Forcing the tile section to stay `Draft` to hide the offering would collide with the normal edit/publish cycle for that section's own field content (an author editing and publishing the tile's copy would inadvertently flip the offering back to "live" on the dashboard, or be blocked from ever publishing routine copy edits while intentionally keeping the offering in Draft). `Active__c` (confirmed: "Unchecked removes the section from the rendered page without deleting it or its content rows") is closer in spirit to a hide/soft-delete lever, but it is scoped to one section, not the offering as a whole, and hiding just the tile section would not by itself remove the offering from other places it might appear. `Draft_State__c` is confirmed to be JSON for *pending* structural changes only (sort/visibility/deletion not yet published) — it models the same "unpublished edit" concept as `Status__c`, not a standing "is this offering live" flag, so it does not fit either.
-
-**RESOLVED by product owner (2026-09-10):** Option 2a — a new, purpose-built field on `GTM_Page_Section__c`, scoped to the offering's tile section (`Section_Key__c='tile'`, `Template_Type__c='offerings-listing'`), NOT reusing `Status__c`/`Active__c`. Field name: `Offering_Status__c` (Picklist: `Draft`/`Published`, default `Published` so existing offerings are unaffected on deploy). Instant DML via the same `GtmPageSectionController` pattern as `setSectionActive`.
-
-### "Delete" mechanically — RESOLVED
-
-**RESOLVED by product owner (2026-09-10):** A separate `Archived__c` (Checkbox, default `false`) field, also on the tile section — distinct from `Offering_Status__c`. Both independently hide the offering from `GtmPageContentReader.getOfferingTiles()`'s dashboard listing (`Offering_Status__c == 'Draft' OR Archived__c == true`), but they are two distinct levers a content author can reason about separately (temporary unpublish vs. permanent-ish archive), never a destructive record delete.
-
-### Open naming/placement risk — confirmed, not in the issue text
-
-`gtmContentHome.js` **already has a "Settings" affordance today**: `handleOpenSettings()` (line 544) is a per-page "Settings" link on an offering's card that opens the Configurator's `offering-defaults` customizer-settings panel (or the Framework's `assistant` settings). The issue only calls out avoiding collision with the Configurator's link-level **Customize wizard** (`gtmConfigWizard`) — but naming the new Status/Delete surface "Settings" would *also* collide with this already-existing, differently-scoped "Settings" link in the very same `gtmContentHome` card UI. The Architect/Developer step should pick a name for the new surface that avoids both collisions (e.g. something other than "Settings" — "Manage," "Offering status," etc.) — not resolved here, as naming is a design decision, not a requirements-gathering one.
-
----
+- **System Component Impacted:** LWC (`gtmContentManager`, `gtmOverview`,
+  `gtmFeedbackQueue`) + Apex (`GtmPageContentController` — extending
+  whichever method backs `gtmContentManager`'s `getTemplateSummary`, and
+  any equivalent lookup `gtmOverview`/`gtmFeedbackQueue` should call, to
+  also surface the existing `pageTitles`-style override). No Experience
+  Cloud route, Custom Metadata, or YAML instrument changes.
 
 ## 2. Code Dependency Checklist
 
-- [ ] Modifying GUS Tool Surface? **No.** None of the affected components (`gtmPageLayouts`, `gtmContentManager`, `gtmContentHome`, `gtmConfigurator`, `GtmPageSectionController`, `GtmPageContentReader`) are GUS tool surfaces (`GtmAgentToolSurface` implementations). N/A — AGENTS.md §1 zero-DML rule does not apply.
-- [x] Altering Custom Metadata? **Conditional — depends on the data-model fork above.** If the Architect step resolves the fork toward option 1 (new `GTM_Offering__mdt` field), this is YES: the field must be authored as CMDT and any migration-accelerator YAML affected must be updated, and the raw XML must not be hand-edited outside that path per `CLAUDE.md` §2. If the fork resolves toward option 2 (a `GTM_Page_Section__c` field), this checkbox is N/A and standard object field metadata applies instead (still not YAML-governed, but still subject to the permission-set mapping rule below).
-- [x] Introducing database fields? **Yes, pending the fork.** Either path introduces at least one new field (a Status/Delete flag, wherever it lands). Per `CLAUDE.md` §6, mapping to the 5 core permission sets (`GTM_Config_Manager`, `GTM_Config_View_All`, `GTM_Assessment_Guest`, `GTM_Story_Guest`, `GTM_Platform_Visibility`) is mandatory and must be part of the Definition of Done — most likely `GTM_Config_Manager` (author-facing edit) and `GTM_Config_View_All` (read), with the guest-facing sets almost certainly excluded since this is an authoring-only surface, but that inclusion/exclusion list itself should be confirmed by the Architect/Developer step against each permission set's actual current field grants, not assumed here.
+- [ ] Modifying GUS Tool Surface? **No.** None of the affected files
+      (`gtmContentManager`, `gtmOverview`, `gtmFeedbackQueue`,
+      `GtmPageContentController`) implement `GtmAgentToolSurface` or sit
+      in GUS's tool-call path (`GtmAgentProxyController`,
+      `GtmAgentGetConfigState`/`GtmAgentApplyConfigUpdate`,
+      `GtmReadoutAgentSurface`). AGENTS.md §1's zero-DML-in-tool rule does
+      not apply.
+- [ ] Altering Custom Metadata? **No.** Page titles live on
+      `GTM_Page_Content__c` (a standard custom object, reserved-address
+      row), not on any `GTM_*__mdt` Custom Metadata Type — no
+      `migration-accelerator/` YAML or `customMetadata/GTM_Assessment_*`
+      XML is touched by this scope.
+- [ ] Introducing database fields? **No new field or object.** This scope
+      only reads the already-existing address
+      (`Section_Key__c='page'`/`Field_Key__c='title'` on
+      `GTM_Page_Content__c`) from additional call sites; `renamePage()`
+      and the underlying schema already exist. The prior commit's message
+      claims no new permission-set grant was needed because those
+      `GTM_Page_Content__c` columns were already fully granted — **the
+      Architect/Developer step must verify this directly** (diff
+      `GTM_Content_Manager.permissionset-meta.xml` and
+      `GTM_Content_Admin.permissionset-meta.xml`'s existing
+      `GTM_Page_Content__c` field grants for `Text_Value__c`,
+      `Section_Key__c`, `Field_Key__c`, `Template_Type__c`,
+      `Offering_Key__c`) rather than trusting an unverified prior claim,
+      per this repo's own docs-drift caveat. If a gap is found, it is an
+      addition to a `fieldPermissions` entry on the existing object for
+      `GTM_Content_Manager` (read access — this scope's three surfaces
+      are all read paths) and, if not already present, `GTM_Content_Admin`
+      (already full CRUD/FLS on the object per CLAUDE.md §6) — not a new
+      object/field mapping exercise, since the schema itself pre-exists.
+      `GTM_Offering_User`/`GTM_Offering_Admin`/`GTM_Guest` are unaffected:
+      `gtmOverview` and `gtmFeedbackQueue` run under `GTM_Offering_User`,
+      which needs the same read-only confirmation as
+      `GTM_Content_Manager` above if it does not already carry it —
+      confirm this permission set too, not just the Content ones.
 
 ## 3. Plan Acceptance Criteria
 
-- **Success Metric:**
-  1. `gtmPageLayouts.js`'s `TEMPLATE_LAYOUTS.configurator` includes `'industry-profile'`, so the Content Manager's "Add section" modal on a Configurator page offers "Industry angle" as a layout choice, and a newly created section can be selected and shows its own fields (problem/useCase/solution/proofLine/etc.), matching every other layout's create/select behavior.
-  2. The architectural fork on `getIndustryProfiles` (item 1(b) above) is explicitly resolved by the Architect step — either the per-offering read path is restored so newly authored `industry-profile` content actually renders on that offering's live Configurator, or a documented decision is recorded that the framework-only model is intentional and the issue's acceptance criterion "renders correctly on that offering's live Configurator page" is descoped/renegotiated with the product owner. Silently leaving (b) unaddressed while shipping only fix (a) would satisfy the create/edit UI but not the issue's explicit "and it renders correctly on that offering's live Configurator page" acceptance criterion.
-  3. Each offering's card in `gtmContentHome` exposes a Status control (Draft/Published) and a Delete/archive action, both visibly distinct in naming and placement from the existing per-page "Settings" link (`handleOpenSettings`) and from the Configurator's link-level Customize wizard.
-  4. Setting Status to Draft removes that offering from `GtmPageContentReader.getOfferingTiles()`'s dashboard listing; Published restores it. No `delete`/destructive DML is introduced anywhere in this surface — confirmed against `CLAUDE.md` §1's `gtm-dev`-is-production rule.
-- **Target Test Target:** `force-app/main/default/classes/GtmPageContentReaderTest.cls` (for `getOfferingTiles`/`getIndustryProfiles` behavior changes) and `force-app/main/default/classes/GtmPageSectionControllerTest.cls` (for `createSection`/`getEditorSections` against the `industry-profile` layout on `configurator`). No existing Jest spec exercises `gtmPageLayouts.js`'s `TEMPLATE_LAYOUTS`/`addableLayouts` or `gtmContentHome.js` directly (only `force-app/main/default/lwc/gtmConfigurator/__tests__/gtmConfigurator.readout.test.js` exists among the affected LWCs, and it does not cover this) — new Jest specs for `gtmPageLayouts`'s `addableLayouts('configurator')` and for the new `gtmContentHome` Status/Delete controls are required as part of this build, not merely reused from an existing suite.
+- **Success Metric:** A page renamed once, via `gtmContentHome`'s
+  existing (`1b525bf`) rename control, shows the new name consistently
+  everywhere a page name is displayed, with no second/parallel renaming
+  mechanism introduced:
+  1. `gtmContentManager`'s template-picker cards (`loadTemplates()`) and
+     its `selectedTemplateLabel` breadcrumb/header both reflect the
+     override, resolved via the same `<offeringKey>::<templateType>`
+     `pageTitles` shape `getHomeSummary()` already returns (either by
+     having `gtmContentManager` also call `getHomeSummary()`/a new
+     lightweight equivalent, or by extending `getTemplateSummary()` to
+     include the override per row — left to the Architect/Developer to
+     choose based on payload size and existing call patterns, not
+     specified further here).
+  2. `gtmOverview`'s locally-duplicated `TEMPLATE_LABELS` constant is
+     removed in favor of importing the canonical one from
+     `gtmPageLayouts.js` (fixing the pre-existing `offerings-page`/
+     `faq-bd`/`faq-content-manager`/`assistant` omissions as a direct
+     side effect), and applies the same override.
+  3. `gtmFeedbackQueue` applies the override too, so a feedback item's
+     "page" column matches the page's current name.
+  4. No regression to `gtmContentHome`'s existing `1b525bf` rename
+     UI/flow (rename icon, inline Save/Cancel, `renamePage` Apex call).
+- **Target Test Target:** New/extended Jest specs —
+  `force-app/main/default/lwc/gtmContentManager/__tests__/gtmContentManager.test.js`
+  (assert `selectedTemplateLabel` and template-card labels prefer an
+  override over `TEMPLATE_LABELS`) and
+  `force-app/main/default/lwc/gtmOverview/__tests__/gtmOverview.test.js`
+  (assert the local `TEMPLATE_LABELS` duplicate is gone, every
+  `gtmPageLayouts.js` template type resolves to a real label, and an
+  override wins when present) — confirm each spec file exists already
+  before assuming it needs only extension versus net-new creation. If the
+  Architect/Developer step extends an Apex method (e.g.
+  `getTemplateSummary`) to return per-template override titles, add
+  coverage to `force-app/main/default/classes/GtmPageContentControllerTest.cls`.
