@@ -1,6 +1,7 @@
 import { LightningElement, track } from 'lwc';
 import getOpenFeedback from '@salesforce/apex/GtmFeedbackController.getOpenFeedback';
 import respond from '@salesforce/apex/GtmFeedbackController.respond';
+import getPageTitles from '@salesforce/apex/GtmPageContentController.getPageTitles';
 import { TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 
 /**
@@ -26,6 +27,8 @@ export default class GtmFeedbackQueue extends LightningElement {
     @track reply = '';
     @track nextStatus = 'Resolved';
     @track saving = false;
+    // Page-title overrides from renamePage(), keyed "<offeringKey>::<templateType>".
+    _pageTitles = {};
 
     statusOptions = STATUSES;
 
@@ -33,8 +36,13 @@ export default class GtmFeedbackQueue extends LightningElement {
 
     load() {
         this.loading = true;
-        return getOpenFeedback()
-            .then((rows) => {
+        return Promise.all([
+            getOpenFeedback(),
+            getPageTitles()
+        ])
+            .then(([rows, titles]) => {
+                this._pageTitles = titles || {};
+                const pt = this._pageTitles;
                 this.notes = (rows || []).map((r) => ({
                     key: r.recordId,
                     name: r.name,
@@ -42,7 +50,11 @@ export default class GtmFeedbackQueue extends LightningElement {
                     who: r.submittedBy || 'Someone',
                     when: r.createdDate ? new Date(r.createdDate).toLocaleDateString() : '',
                     offering: r.offeringKey,
-                    page: r.templateType ? (TEMPLATE_LABELS[r.templateType] || r.templateType) : '',
+                    page: r.templateType
+                        ? (pt[r.offeringKey + '::' + r.templateType]
+                            || TEMPLATE_LABELS[r.templateType]
+                            || r.templateType)
+                        : '',
                     status: r.status,
                     statusClass: `q-pill q-pill--${(r.status || 'New').toLowerCase().replace(/\s+/g, '-')}`,
                     response: r.response,

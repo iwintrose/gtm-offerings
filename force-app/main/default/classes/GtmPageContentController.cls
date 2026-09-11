@@ -377,7 +377,46 @@ public without sharing class GtmPageContentController {
             }
             ts.fieldCount = (Integer) ar.get('c');
         }
+        // Apply any display-name overrides written by renamePage().
+        for (GTM_Page_Content__c rec : [
+            SELECT Template_Type__c, Text_Value__c
+            FROM   GTM_Page_Content__c
+            WHERE  Offering_Key__c = :offeringKey
+            AND    Section_Key__c  = 'page'
+            AND    Field_Key__c    = 'title'
+            AND    Active__c       = true
+            LIMIT  50
+        ]) {
+            TemplateSummary ts = byTemplate.get(rec.Template_Type__c);
+            if (ts != null && String.isNotBlank(rec.Text_Value__c)) {
+                ts.pageTitle = rec.Text_Value__c;
+            }
+        }
         return byTemplate.values();
+    }
+
+    /**
+     * Lightweight read of all page-title overrides across every offering.
+     * Used by surfaces (e.g. gtmFeedbackQueue) that need the map but do not
+     * want the full HomeSummary payload. Keys are "<offeringKey>::<templateType>".
+     */
+    @AuraEnabled(cacheable=false)
+    public static Map<String, String> getPageTitles() {
+        Map<String, String> titles = new Map<String, String>();
+        for (GTM_Page_Content__c rec : [
+            SELECT Offering_Key__c, Template_Type__c, Text_Value__c
+            FROM   GTM_Page_Content__c
+            WHERE  Template_Type__c != null
+            AND    Section_Key__c   = 'page'
+            AND    Field_Key__c     = 'title'
+            AND    Active__c        = true
+            LIMIT  400
+        ]) {
+            if (String.isNotBlank(rec.Text_Value__c)) {
+                titles.put(rec.Offering_Key__c + '::' + rec.Template_Type__c, rec.Text_Value__c);
+            }
+        }
+        return titles;
     }
 
     public class OfferingOption {
@@ -394,6 +433,8 @@ public without sharing class GtmPageContentController {
         @AuraEnabled public String  templateType { get; set; }
         @AuraEnabled public Integer sectionCount { get; set; }
         @AuraEnabled public Integer fieldCount   { get; set; }
+        // Display-name override from renamePage(), null when not renamed.
+        @AuraEnabled public String  pageTitle    { get; set; }
     }
 
     /**

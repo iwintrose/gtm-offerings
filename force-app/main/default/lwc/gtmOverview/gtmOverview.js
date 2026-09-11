@@ -7,13 +7,7 @@ import getHomeSummary from '@salesforce/apex/GtmPageContentController.getHomeSum
 import getFeedbackFor from '@salesforce/apex/GtmFeedbackController.getFeedbackFor';
 import submitFeedback from '@salesforce/apex/GtmFeedbackController.submitFeedback';
 import getSiteHomePageUrl from '@salesforce/apex/GtmSavedConfigurationController.getSiteHomePageUrl';
-
-const TEMPLATE_LABELS = {
-    story: 'Story',
-    configurator: 'Configurator',
-    'offerings-listing': 'Offerings Listing',
-    'industry-chooser': 'Industry Chooser'
-};
+import { TEMPLATE_LABELS } from 'c/gtmPageLayouts';
 
 /**
  * The app's landing page.
@@ -34,6 +28,8 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     @track loadError = '';
     @track requestsLoaded = false;
     @track offeringsLoaded = false;
+    // Page-title overrides from renamePage(), keyed "<offeringKey>::<templateType>".
+    pageTitles = {};
 
     @track navBusy = false;
 
@@ -143,6 +139,8 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     loadOfferings() {
         return getHomeSummary()
             .then((data) => {
+                this.pageTitles = (data && data.pageTitles) || {};
+                const pt = this.pageTitles;
                 // The framework is authoring scaffolding, not an offering a
                 // rep sells. It belongs in the Content Manager, which is the
                 // BA's app; showing it here asks a BD person to reason about
@@ -167,8 +165,11 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
                             : 'No pages modelled yet',
                         // Named pages rather than a count: "Story, Configurator"
                         // tells a BD what exists to read; "2 pages" does not.
+                        // pageTitles override wins over the hardcoded TEMPLATE_LABELS.
                         pageList: built
-                            .map((p) => TEMPLATE_LABELS[p.templateType] || p.templateType)
+                            .map((p) => pt[o.offeringKey + '::' + p.templateType]
+                                || TEMPLATE_LABELS[p.templateType]
+                                || p.templateType)
                             .join(' · '),
                         configuratorUrl: o.configuratorUrl || '',
                         hasConfigurator: !!o.configuratorUrl,
@@ -337,7 +338,11 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
             when: r.createdDate ? new Date(r.createdDate).toLocaleDateString() : '',
             status: r.status,
             statusClass: `note-pill note-pill--${(r.status || 'New').toLowerCase().replace(/\s+/g, '-')}`,
-            page: r.templateType ? (TEMPLATE_LABELS[r.templateType] || r.templateType) : '',
+            page: r.templateType
+                ? (this.pageTitles[r.offeringKey + '::' + r.templateType]
+                    || TEMPLATE_LABELS[r.templateType]
+                    || r.templateType)
+                : '',
             hasResponse: answered,
             response: r.response,
             // The one state that needs the reader to do something.

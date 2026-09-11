@@ -274,7 +274,7 @@ export default class GtmContentManager extends LightningElement {
             .then((rows) => {
                 this.templates = (rows || []).map((t) => ({
                     ...t,
-                    label: TEMPLATE_LABELS[t.templateType] || t.templateType,
+                    label: t.pageTitle || TEMPLATE_LABELS[t.templateType] || t.templateType,
                     isBuilt: (t.sectionCount || 0) > 0,
                     summary: (t.sectionCount || 0) > 0
                         ? `${t.sectionCount} sections · ${t.fieldCount || 0} fields`
@@ -698,6 +698,8 @@ export default class GtmContentManager extends LightningElement {
     /* The breadcrumb showed 'offerings-listing' -- the key the code addresses a
      * template by, not a name anyone would say out loud. */
     get selectedTemplateLabel() {
+        const t = (this.templates || []).find((x) => x.templateType === this.selectedTemplate);
+        if (t && t.label) return t.label;
         return TEMPLATE_LABELS[this.selectedTemplate] || this.selectedTemplate;
     }
 
