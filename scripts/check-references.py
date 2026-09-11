@@ -22,10 +22,18 @@ never seen this solution has nothing left to resolve. There is no `sf` CLI and
 no org here; nothing below deploys or compiles anything. Every check is static.
 
 Usage:  python3 scripts/check-references.py
-        python3 scripts/check-references.py --inventory   # what is in the tree
+        python3 scripts/check-references.py --inventory       # what is in the tree
+        python3 scripts/check-references.py --list-blocking   # one line per
+                                                                # deploy-blocking
+                                                                # finding, sorted,
+                                                                # for diffing two
+                                                                # trees against
+                                                                # each other
 Exit:   0 = nothing found that would fail a deploy
         1 = at least one dangling reference or deploy-blocking problem
 """
+import contextlib
+import io
 import json
 import os
 import re
@@ -1285,6 +1293,12 @@ def main():
         inventory()
         return 0
 
+    list_blocking = "--list-blocking" in sys.argv
+    # In --list-blocking mode we want ONLY the sorted finding lines on
+    # stdout (see below) so a caller can diff two runs cleanly -- swallow
+    # every other report section's normal output.
+    out = (lambda *a, **k: None) if list_blocking else print
+
     lwcs = sorted(
         d for d in os.listdir(os.path.join(SRC, "lwc"))
         if os.path.isdir(os.path.join(SRC, "lwc", d))
@@ -1317,9 +1331,9 @@ def main():
                     break
         return hits
 
-    print("=" * 72)
-    print("LIGHTNING COMPONENTS")
-    print("=" * 72)
+    out("=" * 72)
+    out("LIGHTNING COMPONENTS")
+    out("=" * 72)
     orphans = []
     for name in lwcs:
         # Every form a reference can take. Missing one of these is how four
@@ -1333,15 +1347,15 @@ def main():
                         f"<lwcComponent>{name}</lwcComponent>"], own_dir=name)
         if hits:
             where = ", ".join(f"{k}({len(v)})" for k, v in sorted(hits.items()))
-            print(f"  {name:<24} <- {where}")
+            out(f"  {name:<24} <- {where}")
         else:
             orphans.append(name)
-            print(f"  {name:<24} <- NOTHING (orphan)")
+            out(f"  {name:<24} <- NOTHING (orphan)")
 
-    print()
-    print("=" * 72)
-    print("APEX CLASSES  (grants shown so a guest-facing class is obvious)")
-    print("=" * 72)
+    out()
+    out("=" * 72)
+    out("APEX CLASSES  (grants shown so a guest-facing class is obvious)")
+    out("=" * 72)
     for name in apex:
         if name.endswith("Test"):
             continue
@@ -1355,13 +1369,13 @@ def main():
                         f"{name}.", f"<invocationTarget>{name}</invocationTarget>"],
                        own_dir=None)
         where = ", ".join(f"{k}({len(v)})" for k, v in sorted(hits.items())) or "NOTHING"
-        print(f"  {name:<32} <- {where}")
+        out(f"  {name:<32} <- {where}")
 
     # Dangling: something referenced that no longer exists in source.
-    print()
-    print("=" * 72)
-    print("DANGLING REFERENCES")
-    print("=" * 72)
+    out()
+    out("=" * 72)
+    out("DANGLING REFERENCES")
+    out("=" * 72)
     dangling = []
     known = set(lwcs)
     for path, text in files.items():
@@ -1378,62 +1392,81 @@ def main():
                 dangling.append((os.path.relpath(path, ROOT), "apexClass", m))
     if dangling:
         for where, kind, what in dangling:
-            print(f"  x {where} references missing {kind} '{what}'")
+            out(f"  x {where} references missing {kind} '{what}'")
     else:
-        print("  none")
+        out("  none")
 
-    print()
-    print(f"Orphaned components: {', '.join(orphans) if orphans else 'none'}")
+    out()
+    out(f"Orphaned components: {', '.join(orphans) if orphans else 'none'}")
     if orphans:
         # This scans the branch, and the branch is not the org. Ported from
         # claude/gtm-offerings-ma-deploy-vtf5vl: maAdminBar and gtmAppShell
         # both read as orphans there while the org had them placed on live
         # Experience Cloud pages -- the delete failed and said so.
-        print()
-        print("  These are unreferenced IN THIS BRANCH. Experience Builder keeps its")
-        print("  own page layouts in the org, and a deploy of the site bundles does")
-        print("  not always round-trip them. Before deleting any of these, confirm")
-        print("  against the org:")
-        print()
-        print("      sf project retrieve start --metadata ExperienceBundle \\")
-        print("        --target-metadata-dir /tmp/exp")
-        print("      unzip -o /tmp/exp/unpackaged.zip -d /tmp/exp")
-        print("      grep -rl '<NAME>' /tmp/exp/unpackaged/experiences/")
-        print()
-        print("  A destructive deploy also refuses and names the pages, which is the")
-        print("  authoritative answer.")
+        out()
+        out("  These are unreferenced IN THIS BRANCH. Experience Builder keeps its")
+        out("  own page layouts in the org, and a deploy of the site bundles does")
+        out("  not always round-trip them. Before deleting any of these, confirm")
+        out("  against the org:")
+        out()
+        out("      sf project retrieve start --metadata ExperienceBundle \\")
+        out("        --target-metadata-dir /tmp/exp")
+        out("      unzip -o /tmp/exp/unpackaged.zip -d /tmp/exp")
+        out("      grep -rl '<NAME>' /tmp/exp/unpackaged/experiences/")
+        out()
+        out("  A destructive deploy also refuses and names the pages, which is the")
+        out("  authoritative answer.")
 
     # ---- the deployability half -------------------------------------------
     problems, warnings = [], []
-    audit(problems, warnings)
+    if list_blocking:
+        # audit() prints its own section headers unconditionally (it has no
+        # knowledge of --list-blocking); swallow that too so stdout in this
+        # mode is only ever the sorted finding lines below.
+        with contextlib.redirect_stdout(io.StringIO()):
+            audit(problems, warnings)
+    else:
+        audit(problems, warnings)
 
-    print()
-    print("=" * 72)
-    print("WOULD-NOT-DEPLOY  (each of these fails, or silently omits, a deploy)")
-    print("=" * 72)
+    if list_blocking:
+        # Machine-readable, one line per deploy-blocking finding, sorted so
+        # two runs of the identical tree always emit identical output. Used
+        # by .github/workflows/agent-ci-gate.yml to diff a PR's findings
+        # against main's baseline rather than fail on the raw count -- see
+        # that workflow for why (issue #33).
+        lines = [f"{where}\tmissing {kind} '{what}'" for where, kind, what in dangling]
+        lines += [f"{where}\t{msg}" for where, msg in problems]
+        for line in sorted(lines):
+            print(line)
+        return 1 if (dangling or problems) else 0
+
+    out()
+    out("=" * 72)
+    out("WOULD-NOT-DEPLOY  (each of these fails, or silently omits, a deploy)")
+    out("=" * 72)
     if dangling:
         for where, kind, what in dangling:
-            print(f"  x {where}")
-            print(f"      references missing {kind} '{what}'")
+            out(f"  x {where}")
+            out(f"      references missing {kind} '{what}'")
     for where, msg in problems:
-        print(f"  x {where}")
-        print(f"      {msg}")
+        out(f"  x {where}")
+        out(f"      {msg}")
     if not dangling and not problems:
-        print("  none")
+        out("  none")
 
-    print()
-    print("=" * 72)
-    print("DEPLOYS, BUT WILL NOT WORK UNTIL SOMEBODY DOES SOMETHING BY HAND")
-    print("=" * 72)
+    out()
+    out("=" * 72)
+    out("DEPLOYS, BUT WILL NOT WORK UNTIL SOMEBODY DOES SOMETHING BY HAND")
+    out("=" * 72)
     if warnings:
         for where, msg in warnings:
-            print(f"  ! {where}")
-            print(f"      {msg}")
+            out(f"  ! {where}")
+            out(f"      {msg}")
     else:
-        print("  none")
+        out("  none")
 
-    print()
-    print(f"{len(dangling) + len(problems)} deploy-blocking, "
+    out()
+    out(f"{len(dangling) + len(problems)} deploy-blocking, "
           f"{len(warnings)} needing a manual step "
           f"(see docs/runbooks/fresh-org-deploy.md)")
     return 1 if (dangling or problems) else 0

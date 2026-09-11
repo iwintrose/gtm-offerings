@@ -63,7 +63,42 @@ jobs:
 
       - name: Static reference / instrument drift audit
         run: |
-          python3 scripts/check-references.py
+          # check-references.py's deploy-blocking count is not currently
+          # zero on main (issue #33) -- three long-standing findings that no
+          # agent branch introduced were failing every PR identically
+          # (confirmed on PRs #20, #27, #28). Failing on the raw count makes
+          # the gate a permanent red X rather than a signal, so this diffs
+          # this branch's findings against main's own and fails only on ones
+          # this branch adds. --list-blocking prints one sorted, stable line
+          # per deploy-blocking finding for exactly this purpose.
+          # check-references.py resolves ROOT/SRC relative to its own file
+          # location, so the baseline run needs to be an actual checkout of
+          # main, not just the old script pointed at this branch's tree (nor
+          # this branch's *new* --list-blocking flag run against a copy of
+          # the old script, which predates that flag and wouldn't understand
+          # it). Give main a real worktree and run THIS branch's script --
+          # the one with --list-blocking -- against it.
+          git fetch origin main --depth=1
+          git worktree add --detach /tmp/main-baseline origin/main
+          cp scripts/check-references.py /tmp/main-baseline/scripts/check-references.py
+          python3 /tmp/main-baseline/scripts/check-references.py --list-blocking > /tmp/blocking-main.txt || true
+          git worktree remove --force /tmp/main-baseline
+          python3 scripts/check-references.py --list-blocking > /tmp/blocking-head.txt || true
+          NEW_FINDINGS="$(comm -13 <(sort /tmp/blocking-main.txt) <(sort /tmp/blocking-head.txt))"
+          if [[ -n "$NEW_FINDINGS" ]]; then
+            echo "::error::This branch introduces deploy-blocking findings that are not on main:"
+            echo "$NEW_FINDINGS"
+            echo "(main's own pre-existing findings, if any, are not this branch's problem to fix.)"
+            exit 1
+          fi
+          echo "No new deploy-blocking findings vs. main. Full report for context:"
+          python3 scripts/check-references.py || true
+
+          # build-instrument.py --check is all-or-nothing too, in principle,
+          # but unlike check-references.py it already passes cleanly on main
+          # today (0 findings) -- there's no pre-existing baseline to be
+          # unfair about, so it's left as a plain pass/fail gate rather than
+          # given the same delta treatment.
           python3 scripts/build-instrument.py --check
 
       - name: Set up Salesforce CLI

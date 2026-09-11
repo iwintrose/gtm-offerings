@@ -21,7 +21,7 @@ GTM Offerings is a Salesforce Lightning/Apex application built to simplify, stan
 
 ### Environment Configuration
 
-- **Org Status:** `gtm-dev` (Org ID: `00DgK00000XZieHUAT`) is treated as **Production**. There is no staging environment. Every destructive change or seed script lands directly on live prospect data.
+- **Org Status:** `gtm-dev` is treated as **Production**. Its org id is org-specific and is deliberately not committed here, the same treatment `docs/runbooks/fresh-org-deploy.md` §8 gives every other org-specific value; look it up with `sf org display --target-org gtm-dev` if you need it. There is no staging environment. Every destructive change or seed script lands directly on live prospect data.
 - _Note: This operational risk will persist until migration to the core Publicis Sapient Salesforce Org is finalized._
 
 ---
