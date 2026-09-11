@@ -95,11 +95,16 @@ jobs:
           python3 scripts/check-references.py || true
 
           # build-instrument.py --check is all-or-nothing too, in principle,
-          # but unlike check-references.py it already passes cleanly on main
-          # today (0 findings) -- there's no pre-existing baseline to be
-          # unfair about, so it's left as a plain pass/fail gate rather than
-          # given the same delta treatment.
-          python3 scripts/build-instrument.py --check
+          # but CI/agent worktrees never have an ma-migrator checkout, so
+          # rule 5 (cited paths exist) cannot run without one. The repo's
+          # own documented pattern for exactly this context is
+          # --allow-missing-source-root (docs/runbooks/fresh-org-deploy.md
+          # row A4; docs/agent-artifacts/issue-16-architecture.md), which
+          # skips rule 5 and lets the other 10 rules gate the build. Verified
+          # this passes cleanly (0 findings) on both origin/main and this
+          # branch before adding it here -- do not drop the flag without
+          # provisioning an ma-migrator checkout in this workflow first.
+          python3 scripts/build-instrument.py --check --allow-missing-source-root
 
       - name: Set up Salesforce CLI
         run: npm install --global @salesforce/cli
