@@ -1,53 +1,94 @@
-# TASK SCOPE — ISSUE #26
+# TASK SCOPE — ISSUE #48
 
 ## 1. Requirements Breakdown
 
-- **Target Objective:** Two related content-authoring gaps in the GTM Content Manager, reported by the product owner:
-  1. An author must be able to create a brand-new `industry-profile` section (an offering's own pitch to one industry) from the Content Manager UI, and clicking an existing `industry-profile` section must show its real fields rather than a blank state.
-  2. Each offering needs a Settings affordance in `gtmContentHome` exposing an explicit **Status** (Draft/Published — gates whether the offering appears on the GTM Offering Dashboard listing) and a **Delete** action (soft-hide/archive only — never a destructive record delete, since `gtm-dev` is production per `CLAUDE.md` §1). This must be visibly distinct from the Configurator's existing per-link Customize wizard.
+- **Target Objective:** Issue #48 asserts that issue #26's Draft/Published Status and Archive backend
+  (`GtmPageContentController.setOfferingStatus` / `setOfferingArchived` / `getHomeSummary`) was merged
+  with **no UI anywhere** to drive it, and asks for that UI to be built in `gtmContentHome`.
+- **System Component Impacted:** None — this is a verification/no-op finding, not a build task.
 
-  **Verified against actual code (not just the issue text or `docs/backlog.md`), three findings that change the shape of item 1:**
+  **This issue is already resolved on `main` as of commit `49ce6bf` ("feat(gtm-content-manager):
+  industry-profile authoring, per-offering industry copy, and offering Status/Archive (issue-26)"),
+  merged via PR #27 (`838dac9`, the current HEAD of `main`).** Verified directly against the working
+  tree, not just the commit message:
 
-  - **(a) Confirmed bug, JS layer:** `force-app/main/default/lwc/gtmPageLayouts/gtmPageLayouts.js`, `TEMPLATE_LAYOUTS.configurator` (lines 204–205) whitelists only `['chapter-cards', 'chapter-lede', 'chapter-proof', 'chapter-phases', 'chapter-close', 'offering-defaults']` — **`'industry-profile'` is not in this list.** `addableLayouts('configurator')` (line 245) filters strictly against this whitelist for a listed template, so the "Add section" modal on the Configurator page never offers Industry angle as a layout choice at all. This is a distinct, narrower bug from `docs/backlog.md` D12, which is about the `industry-chooser` framework template being *deliberately* closed off (correct, out of scope, do not touch) — D12 does not mention or explain the Configurator's own whitelist gap. The fix here is additive: add `'industry-profile'` to the `configurator` array. `LAYOUT_FIELDS['industry-profile']`, `LAYOUT_LABELS`, `LAYOUT_HINTS`, and `SECTION_ICONS['industry-profile']` (in `gtmContentManager.js`) are all already fully defined and unaffected — only the whitelist entry is missing.
-  - **(b) Deeper drift, Apex layer — the issue's own premise is stale:** `GtmPageContentReader.getIndustryProfiles(offeringKey, templateType)` (`force-app/main/default/classes/GtmPageContentReader.cls`, ~line 262) **ignores both of its parameters for the actual query.** It hardcodes `INDUSTRY_OWNER = 'gtm'` and `INDUSTRY_TEMPLATE = 'industry-chooser'` (lines 18–19) and always reads the **framework's** `industry-<key>` sections (i.e. the same generic `industry-tile` content shown on the Choose Your Industry page), never an offering-scoped `industry-profile` row. The method's own doc comment explains this was a deliberate consolidation: "Industries belong to the framework, not to an offering... an industry has one home... The configurator draws one cover, so it had no business holding six industry sections." **This directly contradicts the issue's stated premise** that `industry-profile` is "already wired into `gtmConfigurator.js` via `getIndustryProfiles(offeringKey=this.offeringKey)`" — the offering key is accepted but never used to select which industry copy is shown. No documented decision record for this consolidation was found in `docs/backlog.md`, `docs/architecture/`, or `docs/specs/` — it exists only as a code comment. **This is exactly the kind of spec/code drift `CLAUDE.md`/`AGENTS.md` warn about**, and it means: even if (a) is fixed and an author successfully authors a new per-offering `industry-profile` section, it will *still never render* on the live Configurator, because the read path that feeds the page does not look at it. Restoring the per-offering read path (or deciding the framework-level consolidation is in fact still the intended architecture, and the ask is instead to re-open per-offering industry copy as a considered reversal of that decision) is an architectural call, not a one-line bug fix, and belongs to the Architect step, not this scope file.
-  - **(c) "Clicking an existing section shows blank" — unconfirmed root cause.** `GtmPageSectionController.getEditorSections` and `gtmContentManager.js`'s field-editor bridge (`activeSection`/`records` filtered by `sectionKey`) show no code path that would blank an existing row's fields once its `GTM_Page_Content__c` records exist — the mechanism should work like any other layout. The most likely explanation, given (b), is that any existing `industry-profile` section a user finds already has no content rows behind it (never seeded, or seeded then abandoned once the framework-consolidation in (b) landed and stopped being read) — but this was not directly reproduced against `gtm-dev` data. **Flagging as unconfirmed** rather than presenting a guessed cause as settled.
+  - `force-app/main/default/lwc/gtmContentHome/gtmContentHome.js` imports and calls both
+    `setOfferingStatus` (line 643, inside `handleToggleOfferingStatus()`) and `setOfferingArchived`
+    (line 674, inside `handleConfirmArchiveToggle()`), reading initial state from `getHomeSummary()`'s
+    `offeringStatus`/`archived` fields via the `cards` getter (lines 178–186).
+  - `force-app/main/default/lwc/gtmContentHome/gtmContentHome.html` renders a `"Manage offering"`
+    button per offering card (`showManage`, lines 163–168) that is a **distinct element** from the
+    existing per-page `"Settings"` link (`handleOpenSettings`), and a modal (`manageOpen`, lines
+    283–333) exposing a Status toggle button and a two-step Archive/Restore confirm flow — matching
+    issue #26's own acceptance criterion #3 verbatim.
+  - `force-app/main/default/lwc/gtmContentHome/__tests__/gtmContentHome.test.js` has a full Jest
+    describe block ("offering Manage control (Status / Archive)", 6 tests) asserting: the control
+    renders and is distinct from Settings, it's absent from the framework card, the modal opens/shows
+    the right offering, Status toggling calls `setOfferingStatus` with the flipped value, Archive
+    requires a confirm step before calling `setOfferingArchived`, and un-archiving calls
+    `setOfferingArchived(false)` with no confirm. **Ran this suite directly
+    (`npx sfdx-lwc-jest`): all 6 tests pass.**
+  - `force-app/main/default/classes/GtmPageContentControllerTest.cls` (lines 432–536) already has
+    Apex coverage for `setOfferingStatus`/`setOfferingArchived`: creating a tile section when none
+    exists, updating one in place, rejecting invalid status values, refusing the framework key for
+    both methods, and setting/clearing the Archived flag. Issue #48's acceptance criterion asking to
+    "confirm existing GtmPageContentControllerTest.cls coverage... it should already exist... verify,
+    don't just assume" — **verified: it exists and is adequate** (covers both success and rejection
+    paths for both methods).
 
-- **System Component Impacted:** LWC (`gtmPageLayouts`, `gtmContentManager`, `gtmContentHome`, `gtmConfigurator`) + Apex (`GtmPageSectionController`, `GtmPageContentReader`, `GtmPageContentController`) + Custom Metadata (`GTM_Offering__mdt`, pending the data-model fork below) + possibly `GTM_Page_Section__c` (new field, pending the same fork).
+  **Why issue #48's premise is false:** the issue's own evidence is
+  `grep -rln "Offering_Status__c\|Archived__c" force-app/main/default/lwc/` returning zero results.
+  That grep is a false negative, not a real gap: the LWC layer never references those two Custom
+  Field API names as literal strings — it consumes them exclusively through the Apex
+  `OfferingSummary.offeringStatus` / `OfferingSummary.archived` DTO properties (already differently
+  named from the underlying fields) and through the imperative Apex method imports
+  `setOfferingStatus` / `setOfferingArchived`. Grepping for the two Custom Field API names in
+  `force-app/main/default/lwc/` was never going to find a hit even in a fully-wired implementation,
+  which is exactly the state found here. Issue #48 was almost certainly filed by re-running the
+  same verification grep from issue #26's own writeup without re-checking it against the LWC that
+  PR #27 had, by then, already shipped.
 
----
-
-### Open design fork — data model for offering Status/Delete (Architect/human decision, not resolved here)
-
-No Status/Delete surface exists anywhere today — verified: `GTM_Offering__mdt` has only `Site_Path__c`, `Monthly_Target__c`, `CMS_Channel_Id__c`, `Label__c`, `Offering_Key__c`, `Annual_Target__c` (no status/active/delete field of any kind). `gtmContentHome.js` and `gtmContentManager.js` have no delete/archive/status action on an offering. The only "is this live" signal today is `GtmPageContentReader.getOfferingTiles()`'s derived `isLive = String.isNotBlank(t.description)` — confirmed, a heuristic off content presence, not an explicit flag.
-
-**Two candidate homes for the new flag, with tradeoffs, presented rather than chosen:**
-
-1. **New field on `GTM_Offering__mdt` (Custom Metadata):** Matches where every other offering-level attribute already lives (`Site_Path__c`, targets, etc.) and keeps "what offerings exist and their top-level attributes" in one metadata type. Downside, confirmed by `CLAUDE.md` §5: Custom Metadata changes are Metadata-API deploys (`./scripts/deploy.sh`, two-pass with retries for `GTM_Offering__mdt` specifically, called out as flaky), not an instant DML update — a poor fit for a toggle a content author expects to click and see take effect immediately, the way every other Content Manager edit (`saveDrafts`, `setSectionActive`, etc.) already works via ordinary DML.
-2. **Reuse/extend `GTM_Page_Section__c.Status__c` on the offering's `offering-tile` (i.e. `tile`/`offerings-listing`) section specifically:** `Status__c` is a real, already-deployed Picklist (`Draft`/`Published`, confirmed via field-meta.xml) and DML-editable instantly via the same `setSectionActive`-style pattern already in `GtmPageSectionController`. But **confirmed semantic conflict**: `Status__c`'s existing, documented meaning (per its own `inlineHelpText`) is "draft until published — a section created in the editor is Draft and does not appear on the public page until Publish runs," i.e. it already means *this section's own content edit is unpublished*, not *this whole offering should be hidden from the dashboard*. Forcing the tile section to stay `Draft` to hide the offering would collide with the normal edit/publish cycle for that section's own field content (an author editing and publishing the tile's copy would inadvertently flip the offering back to "live" on the dashboard, or be blocked from ever publishing routine copy edits while intentionally keeping the offering in Draft). `Active__c` (confirmed: "Unchecked removes the section from the rendered page without deleting it or its content rows") is closer in spirit to a hide/soft-delete lever, but it is scoped to one section, not the offering as a whole, and hiding just the tile section would not by itself remove the offering from other places it might appear. `Draft_State__c` is confirmed to be JSON for *pending* structural changes only (sort/visibility/deletion not yet published) — it models the same "unpublished edit" concept as `Status__c`, not a standing "is this offering live" flag, so it does not fit either.
-
-**RESOLVED by product owner (2026-09-10):** Option 2a — a new, purpose-built field on `GTM_Page_Section__c`, scoped to the offering's tile section (`Section_Key__c='tile'`, `Template_Type__c='offerings-listing'`), NOT reusing `Status__c`/`Active__c`. Field name: `Offering_Status__c` (Picklist: `Draft`/`Published`, default `Published` so existing offerings are unaffected on deploy). Instant DML via the same `GtmPageSectionController` pattern as `setSectionActive`.
-
-### "Delete" mechanically — RESOLVED
-
-**RESOLVED by product owner (2026-09-10):** A separate `Archived__c` (Checkbox, default `false`) field, also on the tile section — distinct from `Offering_Status__c`. Both independently hide the offering from `GtmPageContentReader.getOfferingTiles()`'s dashboard listing (`Offering_Status__c == 'Draft' OR Archived__c == true`), but they are two distinct levers a content author can reason about separately (temporary unpublish vs. permanent-ish archive), never a destructive record delete.
-
-### Open naming/placement risk — confirmed, not in the issue text
-
-`gtmContentHome.js` **already has a "Settings" affordance today**: `handleOpenSettings()` (line 544) is a per-page "Settings" link on an offering's card that opens the Configurator's `offering-defaults` customizer-settings panel (or the Framework's `assistant` settings). The issue only calls out avoiding collision with the Configurator's link-level **Customize wizard** (`gtmConfigWizard`) — but naming the new Status/Delete surface "Settings" would *also* collide with this already-existing, differently-scoped "Settings" link in the very same `gtmContentHome` card UI. The Architect/Developer step should pick a name for the new surface that avoids both collisions (e.g. something other than "Settings" — "Manage," "Offering status," etc.) — not resolved here, as naming is a design decision, not a requirements-gathering one.
-
----
+  **This is not a design fork requiring a human decision on how to build the feature** — the feature
+  is built, and built to spec. The only open question, and the reason this is being escalated rather
+  than silently closed, is **process**, which only a human can settle: is issue #48 simply stale
+  (opened before, or without seeing, PR #27's merge) and should be closed with a comment pointing at
+  `49ce6bf`/PR #27 and this scope file, or is there a *narrower* real gap the issue's author actually
+  observed (e.g., a specific environment where the Manage control is not rendering, a permission
+  set gap hiding the control from certain profiles, or a discrepancy between what's in `gtm-dev`
+  today and what's in this repo's `main`) that got mis-described using an outdated grep. Recommend:
+  do not open a Developer/Architect worktree against this issue as a build task. Have a human
+  (a) confirm whether `gtm-dev` is actually running the code at `838dac9`/PR #27 or an older deploy
+  that predates it, and (b) close or re-scope issue #48 accordingly.
 
 ## 2. Code Dependency Checklist
 
-- [ ] Modifying GUS Tool Surface? **No.** None of the affected components (`gtmPageLayouts`, `gtmContentManager`, `gtmContentHome`, `gtmConfigurator`, `GtmPageSectionController`, `GtmPageContentReader`) are GUS tool surfaces (`GtmAgentToolSurface` implementations). N/A — AGENTS.md §1 zero-DML rule does not apply.
-- [x] Altering Custom Metadata? **Conditional — depends on the data-model fork above.** If the Architect step resolves the fork toward option 1 (new `GTM_Offering__mdt` field), this is YES: the field must be authored as CMDT and any migration-accelerator YAML affected must be updated, and the raw XML must not be hand-edited outside that path per `CLAUDE.md` §2. If the fork resolves toward option 2 (a `GTM_Page_Section__c` field), this checkbox is N/A and standard object field metadata applies instead (still not YAML-governed, but still subject to the permission-set mapping rule below).
-- [x] Introducing database fields? **Yes, pending the fork.** Either path introduces at least one new field (a Status/Delete flag, wherever it lands). Per `CLAUDE.md` §6, mapping to the 5 core permission sets (`GTM_Config_Manager`, `GTM_Config_View_All`, `GTM_Assessment_Guest`, `GTM_Story_Guest`, `GTM_Platform_Visibility`) is mandatory and must be part of the Definition of Done — most likely `GTM_Config_Manager` (author-facing edit) and `GTM_Config_View_All` (read), with the guest-facing sets almost certainly excluded since this is an authoring-only surface, but that inclusion/exclusion list itself should be confirmed by the Architect/Developer step against each permission set's actual current field grants, not assumed here.
+- [ ] Modifying GUS Tool Surface? **N/A** — no GUS/tool-surface code is touched by this issue; the
+      feature already lives entirely in `gtmContentHome` (LWC) and `GtmPageContentController` (Apex),
+      neither of which is a `GtmAgentToolSurface` implementation.
+- [ ] Altering Custom Metadata? **No** — `Offering_Status__c` and `Archived__c` are standard Custom
+      Fields on `GTM_Page_Section__c` (real DML-backed fields, not Custom Metadata Type records), per
+      the Apex header comments at `GtmPageContentController.cls` lines 725-730 and 758-761 ("Ordinary
+      DML... this is a real custom field, not custom metadata, so there is no async deploy step"). No
+      `migration-accelerator/` YAML or `GTM_Assessment_*` XML is implicated by this issue at all.
+- [ ] Introducing database fields? **No** — both fields were already introduced and permission-set
+      mapped as part of issue #26/PR #27 (out of scope to re-verify FLS here since no new field is
+      being introduced by this issue; if reopened as a real gap, a fast follow-up check should confirm
+      `Offering_Status__c`/`Archived__c` are present in `GTM_Content_Manager`/`GTM_Content_Admin`
+      permission sets, since that is where a genuine "control renders but is invisible/read-only to
+      some content authors" symptom would actually originate — but this was not observed in the code
+      review above and is speculative).
 
 ## 3. Plan Acceptance Criteria
 
-- **Success Metric:**
-  1. `gtmPageLayouts.js`'s `TEMPLATE_LAYOUTS.configurator` includes `'industry-profile'`, so the Content Manager's "Add section" modal on a Configurator page offers "Industry angle" as a layout choice, and a newly created section can be selected and shows its own fields (problem/useCase/solution/proofLine/etc.), matching every other layout's create/select behavior.
-  2. The architectural fork on `getIndustryProfiles` (item 1(b) above) is explicitly resolved by the Architect step — either the per-offering read path is restored so newly authored `industry-profile` content actually renders on that offering's live Configurator, or a documented decision is recorded that the framework-only model is intentional and the issue's acceptance criterion "renders correctly on that offering's live Configurator page" is descoped/renegotiated with the product owner. Silently leaving (b) unaddressed while shipping only fix (a) would satisfy the create/edit UI but not the issue's explicit "and it renders correctly on that offering's live Configurator page" acceptance criterion.
-  3. Each offering's card in `gtmContentHome` exposes a Status control (Draft/Published) and a Delete/archive action, both visibly distinct in naming and placement from the existing per-page "Settings" link (`handleOpenSettings`) and from the Configurator's link-level Customize wizard.
-  4. Setting Status to Draft removes that offering from `GtmPageContentReader.getOfferingTiles()`'s dashboard listing; Published restores it. No `delete`/destructive DML is introduced anywhere in this surface — confirmed against `CLAUDE.md` §1's `gtm-dev`-is-production rule.
-- **Target Test Target:** `force-app/main/default/classes/GtmPageContentReaderTest.cls` (for `getOfferingTiles`/`getIndustryProfiles` behavior changes) and `force-app/main/default/classes/GtmPageSectionControllerTest.cls` (for `createSection`/`getEditorSections` against the `industry-profile` layout on `configurator`). No existing Jest spec exercises `gtmPageLayouts.js`'s `TEMPLATE_LAYOUTS`/`addableLayouts` or `gtmContentHome.js` directly (only `force-app/main/default/lwc/gtmConfigurator/__tests__/gtmConfigurator.readout.test.js` exists among the affected LWCs, and it does not cover this) — new Jest specs for `gtmPageLayouts`'s `addableLayouts('configurator')` and for the new `gtmContentHome` Status/Delete controls are required as part of this build, not merely reused from an existing suite.
+- **Success Metric:** No code change is required to close this issue. Success is a human decision
+  (see §1) to either (a) close issue #48 as already resolved by PR #27 / commit `49ce6bf`, citing this
+  `TASK_SCOPE.md` and the passing Jest run as evidence, or (b) re-file a narrower issue describing the
+  specific real-world symptom (e.g., against `gtm-dev` specifically) if one still exists once (a) is
+  ruled out.
+- **Target Test Target:** `force-app/main/default/lwc/gtmContentHome/__tests__/gtmContentHome.test.js`
+  (already passing — 6/6 tests, verified via `npx sfdx-lwc-jest` in this scoping session) and
+  `GtmPageContentControllerTest.cls` methods `setOfferingStatus_createsTheTileSectionWhenNoneExistsYet`,
+  `setOfferingStatus_updatesAnExistingTileSectionInPlace`,
+  `setOfferingStatus_rejectsAnythingOtherThanDraftOrPublished`, `setOfferingStatus_refusesTheFramework`,
+  `setOfferingArchived_setsAndClearsTheFlagOnTheTileSection`, `setOfferingArchived_refusesTheFramework`
+  (lines 432-536) — no new test authoring is in scope unless issue #48 is re-scoped per §1.
