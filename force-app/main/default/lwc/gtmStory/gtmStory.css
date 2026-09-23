@@ -176,6 +176,227 @@
   --ps-invert-border: #dddddd;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PS LAYOUT PRIMITIVES — grid, rhythm, type scale, reveal.
+
+   Restored from the deleted c/gtmBrandTokens bundle (issue #278): the token
+   fold-in at issue #33 (commit 4fe6b5c8) only carried over the --ps-*
+   color/type/shape/motion declarations above and dropped these layout
+   primitives, even though gtmStory.html (and gtmPagePreview.html, which
+   renders the identical <c-gtm-story>) never stopped referencing them.
+   Every comment elsewhere in this file that says "(primitives)" or "shared
+   primitives" or "primitives block above" refers to this block.
+
+   Read off the live publicissapient.com stylesheet. Two deliberate deviations
+   from their markup, both documented at the point of deviation:
+     1. CONTAINER queries, not media queries. Same breakpoints (768 / 1024),
+        same geometry on the real site — but the GTM Content Manager previews
+        this page inside a resizable frame, and only a container query makes a
+        390px preview render the 390px layout. :host already declares
+        container-type: inline-size; container-name: story; above, and
+        .rootClass (gtmStory.js) already puts "ps-scope" on .story-root.
+     2. Full-bleed bands set `background` on the <section> directly rather than
+        using an absolutely-positioned inset:0 layer. PS needs the layer because
+        their sections live inside a padded container; ours are direct children
+        of a full-width root, so the section IS the bleed. Identical result,
+        one fewer node, nothing to keep in sync.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ps-scope {
+  /* Strict 4px scale. PS uses these ten steps and no others. */
+  --ps-s-16: 16px;  --ps-s-20: 20px;  --ps-s-24: 24px;  --ps-s-32: 32px;
+  --ps-s-40: 40px;  --ps-s-48: 48px;  --ps-s-64: 64px;  --ps-s-80: 80px;
+  --ps-s-96: 96px;  --ps-s-128: 128px;
+
+  --ps-boxed-max: 1536px;
+  --ps-gutter: 16px;          /* .boxed padding-inline */
+  --ps-col-gap: 16px;
+  --ps-row-gap: 40px;         /* section header -> content */
+  --ps-rhythm: 80px;          /* the spacer between sections; band padding */
+  --ps-band-pb-asym: 64px;
+
+  --ps-measure: 768px;        /* paragraph measure cap, narrow */
+  --ps-measure-wide: 880px;
+
+  --ps-display-size: 36px;
+  --ps-hero-size: 44px;
+  --ps-body-size: 18px;
+}
+
+@container story (min-width: 768px) {
+  .ps-scope {
+    --ps-display-size: 42px;
+    --ps-hero-size: 56px;
+    --ps-body-size: 19px;
+  }
+}
+
+@container story (min-width: 1024px) {
+  .ps-scope {
+    --ps-gutter: 64px;
+    --ps-col-gap: 32px;
+    --ps-row-gap: 64px;
+    --ps-rhythm: 128px;
+    --ps-band-pb-asym: 96px;
+    --ps-display-size: 50px;
+    --ps-hero-size: 72px;
+    --ps-body-size: 20px;
+  }
+}
+
+/* ── grid ───────────────────────────────────────────────────────────────── */
+.boxed {
+  max-width: var(--ps-boxed-max);
+  margin-inline: auto;
+  padding-inline: var(--ps-gutter);
+}
+
+.ps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--ps-col-gap);
+  row-gap: var(--ps-row-gap);
+}
+@container story (min-width: 1024px) {
+  .ps-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+}
+
+/* Below 1024 every child is one full-width row. The spans are the desktop-only
+   layer. */
+.ps-grid > * { grid-column: 1 / -1; min-width: 0; }
+
+/* The labelled rail does not exist below 1024. Declared BEFORE the container
+   block so the block wins; do not reorder these two rules. */
+.pc-rail,
+.u-gte-1024 { display: none; }
+
+@container story (min-width: 1024px) {
+  .pc-narrative  { grid-column: 3 / span 8; }
+  .pc-text       { grid-column: 1 / span 5; }
+  .pc-media      { grid-column: 7 / span 6; }   /* column 6 stays empty */
+  .pc-hero-text  { grid-column: 1 / span 6; }
+  .pc-hero-media { grid-column: 8 / span 5; }   /* column 7 stays empty */
+  .pc-rail       { grid-column: 2 / span 2; display: block; }
+  .pc-railbody   { grid-column: 5 / span 7; }
+  .pc-full       { grid-column: 1 / -1; }
+  .u-gte-1024    { display: block; }
+}
+
+/* ── vertical rhythm ────────────────────────────────────────────────────── */
+.ps-spacer { height: var(--ps-rhythm); }
+
+.ps-band        { padding-block: var(--ps-rhythm); }
+.ps-band--asym  { padding-block: var(--ps-rhythm) var(--ps-band-pb-asym); }
+.ps-band--tint  { background: var(--ps-surface-100); }
+.ps-band--invert {
+  background: var(--ps-invert-bg);
+  color: var(--ps-invert-fg);
+}
+.ps-band--invert .ps-body,
+.ps-band--invert .ps-eyebrow { color: var(--ps-invert-fg-muted); }
+
+/* ── type ───────────────────────────────────────────────────────────────── */
+.ps-display {
+  font-family: var(--ps-font-display);
+  font-weight: var(--ps-fw-light);
+  font-size: var(--ps-display-size);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.ps-hero-display {
+  font-family: var(--ps-font-display);
+  font-weight: var(--ps-fw-light);
+  font-size: var(--ps-hero-size);
+  line-height: 1.05;
+  letter-spacing: var(--ps-tracking-display);
+  margin: 0;
+}
+.ps-body {
+  font-family: var(--ps-font-body);
+  font-size: var(--ps-body-size);
+  line-height: 1.625;
+  color: var(--ps-ink-strong);
+  max-width: var(--ps-measure);
+  margin: 0;
+}
+.ps-body--wide { max-width: var(--ps-measure-wide); }
+.ps-body > p + p { margin-top: var(--ps-s-24); }
+
+.ps-eyebrow {
+  font-family: var(--ps-font-mono);
+  font-size: 12px;
+  font-weight: var(--ps-fw-bold);
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: var(--ps-tracking-eyebrow);
+  margin: 0;
+}
+.ps-mono-num {
+  font-family: var(--ps-font-mono);
+  font-weight: var(--ps-fw-light);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.ps-hero-display + .ps-body,
+.ps-display      + .ps-body { margin-top: var(--ps-s-20); }
+.ps-display      + .ps-cta,
+.ps-hero-display + .ps-cta  { margin-top: var(--ps-s-32); }
+.ps-eyebrow      + .ps-display,
+.ps-eyebrow      + .ps-hero-display { margin-top: var(--ps-s-20); }
+@container story (min-width: 1024px) {
+  .ps-hero-display + .ps-body,
+  .ps-display      + .ps-body { margin-top: var(--ps-s-24); }
+}
+
+/* ── reveal ─────────────────────────────────────────────────────────────────
+   PS's canonical entrance: 40px + opacity, 0.7s, cubic-bezier(.4,0,.2,1),
+   IntersectionObserver at threshold 0.2 with rootMargin -50px, replaying on
+   scroll-back. Two-column sections CONVERGE: text from the left, media from
+   the right, both at 0.15s. The hero is slower (1.5s) with its right column
+   0.2s behind. Their site ships NO prefers-reduced-motion guard; we do. */
+
+.rv {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s var(--ps-ease), transform 0.7s var(--ps-ease);
+}
+.rv.in { opacity: 1; transform: none; }
+
+.rv.rv-l { transform: translateX(-40px); transition-delay: 0.15s; }
+.rv.rv-r { transform: translateX(40px);  transition-delay: 0.15s; }
+
+.rv.d1 { transition-delay: 0.1s; }
+.rv.d2 { transition-delay: 0.2s; }
+.rv.d3 { transition-delay: 0.3s; }
+.rv.d4 { transition-delay: 0.4s; }
+.rv.d5 { transition-delay: 0.5s; }
+.rv.d6 { transition-delay: 0.6s; }
+
+.rv-stagger > * {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s var(--ps-ease), transform 0.7s var(--ps-ease);
+}
+.rv-stagger.in > * { opacity: 1; transform: none; }
+.rv-stagger.in > *:nth-child(1) { transition-delay: 0s; }
+.rv-stagger.in > *:nth-child(2) { transition-delay: 0.1s; }
+.rv-stagger.in > *:nth-child(3) { transition-delay: 0.2s; }
+.rv-stagger.in > *:nth-child(4) { transition-delay: 0.3s; }
+.rv-stagger.in > *:nth-child(5) { transition-delay: 0.4s; }
+.rv-stagger.in > *:nth-child(6) { transition-delay: 0.5s; }
+.rv-stagger.in > *:nth-child(7) { transition-delay: 0.6s; }
+.rv-stagger.in > *:nth-child(n + 8) { transition-delay: 0.7s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rv, .rv.rv-l, .rv.rv-r, .rv-stagger > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
 /* Migration Accelerator — The Story
    Port of gtm-offerings/migration-accelerator/story.html
    :root -> .story-root (LWC shadow DOM has no :root) */
