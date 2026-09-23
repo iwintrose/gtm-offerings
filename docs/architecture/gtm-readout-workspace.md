@@ -103,23 +103,33 @@ to listen for this and unmount the workspace.
 - Once submitted, the tab reverts to its previous behavior: "Generate
   Readout" prompt when no readout exists yet, `c-gtm-readout-review`
   once one does.
-- **Bug fix — gate on real answers, not a timestamp:** the gate used to be
-  `!!Submitted_At__c` alone. That conflates "a submission timestamp was
+- **Bug fix — gate on real answers, not a timestamp alone:** the gate used to
+  be `!!Submitted_At__c` alone. That conflates "a submission timestamp was
   written" with "the prospect actually answered questions", and the two can
   diverge in either direction (a timestamp set without real answers, or
   real answers present without the timestamp ever having been stamped). The
-  gate ("`isSubmitted`"/"`hasMeaningfulAnswers`") is now: at least one of the
-  instrument's own answer fields is non-blank —
+  fix added a second signal — at least one of the instrument's own answer
+  fields is non-blank —
   `Pain_Points__c`, `Migration_Goals__c`, `Success_Criteria__c`,
   `Decision_Makers__c`, `Budget_Range__c`, `Urgency_Driver__c`,
   `Key_Integrations__c`, `Executive_Sponsorship__c`, `Target_Platform__c`,
   `Internal_Team_Size__c`, `Monthly_Send_Volume__c`, `Contact_Count__c` —
-  the same fields "Prospect's Answers" renders. `Submitted_At__c` is
-  intentionally no longer part of the check (it's still read/wired, just
-  unused for gating). This same fix was made in `c-gtm-assessment-detail`'s
-  own independent copy of this gate (both had it; neither shares code with
-  the other, per the existing doc note above about the not-submitted
-  message).
+  the same fields "Prospect's Answers" renders. The gate
+  ("`isSubmitted`"/"`hasMeaningfulAnswers`") is the AND of both signals:
+  `Submitted_At__c` must be set AND at least one answer field must be
+  non-blank — neither signal alone is sufficient. (An intermediate version of
+  this fix briefly dropped `Submitted_At__c` from the check entirely; see
+  "Round 3 — three direct product-owner corrections after a live review,"
+  item "3 & 4" below, for why it was reinstated as an AND — that is the
+  current, correct behavior.) This same fix was made in
+  `c-gtm-assessment-detail`'s own copy of this gate. As of
+  issue-readout-navigation-consolidation-03-docs-and-answer-fields-dedup,
+  the `ANSWER_FIELDS` list and the "at least one non-blank" check
+  (`hasMeaningfulAnswers`) are genuinely shared code, extracted into
+  `c/gtmAssessmentAnswerFields` and imported by both components; each still
+  combines it with its own independent `Submitted_At__c` field read and its
+  own independent not-submitted message (per the existing doc note above),
+  which were not extracted.
 - **Conduit tab gets the same answers-completeness gate, additively.** The
   tab's presence is still driven purely by the offering-level
   `Has_Conduit__c` check (below) — an ineligible offering shows no Conduit
@@ -157,17 +167,23 @@ renders a second card below "Assessment Details":
   Internal Team Size, Monthly Send Volume, Contact/Lead Database Size), not
   a new data source. No new Apex — added fields to the existing `getRecord`
   wire's `FIELDS` array only.
-- **Bug fix — gate on real answers, not `Submitted_At__c`:** the
+- **Bug fix — gate on real answers, not `Submitted_At__c` alone:** the
   submitted/not-submitted split above used to be `!!Submitted_At__c` alone.
-  It is now "at least one of the twelve instrument answer fields listed
-  above is non-blank" (`hasMeaningfulAnswers`, checked via a shared
-  `ANSWER_FIELDS` list in this component's own JS) — `Submitted_At__c` can
-  diverge from whether real answers exist in either direction (a timestamp
-  written without answers, or answers present without a timestamp), so it
-  is no longer part of the gate here (still read/wired, just unused for
-  this). `gtmReadoutWorkspace`'s Readout/Conduit-tab gate (above) makes the
-  identical change to its own independent copy of this check, over the same
-  twelve fields.
+  The fix added "at least one of the twelve instrument answer fields listed
+  above is non-blank" (`hasMeaningfulAnswers`) as a second signal —
+  `Submitted_At__c` can diverge from whether real answers exist in either
+  direction (a timestamp written without answers, or answers present without
+  a timestamp). The gate (`isSubmitted`) here is the AND of both signals:
+  `Submitted_At__c` must be set AND `hasMeaningfulAnswers` must be true —
+  see "Round 3 — three direct product-owner corrections after a live
+  review," item "3 & 4," below, for why `Submitted_At__c` was kept in the
+  gate rather than dropped. `gtmReadoutWorkspace`'s Readout/Conduit-tab gate
+  (above) makes the identical AND-gate check, over the same twelve fields.
+  The `ANSWER_FIELDS` list and `hasMeaningfulAnswers` check itself are
+  shared code as of issue-readout-navigation-consolidation-03-docs-and-
+  answer-fields-dedup (`c/gtmAssessmentAnswerFields`, imported by both
+  components); each component still reads its own `Submitted_At__c` field
+  independently to complete its own AND-gate.
 
 Because `c-gtm-assessment-detail` is also embedded elsewhere (the
 `GTM_Assessment_Request__c` record page, `gtmAssessmentSubmissionView`,

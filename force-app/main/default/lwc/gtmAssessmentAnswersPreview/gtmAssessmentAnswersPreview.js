@@ -1,30 +1,29 @@
 import { LightningElement, api, wire } from 'lwc';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
+import { ANSWER_FIELDS } from 'c/gtmAssessmentAnswerFields';
 
 import CONTACT_NAME from '@salesforce/schema/GTM_Assessment_Request__c.Contact__r.Name';
 import ACCOUNT_NAME from '@salesforce/schema/GTM_Assessment_Request__c.Account__r.Name';
 import REQ_NAME from '@salesforce/schema/GTM_Assessment_Request__c.Requester_Name__c';
 import COMPANY_FIELD from '@salesforce/schema/GTM_Assessment_Request__c.Company__c';
 import SUBMITTED_AT from '@salesforce/schema/GTM_Assessment_Request__c.Submitted_At__c';
-import PAIN_POINTS from '@salesforce/schema/GTM_Assessment_Request__c.Pain_Points__c';
-import MIGRATION_GOALS from '@salesforce/schema/GTM_Assessment_Request__c.Migration_Goals__c';
-import SUCCESS_CRITERIA from '@salesforce/schema/GTM_Assessment_Request__c.Success_Criteria__c';
-import DECISION_MAKERS from '@salesforce/schema/GTM_Assessment_Request__c.Decision_Makers__c';
-import BUDGET_RANGE from '@salesforce/schema/GTM_Assessment_Request__c.Budget_Range__c';
-import URGENCY_DRIVER from '@salesforce/schema/GTM_Assessment_Request__c.Urgency_Driver__c';
-import KEY_INTEGRATIONS from '@salesforce/schema/GTM_Assessment_Request__c.Key_Integrations__c';
-import EXEC_SPONSORSHIP from '@salesforce/schema/GTM_Assessment_Request__c.Executive_Sponsorship__c';
-import TARGET_PLATFORM from '@salesforce/schema/GTM_Assessment_Request__c.Target_Platform__c';
-import TEAM_SIZE from '@salesforce/schema/GTM_Assessment_Request__c.Internal_Team_Size__c';
-import SEND_VOLUME from '@salesforce/schema/GTM_Assessment_Request__c.Monthly_Send_Volume__c';
-import CONTACT_COUNT from '@salesforce/schema/GTM_Assessment_Request__c.Contact_Count__c';
 
 const FIELDS = [
     CONTACT_NAME, ACCOUNT_NAME, REQ_NAME, COMPANY_FIELD, SUBMITTED_AT,
-    PAIN_POINTS, MIGRATION_GOALS, SUCCESS_CRITERIA, DECISION_MAKERS,
-    BUDGET_RANGE, URGENCY_DRIVER, KEY_INTEGRATIONS, EXEC_SPONSORSHIP,
-    TARGET_PLATFORM, TEAM_SIZE, SEND_VOLUME, CONTACT_COUNT
+    ...ANSWER_FIELDS
 ];
+
+// Field identity (which twelve fields exist to read at all) now comes from
+// the shared ANSWER_FIELDS list (c/gtmAssessmentAnswerFields) -- the same
+// single source of truth c-gtm-assessment-detail's "Prospect's Answers"
+// section and c-gtm-readout-workspace's Readout/Conduit gate both build on.
+// This file supplies only the presentational half: a stable `key` and the
+// prospect-facing `question` wording, looked up by `fieldApiName` against
+// ANSWER_FIELDS below, in this component's own display order (which
+// intentionally differs from ANSWER_FIELDS's declaration order --
+// Target_Platform__c leads here, matching the routing step's "what are you
+// moving to" question).
+const ANSWER_FIELD_BY_API_NAME = new Map(ANSWER_FIELDS.map((field) => [field.fieldApiName, field]));
 
 /**
  * The question list this component renders, and its ONLY source of truth for
@@ -45,27 +44,27 @@ const FIELDS = [
  *
  * What IS stored, and what this list renders, is exactly the field set
  * `c-gtm-assessment-detail`'s own "Prospect's Answers" section already
- * reads (its `ANSWER_FIELDS`) -- the eleven BD-context fields (ADR-0008
- * section 5, `gtmAssessmentQuestionnaire.BD_CONTEXT_FIELDS`) plus
+ * reads (the shared `ANSWER_FIELDS`) -- the eleven BD-context fields
+ * (ADR-0008 section 5, `gtmAssessmentQuestionnaire.BD_CONTEXT_FIELDS`) plus
  * `Target_Platform__c` (the routing step's "what are you moving to"
  * answer). Question wording below is carried verbatim from
  * `gtmAssessmentQuestionnaire.BD_CONTEXT_FIELDS` so a rep sees the same
  * vocabulary the prospect was actually asked, not a re-paraphrase.
  */
 const QUESTIONS = [
-    { key: 'targetPlatform', field: TARGET_PLATFORM, question: 'What platform are you moving to?' },
-    { key: 'painPoints', field: PAIN_POINTS, question: "What's not working with your current platform?" },
-    { key: 'migrationGoals', field: MIGRATION_GOALS, question: 'What do you need from the new platform?' },
-    { key: 'keyIntegrations', field: KEY_INTEGRATIONS, question: 'Key integrations that must stay connected' },
-    { key: 'successCriteria', field: SUCCESS_CRITERIA, question: 'How will you know the migration succeeded?' },
-    { key: 'budgetRange', field: BUDGET_RANGE, question: 'Budget range' },
-    { key: 'contactCount', field: CONTACT_COUNT, question: 'Contact / lead database size' },
-    { key: 'monthlySendVolume', field: SEND_VOLUME, question: 'Monthly email send volume' },
-    { key: 'internalTeamSize', field: TEAM_SIZE, question: 'Internal team for this migration' },
-    { key: 'executiveSponsorship', field: EXEC_SPONSORSHIP, question: 'Executive sponsorship' },
-    { key: 'decisionMakers', field: DECISION_MAKERS, question: 'Who approves the final decision?' },
-    { key: 'urgencyDriver', field: URGENCY_DRIVER, question: "What's driving the timeline?" }
-];
+    { key: 'targetPlatform', fieldApiName: 'Target_Platform__c', question: 'What platform are you moving to?' },
+    { key: 'painPoints', fieldApiName: 'Pain_Points__c', question: "What's not working with your current platform?" },
+    { key: 'migrationGoals', fieldApiName: 'Migration_Goals__c', question: 'What do you need from the new platform?' },
+    { key: 'keyIntegrations', fieldApiName: 'Key_Integrations__c', question: 'Key integrations that must stay connected' },
+    { key: 'successCriteria', fieldApiName: 'Success_Criteria__c', question: 'How will you know the migration succeeded?' },
+    { key: 'budgetRange', fieldApiName: 'Budget_Range__c', question: 'Budget range' },
+    { key: 'contactCount', fieldApiName: 'Contact_Count__c', question: 'Contact / lead database size' },
+    { key: 'monthlySendVolume', fieldApiName: 'Monthly_Send_Volume__c', question: 'Monthly email send volume' },
+    { key: 'internalTeamSize', fieldApiName: 'Internal_Team_Size__c', question: 'Internal team for this migration' },
+    { key: 'executiveSponsorship', fieldApiName: 'Executive_Sponsorship__c', question: 'Executive sponsorship' },
+    { key: 'decisionMakers', fieldApiName: 'Decision_Makers__c', question: 'Who approves the final decision?' },
+    { key: 'urgencyDriver', fieldApiName: 'Urgency_Driver__c', question: "What's driving the timeline?" }
+].map((q) => ({ key: q.key, field: ANSWER_FIELD_BY_API_NAME.get(q.fieldApiName), question: q.question }));
 
 const NOT_ANSWERED = 'Not answered';
 
