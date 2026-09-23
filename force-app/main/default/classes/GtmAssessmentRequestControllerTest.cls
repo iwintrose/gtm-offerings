@@ -12,6 +12,14 @@ private class GtmAssessmentRequestControllerTest {
         input.context = 'Contract renewal in Q3.';
         input.prospect = 'Northwind Retail';
         input.industry = 'Financial Services';
+        // At least one signal for hasMeaningfulAnswers's pre-DML completeness
+        // gate (GtmAssessmentRequestController.submitRequest). Every existing
+        // call site in this file goes through this shared fixture, so this is
+        // the one place that keeps all of them passing once the gate exists --
+        // see rejectsSubmissionWithNoMeaningfulAnswers and
+        // acceptsSubmissionWithReadinessAnswersButNoFlatFields below for the
+        // gate's own dedicated coverage.
+        input.painPoints = 'Manual list hygiene is eating the team\'s week.';
         return input;
     }
 
@@ -1694,6 +1702,107 @@ private class GtmAssessmentRequestControllerTest {
             'A refused duplicate must not log an activity');
         Assert.areEqual(oppsBefore, [SELECT COUNT() FROM Opportunity],
             'A refused duplicate must not create an Opportunity');
+    }
+
+    // ── the pre-DML completeness gate (hasMeaningfulAnswers) ──
+    // See GtmAssessmentRequestController.hasMeaningfulAnswers's own comment:
+    // deliberately broader than "the twelve rich v2 fields are all blank",
+    // because the BD-context step is optional and "Not decided yet" is a
+    // validated, non-blank choice that still maps targetPlatform to ''.
+
+    @isTest
+    static void rejectsSubmissionWithNoMeaningfulAnswers() {
+        // Valid name/email, but nothing else at all: no rich v2 fields, no
+        // readiness/complexity answers, no generic-path answersJson. This is
+        // the "nothing was answered" case the gate exists to catch.
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input =
+            new GtmAssessmentRequestController.RequestInput();
+        input.name = 'Alex Rivera';
+        input.email = 'alex.rivera@example.com';
+
+        Integer accountsBefore     = [SELECT COUNT() FROM Account];
+        Integer contactsBefore     = [SELECT COUNT() FROM Contact];
+        Integer tasksBefore        = [SELECT COUNT() FROM Task];
+        Integer oppsBefore         = [SELECT COUNT() FROM Opportunity];
+        Integer requestsBefore     = [SELECT COUNT() FROM GTM_Assessment_Request__c];
+
+        Test.startTest();
+        try {
+            GtmAssessmentRequestController.submitRequest(input);
+            Assert.fail('A submission with no meaningful answers should have been refused');
+        } catch (AuraHandledException e) {
+            // expected
+        }
+        Test.stopTest();
+
+        Assert.areEqual(accountsBefore, [SELECT COUNT() FROM Account],
+            'A refused empty submission must not create an Account');
+        Assert.areEqual(contactsBefore, [SELECT COUNT() FROM Contact],
+            'A refused empty submission must not create a Contact');
+        Assert.areEqual(tasksBefore, [SELECT COUNT() FROM Task],
+            'A refused empty submission must not log an activity');
+        Assert.areEqual(oppsBefore, [SELECT COUNT() FROM Opportunity],
+            'A refused empty submission must not create an Opportunity');
+        Assert.areEqual(requestsBefore, [SELECT COUNT() FROM GTM_Assessment_Request__c],
+            'A refused empty submission must not create a request record');
+    }
+
+    @isTest
+    static void acceptsSubmissionWithReadinessAnswersButNoFlatFields() {
+        // The §1.1 scenario the architect traced: a prospect who leaves the
+        // optional BD-context step blank and picks "Not decided yet" for
+        // target platform (client-side mapped to targetPlatform: '') while
+        // fully and correctly answering every readiness and complexity
+        // question. All twelve flat fields are blank here on purpose; the
+        // submission must still succeed because `answers` is non-empty.
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input =
+            new GtmAssessmentRequestController.RequestInput();
+        input.name = 'Alex Rivera';
+        input.email = 'alex.rivera@example.com';
+        input.answers = allAnswersAt(4);
+        input.complexityAnswers = complexityAnswersAt(3);
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(
+            result.success,
+            'A submission with full readiness/complexity answers and no flat ' +
+            'BD-context fields must not be rejected as incomplete'
+        );
+        Assert.isNotNull(result.assessmentRequestId);
+    }
+
+    @isTest
+    static void acceptsGenericPathSubmissionWithAnswersJsonButNoLegacyAnswers() {
+        // The generic path (docs/architecture/gtm-instrument-schema.md) never
+        // populates `answers`/`complexityAnswers` -- recordAssessmentRequest's
+        // isGenericPath branch takes answersJson instead. hasMeaningfulAnswers
+        // needs its own arm for this channel too, for the same reason it needs
+        // one for `answers`/`complexityAnswers`: otherwise a genuine
+        // generic-path submission would be rejected purely for using the
+        // other channel.
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input =
+            new GtmAssessmentRequestController.RequestInput();
+        input.name = 'Alex Rivera';
+        input.email = 'alex.rivera@example.com';
+        input.answersJson = '{"q1":"yes","q2":["a","b"]}';
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(
+            result.success,
+            'A generic-path submission with only answersJson must not be rejected as incomplete'
+        );
+        Assert.isNotNull(result.assessmentRequestId);
     }
 
     // ── the guest-safe durable status check (ADR-0008 section 4, phase 4.3) ──

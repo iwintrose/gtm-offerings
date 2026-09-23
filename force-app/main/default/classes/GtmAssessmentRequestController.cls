@@ -303,6 +303,20 @@ public without sharing class GtmAssessmentRequestController {
         if (!isValidEmail(cleanEmail)) {
             throw new AuraHandledException('Please enter a valid work email.');
         }
+        // NOTHING AT ALL WAS ANSWERED. Pre-DML, same shape as the
+        // duplicate-link guard below: an AuraHandledException thrown before
+        // Database.setSavepoint() (line ~419 now), so a rejected submission
+        // writes nothing -- no Account, no Contact, no Opportunity, no
+        // request row. See hasMeaningfulAnswers's own comment for why this
+        // is deliberately broader than "the twelve rich v2 fields are all
+        // blank": that narrower check would reject real, fully-answered
+        // submissions that simply left the optional BD-context step blank
+        // or picked "Not decided yet" for target platform.
+        if (!hasMeaningfulAnswers(input)) {
+            throw new AuraHandledException(
+                'Please answer the assessment questions before submitting.'
+            );
+        }
 
         ConfigContext ctx = resolveConfigContext(input.savedRecordId);
         // Resolved ONCE, here, and threaded everywhere below. Which offering
@@ -1395,6 +1409,56 @@ public without sharing class GtmAssessmentRequestController {
             return false;
         }
         return Pattern.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$', value);
+    }
+
+    /**
+     * Whether this submission carries any real assessment content at all --
+     * the pre-DML backstop against a genuinely empty submission, NOT a check
+     * that any one particular field was filled in.
+     *
+     * Deliberately NOT "all twelve rich v2 fields blank = reject": eleven of
+     * those twelve are the BD-context step (gtmAssessmentQuestionnaire.js),
+     * which is explicitly optional and has its own Skip affordance, and the
+     * twelfth (targetPlatform) is mapped to '' by buildPayload when the
+     * respondent picks the routing dropdown's own "Not decided yet" option --
+     * a validated, non-blank choice on the client. A prospect who fully and
+     * correctly answers every mandatory readiness/complexity question but
+     * takes those two entirely legitimate paths would have all twelve fields
+     * blank despite having completed the assessment; rejecting on those
+     * fields alone would discard real prospect data instead of catching an
+     * empty submission.
+     *
+     * `answers` (8 readiness slots, mandatory on every branch --
+     * validateStep()'s isReadiness branch) and `complexityAnswers`
+     * (mandatory on the complexity step) are the actual scored instrument
+     * content, and a far more reliable "this is a real submission" signal
+     * than the optional flat fields above, so either being non-empty is
+     * sufficient on its own.
+     *
+     * `answersJson` is the third, generic-path channel
+     * (docs/architecture/gtm-instrument-schema.md): a submission scored
+     * against GTM_Instrument_Definition__c takes recordAssessmentRequest's
+     * isGenericPath branch and never populates `answers`/`complexityAnswers`
+     * at all -- it needs its own arm here for the same reason the other two
+     * do, otherwise a genuine generic-path submission would be rejected
+     * purely for using that channel instead of the legacy one.
+     */
+    private static Boolean hasMeaningfulAnswers(RequestInput input) {
+        return String.isNotBlank(input.targetPlatform)
+            || String.isNotBlank(input.budgetRange)
+            || String.isNotBlank(input.contactCount)
+            || String.isNotBlank(input.monthlySendVolume)
+            || String.isNotBlank(input.painPoints)
+            || String.isNotBlank(input.migrationGoals)
+            || String.isNotBlank(input.keyIntegrations)
+            || String.isNotBlank(input.successCriteria)
+            || String.isNotBlank(input.internalTeamSize)
+            || String.isNotBlank(input.executiveSponsorship)
+            || String.isNotBlank(input.decisionMakers)
+            || String.isNotBlank(input.urgencyDriver)
+            || (input.answers != null && !input.answers.isEmpty())
+            || (input.complexityAnswers != null && !input.complexityAnswers.isEmpty())
+            || String.isNotBlank(input.answersJson);
     }
 
     private static String firstNameOf(String fullName) {
