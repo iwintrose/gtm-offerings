@@ -1,0 +1,349 @@
+<template>
+  <div class="ov">
+    <!-- The link is authored here, in Lightning, where the rep is themselves —
+         not on the site domain, where they are the guest user. Mounted only
+         while open: the wizard's connectedCallback makes three Apex calls, and
+         none of them belong on every Overview load. saved-record-id is
+         deliberately NOT bound — it jumps the wizard to the "Link generated"
+         screen, and 'configsaved' fires on every autosave, so adopting an id
+         here would strand a rep on a finished-looking share box for a
+         half-filled link.
+
+         KEEP THIS FIRST. The wizard must be the first child of this container.
+         gtmConfigWizard._measureChromeOffset reads
+         host.getBoundingClientRect().top + window.scrollY — an absolute
+         document offset — and feeds it to a position: fixed overlay, which
+         needs a viewport offset. Mounted at the top those cancel out
+         (rect.top falls as you scroll, scrollY rises), so it resolves to the
+         Salesforce chrome height at any scroll position: unscrolled,
+         106 + 0 = 106; scrolled 500px, -394 + 500 = 106. Mounted lower it
+         resolves to the host's page position instead and the wizard renders
+         off-screen — measured at 1915px on a 643px viewport when this sat at
+         the end of the container. Fix the mount point, not the wizard: it
+         also renders on two other Lightning tabs and two Experience Cloud
+         sites. -->
+    <template if:true={wizardOpen}>
+      <c-gtm-config-wizard standalone is-open={wizardOpen}
+        offering-key={wizardOffering} onclose={handleWizardClose}
+        ondone={handleWizardDone}
+        onconfigsaved={handleWizardSaved}></c-gtm-config-wizard>
+    </template>
+
+    <!-- The pageless "rep-initiated assessment" entry point (issue
+         rep-initiated-assessment-no-page): opens straight to a real
+         Contact/Account picker, no branded page involved. Mounted only
+         while open, same reasoning as the wizard above. -->
+    <template if:true={repDirectOpen}>
+      <c-gtm-rep-direct-picker is-open={repDirectOpen} offering-key={repDirectOffering}
+        onclose={handleRepDirectClose}
+        oncreated={handleRepDirectCreated}></c-gtm-rep-direct-picker>
+    </template>
+
+    <!-- Salesforce's own record-header proportions, so this reads as a page in
+         the app rather than a page inside it. Same shape as the Content
+         Manager home, because they are siblings — both now built on the
+         shared c-gtm-page-header (issue B14). -->
+    <!-- Actions are declarative (headerActions); "utility:assessment" is not a
+         real SLDS icon, so See Assessments uses utility:preview. -->
+    <c-gtm-page-header icon-name="standard:opportunity" eyebrow="Go to market"
+                      title="GTM Offerings" meta={headerMeta}
+                      actions={headerActions} onheaderaction={handleHeaderAction}>
+    </c-gtm-page-header>
+
+    <!-- Today/Offerings toggle (issue overview-bd-heat-redesign-1-layout-toggle):
+         defaults to Today. "Needs attention today" and the follow-up table
+         live under Today; the per-offering content/performance card lives
+         under Offerings -- the two views are never blended together. -->
+    <div class="ov-view-toggle" role="tablist" aria-label="Overview view">
+      <button type="button" class={todayToggleClass} data-view="today" role="tab"
+              aria-selected={isTodayView} onclick={handleViewToggle}>Today</button>
+      <button type="button" class={offeringsToggleClass} data-view="offerings" role="tab"
+              aria-selected={isOfferingsView} onclick={handleViewToggle}>Offerings</button>
+    </div>
+
+    <template if:true={loadError}>
+      <div class="ov-err" role="alert">
+        <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+        <span>{loadError}</span>
+        <button class="ov-err-x" onclick={handleDismissError} title="Dismiss" aria-label="Dismiss">&times;</button>
+      </div>
+    </template>
+
+    <!-- Not an error, so not loadError: the header button has no offering of
+         its own, and with more than one there is no defensible way to guess
+         which is meant. Unreachable today — the org has a single offering, so
+         the header button always opens the wizard outright. See
+         handleNewEngagementLink for why the branch is kept anyway. -->
+    <template if:true={wizardHint}>
+      <p class="ov-hint">{wizardHint}</p>
+    </template>
+
+    <!-- Today view: "Needs attention today", the follow-up table and
+         Assessment results -- unchanged, functionally, from before the
+         toggle (issue overview-bd-heat-redesign-1-layout-toggle). The former
+         "Pipeline health" funnel card that used to sit beside the follow-up
+         table was removed outright, not migrated here or anywhere else. -->
+    <template if:true={isTodayView}>
+      <!-- Hero: "Who's hot right now" heat grid (issue
+           overview-bd-heat-redesign-2-heat-grid), wired in ahead of Act Today
+           (issue overview-bd-heat-redesign-4-integration). Self-contained --
+           no props in, no events out; it loads its own data on
+           connectedCallback. -->
+      <c-gtm-heat-grid></c-gtm-heat-grid>
+
+      <!-- Row 1: "Act today" (issue overview-sales-dashboard-2-act-today). Four
+           click-through tiles; each is one button-role element so it is
+           keyboard-operable (Enter/Space), and goes to the tab pre-filtered to
+           the same definition it counts. -->
+      <template if:true={showActTodayError}>
+        <div class="ov-err at-error" role="alert">
+          <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+          <span>{actTodayError}</span>
+        </div>
+      </template>
+      <template if:true={showActTodayRow}>
+        <ul class="at-row" aria-label="Act today">
+          <template for:each={actTodayTiles} for:item="tile">
+            <li key={tile.key} class={tile.tileClass} data-key={tile.key}
+                role="button" tabindex="0" aria-label={tile.ariaLabel}
+                onclick={handleActTodayActivate}
+                onkeydown={handleActTodayActivate}>
+              <span class="at-label">{tile.label}</span>
+              <span class="at-count">{tile.countLabel}</span>
+              <span class="at-hint">{tile.hint}</span>
+              <template if:true={tile.hasNames}>
+                <ul class="at-names">
+                  <template for:each={tile.names} for:item="n">
+                    <li key={n.key} class="at-name gtm-link-cell" title={n.name}>{n.name}</li>
+                  </template>
+                </ul>
+              </template>
+            </li>
+          </template>
+        </ul>
+      </template>
+
+      <!-- Daily widgets row (issue overview-bd-heat-redesign-3-daily-widgets),
+           wired in via overview-bd-heat-redesign-4-integration: rep's own
+           tasks due today beside readouts sent but not yet responded to.
+           Both self-contained -- no props in, no events out. -->
+      <div class="ov-cols ov-daily-widgets">
+        <c-gtm-tasks-due-today-widget></c-gtm-tasks-due-today-widget>
+        <c-gtm-readouts-awaiting-widget></c-gtm-readouts-awaiting-widget>
+      </div>
+
+      <!-- Row 2: the follow-up table, on its own now that the funnel card is
+           gone. Kept on the shared .ov-row2-card cap/scroll classes so its
+           height behaviour is unchanged. -->
+      <div class="ov-cols ov-row2 ov-row2--solo">
+        <!-- the opportunities a rep has links out for, and what came back.
+             This is the join a BD used to have to make in their head: an
+             opportunity, the link prepared for it, and the request that link
+             produced -- or did not. Scrolls inside the card; header sticks. -->
+        <article class="slds-card ov-card ov-row2-card ov-deals">
+          <div class="slds-card__header ov-card-h">
+            <span class="ov-ic ov-ic--deals">
+              <lightning-icon icon-name="standard:opportunity" size="small"></lightning-icon>
+            </span>
+            <h2 class="ov-h">Opportunities to follow up on</h2>
+          </div>
+          <div class="slds-card__body ov-card-b ov-deals-body slds-scrollable_y">
+            <template if:true={hasDeals}>
+              <div class="deals" role="table" aria-label="Opportunities to follow up on">
+                <div class="deal deal--head ov-sticky" role="row">
+                  <span role="columnheader">Account / contact / link</span>
+                  <span role="columnheader">Opportunity</span>
+                  <span role="columnheader">Assessment</span>
+                </div>
+                <template for:each={dealRows} for:item="row">
+                  <template if:true={row.isAccount}>
+                    <div key={row.key} class={row.headClass} role="row">
+                      <span class="deal-group-name" role="cell" data-account-id={row.accountId}
+                            onclick={handleAccountClick}>{row.accountLabel}</span>
+                    </div>
+                  </template>
+                  <template if:true={row.isContact}>
+                    <div key={row.key} class="deal deal-contact-head" role="row">
+                      <span class="deal-contact-name" role="cell" data-account-id={row.accountId}
+                            data-contact-id={row.contactId} onclick={handleContactClick}>{row.contactLabel}</span>
+                    </div>
+                  </template>
+                  <template if:true={row.isDeal}>
+                    <div key={row.key} class="deal" role="row" data-config-id={row.deal.configId}
+                         onclick={handleLinkRowClick}>
+                      <span class="deal-id" role="cell">
+                        <span class="deal-name">{row.deal.offeringLabel}</span>
+                        <span class="deal-sub">{row.deal.configName}</span>
+                        <span class={row.deal.engagementClass}>{row.deal.engagementLabel}</span>
+                      </span>
+                      <span class="deal-opp" role="cell">
+                        <a class="deal-opp-name" href={row.deal.url} onclick={handleOpportunityClick}>{row.deal.opportunityName}</a>
+                        <span class={row.deal.crmStageClass}>{row.deal.crmStage}</span>
+                        <!-- OPTIONAL: close date (owner may drop) -->
+                        <template if:true={row.deal.close}>
+                          <span class="deal-close">Close {row.deal.close}</span>
+                        </template>
+                        <!-- /OPTIONAL: close date -->
+                      </span>
+                      <span class="deal-assessment" role="cell">
+                        <template if:true={row.deal.hasRequest}>
+                          <a class="deal-req" data-request-id={row.deal.requestId}
+                             onclick={handleAssessmentClick}>{row.deal.requestName}</a>
+                          <span class="deal-sub">{row.deal.requestSubmittedLabel}</span>
+                        </template>
+                        <template if:false={row.deal.hasRequest}>
+                          <span class="deal-none">—</span>
+                        </template>
+                      </span>
+                    </div>
+                  </template>
+                </template>
+              </div>
+            </template>
+            <template if:true={showEmptyDeals}>
+              <p class="ov-empty">No opportunities yet. Every engagement link you send for an opportunity shows up here with what the recipient did with it.</p>
+            </template>
+          </div>
+        </article>
+      </div>
+
+      <!-- Row 3: Assessment results -- the rep's submitted assessments,
+           ranked by the SERVER (best fit first). No client-side sort. -->
+      <div class="ov-cols ov-row3 ov-row3--solo">
+        <article class="slds-card ov-card ov-row2-card ov-results">
+          <div class="slds-card__header ov-card-h">
+            <span class="ov-ic ov-ic--results">
+              <lightning-icon icon-name="standard:task" size="small"></lightning-icon>
+            </span>
+            <div class="ov-h-stack">
+              <h2 class="ov-h">Assessment results</h2>
+              <span class="ov-h-note">
+                <lightning-button variant="base" label="View all assessments"
+                                  class="ov-view-all" onclick={handleViewAllAssessments}></lightning-button>
+                &middot;
+                <lightning-button variant="base" label="Ready to book"
+                                  class="ov-ready-to-book" onclick={handleReadyToBook}></lightning-button>
+              </span>
+            </div>
+          </div>
+          <div class="slds-card__body ov-card-b ov-results-body slds-scrollable_y">
+            <template if:true={assessmentsLoading}>
+              <div class="ov-empty ar-loading">
+                <lightning-spinner alternative-text="Loading assessments" size="small"></lightning-spinner>
+              </div>
+            </template>
+            <template if:true={assessmentsError}>
+              <div class="ov-err ar-error" role="alert">
+                <lightning-icon icon-name="utility:warning" size="x-small" variant="warning"></lightning-icon>
+                <span>{assessmentsError}</span>
+              </div>
+            </template>
+            <template if:true={showAssessmentsEmpty}>
+              <p class="ov-empty ar-empty">No assessments submitted yet</p>
+            </template>
+            <template if:true={hasAssessmentRows}>
+              <c-gtm-link-datatable class="ar-table" key-field="recordId" data={assessmentRows}
+                                   columns={assessmentColumns} hide-checkbox-column
+                                   onrowaction={handleAssessmentRowAction}></c-gtm-link-datatable>
+            </template>
+          </div>
+        </article>
+      </div>
+    </template>
+
+    <!-- Offerings view: the per-offering content/performance card, re-homed
+         here from what used to be Row 3 (issue
+         overview-bd-heat-redesign-1-layout-toggle). Renders ONLY when
+         Offerings is selected -- never blended into Today. -->
+    <template if:true={isOfferingsView}>
+      <article class="slds-card ov-card ov-offerings">
+        <div class="slds-card__header ov-card-h">
+          <span class="ov-ic ov-ic--offerings">
+            <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
+          </span>
+          <h2 class="ov-h">Offerings</h2>
+        </div>
+        <div class="slds-card__body ov-card-b">
+        <div class="cards">
+          <template for:each={offeringCards} for:item="o">
+            <article key={o.offeringKey} class="slds-card ocard">
+              <div class="slds-card__header ocard-top">
+                <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
+                <div class="ocard-id">
+                  <span class="ocard-name">{o.label}</span>
+                  <span class="ocard-key">{o.pageList}</span>
+                </div>
+              </div>
+              <p class="ocard-sum">{o.summary}</p>
+              <template if:true={o.hasCounts}>
+                <p class="ocard-counts">
+                  <span class="ocount ocount-live">Live links: {o.liveLinkCount}</span>
+                  <span class="ocount ocount-subm">Assessments submitted: {o.submittedAssessmentCount}</span>
+                </p>
+              </template>
+              <div class="ocard-acts">
+                <template if:true={o.hasStory}>
+                  <button class="slds-button slds-button_neutral" data-offering={o.offeringKey}
+                          onclick={handleReadStory}>Read the story</button>
+                </template>
+                <button class="slds-button slds-button_neutral" data-offering={o.offeringKey}
+                        onclick={handleToggleFeedback}>{o.toggleLabel}</button>
+                <button class="slds-button slds-button_neutral" data-offering={o.offeringKey}
+                        onclick={handleOpenAssessment}>Assessment</button>
+              </div>
+
+              <!-- Somewhere to say something about what you just read, and to see
+                   what came back. Closed by default: the card is for reading.
+                   "Send to the writers" is the one true primary action inside
+                   this feedback panel (slds-button_brand), so it does not
+                   compete with "Read the story"/the toggle above, which are
+                   both slds-button_neutral -- one brand button per panel. -->
+              <div class={o.panelClass}>
+                <template if:true={o.isOpen}>
+                  <textarea class="fb-input" placeholder="What did you notice? A claim that will not survive a client, a number that is stale, something missing."
+                            value={draft} onchange={handleDraftChange}></textarea>
+                  <div class="fb-send">
+                    <button class="slds-button slds-button_brand" disabled={sendDisabled}
+                            onclick={handleSendFeedback}>Send to the writers</button>
+                  </div>
+                  <template if:true={o.notes.length}>
+                    <ul class="notes">
+                      <template for:each={o.notes} for:item="n">
+                        <li key={n.key} class="note">
+                          <div class="note-head">
+                            <span class="note-who">{n.who}</span>
+                            <template if:true={n.page}><span class="note-page">{n.page}</span></template>
+                            <span class={n.statusClass}>{n.status}</span>
+                            <span class="note-when">{n.when}</span>
+                          </div>
+                          <p class="note-body">{n.body}</p>
+                          <template if:true={n.hasResponse}>
+                            <p class="note-reply"><span class="note-reply-k">Writers</span>{n.response}</p>
+                          </template>
+                          <template if:true={n.needsYou}>
+                            <p class="note-ask">They have asked you something — reply on the record.</p>
+                          </template>
+                        </li>
+                      </template>
+                    </ul>
+                  </template>
+                </template>
+              </div>
+            </article>
+          </template>
+        </div>
+        <template if:true={showEmptyOfferings}>
+          <p class="ov-empty">No offerings set up yet — ask an admin to add one.</p>
+        </template>
+        <p class="ov-foot ocount-footnote">Live links = sent, active links; Draft and Rep_Direct are not counted.</p>
+        </div>
+      </article>
+    </template>
+
+  </div>
+
+  <!-- B1: the app's own static help panel. Collapsed by default; content is
+       CMS-editable in the Content Manager app, under the Framework
+       offering's "BD App Help (FAQ)" page. -->
+  <c-gtm-faq-panel template-type="faq-bd" fab-label="Help"></c-gtm-faq-panel>
+</template>

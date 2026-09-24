@@ -1,0 +1,216 @@
+:host { display: block; font-size: 13px; color: #181818; }
+
+/* This renders inside gtmPageBrowser's own shell now, which already owns
+   the page background/padding and the tab's one title bar (D7 follow-up:
+   "anything that loads on the Pages tab must maintain the same look and
+   feel" -- a second icon/title here duplicated that bar instead of
+   sharing it). This is the search-and-crumbs bar underneath it, styled
+   as the same kind of card so the two read as one header, not two. */
+.rlf-head {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: .75rem 1rem; margin-bottom: 1rem;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}
+.rlf-head-row {
+    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+}
+.rlf-head-label {
+    margin: 0; font-size: 12px; font-weight: 700; color: #444; flex: none;
+}
+.rlf-head-search { flex: 1 1 16rem; max-width: 22rem; }
+
+/* Unified Account/Contact search (issue-gtm-assessments-account-contact-
+   trail follow-up): replaces the old Account-only lightning-record-picker
+   with a plain input + custom dropdown, since lightning-record-picker
+   only supports a single object-api-name. */
+.rlf-search { position: relative; }
+.rlf-search-results {
+    position: absolute; z-index: 10; top: calc(100% + .25rem); left: 0; right: 0;
+    background: #fff; border: 1px solid #dddbda; border-radius: .25rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,.12); list-style: none; margin: 0; padding: .25rem 0;
+    max-height: 18rem; overflow-y: auto;
+}
+.rlf-search-status {
+    padding: .5rem .75rem; font-size: 12px; color: #747474;
+}
+.rlf-search-status--err { color: #a1500a; }
+.rlf-search-result {
+    display: flex; align-items: center; gap: .5rem; width: 100%; text-align: left;
+    background: none; border: 0; padding: .45rem .75rem; cursor: pointer;
+}
+.rlf-search-result:hover { background: #f3f3f3; }
+.rlf-search-result-body { display: flex; flex-direction: column; min-width: 0; }
+.rlf-search-result-main { font-size: 12.5px; font-weight: 600; color: #181818; }
+.rlf-search-result-sub { font-size: 11px; color: #747474; }
+.rlf-result-icon--account { --sds-c-icon-color-foreground-default: #0176d3; }
+.rlf-result-icon--contact { --sds-c-icon-color-foreground-default: #5a1ba9; }
+
+.rlf-crumbs {
+    display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
+    margin-top: .65rem; padding-top: .6rem; border-top: 1px solid #f0f0f0;
+}
+.rlf-crumb {
+    border: 0; background: none; padding: .1rem .2rem; cursor: pointer;
+    font-size: 12px; color: #0176d3;
+}
+.rlf-crumb:not(:last-child)::after { content: '›'; margin-left: .5rem; color: #b6b6b6; }
+.rlf-crumb:hover:not(:disabled) { text-decoration: underline; }
+.rlf-crumb:disabled { color: #181818; font-weight: 700; cursor: default; }
+
+.rlf-msg { font-size: 12.5px; margin: 0 0 .75rem; }
+.rlf-msg--err { color: #a1500a; }
+.rlf-empty { color: #747474; font-size: 12.5px; line-height: 1.5; margin: 0 0 .75rem; }
+
+/* The filter bar is the only toolbar (Addendum C.9.4). Layout fix kept: the bar's
+   top is pinned (align-self:flex-start, no vertical centering) so it never moves
+   when results change; the .rlf-toolbar wrapper it was pinned in is gone. */
+.rlf-toolbar-bar { display: block; align-self: flex-start; min-width: 0; margin: 0 0 0.75rem; }
+
+/* Nothing picked yet -- a blank page here reads as broken, not as "start
+   by searching." This points at the header's own search instead of
+   repeating it. */
+.rlf-empty-state {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: .5rem; padding: 3rem 1.5rem; color: #747474;
+}
+.rlf-empty-ico { opacity: .5; }
+.rlf-empty-title { margin: .25rem 0 0; font-size: 15px; font-weight: 700; color: #444; }
+.rlf-empty-sub { margin: 0; font-size: 12.5px; line-height: 1.5; max-width: 26rem; }
+
+/* Pages table (all mode). The wrapper sits outside the datatable, so this
+   CSS applies to it; the datatable's own cells only take SLDS utilities. */
+.rlf-table-section { margin-top: 1rem; }
+.rlf-table-wrap {
+    max-height: 32rem; overflow: auto; border: 1px solid #e5e5e5; border-radius: 6px;
+}
+
+/* Miller-columns wrapper: each step's column sits side by side, filling
+   left-to-right, wrapping to a new row (stacking top-to-bottom) when the
+   viewport is too narrow to fit them all -- instead of the old model
+   where picking a step's value tore down and replaced the whole panel. */
+.rlf-columns {
+    display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1rem;
+}
+
+.rlf-col {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: 1rem; box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    flex: 1 1 20rem; max-width: 34rem; min-width: 0;
+}
+
+/* A completed-but-not-current column: collapsed to a one-line summary
+   with a "change" link rather than the full picker list, so it stays put
+   without dominating the row (matches the crumb trail's already-computed
+   label). */
+.rlf-col--compact {
+    flex: 0 1 16rem; max-width: 18rem; padding: .65rem .85rem;
+}
+
+/* The view step's own block (issue #rlf-layout-and-preview, Option C) is a
+   full-width row below the compact Contact/Link columns above, not a third
+   column beside them -- no flex-basis capping like the picker columns. */
+.rlf-view-row { width: 100%; margin-top: 1rem; }
+.rlf-col--view {
+    flex: 1 1 auto; max-width: none; width: 100%;
+}
+
+/* The relocated c-gtm-configurator embed, gated behind "Preview the link" --
+   its own full-width row below the view step's fields, hidden until the
+   toggle reveals it. */
+.rlf-preview-row { width: 100%; margin-top: 1rem; }
+.rlf-preview-toggle-row { margin-top: .75rem; }
+
+.rlf-summary, .rlf-search-summary {
+    display: flex; align-items: baseline; gap: .4rem; flex-wrap: wrap;
+}
+.rlf-summary-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    color: #9a9a9a; flex: none;
+}
+.rlf-summary-value {
+    font-size: 12.5px; font-weight: 600; color: #181818;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.rlf-change, .rlf-search-again {
+    border: 0; background: none; padding: 0; cursor: pointer;
+    font-size: 11.5px; color: #0176d3; flex: none; margin-left: auto;
+}
+.rlf-change:hover, .rlf-search-again:hover { text-decoration: underline; }
+
+.rlf-step-label { margin: 0 0 .6rem; font-size: 13px; font-weight: 700; }
+
+.rlf-list { list-style: none; margin: 0 0 .75rem; padding: 0; }
+.rlf-row-li {
+    display: flex; align-items: stretch; gap: .5rem; margin-bottom: .4rem;
+}
+.rlf-row {
+    display: flex; flex-direction: column; align-items: flex-start; gap: .1rem;
+    flex: 1 1 auto; min-width: 0; text-align: left; background: none; border: 1px solid #e5e5e5;
+    border-radius: .2rem; padding: .55rem .7rem;
+    cursor: pointer; transition: background .12s ease, border-color .12s ease;
+}
+/* The active/inactive switch for the client-facing link -- right on the
+   row a rep is already looking at, not a control they'd have to open the
+   link first to find (the write path is GtmSavedConfigurationController
+   .setActive, the same one the Saved Links bar already uses). A sibling
+   of the row button, not nested inside it: a toggle inside a <button>
+   would double-fire on every click. */
+.rlf-row-toggle {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .2rem; flex: none; padding: 0 .4rem;
+}
+/* Copy the link, or set a new password -- the two things a rep needs
+   mid-call with a client, without leaving this card to find them. Labeled
+   buttons, not bare icons: an icon alone reads as a guess ("is that a key
+   for password, or for something else?"), a label doesn't. */
+.rlf-row-actions {
+    display: flex; flex-direction: column; align-items: stretch; justify-content: center;
+    gap: .3rem; flex: none; padding: 0 .6rem; border-left: 1px solid #f0f0f0;
+}
+.rlf-row-actions lightning-button { display: block; --slds-c-button-line-height: 1.5; }
+.rlf-row:hover { background: #f7f9fc; border-color: #c9d7ee; }
+.rlf-row-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.rlf-row-main { font-weight: 600; font-size: 12.5px; }
+.rlf-row-sub { font-size: 11.5px; color: #747474; }
+.rlf-row-date { font-size: 11px; color: #9a9a9a; margin-top: .1rem; }
+
+.rlf-status {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    color: #2e844a; background: #eaf6ee; border-radius: 1rem; padding: .05rem .5rem;
+}
+.rlf-status--off { color: #706e6b; background: #f3f2f2; }
+
+.rlf-back {
+    border: 0; background: none; padding: 0; cursor: pointer;
+    font-size: 12px; color: #0176d3;
+}
+.rlf-back:hover { text-decoration: underline; }
+
+/* The rendered link itself -- a full-bleed page like Story/Configurator
+   always are, boxed the same way gtmPageBrowser boxed every page it drew. */
+.rlf-view-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: .6rem;
+}
+.rlf-view-note { font-size: 12px; color: #747474; }
+
+.rlf-view-details {
+    display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: .75rem;
+}
+.rlf-view-field {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: .55rem .7rem; flex: 1 1 18rem; min-width: 0;
+}
+.rlf-view-label {
+    display: block; font-size: 11px; font-weight: 700; color: #444;
+    text-transform: uppercase; letter-spacing: .03em; margin-bottom: .3rem;
+}
+.rlf-linkbox { display: flex; align-items: center; gap: .4rem; }
+.rlf-view-input {
+    flex: 1 1 auto; min-width: 0; border: 1px solid #dedede; border-radius: .2rem;
+    padding: .35rem .5rem; font-size: 12.5px; color: #181818; background: #fafafa;
+}
+.rlf-stage {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    overflow: hidden; box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}

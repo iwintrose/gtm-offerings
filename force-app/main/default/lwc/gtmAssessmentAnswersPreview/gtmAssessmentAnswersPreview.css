@@ -1,0 +1,39 @@
+.gaap-root {
+    padding: 0.5rem 0.25rem;
+}
+
+.gaap-empty,
+.gaap-intro {
+    color: #444;
+    margin-bottom: 1rem;
+}
+
+.gaap-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.gaap-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.gaap-item:last-child {
+    border-bottom: none;
+}
+
+.gaap-question {
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.gaap-answer {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.gaap-answer--blank {
+    color: #706e6b;
+    font-style: italic;
+}

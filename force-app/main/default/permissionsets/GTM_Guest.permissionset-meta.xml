@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Merged GTM_Assessment_Guest + GTM_Story_Guest (always co-assigned; same net access). Submit assessment requests, take the questionnaire, view a published readout, view the story site, save one form draft.</description>
+    <label>GTM Guest</label>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>ApiEnabled</name>
+    </userPermissions>
+    <classAccesses>
+        <apexClass>GtmAssessmentRequestController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmPageContentReader</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmViewerContext</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmConfigurationReader</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmFormDraftController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmConfigurationStatusController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmLinkAuthController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmLinkRecoveryController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <!-- Assessment/readout guest paths (ported from claude/salesforce-marketing-maturity-bsxmxs).
+         Deliberately NO objectPermissions grant on GTM_Form_Draft__c below -
+         guest access to the draft object is entirely through
+         GtmAssessmentDraftController's class grant, never through direct
+         object/field permission. See docs/handoff/port-map-ma-to-gtm.md
+         section E: this absence is load-bearing, not an oversight. -->
+    <classAccesses>
+        <apexClass>GtmAssessmentDraftController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmAssessmentInstrument</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmAssessmentQuestions</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmReadoutCommentController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>GtmReadoutPublicController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Config__mdt</name>
+    </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Question__mdt</name>
+    </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Pair__mdt</name>
+    </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Dimension_Override__mdt</name>
+    </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Supplement__mdt</name>
+    </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Gate__mdt</name>
+    </customMetadataTypeAccesses>
+    <!-- GTM_Assessment_Frame__mdt IS read from the guest path, despite
+         ADR-0007's companion plan assuming otherwise: GtmAssessmentScoring and
+         GtmEstateComplexity resolve an offering's frame inside
+         GtmAssessmentRequestController.recordAssessmentRequest, which is the
+         guest submit endpoint. Without this grant a guest submission for a
+         non-migration-accelerator offering would silently fail open to
+         Migration Accelerator's compiled constants, exactly the FLS gap class
+         CLAUDE.md section 5.1 describes. Granted alongside its six sibling
+         instrument types for the same reason they are. -->
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Assessment_Frame__mdt</name>
+    </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Migration_Pair__mdt</name>
+    </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Migration_Platform__mdt</name>
+    </customMetadataTypeAccesses>
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Offering__mdt</name>
+    </customMetadataTypeAccesses>
+    <!-- GTM_Instrument_Theme__mdt is read-only branding lookup for the
+         guest-facing instrument page (Offering_Key__c/Theme_Key__c plain-text
+         convention, see docs/architecture/gtm-instrument-schema.md section 5).
+         No grant on GTM_Instrument_Definition__c / _Question_Definition__c /
+         _Outcome_Range__c here: guests reach instrument content only
+         through an Apex controller (sub-issue 02/03), never direct CRUD,
+         matching the existing GTM_Instrument__c / _Question__c pattern. -->
+    <customMetadataTypeAccesses>
+        <enabled>true</enabled>
+        <name>GTM_Instrument_Theme__mdt</name>
+    </customMetadataTypeAccesses>
+    <!-- SECURITY-REVIEW NOTE (carried over from GTM_Story_Guest, still load-bearing):
+         GTM_Form_Draft__c is a SHARED object - it also holds the branching
+         readiness-questionnaire draft (Draft_Type__c = 'Assessment'), accessed
+         only through GtmAssessmentDraftController's class grant above, never
+         through an object/field permission. The object/field grant below is
+         intentionally narrow and must stay that way:
+           - never add viewAllRecords;
+           - never add a field permission on Resume_Token__c, Expires_At__c,
+             Status__c, Submitted_Request__c, Pair_Key__c, Last_Saved_At__c,
+             or Draft_Type__c;
+           - GtmFormDraftController itself filters every query and insert to
+             Draft_Type__c = 'Booking', which is what actually keeps this
+             population from ever reading or writing an Assessment row, but
+             that control is defense in depth on top of this permission set
+             staying narrow, not a substitute for it. -->
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>GTM_Form_Draft__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>Contact</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>Task</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>Event</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>GTM_Assessment_Request__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>Opportunity</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>GTM_Saved_Configuration__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <fieldPermissions>
+        <field>GTM_Form_Draft__c.Draft_JSON__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Form_Draft__c.Furthest_Field__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Form_Draft__c.Session_Id__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+</PermissionSet>

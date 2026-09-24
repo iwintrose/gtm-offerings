@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>GTM Configurator</masterLabel>
+    <targets>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+<targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property name="offeringKey" type="String" label="Offering Key"
+                      description="Offering key, matching GTM_Offering__mdt.Offering_Key__c. Required — leave unset only if this page will always be reached via a ?offering= link or a saved cfgId record; otherwise the page shows an explicit &quot;not configured&quot; state rather than defaulting to any one offering."/>
+            <property name="accentColor" type="Color" label="Brand accent colour" description="Client brand colour (leave blank — accent is set via URL parameter)."/>
+            <property name="offeringsUrl" type="String" label="Offerings URL" description="URL for the offerings page (leave blank — set via URL parameter)."/>
+            <property name="industryUrl" type="String" label="Industry URL" description="URL for the industry page (leave blank — set via URL parameter)."/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

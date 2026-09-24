@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Max_Answer_Value__c</fullName>
+    <label>Max Answer Value</label>
+    <description>Highest value one scored readiness answer may contribute for
+        this offering. Replaces GtmAssessmentScoring.MAX_ANSWER_VALUE, which
+        stays as the fallback when no frame record exists.</description>
+    <required>true</required>
+    <precision>2</precision>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

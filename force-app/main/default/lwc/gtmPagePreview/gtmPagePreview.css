@@ -1,0 +1,171 @@
+:host {
+    --gtm-text: #181818;
+    --gtm-text-muted: #747474;
+    --gtm-border: #e5e5e5;
+    --gtm-bg-surface: #fff;
+    --gtm-bg-hover: #fafaf9;
+    --gtm-danger: #ba0517;
+    --gtm-radius: 4px;
+    --gtm-font-size-base: 13px;
+    --gtm-font-size-label: 10.5px;
+    display: block; min-height: 0;
+}
+.pv { display: flex; flex-direction: column; height: 100%; min-height: 0; background: #f3f3f3; }
+
+/* ── head ────────────────────────────────────────────────────────────────── */
+.pv-head {
+    flex: none;
+    display: flex; align-items: center; gap: 0.45rem;
+    padding: 0.42rem 0.6rem;
+    border-bottom: 1px solid var(--gtm-border); background: var(--gtm-bg-surface);
+}
+.pv-live {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700;
+    color: #2e844a; flex: none;
+}
+.pv-live .lv {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #2e844a; box-shadow: 0 0 0 3px rgba(46, 132, 74, 0.18); flex: none;
+}
+.pv-url {
+    flex: 1; min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
+    color: var(--gtm-text-muted); background: #f3f3f3;
+    border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius);
+    padding: 0.22rem 0.45rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.vp {
+    display: flex; gap: 1px; flex: none;
+    background: var(--gtm-border); border: 1px solid #c9c9c9; border-radius: var(--gtm-radius); overflow: hidden;
+}
+.vp button {
+    background: var(--gtm-bg-surface); color: var(--gtm-text-muted); border: 0;
+    padding: 0.24rem 0.5rem; cursor: pointer; font-size: 11px; font-weight: 600;
+}
+.vp button:hover { background: #f3f3f3; color: var(--gtm-text); }
+.vp button.on { background: #0176d3; color: #fff; }
+
+.vpsize {
+    display: flex; align-items: center; gap: 0.15rem; flex: none;
+    border: 1px solid #c9c9c9; border-radius: var(--gtm-radius); background: var(--gtm-bg-surface);
+    padding: 0.1rem 0.3rem 0.1rem 0.35rem;
+}
+.vpw {
+    width: 46px; border: 0; background: none;
+    font-size: 11.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-align: right; padding: 0.14rem 0; -moz-appearance: textfield;
+}
+.vpw::-webkit-outer-spin-button, .vpw::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.vpw:focus { outline: 0; }
+.vpsize:focus-within { border-color: #0176d3; box-shadow: 0 0 0 2px rgba(1, 118, 211, 0.2); }
+.px { font-size: 10px; color: #969696; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.zoomsel {
+    flex: none;
+    border: 1px solid #c9c9c9; border-radius: var(--gtm-radius); background: var(--gtm-bg-surface);
+    font-size: 11.5px; padding: 0.2rem 0.25rem; cursor: pointer;
+}
+.zoomsel:disabled { color: #969696; cursor: default; background: #f3f3f3; }
+.zoomread {
+    flex: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--gtm-font-size-label); color: #969696; min-width: 34px; text-align: right;
+}
+
+/* ── canvas ──────────────────────────────────────────────────────────────── */
+.pv-stage { flex: 1; min-height: 0; position: relative; background: #f3f3f3; }
+.pv-scroll {
+    position: absolute; inset: 0; overflow: auto;
+    padding: 14px 22px;
+    display: flex; justify-content: center; align-items: flex-start;
+}
+/* Holds the space the SCALED page occupies. The device inside is always the
+   true device width — transform does not shrink a box — so both are sized
+   from JS in layout(). */
+.dev-slot { position: relative; flex: none; transition: width 0.18s ease, height 0.18s ease; }
+.device {
+    position: absolute; top: 0; left: 0;
+    transform-origin: top left;
+    background: var(--gtm-bg-surface);
+    /* A device preset is a fixed window with the page scrolling inside it,
+       the way the real device behaves. In fluid mode the device is auto-height
+       so this never engages and the canvas does the scrolling. */
+    overflow: auto;
+    border: 1px solid #c9c9c9; border-radius: 8px;
+    box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.3);
+}
+.grip {
+    position: absolute; right: -11px; top: 0; bottom: 0;
+    width: 22px; cursor: col-resize; padding: 0; border: 0;
+    display: grid; place-items: center; background: none; touch-action: none;
+}
+.grip::after {
+    content: ""; width: 4px; height: 40px; border-radius: 2px; background: #c9c9c9;
+    transition: background 0.15s, height 0.15s;
+}
+.grip:hover::after { background: #0176d3; height: 72px; }
+
+/* ── no preview available ────────────────────────────────────────────────── */
+.pv-none {
+    padding: 2.5rem 2rem; text-align: center; color: #444;
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+}
+.pv-none-h { margin: 0; font-size: 13.5px; font-weight: 700; color: #181818; }
+.pv-none-sub { margin: 0; font-size: 12px; color: #747474; line-height: 1.55; max-width: 30rem; }
+.pv-none-link { margin-top: 0.5rem; font-size: 12.5px; font-weight: 600; color: #0176d3; text-decoration: none; }
+.pv-none-link:hover { text-decoration: underline; }
+
+/* Says how the preview is standing in for a page that has no single version of
+   itself — a tile shown in place, a configurator shown for one industry. */
+.pv-note {
+  padding: 6px 12px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #5c6b7a;
+  background: #f3f6f9;
+  border-bottom: 1px solid #e3e8ee;
+}
+
+/* ── Customizer settings preview ─────────────────────────────────────────────
+   What the rep's link wizard starts from -- never the page itself, so this
+   never scrolls and never hands a section back to the parent. Replaces the
+   ordinary device canvas entirely while Customizer settings is open. */
+.pv-settings {
+  flex: 1; min-height: 0; overflow-y: auto; background: #f3f3f3;
+  padding: 1.25rem; display: flex; flex-direction: column; gap: 1.1rem;
+}
+.pvs-block {
+  background: #fff; border: 1px solid #e5e5e5; border-radius: 0.4rem;
+  padding: 0.85rem 1rem;
+}
+.pvs-h {
+  margin: 0 0 0.5rem; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: #747474;
+}
+.pvs-line { margin: 0; font-size: 13px; color: #181818; }
+.pvs-presets { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.pvs-preset {
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  border: 1px solid #e5e5e5; border-radius: 0.35rem; padding: 0.5rem 0.9rem;
+  min-width: 5.5rem;
+}
+.pvs-preset-key { font-size: 15px; font-weight: 700; color: #0176d3; }
+.pvs-preset-label { font-size: 12px; font-weight: 600; color: #181818; }
+.pvs-preset-sub { font-size: 10.5px; color: #747474; }
+.pvs-swatches { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.pvs-swatch {
+  display: flex; align-items: center; gap: 0.35rem; font-size: 12px; color: #181818;
+}
+.pvs-dot {
+  width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15);
+  display: inline-block;
+}
+.pvs-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.pvs-chip {
+  font-size: 11.5px; padding: 0.2rem 0.55rem; border-radius: 1rem;
+  background: #f3f6f9; color: #3e4c59; border: 1px solid #e3e8ee;
+}
+.pvs-chip--dep { background: #fef5ec; border-color: #fde0bc; color: #8c6a1a; }

@@ -1,0 +1,14 @@
+<template>
+    <template lwc:if={showSpinner}>
+        <div class="slds-is-relative slds-p-around_large" style="min-height:6rem">
+            <lightning-spinner alternative-text="Opening" size="medium"></lightning-spinner>
+        </div>
+    </template>
+    <template lwc:else>
+        <div class="slds-p-around_large">
+            <div class="slds-notify slds-notify_alert slds-alert_warning" role="alert">
+                <h2>This record is not available. It may have been deleted, or you may not have access to it. Use the Pages or Assessments tab to find your links and assessments.</h2>
+            </div>
+        </div>
+    </template>
+</template>

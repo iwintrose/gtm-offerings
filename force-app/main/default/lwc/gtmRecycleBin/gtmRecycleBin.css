@@ -1,0 +1,23 @@
+.rb {
+    display: block;
+}
+
+.rb-loading {
+    padding: 2rem;
+    text-align: center;
+}
+
+.rb-empty {
+    padding: 1rem 0;
+    color: #706e6b;
+}
+
+.rb-error {
+    color: #ba0517;
+    padding: 0.5rem 0;
+}
+
+.rb-search {
+    margin: 0.75rem 0;
+    max-width: 24rem;
+}

@@ -1,0 +1,36 @@
+<template>
+    <div class="gaap-root">
+        <template if:true={hasNoRecordId}>
+            <p class="gaap-empty">No assessment request to preview yet.</p>
+        </template>
+        <template if:true={hasError}>
+            <p class="gaap-empty">We could not load this assessment's answers just now.</p>
+        </template>
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+        <template if:false={isLoading}>
+            <template if:false={hasError}>
+                <template if:false={hasNoRecordId}>
+                    <p class="gaap-intro">
+                        <template if:false={isSubmitted}>
+                            {contactName} at {accountName} has not submitted the assessment yet.
+                            Answers below are shown as submitted so far.
+                        </template>
+                        <template if:true={isSubmitted}>
+                            Submitted answers from {contactName} at {accountName}.
+                        </template>
+                    </p>
+                    <ul class="gaap-list">
+                        <template for:each={questions} for:item="q">
+                            <li key={q.key} class="gaap-item">
+                                <p class="gaap-question">{q.question}</p>
+                                <p class={q.cls}>{q.answer}</p>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+            </template>
+        </template>
+    </div>
+</template>

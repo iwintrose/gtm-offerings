@@ -1,0 +1,337 @@
+<template>
+  <div class={rootClass}>
+    <div class="bar" data-section={header.sectionKey}>
+      <div class="boxed bar-in">
+        <div class="bar-wm">
+          <span class="tick"></span> {header.brandLabel}
+          <span class="bar-tag mono">{header.brandTag}</span>
+        </div>
+        <div class="bar-right">
+          <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
+        </div>
+      </div>
+    </div>
+    <div class="progress" style={progressStyle}></div>
+
+    <template if:true={_loadError}>
+      <div class="boxed load-error" role="status">{_loadError}</div>
+    </template>
+
+    <!--
+      The page is drawn by iterating sections. Order, presence and layout type
+      all come from GTM_Page_Section__c, so rearranging in the Content Manager
+      moves the section here. Adding a new LAYOUT still needs a branch below;
+      adding, removing or reordering a section does not.
+    -->
+    <template for:each={sections} for:item="s">
+      <section key={s.key} class={s.sectionClass} data-section={s.key}>
+        <div class="boxed ps-grid">
+
+        <!-- hero -->
+        <template if:true={s.isHero}>
+          <div class="pc-hero-text">
+            <div class="eyebrow rv"><span class="bead"></span> {s.eyebrow}</div>
+            <h1 class="hero-h rv d1">
+              <lightning-formatted-rich-text value={s.headline}></lightning-formatted-rich-text>
+            </h1>
+            <p class="hero-sub rv d2">
+              <lightning-formatted-rich-text value={s.subhead}></lightning-formatted-rich-text>
+            </p>
+            <div class="scroll-cue rv d3"><span>scroll</span><span class="ln"></span></div>
+          </div>
+        </template>
+        <template if:true={s.isHero}>
+          <ol class="pc-full hero-nav rv d2">
+            <template for:each={pageIndex} for:item="p">
+              <li key={p.id}>
+                <button type="button" class="hero-nav-btn" data-target={p.id} onclick={handleNavClick}>
+                  <span class="hr-n">{p.num}</span>{p.label}
+                </button>
+              </li>
+            </template>
+          </ol>
+        </template>
+
+        <!-- lede-chips -->
+        <template if:true={s.isLedeChips}>
+          <div class="pc-text rv rv-l">
+            <template if:true={s.hasEyebrow}>
+              <div class="eyebrow"><span class="bead"></span> {s.eyebrow}</div>
+            </template>
+            <p class="lede">
+              <lightning-formatted-rich-text value={s.lede}></lightning-formatted-rich-text>
+            </p>
+          </div>
+          <div class="pc-media chip-row rv rv-r rv-stagger">
+            <template for:each={s.chips} for:item="chip">
+              <span key={chip.id} class="chip"><b>—</b>{chip.text}</span>
+            </template>
+          </div>
+          <p class="pc-full close-line ps-display rv d2">
+            <lightning-formatted-rich-text value={s.close}></lightning-formatted-rich-text>
+          </p>
+        </template>
+
+        <!-- route-proof -->
+        <template if:true={s.isRouteProof}>
+          <template if:true={s.hasEyebrow}>
+            <div class="pc-rail eyebrow rv"><span class="bead"></span> {s.eyebrow}</div>
+          </template>
+          <div class="pc-railbody">
+            <h2 class="beat-h rv d1">
+              <lightning-formatted-rich-text value={s.head}></lightning-formatted-rich-text>
+            </h2>
+            <p class="lede rv d1">
+              <lightning-formatted-rich-text value={s.sub}></lightning-formatted-rich-text>
+            </p>
+          </div>
+          <div class="pc-full route rv d2">
+            <template for:each={s.routeSteps} for:item="step">
+              <div key={step.stepLabel} class="route-node">
+                <div class="route-line"></div>
+                <div class="rdot"></div>
+                <div class="rt">{step.stepLabel}</div>
+                <div class="rd">{step.stepDesc}</div>
+              </div>
+            </template>
+          </div>
+          <div class="pc-full">
+            <div class={proofClass}>
+              <div class="proof-bar">
+                <span class="pd"></span><span class="pd"></span><span class="pd"></span>
+                <span class="pt">{proofBarLabel}</span>
+              </div>
+              <div class="proof-body">
+                <div class="proof-cta">
+                  <p>
+                    <lightning-formatted-rich-text value={s.proofCtaText}></lightning-formatted-rich-text>
+                  </p>
+                  <button class="btn" onclick={handleReveal}>See it work →</button>
+                </div>
+                <div class="proof-result">
+                  <div class="proof-grid">
+                    <div class="p-stat">
+                      <div class="ps-n">{objectsText}</div>
+                      <div class="ps-l">objects mapped</div>
+                    </div>
+                    <div class="p-stat row">
+                      <div class="gauge-mini" style={gaugeStyle}><span>{gaugeValue}</span></div>
+                      <div><div class="ps-l flush">health score</div></div>
+                    </div>
+                    <div class="p-stat">
+                      <div class="ps-n">{depsText}</div>
+                      <div class="ps-l">dependencies traced</div>
+                    </div>
+                  </div>
+                  <div class="p-dep">
+                    <span class="p-node root">{s.proofDemoRoot}</span>
+                    <template for:each={s.proofDemoDeps} for:item="dep">
+                      <span key={dep.id} class="p-node">{dep.text}</span>
+                    </template>
+                  </div>
+                  <div class="p-status-wrap">
+                    <span class="p-status"><span class="lv"></span> dry run complete · rollback armed</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- card-grid -->
+        <template if:true={s.isCardGrid}>
+          <template if:true={s.hasEyebrow}>
+            <div class="pc-rail eyebrow rv"><span class="bead"></span> {s.eyebrow}</div>
+          </template>
+          <h2 class="pc-railbody beat-h rv d1">{s.head}</h2>
+          <div class="pc-full cap-grid rv-stagger">
+            <template for:each={s.cards} for:item="cap">
+              <div key={cap.cardTitle} class={cap.cardClass}>
+                <div class="cc-ic">{cap.icon}</div>
+                <div class="cc-t">{cap.cardTitle}</div>
+                <div class="cc-d">{cap.cardDesc}</div>
+              </div>
+            </template>
+          </div>
+          <div class="pc-railbody bonus-card rv d3">
+            <lightning-formatted-rich-text value={s.bonusCard}></lightning-formatted-rich-text>
+          </div>
+        </template>
+
+        <!-- stat -->
+        <template if:true={s.isStat}>
+          <template if:true={s.hasEyebrow}>
+            <div class="pc-rail eyebrow rv"><span class="bead"></span> {s.eyebrow}</div>
+          </template>
+          <h2 class="pc-railbody beat-h rv d1">{s.head}</h2>
+          <div class="pc-text stat-figure rv rv-l">
+            <span class="stat-big">{s.statBig}</span>
+          </div>
+          <div class="pc-media stat-copy rv rv-r">
+            <span class="stat-desc">
+              <lightning-formatted-rich-text value={s.statDesc}></lightning-formatted-rich-text>
+            </span>
+            <p class="note-line">
+              <lightning-formatted-rich-text value={s.note}></lightning-formatted-rich-text>
+            </p>
+          </div>
+        </template>
+
+        <!-- use-pitch -->
+        <template if:true={s.isUsePitch}>
+          <template if:true={s.hasEyebrow}>
+            <div class="pc-rail eyebrow rv"><span class="bead"></span> {s.eyebrow}</div>
+          </template>
+          <div class="pc-railbody">
+            <h2 class="beat-h rv d1">{s.head}</h2>
+            <p class="lede rv d1">
+              <lightning-formatted-rich-text value={s.lede}></lightning-formatted-rich-text>
+            </p>
+          </div>
+          <div class="pc-full use-grid rv-stagger">
+            <template for:each={s.useCases} for:item="uc">
+              <div key={uc.caseTitle} class="use-card">
+                <div class="uc-t">{uc.caseTitle}</div>
+                <div class="uc-d">{uc.caseDesc}</div>
+              </div>
+            </template>
+          </div>
+          <div class="pc-full pitch-shift rv d3">
+            <div class="ps-col old">
+              <span class="ps-label">The old pitch</span>
+              <template for:each={s.oldChips} for:item="chip">
+                <span key={chip.id} class="ps-chip">{chip.text}</span>
+              </template>
+            </div>
+            <div class="ps-arrow">→</div>
+            <div class="ps-col new">
+              <span class="ps-label">This pitch</span>
+              <template for:each={s.newChips} for:item="chip">
+                <span key={chip.id} class="ps-chip">{chip.text}</span>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <!-- faq -->
+        <template if:true={s.isFaq}>
+          <template if:true={s.hasEyebrow}>
+            <div class="pc-rail eyebrow rv"><span class="bead"></span> {s.eyebrow}</div>
+          </template>
+          <div class="pc-railbody">
+            <h2 class="beat-h rv d1">{s.head}</h2>
+            <div class="faq rv-stagger">
+              <template for:each={s.items} for:item="faq">
+                <div key={faq.id} class={faq.itemClass}>
+                  <button class="faq-q" data-id={faq.id} onclick={handleFaqToggle}>
+                    {faq.question}
+                    <span>
+                      <span class={faq.verdictClass}>{faq.verdict}</span>
+                      <span class="fq-plus">+</span>
+                    </span>
+                  </button>
+                  <div class="faq-a">
+                    <div class="faq-a-in">
+                      <lightning-formatted-rich-text value={faq.answer}></lightning-formatted-rich-text>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <!-- closing -->
+        <template if:true={s.isClosing}>
+          <div class="pc-narrative">
+            <h2 class="rv">
+              <lightning-formatted-rich-text value={s.head}></lightning-formatted-rich-text>
+            </h2>
+            <p class="rv d1">
+              <lightning-formatted-rich-text value={s.sub}></lightning-formatted-rich-text>
+            </p>
+          </div>
+        </template>
+
+        <!-- statement -->
+        <template if:true={s.isStatement}>
+          <div class="pc-rail st-kicker ps-eyebrow rv">{s.kicker}</div>
+          <div class="pc-railbody st-line ps-display rv d1">
+            <lightning-formatted-rich-text value={s.statement}></lightning-formatted-rich-text>
+          </div>
+          <div class="pc-railbody st-attr rv d2">
+            <lightning-formatted-rich-text value={s.attribution}></lightning-formatted-rich-text>
+          </div>
+        </template>
+
+        <!-- Fields this layout never declared. Drawn generically so an editor
+             who adds a field to a section sees it on the page instead of
+             creating a record that silently goes nowhere. -->
+        <template if:true={s.hasExtras}>
+          <div class="pc-railbody extras rv d2">
+            <template for:each={s.extras} for:item="x">
+              <div key={x.key} class={x.cls} id={x.htmlId} style={x.style}>
+                <template if:true={x.hasLabel}>
+                  <h3 class="extra-h">{x.label}</h3>
+                </template>
+
+                <template if:true={x.isText}>
+                  <p class="extra-p">{x.value}</p>
+                </template>
+
+                <template if:true={x.isRich}>
+                  <div class="extra-p">
+                    <lightning-formatted-rich-text value={x.value}></lightning-formatted-rich-text>
+                  </div>
+                </template>
+
+                <template if:true={x.isList}>
+                  <div class="chip-row">
+                    <template for:each={x.items} for:item="c">
+                      <span key={c.id} class="chip">{c.text}</span>
+                    </template>
+                  </div>
+                </template>
+
+                <template if:true={x.isPairs}>
+                  <dl class="extra-pairs">
+                    <template for:each={x.items} for:item="i">
+                      <div key={i.id} class="extra-pair">
+                        <dt>{i.title}</dt>
+                        <dd>{i.body}</dd>
+                      </div>
+                    </template>
+                  </dl>
+                </template>
+
+                <template if:true={x.isCards}>
+                  <div class="extra-cards">
+                    <template for:each={x.items} for:item="i">
+                      <div key={i.id} class="extra-card">
+                        <span class="extra-badge">{i.badge}</span>
+                        <h4>{i.title}</h4>
+                        <p>{i.body}</p>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        </div>
+        <template if:true={s.spacerAfter}>
+          <div class="ps-spacer" aria-hidden="true"></div>
+        </template>
+      </section>
+    </template>
+
+    <footer class="pf" data-section={footer.sectionKey}>
+      <div class="boxed pf-in">
+        <span>{footer.footerLeft}</span>
+        <span>{footer.footerRight}</span>
+      </div>
+    </footer>
+  </div>
+</template>

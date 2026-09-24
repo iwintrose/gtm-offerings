@@ -1,0 +1,184 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont1"
+      },
+      "AccountId": "@demoAcct1",
+      "FirstName": "Marisol",
+      "LastName": "[DEMO] Alvarez",
+      "Title": "VP Marketing Operations",
+      "Email": "demo.alvarez@demo.northwind-apparel.invalid",
+      "Phone": "555-010-1001"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont2"
+      },
+      "AccountId": "@demoAcct1",
+      "FirstName": "Daniel",
+      "LastName": "[DEMO] Reyes",
+      "Title": "Director, Digital Campaigns",
+      "Email": "demo.reyes@demo.northwind-apparel.invalid",
+      "Phone": "555-010-1002"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont3"
+      },
+      "AccountId": "@demoAcct2",
+      "FirstName": "Elena",
+      "LastName": "[DEMO] Whitfield",
+      "Title": "Senior Director, Marketing Technology",
+      "Email": "demo.whitfield@demo.cascade-health.invalid",
+      "Phone": "555-010-2001"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont4"
+      },
+      "AccountId": "@demoAcct3",
+      "FirstName": "Chidi",
+      "LastName": "[DEMO] Okafor",
+      "Title": "Head of Revenue Operations",
+      "Email": "demo.okafor@demo.ironclad-freight.invalid",
+      "Phone": "555-010-3001"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont5"
+      },
+      "AccountId": "@demoAcct3",
+      "FirstName": "Lucia",
+      "LastName": "[DEMO] Bianchi",
+      "Title": "VP Customer Marketing",
+      "Email": "demo.bianchi@demo.ironclad-freight.invalid",
+      "Phone": "555-010-3002"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont6"
+      },
+      "AccountId": "@demoAcct4",
+      "FirstName": "Raj",
+      "LastName": "[DEMO] Patel",
+      "Title": "CMO",
+      "Email": "demo.patel@demo.brightfield-financial.invalid",
+      "Phone": "555-010-4001"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont7"
+      },
+      "AccountId": "@demoAcct5",
+      "FirstName": "Ingrid",
+      "LastName": "[DEMO] Sundberg",
+      "Title": "Director, Lifecycle Marketing",
+      "Email": "demo.sundberg@demo.solvent-materials.invalid",
+      "Phone": "555-010-5001"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont8"
+      },
+      "AccountId": "@demoAcct2",
+      "FirstName": "Sofia",
+      "LastName": "[DEMO] Lindqvist",
+      "Title": "Director, Marketing Analytics",
+      "Email": "demo.lindqvist@demo.cascade-health.invalid",
+      "Phone": "555-010-1008"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont9"
+      },
+      "AccountId": "@demoAcct4",
+      "FirstName": "Camille",
+      "LastName": "[DEMO] Moreau",
+      "Title": "Head of Marketing Technology",
+      "Email": "demo.moreau@demo.brightfield-financial.invalid",
+      "Phone": "555-010-1009"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont10"
+      },
+      "AccountId": "@demoAcct6",
+      "FirstName": "Yuki",
+      "LastName": "[DEMO] Nakamura",
+      "Title": "VP Commercial Operations",
+      "Email": "demo.nakamura@demo.helix-bio.invalid",
+      "Phone": "555-010-1010"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont11"
+      },
+      "AccountId": "@demoAcct7",
+      "FirstName": "Ines",
+      "LastName": "[DEMO] Delacroix",
+      "Title": "Chief Marketing Officer",
+      "Email": "demo.delacroix@demo.primestream-media.invalid",
+      "Phone": "555-010-1011"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont12"
+      },
+      "AccountId": "@demoAcct8",
+      "FirstName": "Layla",
+      "LastName": "[DEMO] Haddad",
+      "Title": "Director, Digital Services",
+      "Email": "demo.haddad@demo.civicworks-authority.invalid",
+      "Phone": "555-010-1012"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont13"
+      },
+      "AccountId": "@demoAcct6",
+      "FirstName": "Kwame",
+      "LastName": "[DEMO] Osei",
+      "Title": "Head of CRM",
+      "Email": "demo.osei@demo.helix-bio.invalid",
+      "Phone": "555-010-1013"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont14"
+      },
+      "AccountId": "@demoAcct7",
+      "FirstName": "Tobias",
+      "LastName": "[DEMO] Brandt",
+      "Title": "Director, Audience Data",
+      "Email": "demo.brandt@demo.primestream-media.invalid",
+      "Phone": "555-010-1014"
+    },
+    {
+      "attributes": {
+        "type": "Contact",
+        "referenceId": "demoCont15"
+      },
+      "AccountId": "@demoAcct8",
+      "FirstName": "Mateo",
+      "LastName": "[DEMO] Vasquez",
+      "Title": "Program Manager, Constituent Communications",
+      "Email": "demo.vasquez@demo.civicworks-authority.invalid",
+      "Phone": "555-010-1015"
+    }
+  ]
+}

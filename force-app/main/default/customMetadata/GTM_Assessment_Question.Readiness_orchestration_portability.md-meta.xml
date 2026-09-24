@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Orchestration Portability</label>
+    <protected>false</protected>
+    <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
+        <field>Instrument__c</field>
+        <value xsi:type="xsd:string">Readiness</value>
+    </values>
+    <values>
+        <field>Dimension_Key__c</field>
+        <value xsi:type="xsd:string">orchestration_portability</value>
+    </values>
+    <values>
+        <field>Dimension_Name__c</field>
+        <value xsi:type="xsd:string">Orchestration Portability</value>
+    </values>
+    <values>
+        <field>Measures__c</field>
+        <value xsi:type="xsd:string">Whether flows/journeys survive the move or have to be rebuilt</value>
+    </values>
+    <values>
+        <field>Question_Text__c</field>
+        <value xsi:type="xsd:string">How complex are the journeys, flows and automations that are live today?</value>
+    </values>
+    <values>
+        <field>Option_1_Label__c</field>
+        <value xsi:type="xsd:string">Heavily branched journeys with custom scripting and real-time triggers — most would be rebuilt from scratch</value>
+    </values>
+    <values>
+        <field>Option_2_Label__c</field>
+        <value xsi:type="xsd:string">A mix, including several long-running journeys whose logic nobody has documented</value>
+    </values>
+    <values>
+        <field>Option_3_Label__c</field>
+        <value xsi:type="xsd:string">Mostly scheduled or simply-triggered flows, with a few complex exceptions</value>
+    </values>
+    <values>
+        <field>Option_4_Label__c</field>
+        <value xsi:type="xsd:string">A small number of straightforward, mostly scheduled flows that map cleanly onto the target</value>
+    </values>
+    <values>
+        <field>Max_Answer_Value__c</field>
+        <value xsi:type="xsd:double">4.0</value>
+    </values>
+    <values>
+        <field>Sort_Order__c</field>
+        <value xsi:type="xsd:double">30.0</value>
+    </values>
+    <values>
+        <field>Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+</CustomMetadata>

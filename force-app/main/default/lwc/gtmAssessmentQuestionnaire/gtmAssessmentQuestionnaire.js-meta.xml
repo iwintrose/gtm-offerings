@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>GTM Assessment Questionnaire</masterLabel>
+    <targets>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property name="prospect" type="String" label="Prospect name" />
+            <property name="industryLabel" type="String" label="Industry label" />
+            <property name="prefillCompany" type="String" label="Prefill company" />
+            <!-- offeringKey's own @api comment claimed it was settable from the
+                 page builder; it was not, because it was never declared here.
+                 Declared now so any standalone /assessment page can at least
+                 be set correctly by an author. Inside gtmConfigurator the
+                 engagement link's own Offering__c wins over whatever is typed
+                 here (ADR-0008 section 3).
+
+                 embedded, bookingUrl, sessionId, savedRecordId,
+                 submissionToken and resumeToken stay OUT of targetConfigs on
+                 purpose: they are parent-passed, and exposing savedRecordId as
+                 an author-typed page property is precisely the
+                 standalone-context mistake ADR-0008 section 2 forbids. -->
+            <property name="offeringKey" type="String" label="Offering key"
+                      description="Matches GTM_Offering__mdt.Offering_Key__c. Required when the component is hosted standalone (no default) -- set explicitly per page instance. Inside gtmConfigurator the engagement link's own Offering__c wins instead (ADR-0008)." />
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

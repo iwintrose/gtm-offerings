@@ -1,0 +1,274 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg1"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct1",
+      "Contact__c": "@demoCont1",
+      "Opportunity__c": "@demoOpp1",
+      "Company__c": "[DEMO] Northwind Apparel Group",
+      "Presentation_Stage__c": "Draft",
+      "Active__c": true,
+      "Estimated_Value__c": 85000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg2"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct5",
+      "Contact__c": "@demoCont7",
+      "Opportunity__c": "@demoOpp5",
+      "Company__c": "[DEMO] Solvent Materials Corp",
+      "Presentation_Stage__c": "Rep_Direct",
+      "Active__c": true,
+      "Estimated_Value__c": 98000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg3"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct4",
+      "Contact__c": "@demoCont6",
+      "Opportunity__c": "@demoOpp4",
+      "Company__c": "[DEMO] Brightfield Financial Partners",
+      "Presentation_Stage__c": "Sent",
+      "Active__c": true,
+      "Estimated_Value__c": 205000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg4"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct2",
+      "Contact__c": "@demoCont3",
+      "Opportunity__c": "@demoOpp2",
+      "Company__c": "[DEMO] Cascade Regional Health",
+      "Presentation_Stage__c": "Sent",
+      "Active__c": true,
+      "Estimated_Value__c": 140000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg5"
+      },
+      "Offering__c": "test-offering",
+      "Account__c": "@demoAcct3",
+      "Contact__c": "@demoCont4",
+      "Opportunity__c": "@demoOpp3",
+      "Company__c": "[DEMO] Ironclad Freight & Logistics",
+      "Presentation_Stage__c": "Sent",
+      "Active__c": true,
+      "Estimated_Value__c": 62000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg6"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct1",
+      "Contact__c": "@demoCont2",
+      "Opportunity__c": "@demoOpp1",
+      "Company__c": "[DEMO] Northwind Apparel Group",
+      "Presentation_Stage__c": "Sent",
+      "Active__c": false,
+      "Estimated_Value__c": 85000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg7"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct7",
+      "Contact__c": "@demoCont11",
+      "Opportunity__c": "@demoOpp7",
+      "Company__c": "[DEMO] Prime Stream Media",
+      "Presentation_Stage__c": "Sent",
+      "Active__c": true,
+      "Estimated_Value__c": 76000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg8"
+      },
+      "Offering__c": "test-offering",
+      "Account__c": "@demoAcct6",
+      "Contact__c": "@demoCont10",
+      "Opportunity__c": "@demoOpp6",
+      "Company__c": "[DEMO] Helix BioSciences",
+      "Presentation_Stage__c": "Sent",
+      "Active__c": true,
+      "Estimated_Value__c": 118000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg9"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct8",
+      "Contact__c": "@demoCont12",
+      "Opportunity__c": "@demoOpp8",
+      "Company__c": "[DEMO] Civic Works Authority",
+      "Presentation_Stage__c": "Sent",
+      "Active__c": true,
+      "Estimated_Value__c": 64000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg10"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct4",
+      "Contact__c": "@demoCont9",
+      "Opportunity__c": "@demoOpp4",
+      "Company__c": "[DEMO] Brightfield Financial Partners",
+      "Presentation_Stage__c": "In_Review",
+      "Active__c": true,
+      "Estimated_Value__c": 205000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg11"
+      },
+      "Offering__c": "test-offering",
+      "Account__c": "@demoAcct2",
+      "Contact__c": "@demoCont8",
+      "Opportunity__c": "@demoOpp2",
+      "Company__c": "[DEMO] Cascade Regional Health",
+      "Presentation_Stage__c": "In_Review",
+      "Active__c": true,
+      "Estimated_Value__c": 140000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg12"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct1",
+      "Contact__c": "@demoCont1",
+      "Opportunity__c": "@demoOpp1",
+      "Company__c": "[DEMO] Northwind Apparel Group",
+      "Presentation_Stage__c": "In_Review",
+      "Active__c": false,
+      "Estimated_Value__c": 85000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg13"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct4",
+      "Contact__c": "@demoCont6",
+      "Opportunity__c": "@demoOpp4",
+      "Company__c": "[DEMO] Brightfield Financial Partners",
+      "Presentation_Stage__c": "Assessment",
+      "Active__c": true,
+      "Estimated_Value__c": 205000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg14"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct2",
+      "Contact__c": "@demoCont3",
+      "Opportunity__c": "@demoOpp2",
+      "Company__c": "[DEMO] Cascade Regional Health",
+      "Presentation_Stage__c": "Assessment",
+      "Active__c": true,
+      "Estimated_Value__c": 140000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg15"
+      },
+      "Offering__c": "test-offering",
+      "Account__c": "@demoAcct3",
+      "Contact__c": "@demoCont5",
+      "Opportunity__c": "@demoOpp3",
+      "Company__c": "[DEMO] Ironclad Freight & Logistics",
+      "Presentation_Stage__c": "Assessment",
+      "Active__c": true,
+      "Estimated_Value__c": 62000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg16"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct6",
+      "Contact__c": "@demoCont10",
+      "Opportunity__c": "@demoOpp6",
+      "Company__c": "[DEMO] Helix BioSciences",
+      "Presentation_Stage__c": "Assessment",
+      "Active__c": true,
+      "Estimated_Value__c": 118000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg17"
+      },
+      "Offering__c": "test-offering",
+      "Account__c": "@demoAcct7",
+      "Contact__c": "@demoCont11",
+      "Opportunity__c": "@demoOpp7",
+      "Company__c": "[DEMO] Prime Stream Media",
+      "Presentation_Stage__c": "Assessment",
+      "Active__c": true,
+      "Estimated_Value__c": 76000,
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Saved_Configuration__c",
+        "referenceId": "demoCfg18"
+      },
+      "Offering__c": "migration-accelerator",
+      "Account__c": "@demoAcct8",
+      "Contact__c": "@demoCont12",
+      "Opportunity__c": "@demoOpp8",
+      "Company__c": "[DEMO] Civic Works Authority",
+      "Presentation_Stage__c": "Assessment",
+      "Active__c": false,
+      "Estimated_Value__c": 64000,
+      "Is_Synthetic__c": true
+    }
+  ]
+}

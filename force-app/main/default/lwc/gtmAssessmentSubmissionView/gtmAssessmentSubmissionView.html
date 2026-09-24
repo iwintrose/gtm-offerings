@@ -1,0 +1,80 @@
+<template>
+  <div class="asv">
+    <template if:true={loadError}>
+      <div class="asv-err">{loadError}</div>
+    </template>
+
+    <!-- ── List view (no c__readout param) ────────────────────────── -->
+    <template if:true={showList}>
+      <template if:true={listLoading}>
+        <div class="asv-loading">
+          <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </div>
+      </template>
+      <template if:false={listLoading}>
+        <div class="asv-list">
+          <c-gtm-page-header icon-name="standard:survey" eyebrow="Assessment"
+                            title="Assessment Submissions" meta={submissionCountMeta}>
+            <lightning-button-icon slot="actions" icon-name="utility:refresh" variant="border-filled"
+                                    alternative-text="Refresh" title="Refresh"
+                                    onclick={handleRefresh}></lightning-button-icon>
+          </c-gtm-page-header>
+          <template if:true={hasReadouts}>
+            <lightning-datatable
+              key-field="id"
+              data={readouts}
+              columns={listColumns}
+              hide-checkbox-column
+              onrowaction={handleRowAction}
+            ></lightning-datatable>
+          </template>
+          <template if:false={hasReadouts}>
+            <p class="asv-empty">No readouts found.</p>
+          </template>
+        </div>
+      </template>
+    </template>
+
+    <!-- ── Detail view (c__readout param present) ─────────────────── -->
+    <template if:false={showList}>
+      <template if:true={isLoading}>
+        <div class="asv-loading">
+          <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </div>
+      </template>
+
+      <template if:false={isLoading}>
+        <lightning-tabset class="asv-tabset" variant="scoped">
+          <lightning-tab label="Readout" icon-name="utility:file">
+            <c-gtm-readout-review></c-gtm-readout-review>
+          </lightning-tab>
+
+          <lightning-tab label="Assessments" icon-name="utility:preview">
+            <template if:true={hasAssessmentRequest}>
+              <c-gtm-assessment-detail record-id={assessmentRequestId}></c-gtm-assessment-detail>
+            </template>
+            <template if:true={showOrphanNotice}>
+              <div class="asv-orphan">
+                This readout is not linked to an Assessment Request — there is
+                no submitted assessment content to show here. It was queued to
+                GTM_Readout_Triage for manual routing.
+              </div>
+            </template>
+          </lightning-tab>
+
+          <lightning-tab label="Migration Accelerator" icon-name="utility:routing_offline">
+            <template if:true={hasAssessmentRequest}>
+              <c-conduit-dashboard record-id={assessmentRequestId}></c-conduit-dashboard>
+            </template>
+            <template if:true={showOrphanNotice}>
+              <div class="asv-orphan">
+                This readout is not linked to an Assessment Request — Migration
+                Accelerator data is unavailable.
+              </div>
+            </template>
+          </lightning-tab>
+        </lightning-tabset>
+      </template>
+    </template>
+  </div>
+</template>

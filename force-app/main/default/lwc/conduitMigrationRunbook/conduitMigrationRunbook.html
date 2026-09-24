@@ -1,0 +1,343 @@
+<template>
+    <lightning-card title="Conduit Migration Runbook" icon-name="standard:document">
+        <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-top_small slds-p-bottom_x-small">
+            <p class="slds-text-body_small slds-text-color_weak">{subtitle}</p>
+        </div>
+
+        <!-- ── Recent runs strip (always visible when history exists) ─── -->
+        <template lwc:if={hasRecentRuns}>
+            <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-bottom_small">
+                <p class="recent-runs-label">Recent migration runs</p>
+                <div class="recent-runs">
+                    <template for:each={recentRuns} for:item="r">
+                        <button key={r.id}
+                                class="recent-run-chip"
+                                data-run-id={r.id}
+                                onclick={handleOpenRun}
+                                title="Open run detail">
+                            <span class={r.statusClass}>{r.status}</span>
+                            <span class="recent-run-name">{r.name}</span>
+                            <span class="recent-run-counts">
+                                {r.succeeded}✓ · {r.failed}✗ · {r.skipped}⊘
+                            </span>
+                            <span class="recent-run-when">{r.when}</span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+        <!-- ── Post-execute banner ─────────────────────────────────────── -->
+        <template lwc:if={executionResult}>
+            <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-bottom_small">
+                <template lwc:if={executionResult.success}>
+                    <div class="post-exec-banner post-exec-success">
+                        <span class="post-exec-icon">✓</span>
+                        <span class="post-exec-text">
+                            Migration run created. Open the run record to see per-step results and error details.
+                        </span>
+                        <button class="post-exec-link" onclick={handleOpenLastRun}>
+                            View run details →
+                        </button>
+                    </div>
+                </template>
+                <template lwc:else>
+                    <div class="post-exec-banner post-exec-error">
+                        <span class="post-exec-icon">✗</span>
+                        <span class="post-exec-text">
+                            Migration failed before any steps could be persisted: {executionResult.error}
+                        </span>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- ── Initial ──────────────────────────────────────────────── -->
+        <template lwc:if={showInitial}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <p class="slds-text-body_regular slds-m-bottom_medium">
+                    Generate the tactical migration runbook — every planned step with per-entity preview,
+                    confidence score, and a Markdown document you can download and share with the customer.
+                </p>
+                <lightning-button label={buttonLabel} variant="brand" onclick={handleGenerate}></lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Loading ──────────────────────────────────────────────── -->
+        <template lwc:if={isLoading}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_large slds-text-align_center">
+                <lightning-spinner alternative-text="Generating…" size="medium"></lightning-spinner>
+                <p class="slds-m-top_medium slds-text-heading_small">Building runbook…</p>
+                <p class="slds-text-color_weak slds-m-top_x-small">Planning · describing steps · rendering Markdown</p>
+            </div>
+        </template>
+
+        <!-- ── Error ───────────────────────────────────────────────── -->
+        <template lwc:if={error}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">
+                    {error}
+                </div>
+                <lightning-button label="Retry" onclick={handleGenerate}></lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Runbook ─────────────────────────────────────────────── -->
+        <template lwc:if={hasRunbook}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+
+                <!-- Summary strip -->
+                <div class="summary-strip slds-grid slds-gutters slds-m-bottom_medium">
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num">{summary.totalSteps}</p>
+                        <p class="summary-label">Total Steps</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num summary-create">{summary.create}</p>
+                        <p class="summary-label">Create</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num">{summary.update}</p>
+                        <p class="summary-label">Update</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num summary-skip">{summary.skip}</p>
+                        <p class="summary-label">Skip</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num">{summary.averageConfidence}%</p>
+                        <p class="summary-label">Avg Confidence</p>
+                    </div>
+                    <template lwc:if={hasBlockers}>
+                        <div class="slds-col slds-text-align_center summary-cell">
+                            <p class="summary-num summary-blocker">{summary.blockers}</p>
+                            <p class="summary-label">Blockers</p>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Toolbar: download + filters -->
+                <div class="toolbar slds-m-bottom_medium">
+                    <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+                        <div>
+                            <!-- Real anchor + data URL. LWC's Locker Service blocks the
+                                 programmatic click() pattern (document.createElement,
+                                 body.appendChild, a.click()); a template-declared <a>
+                                 with `download` + `href` works natively in every browser. -->
+                            <a href={downloadHref}
+                               download={downloadFilename}
+                               class="download-btn slds-button slds-button_brand"
+                               role="button"
+                               onclick={handleDownloadClick}>
+                                Download Markdown
+                            </a>
+                            <lightning-button
+                                label={executeButtonLabel}
+                                onclick={handleOpenConfirm}
+                                disabled={isExecuting}
+                                variant="destructive"
+                                class="slds-m-left_x-small">
+                            </lightning-button>
+                            <lightning-button
+                                label="Regenerate"
+                                onclick={handleGenerate}
+                                class="slds-m-left_x-small">
+                            </lightning-button>
+                        </div>
+                        <p class="slds-text-body_small slds-text-color_weak slds-align-middle">
+                            Generated {generatedLabel}
+                        </p>
+                    </div>
+
+                    <template lwc:if={hasExplicitSelection}>
+                        <div class="selection-banner slds-m-bottom_x-small">
+                            <span>{selectionLabel}</span>
+                            <button class="link-btn" onclick={handleClearSelection}>Clear selection</button>
+                        </div>
+                    </template>
+
+                    <div class="filter-row slds-m-bottom_x-small">
+                        <span class="filter-label">Wave:</span>
+                        <template for:each={waveFilters} for:item="f">
+                            <button key={f.value}
+                                    class={f.cls}
+                                    data-value={f.value}
+                                    onclick={handleWaveFilter}>{f.label}</button>
+                        </template>
+                    </div>
+
+                    <div class="filter-row slds-m-bottom_x-small">
+                        <span class="filter-label">Action:</span>
+                        <template for:each={actionFilters} for:item="f">
+                            <button key={f.value}
+                                    class={f.cls}
+                                    data-value={f.value}
+                                    onclick={handleActionFilter}>{f.label}</button>
+                        </template>
+                    </div>
+
+                    <div class="filter-row slds-m-bottom_x-small">
+                        <span class="filter-label">Result:</span>
+                        <template for:each={resultFilters} for:item="f">
+                            <button key={f.value}
+                                    class={f.cls}
+                                    data-value={f.value}
+                                    onclick={handleResultFilter}>{f.label}</button>
+                        </template>
+                    </div>
+
+                    <div class="filter-row slds-grid slds-gutters slds-wrap slds-m-bottom_x-small">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input
+                                type="search"
+                                placeholder="Search entities…"
+                                label="Search"
+                                variant="label-hidden"
+                                onchange={handleSearch}>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <label class="slds-form-element__label">{confidenceLabel}</label>
+                            <input type="range" min="0" max="100" step="10" value={confidenceFilter}
+                                onchange={handleConfidence} class="confidence-slider" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wave cards -->
+                <template for:each={filteredWaves} for:item="wave">
+                    <div key={wave.index} class="wave-card">
+                        <div class="wave-header">
+                            <div>
+                                <span class="wave-badge">Wave {wave.index}</span>
+                                <span class="wave-name">{wave.name}</span>
+                            </div>
+                            <span class="wave-count">
+                                {wave.visibleCount} shown
+                                <template lwc:if={wave.hasHiddenSteps}>
+                                    · {wave.hiddenCount} hidden by filter
+                                </template>
+                            </span>
+                        </div>
+                        <p class="wave-desc">{wave.description}</p>
+                        <p class="wave-gate"><strong>Exit gate:</strong> {wave.gate}</p>
+
+                        <template lwc:if={wave.hasFilteredSteps}>
+                            <div class="step-table">
+                                <div class="step-row step-row-head">
+                                    <span class="col-check">
+                                        <input type="checkbox"
+                                               data-wave={wave.name}
+                                               checked={wave.allEligibleChecked}
+                                               onchange={handleWaveSelectAll}
+                                               title="Select all eligible steps in this wave" />
+                                    </span>
+                                    <span class="col-order">#</span>
+                                    <span class="col-action">Action</span>
+                                    <span class="col-entity">Entity</span>
+                                    <span class="col-preview">Preview</span>
+                                    <span class="col-result">Result</span>
+                                    <span class="col-conf">Confidence</span>
+                                </div>
+                                <template for:each={wave.filteredSteps} for:item="s">
+                                    <div key={s.order} class="step-row">
+                                        <span class="col-check">
+                                            <input type="checkbox"
+                                                   data-order={s.order}
+                                                   checked={s.checked}
+                                                   disabled={s.checkDisabled}
+                                                   onchange={handleStepCheck} />
+                                        </span>
+                                        <span class="col-order">{s.order}</span>
+                                        <span class="col-action"><span class={s.actionClass}>{s.action}</span></span>
+                                        <span class="col-entity">{s.entityName}</span>
+                                        <span class="col-preview">{s.preview}</span>
+                                        <span class="col-result">
+                                            <span class={s.resultClass} title={s.resultTooltip}>{s.resultLabel}</span>
+                                        </span>
+                                        <span class="col-conf"><span class={s.confidenceClass}>{s.confidence}%</span></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template lwc:if={wave.gaps.length}>
+                            <div class="wave-gaps">
+                                <p class="wave-gaps-label">Structural gaps in this wave</p>
+                                <ul>
+                                    <template for:each={wave.gaps} for:item="g">
+                                        <li key={g.entityName}>
+                                            <span class="gap-sev">[{g.severity}]</span>
+                                            <span class="gap-name">{g.entityName}</span> — {g.reason}
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+            </div>
+        </template>
+
+        <!-- ── Confirm Execute dialog ────────────────────────────────── -->
+        <template lwc:if={showConfirmDialog}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open" aria-modal="true">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-modal__title slds-hyphenate">Execute migration</h2>
+                        <p class="slds-m-top_x-small slds-text-body_small slds-text-color_weak">
+                            This will make live changes in the target SFMC org.
+                        </p>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <p class="slds-m-bottom_x-small">
+                            <strong>{selectedStepCount}</strong> step(s) will be sent to the target.
+                            Structural steps (Data Extensions, static Lists) will run; content assets are skipped in this phase.
+                            The engine checks each entity first, so anything that already exists in the target is left alone.
+                        </p>
+                        <p class="slds-m-bottom_medium slds-text-body_small slds-text-color_weak">
+                            {selectionModeLabel}
+                        </p>
+
+                        <template lwc:if={hasNoTargetConfigs}>
+                            <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium">
+                                No Conduit Target SFMC records exist. An admin must create one in
+                                Setup → Custom Metadata Types → Conduit Target SFMC → Manage Records.
+                            </div>
+                        </template>
+
+                        <template lwc:if={targetConfigs.length}>
+                            <lightning-combobox
+                                label="Target SFMC"
+                                value={selectedTargetConfig}
+                                options={targetConfigOptions}
+                                onchange={handleTargetConfigChange}
+                                class="slds-m-bottom_medium">
+                            </lightning-combobox>
+                        </template>
+
+                        <lightning-input
+                            type="checkbox"
+                            label="Enable rollback for this run"
+                            checked={rollbackEnabled}
+                            onchange={handleRollbackChange}
+                            field-level-help="If checked, the run record will be marked rollback-enabled — a future button will delete only the entities Conduit created (leaves pre-existing ones alone).">
+                        </lightning-input>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button label="Cancel" onclick={handleCancelConfirm}></lightning-button>
+                        <lightning-button
+                            label="Execute now"
+                            variant="destructive"
+                            onclick={handleConfirmExecute}
+                            disabled={hasNoTargetConfigs}
+                            class="slds-m-left_x-small">
+                        </lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </lightning-card>
+</template>

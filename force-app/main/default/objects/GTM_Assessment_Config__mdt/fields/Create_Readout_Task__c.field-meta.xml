@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Create_Readout_Task__c</fullName>
+    <label>Create Readout Task (retired)</label>
+    <description>RETIRED and no longer read by any code. The review Task was replaced by a review Case (see Create_Readout_Case__c): a Case is queue-ownable without an org preference, carries the recipient comment thread natively, and gives one work item instead of two competing ones. The field is kept rather than deleted because GTM_Assessment_Config.Default still carries a value for it and dropping a custom metadata field is a destructive change; delete both together in a later cleanup.</description>
+    <type>Checkbox</type>
+    <defaultValue>true</defaultValue>
+</CustomField>

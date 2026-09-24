@@ -1,0 +1,12 @@
+.ghr-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.ghr-msg {
+    color: #6b6b6b;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+}

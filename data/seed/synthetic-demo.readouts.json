@@ -1,0 +1,104 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "GTM_Readout__c",
+        "referenceId": "demoRdo1"
+      },
+      "Assessment_Request__c": "@demoReq2",
+      "Opportunity__c": "@demoOpp9",
+      "Offering_Key__c": "migration-accelerator",
+      "Status__c": "Draft",
+      "Rep_Context_Notes__c": "[DEMO] Synthetic readout seeded by scripts/seed-synthetic-data.py for UI walkthroughs. Safe to delete via --teardown.",
+      "Readout_Data__c": "{\"demo\": true, \"request\": \"demoReq2\"}",
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout__c",
+        "referenceId": "demoRdo2"
+      },
+      "Assessment_Request__c": "@demoReq3",
+      "Opportunity__c": "@demoOpp2",
+      "Offering_Key__c": "migration-accelerator",
+      "Status__c": "Pending Approval",
+      "Rep_Context_Notes__c": "[DEMO] Synthetic readout seeded by scripts/seed-synthetic-data.py for UI walkthroughs. Safe to delete via --teardown.",
+      "Readout_Data__c": "{\"demo\": true, \"request\": \"demoReq3\"}",
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout__c",
+        "referenceId": "demoRdo3"
+      },
+      "Assessment_Request__c": "@demoReq5",
+      "Opportunity__c": "@demoOpp3",
+      "Offering_Key__c": "test-offering",
+      "Status__c": "Published",
+      "Rep_Context_Notes__c": "[DEMO] Synthetic readout seeded by scripts/seed-synthetic-data.py for UI walkthroughs. Safe to delete via --teardown.",
+      "Readout_Data__c": "{\"demo\": true, \"request\": \"demoReq5\"}",
+      "Is_Synthetic__c": true,
+      "Approved_Date__c": "$DAYS_AGO:70",
+      "Published_Date__c": "$DAYS_AGO:68",
+      "Notification_Sent_Date__c": "$DAYS_AGO:68"
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout__c",
+        "referenceId": "demoRdo4"
+      },
+      "Assessment_Request__c": "@demoReq7",
+      "Opportunity__c": "@demoOpp6",
+      "Offering_Key__c": "migration-accelerator",
+      "Status__c": "Approved",
+      "Rep_Context_Notes__c": "[DEMO] Synthetic readout seeded by scripts/seed-synthetic-data.py for UI walkthroughs. Safe to delete via --teardown.",
+      "Readout_Data__c": "{\"demo\": true, \"request\": \"demoReq7\"}",
+      "Is_Synthetic__c": true,
+      "Approved_Date__c": "$DAYS_AGO:10"
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout__c",
+        "referenceId": "demoRdo5"
+      },
+      "Assessment_Request__c": "@demoReq8",
+      "Opportunity__c": "@demoOpp12",
+      "Offering_Key__c": "migration-accelerator",
+      "Status__c": "Approved",
+      "Rep_Context_Notes__c": "[DEMO] Synthetic readout seeded by scripts/seed-synthetic-data.py for UI walkthroughs. Safe to delete via --teardown.",
+      "Readout_Data__c": "{\"demo\": true, \"request\": \"demoReq8\"}",
+      "Is_Synthetic__c": true,
+      "Approved_Date__c": "$DAYS_AGO:125",
+      "Notification_Sent_Date__c": "$DAYS_AGO:120"
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout__c",
+        "referenceId": "demoRdo6"
+      },
+      "Assessment_Request__c": "@demoReq10",
+      "Opportunity__c": "@demoOpp13",
+      "Offering_Key__c": "test-offering",
+      "Status__c": "Draft",
+      "Rep_Context_Notes__c": "[DEMO] Synthetic readout seeded by scripts/seed-synthetic-data.py for UI walkthroughs. Safe to delete via --teardown.",
+      "Readout_Data__c": "{\"demo\": true, \"request\": \"demoReq10\"}",
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout__c",
+        "referenceId": "demoRdo7"
+      },
+      "Assessment_Request__c": "@demoReq11",
+      "Opportunity__c": "@demoOpp8",
+      "Offering_Key__c": "migration-accelerator",
+      "Status__c": "Published",
+      "Rep_Context_Notes__c": "[DEMO] Synthetic readout seeded by scripts/seed-synthetic-data.py for UI walkthroughs. Safe to delete via --teardown.",
+      "Readout_Data__c": "{\"demo\": true, \"request\": \"demoReq11\"}",
+      "Is_Synthetic__c": true,
+      "Approved_Date__c": "$DAYS_AGO:150",
+      "Published_Date__c": "$DAYS_AGO:148",
+      "Notification_Sent_Date__c": "$DAYS_AGO:148"
+    }
+  ]
+}

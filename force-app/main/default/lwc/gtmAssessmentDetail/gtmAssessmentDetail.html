@@ -1,0 +1,324 @@
+<template>
+    <template if:true={isLoading}>
+        <div class="slds-p-around_medium">
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </div>
+    </template>
+
+    <template if:false={isLoading}>
+        <template if:false={hasError}>
+
+            <!-- ── Connected Records ── -->
+            <template if:true={hasCrmChain}>
+                <lightning-card title="Connected Records" icon-name="standard:related_list">
+                    <div class="slds-grid slds-gutters slds-wrap slds-p-around_medium">
+
+                        <!-- Engagement Link (Saved Config) -->
+                        <template if:true={hasCfg}>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:link" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Engagement Link</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href="#" class="slds-text-link" onclick={handleOpenEngagementLink}>{cfgName}</a>
+                                        <template if:true={cfgProspectUrl}>
+                                            <div class="slds-m-top_xx-small">
+                                                <a href={cfgProspectUrl} target="_blank" rel="noopener" class="slds-text-link slds-text-body_small">
+                                                    View prospect page ↗
+                                                </a>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Account -->
+                        <template if:true={hasAccount}>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:account" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Account</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href={accountUrl} class="slds-text-link">{accountName}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Opportunity -->
+                        <template if:true={hasOpp}>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:opportunity" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Opportunity</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href={oppUrl} class="slds-text-link">{oppName}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Contact -->
+                        <template if:true={hasContact}>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+                                <div class="record-tile">
+                                    <div class="record-tile__header">
+                                        <lightning-icon icon-name="standard:contact" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                        <span class="slds-text-title slds-text-color_weak">Contact</span>
+                                    </div>
+                                    <div class="record-tile__body">
+                                        <a href={contactUrl} class="slds-text-link">{contactName}</a>
+                                        <template if:true={contactEmail}>
+                                            <div class="slds-m-top_xx-small slds-text-body_small">
+                                                <a href="mailto:{contactEmail}" class="slds-text-link">{contactEmail}</a>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+
+                    </div>
+                </lightning-card>
+            </template>
+
+            <!-- ── Assessment Details ── -->
+            <lightning-card title="Assessment Details" icon-name="standard:survey" class="slds-m-top_small">
+                <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                    <div class="slds-form" role="list">
+                        <div class="slds-grid slds-wrap">
+
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                        <span class="slds-form-element__label">Platform</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">{platform}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                        <span class="slds-form-element__label">Environment Size</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">{environmentSize}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form__item" role="listitem">
+                                    <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                        <span class="slds-form-element__label">Timeline</span>
+                                        <div class="slds-form-element__control">
+                                            <div class="slds-form-element__static">{timeline}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <template if:true={reqName}>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <div class="slds-form__item" role="listitem">
+                                        <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                            <span class="slds-form-element__label">Requester</span>
+                                            <div class="slds-form-element__control">
+                                                <div class="slds-form-element__static">
+                                                    {reqName}
+                                                    <template if:true={reqEmail}>
+                                                        <br/>
+                                                        <a href="mailto:{reqEmail}" class="slds-text-link">{reqEmail}</a>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template if:true={role}>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <div class="slds-form__item" role="listitem">
+                                        <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                            <span class="slds-form-element__label">Role</span>
+                                            <div class="slds-form-element__control">
+                                                <div class="slds-form-element__static">{role}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template if:true={source}>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <div class="slds-form__item" role="listitem">
+                                        <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                            <span class="slds-form-element__label">Source</span>
+                                            <div class="slds-form-element__control">
+                                                <div class="slds-form-element__static">{source}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                        </div>
+
+                        <template if:true={hasContext}>
+                            <div class="slds-form__item slds-m-top_small" role="listitem">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">Additional Context</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static context-text">{context}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                    </div>
+                </div>
+            </lightning-card>
+
+            <!-- ── Prospect's Answers (issue-gtm-readout-workspace #4) ── -->
+            <lightning-card title="Prospect's Answers" icon-name="standard:feedback" class="slds-m-top_small">
+                <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                    <template if:false={isSubmitted}>
+                        <p class="not-submitted-msg">{notSubmittedMessage}</p>
+                    </template>
+                    <template if:true={isSubmitted}>
+                        <div class="slds-grid slds-wrap">
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">Budget Range</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{budgetRange}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">Executive Sponsorship</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{execSponsorship}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">Target Platform</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{targetPlatform}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">Internal Team Size</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{teamSize}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">Monthly Send Volume</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{sendVolume}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked">
+                                    <span class="slds-form-element__label">Contact / Lead Database Size</span>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-form-element__static">{contactCount}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <template if:true={hasPainPoints}>
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked slds-m-top_small">
+                                <span class="slds-form-element__label">Pain Points with Current Platform</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static context-text">{painPoints}</div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template if:true={hasMigrationGoals}>
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked slds-m-top_small">
+                                <span class="slds-form-element__label">Migration Goals</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static context-text">{migrationGoals}</div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template if:true={hasSuccessCriteria}>
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked slds-m-top_small">
+                                <span class="slds-form-element__label">Success Criteria</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static context-text">{successCriteria}</div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template if:true={hasDecisionMakers}>
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked slds-m-top_small">
+                                <span class="slds-form-element__label">Decision Makers</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static context-text">{decisionMakers}</div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template if:true={hasUrgencyDriver}>
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked slds-m-top_small">
+                                <span class="slds-form-element__label">What's Driving the Timeline?</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static context-text">{urgencyDriver}</div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template if:true={hasKeyIntegrations}>
+                            <div class="slds-form-element slds-form-element_readonly slds-form-element_stacked slds-m-top_small">
+                                <span class="slds-form-element__label">Key Integrations to Maintain</span>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-form-element__static context-text">{keyIntegrations}</div>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </lightning-card>
+
+            <!-- ── Forward action: "Open the readout" (issue-102-1, D7) ── -->
+            <template if:true={showOpenReadoutAction}>
+                <div class="slds-m-top_small slds-align_absolute-center open-readout-row">
+                    <lightning-button
+                        label="Open the readout"
+                        variant="brand"
+                        icon-name="utility:preview"
+                        class="open-readout-button"
+                        onclick={handleOpenReadout}
+                    ></lightning-button>
+                </div>
+            </template>
+
+        </template>
+    </template>
+</template>

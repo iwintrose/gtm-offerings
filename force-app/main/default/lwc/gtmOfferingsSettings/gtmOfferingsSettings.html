@@ -1,0 +1,59 @@
+<template>
+    <div class="slds-p-around_medium">
+        <!-- Shared page header bar: icon circle / eyebrow / bold title / meta
+             subtitle, same shape as gtmOverview, gtmContentHome, gtmAnalytics
+             (issue B14). Settings predated that migration; issue #171 brings
+             it in line. -->
+        <c-gtm-page-header icon-name="standard:settings" eyebrow="GTM Offerings"
+                          title="Settings" meta={sectionsMeta}>
+        </c-gtm-page-header>
+
+        <div class="slds-grid slds-gutters slds-m-top_medium">
+            <div class="slds-col slds-size_1-of-4">
+                <nav class="slds-nav-vertical" aria-label="Settings sections">
+                    <div class="slds-nav-vertical__section">
+                        <ul>
+                            <template for:each={sections} for:item="section">
+                                <li key={section.id} class={section.navClass}>
+                                    <a
+                                        href="#"
+                                        class="slds-nav-vertical__action"
+                                        data-section-id={section.id}
+                                        onclick={handleSectionSelect}
+                                    >{section.label}</a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            <div class="slds-col slds-size_3-of-4">
+                <article class="slds-card">
+                    <div class="slds-card__body slds-card__body_inner">
+                        <template if:true={isSetupSelected}>
+                            <c-gtm-setup-checklist onselectsection={handleSelectSection}></c-gtm-setup-checklist>
+                        </template>
+                        <template if:true={isApprovalRoutingSelected}>
+                            <c-gtm-readout-approval-settings></c-gtm-readout-approval-settings>
+                        </template>
+                        <template if:true={isAnalyticsNotificationsSelected}>
+                            <c-gtm-analytics-notification-settings></c-gtm-analytics-notification-settings>
+                        </template>
+                        <template if:true={isClaudeGusSelected}>
+                            <c-gtm-offerings-settings-agent></c-gtm-offerings-settings-agent>
+                        </template>
+                        <template if:true={isScheduledJobsSelected}>
+                            <c-gtm-scheduled-jobs-settings></c-gtm-scheduled-jobs-settings>
+                        </template>
+                        <template if:true={isRecycleBinSelected}>
+                            <c-gtm-recycle-bin></c-gtm-recycle-bin>
+                        </template>
+                        <template if:true={isNotificationsSelected}>
+                            <c-gtm-offerings-settings-notifications></c-gtm-offerings-settings-notifications>
+                        </template>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</template>

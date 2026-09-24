@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Template_Type__c</fullName>
+    <description>Which page template this content belongs to. story | offerings-listing | industry-chooser | configurator | offerings-page | faq-bd | faq-content-manager | assistant</description>
+    <label>Template Type</label>
+    <required>true</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>story</fullName>
+                <default>false</default>
+                <label>Story</label>
+            </value>
+            <value>
+                <fullName>offerings-listing</fullName>
+                <default>false</default>
+                <label>Offerings Listing</label>
+            </value>
+            <value>
+                <fullName>offerings-page</fullName>
+                <default>false</default>
+                <label>Offerings Page</label>
+            </value>
+            <value>
+                <fullName>industry-chooser</fullName>
+                <default>false</default>
+                <label>Industry Chooser</label>
+            </value>
+            <value>
+                <fullName>configurator</fullName>
+                <default>false</default>
+                <label>Configurator</label>
+            </value>
+            <value>
+                <fullName>faq-bd</fullName>
+                <default>false</default>
+                <label>FAQ — BD App</label>
+            </value>
+            <value>
+                <fullName>faq-content-manager</fullName>
+                <default>false</default>
+                <label>FAQ — Content Manager App</label>
+            </value>
+            <value>
+                <fullName>assistant</fullName>
+                <default>false</default>
+                <label>Assistant</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

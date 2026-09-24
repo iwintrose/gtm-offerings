@@ -1,0 +1,18 @@
+# Offering pack: Migration Accelerator.
+# Read by scripts/deploy-fresh-org.sh --with-offering migration-accelerator.
+# Line kinds: "cmdt: <file or glob>" (customMetadata records, deployed with
+# retries) and "seed: <file>" (sf data import tree, in the order listed).
+# The Assessment_* / Migration_* records are GENERATED from
+# instrument/migration-accelerator/ by scripts/build-instrument.py: never
+# hand-edit them. Contract: docs/architecture/blank-install.md.
+cmdt: force-app/main/default/customMetadata/GTM_Offering.Migration_Accelerator.md-meta.xml
+cmdt: force-app/main/default/customMetadata/GTM_Assessment_Question.*.md-meta.xml
+cmdt: force-app/main/default/customMetadata/GTM_Assessment_Pair.*.md-meta.xml
+cmdt: force-app/main/default/customMetadata/GTM_Assessment_Dimension_Override.*.md-meta.xml
+cmdt: force-app/main/default/customMetadata/GTM_Assessment_Supplement.*.md-meta.xml
+cmdt: force-app/main/default/customMetadata/GTM_Assessment_Gate.*.md-meta.xml
+cmdt: force-app/main/default/customMetadata/GTM_Migration_Platform.*.md-meta.xml
+cmdt: force-app/main/default/customMetadata/GTM_Migration_Pair.*.md-meta.xml
+# Sections must be imported before records (records address sections).
+seed: data/seed/migration-accelerator.story.sections.json
+seed: data/seed/migration-accelerator.story.records.json

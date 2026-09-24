@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>mcae to sfmc</label>
+    <protected>false</protected>
+    <values>
+        <field>Source_Key__c</field>
+        <value xsi:type="xsd:string">mcae</value>
+    </values>
+    <values>
+        <field>Target_Key__c</field>
+        <value xsi:type="xsd:string">sfmc</value>
+    </values>
+    <values>
+        <field>Supported__c</field>
+        <value xsi:type="xsd:boolean">false</value>
+    </values>
+    <values>
+        <field>Unsupported_Reason__c</field>
+        <value xsi:type="xsd:string">Account Engagement is not a source the accelerator can extract from yet. Treat this as an advisory conversation, not a scoped migration.</value>
+    </values>
+    <values>
+        <field>Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+</CustomMetadata>

@@ -1,0 +1,57 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "GTM_Form_Draft__c",
+        "referenceId": "demoDraft1"
+      },
+      "Saved_Configuration__c": "@demoCfg13",
+      "Submitted_Request__c": "@demoReq1",
+      "Draft_Type__c": "Assessment",
+      "Status__c": "Submitted",
+      "Session_Id__c": "demo-session-cfg13-001",
+      "Draft_JSON__c": "{\"demo\": true}",
+      "Furthest_Field__c": "success_criteria",
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Form_Draft__c",
+        "referenceId": "demoDraft2"
+      },
+      "Saved_Configuration__c": "@demoCfg10",
+      "Draft_Type__c": "Assessment",
+      "Status__c": "Open",
+      "Session_Id__c": "demo-session-cfg10-001",
+      "Draft_JSON__c": "{\"demo\": true}",
+      "Furthest_Field__c": "monthly_send_volume",
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Form_Draft__c",
+        "referenceId": "demoDraft3"
+      },
+      "Saved_Configuration__c": "@demoCfg11",
+      "Draft_Type__c": "Assessment",
+      "Status__c": "Open",
+      "Session_Id__c": "demo-session-cfg11-001",
+      "Draft_JSON__c": "{\"demo\": true}",
+      "Furthest_Field__c": "current_platform",
+      "Is_Synthetic__c": true
+    },
+    {
+      "attributes": {
+        "type": "GTM_Form_Draft__c",
+        "referenceId": "demoDraft4"
+      },
+      "Saved_Configuration__c": "@demoCfg12",
+      "Draft_Type__c": "Booking",
+      "Status__c": "Open",
+      "Session_Id__c": "demo-session-cfg12-001",
+      "Draft_JSON__c": "{\"demo\": true}",
+      "Furthest_Field__c": "contact_email",
+      "Is_Synthetic__c": true
+    }
+  ]
+}

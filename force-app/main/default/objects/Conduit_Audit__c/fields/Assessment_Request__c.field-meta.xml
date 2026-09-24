@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Assessment_Request__c</fullName>
+    <label>Assessment Request</label>
+    <referenceTo>GTM_Assessment_Request__c</referenceTo>
+    <relationshipLabel>Conduit Audits</relationshipLabel>
+    <relationshipName>Conduit_Audits</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <trackTrending>false</trackTrending>
+    <type>MasterDetail</type>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

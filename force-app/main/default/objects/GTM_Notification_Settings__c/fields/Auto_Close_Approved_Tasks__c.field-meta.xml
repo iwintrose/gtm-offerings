@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Auto_Close_Approved_Tasks__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Whether the rep's "readout approved" Task auto-closes when the rep calls GtmReadoutController.publishReadout.</description>
+    <externalId>false</externalId>
+    <label>Auto Close Approved Tasks</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,88 @@
+.sa-rail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.8125rem;
+    font-family: inherit;
+    border-bottom: 1px solid transparent;
+    flex-wrap: wrap;
+}
+
+/* Stage-tinted backgrounds */
+.sa-rail--assessment { background: #fffbeb; border-color: #fcd34d; }
+.sa-rail--in-review  { background: #eff6ff; border-color: #93c5fd; }
+.sa-rail--draft      { background: #f0fdf4; border-color: #86efac; }
+.sa-rail--sent       { background: #f5f3ff; border-color: #c4b5fd; }
+
+.sa-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.sa-requester {
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+/* Stage pills */
+.sa-pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.sa-pill--assessment { background: #fef3c7; color: #92400e; }
+.sa-pill--in-review  { background: #dbeafe; color: #1e40af; }
+.sa-pill--draft      { background: #dcfce7; color: #166534; }
+.sa-pill--sent       { background: #ede9fe; color: #5b21b6; }
+
+/* Actions row */
+.sa-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.sa-btn {
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}
+
+.sa-btn--primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.sa-btn--ghost {
+    --slds-c-button-color-background: transparent;
+    --slds-c-button-color-border: transparent;
+    --slds-c-button-text-color: #6b7280;
+}
+.sa-btn--ghost:hover { text-decoration: underline; }
+
+/* Client message */
+.sa-client-msg {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #374151;
+    font-size: 0.875rem;
+}
+.sa-client-icon {
+    color: #0070d2;
+    font-size: 0.75rem;
+}
+
+.sa-error {
+    width: 100%;
+    color: #b91c1c;
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+}

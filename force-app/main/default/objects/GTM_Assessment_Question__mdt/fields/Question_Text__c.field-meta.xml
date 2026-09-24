@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Question_Text__c</fullName>
+    <label>Question Text</label>
+    <!-- Salesforce does not support `required` on a LongTextArea field -
+         confirmed against this org. See Predicate_JSON__c for the same fix. -->
+    <description>The question as the prospect reads it. Edit freely -- nothing in Apex matches on this string.</description>
+    <length>1000</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

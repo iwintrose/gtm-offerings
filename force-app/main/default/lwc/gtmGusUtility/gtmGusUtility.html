@@ -1,0 +1,21 @@
+<template>
+    <div class="gus-panel">
+        <header class="gus-head">
+            <c-gtm-mascot size="sm" mood="idle"></c-gtm-mascot>
+            <div class="gus-id">
+                <span class="gus-name">GUS</span>
+                <span class="gus-role">GTM Utility Sidekick</span>
+            </div>
+            <button type="button" class="slds-button slds-button_neutral gus-new" onclick={handleNewChat}>New chat</button>
+        </header>
+        <div class="gus-body">
+            <c-gtm-agent-chat
+                mode="app"
+                page-context={pageContext}
+                greeting={greeting}
+                placeholder-text={placeholder}
+                onagentaction={handleAgentAction}
+            ></c-gtm-agent-chat>
+        </div>
+    </div>
+</template>

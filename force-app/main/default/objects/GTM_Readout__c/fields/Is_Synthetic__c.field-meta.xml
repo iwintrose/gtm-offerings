@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Is_Synthetic__c</fullName>
+    <label>Is Synthetic</label>
+    <description>True only for demo/synthetic records inserted by scripts/seed-synthetic-data.py (issue synthetic-seed-data). This is the authoritative, queryable flag the script's --teardown mode filters on -- every delete it issues is scoped to WHERE Is_Synthetic__c = true, never unfiltered. Paired with a human-readable [DEMO] prefix on this record's name/title field as a visual-inspection backstop, but this flag -- not the prefix -- is what teardown actually queries. Internal/admin housekeeping field: never surfaced on rep- or content-editor-facing layouts.</description>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+</CustomField>

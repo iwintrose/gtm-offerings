@@ -1,0 +1,27 @@
+:host { display: block; }
+
+.setup-item {
+    display: flex;
+    gap: var(--lwc-spacingSmall, 0.75rem);
+    padding: var(--lwc-spacingSmall, 0.75rem) 0;
+    border-bottom: 1px solid var(--slds-g-color-border-base-1, var(--lwc-colorBorder, transparent));
+}
+
+.body { flex: 1 1 auto; min-width: 0; }
+
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lwc-spacingXSmall, 0.5rem); }
+
+.why, .detail, .blocked-by { margin-top: var(--lwc-spacingXxSmall, 0.125rem); }
+
+.action { margin-top: var(--lwc-spacingXSmall, 0.5rem); }
+
+.picker { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lwc-spacingXSmall, 0.5rem); }
+
+/* 32px control convention shared across the app. */
+.action-button,
+.assign-button,
+.picker-search,
+.picker-select {
+    --gtm-control-h: 32px;
+    min-height: var(--gtm-control-h, 32px);
+}

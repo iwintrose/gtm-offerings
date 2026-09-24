@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Status__c</fullName>
+    <externalId>false</externalId>
+    <inlineHelpText>Draft until published. A section created in the editor is Draft and does not appear on the public page until Publish runs.</inlineHelpText>
+    <label>Status</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Draft</fullName><default>false</default><label>Draft</label></value>
+            <value><fullName>Published</fullName><default>true</default><label>Published</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Chat_Provider__c</fullName>
+    <description>Which chat/LLM provider GtmAgentProxyController.runLoop() calls for GUS. Anthropic is the default and preserves pre-existing behavior when left blank/unset. Plain Text (not Picklist) because GTM_Agent_Settings__c is a Hierarchy Custom Setting and Custom Settings do not support Picklist fields -- the 'Anthropic'/'OpenAI'/'Gemini'/'Agentforce' value constraint is enforced at the Apex layer in GtmAgentSettingsController.setAgentSettings() instead.</description>
+    <label>Chat Provider</label>
+    <length>40</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

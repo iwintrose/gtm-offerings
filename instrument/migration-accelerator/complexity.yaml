@@ -1,0 +1,113 @@
+# THE SECOND AXIS'S FRAME. Six dimensions, each scored 1-3, total 6-18, three
+# fixed bands (Light 6-9 / Moderate 10-13 / Heavy 14-18).
+#
+# It is the same idea as dimensions.yaml and for the same reason: a complexity
+# score is worth something only because it can be compared to the last one, and
+# to the POST-SCAN recomputation of itself. GTM_Assessment_Request__c carries
+# Estate_Complexity_Basis__c precisely so that a self-estimate and a measurement
+# can sit on one scale; a pair that varied the dimension COUNT or the 1-3 range
+# would break that comparison silently, printing "12 of 18" against something
+# that was never out of 18.
+#
+# WHY THIS FILE EXISTS AT ALL. Until it did, the six dimensions were written
+# once, in the TARGET's vocabulary, and asked of a SOURCE estate. A HubSpot
+# marketer was asked about "30-100 tables, moderate SQL", "standard publication
+# or subscription lists" and "business units or child accounts". They have none
+# of those. An honest respondent cannot answer, a polite one guesses, and the
+# axis reports the guess as a measurement. The adaptive layer already solved
+# exactly this for the eight readiness slots; complexity was left behind because
+# nobody had walked the form as a prospect.
+#
+# WORDING IS NOT HERE, for the same reason it is not in dimensions.yaml. The
+# base label, question and three options live in GTM_Assessment_Question__mdt
+# (Instrument__c = 'Complexity'), so a consultant can reword a base complexity
+# question in Setup and deploy nothing. This file declares the frame those rows
+# hang on; pairs/*.yaml declares what a given pair changes, under
+# `complexity_overrides`, using the same layers as the readiness slots.
+#
+# HOW IT DIFFERS FROM READINESS, AND WHY THAT MATTERS ON SCREEN. Readiness
+# measures PORTABILITY RISK -- how much of what you have survives the move.
+# Complexity measures SIZE AND EFFORT -- how much of it there is. Four of these
+# six sit next to a readiness slot on the same subject (journey_footprint next
+# to orchestration_portability, data_extension_complexity next to the data-model
+# slot, integration_surface next to integration_containment,
+# consent_suppression_model next to consent_portability), and before this file
+# existed a respondent answered each pair twice, six screens apart, with no
+# visible reason why.
+#
+# The rule that fixes it, and that every authored complexity question must obey:
+#
+#     A COMPLEXITY OPTION IS A COUNT OR A VOLUME. NEVER A DIFFICULTY.
+#
+# "How many active workflows" is complexity. "How much of your workflow logic
+# depends on constructs Journey Builder lacks" is readiness. If an authored
+# complexity option contains a judgement about how hard something is to move,
+# it has wandered into the other axis and is asking the same question twice.
+# scripts/build-instrument.py cannot check a sentence for judgement, so the rule
+# lives here, in the file an author has to open before authoring.
+#
+# NO CEILINGS. max_attainable is a readiness idea: it says a top answer is not
+# available on this move. There is no such thing here, because a complexity
+# option is a fact about the client's own estate, not a claim about what the
+# accelerator can do with it. A cap on "how many workflows do you have" would be
+# the instrument refusing to hear a number.
+
+instrument: complexity
+version: "2026.09.1"
+
+# Same resolution as dimensions.yaml -- see its header.
+source_root_env: MA_MIGRATOR_ROOT
+
+# Band edges, restated here so the frame is reviewable in one place. They are
+# DERIVED in GtmEstateComplexity (LIGHT_MAX / MODERATE_MAX) and this file does
+# not set them; scripts/build-instrument.py checks the two agree.
+bands:
+  - band: Light
+    min: 6
+    max: 9
+  - band: Moderate
+    min: 10
+    max: 13
+  - band: Heavy
+    min: 14
+    max: 18
+
+dimensions:
+  - position: 1
+    key: journey_footprint
+    substitutable: true
+    measures_theme: "How many automated programmes there are, and how they start"
+
+  - position: 2
+    key: data_extension_complexity
+    substitutable: true
+    measures_theme: "How much audience data there is, and how many pieces it is in"
+
+  - position: 3
+    key: scripting_depth
+    substitutable: true
+    measures_theme: "How much hand-written code is embedded in the estate"
+
+  - position: 4
+    key: business_unit_structure
+    substitutable: true
+    measures_theme: "How many separate tenancies or brand containers there are"
+
+  - position: 5
+    key: integration_surface
+    substitutable: true
+    measures_theme: "How many other systems are wired in"
+
+  - position: 6
+    key: consent_suppression_model
+    substitutable: true
+    measures_theme: "How many permission categories exist, and how many places they live"
+
+rationale: >-
+  skills/mce-mcn-helper/references/scoring-model.md — the six-dimension 1-3
+  complexity model this frame is a pre-sales self-estimate of, and the reason the
+  dimension count and the 1-3 range are fixed rather than per-pair: the same
+  maths has to run again post-scan against a real extract and land on the same
+  scale. skills/mce-mcn-helper/references/skills/03-org-scoring.md — the
+  count-the-artefacts method, which is where the "a complexity option is a count,
+  never a difficulty" rule comes from.

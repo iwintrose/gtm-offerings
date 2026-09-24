@@ -1,0 +1,23 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "GTM_Page_Content__c",
+        "referenceId": "testRow1"
+      },
+      "Offering_Key__c": "test-offering",
+      "Template_Type__c": "story",
+      "Section_Key__c": "header",
+      "Field_Key__c": "brand",
+      "Field_Type__c": "text",
+      "Content_Address__c": "test-offering::story::header::brand",
+      "Active__c": true,
+      "Sort_Order__c": 10,
+      "Text_Value__c": "TEST RECORD - safe to delete",
+      "Rich_Value__c": "",
+      "JSON_Value__c": "",
+      "Label__c": "Brand",
+      "Help_Text__c": "TEST RECORD - safe to delete"
+    }
+  ]
+}

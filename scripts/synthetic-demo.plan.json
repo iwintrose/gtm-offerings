@@ -1,0 +1,56 @@
+[
+  {
+    "sobject": "Account",
+    "saveRefs": true,
+    "resolveRefs": false,
+    "files": ["../data/seed/synthetic-demo.accounts.json"]
+  },
+  {
+    "sobject": "Contact",
+    "saveRefs": true,
+    "resolveRefs": true,
+    "files": ["../data/seed/synthetic-demo.contacts.json"]
+  },
+  {
+    "sobject": "Opportunity",
+    "saveRefs": true,
+    "resolveRefs": true,
+    "files": ["../data/seed/synthetic-demo.opportunities.json"]
+  },
+  {
+    "sobject": "GTM_Saved_Configuration__c",
+    "saveRefs": true,
+    "resolveRefs": true,
+    "files": ["../data/seed/synthetic-demo.saved-configurations.json"]
+  },
+  {
+    "sobject": "GTM_Assessment_Request__c",
+    "saveRefs": true,
+    "resolveRefs": true,
+    "files": ["../data/seed/synthetic-demo.assessment-requests.json"]
+  },
+  {
+    "sobject": "GTM_Readout__c",
+    "saveRefs": true,
+    "resolveRefs": true,
+    "files": ["../data/seed/synthetic-demo.readouts.json"]
+  },
+  {
+    "sobject": "GTM_Readout_Version__c",
+    "saveRefs": true,
+    "resolveRefs": true,
+    "files": ["../data/seed/synthetic-demo.readout-versions.json"]
+  },
+  {
+    "sobject": "GTM_Link_Event__c",
+    "saveRefs": false,
+    "resolveRefs": true,
+    "files": ["../data/seed/synthetic-demo.link-events.json"]
+  },
+  {
+    "sobject": "GTM_Form_Draft__c",
+    "saveRefs": false,
+    "resolveRefs": true,
+    "files": ["../data/seed/synthetic-demo.form-drafts.json"]
+  }
+]

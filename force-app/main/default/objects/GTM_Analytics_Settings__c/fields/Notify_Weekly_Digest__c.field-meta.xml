@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Notify_Weekly_Digest__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Analytics notification: when true, every active rep who owns at least one engagement link gets a weekly email summary of their own Analytics numbers (GtmAnalyticsDigestJob). Toggling this from the Settings tab schedules or aborts that job -- see GtmAnalyticsSettingsController.saveSettings.</description>
+    <externalId>false</externalId>
+    <label>Send weekly Analytics email</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

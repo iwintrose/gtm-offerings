@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Default</label>
+    <protected>false</protected>
+    <values>
+        <field>Create_Lead__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>Send_Email__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>Notify_Email__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Lead_Source__c</field>
+        <value xsi:type="xsd:string">Migration Accelerator</value>
+    </values>
+    <values>
+        <field>Activity_Type__c</field>
+        <value xsi:type="xsd:string">Task</value>
+    </values>
+    <values>
+        <field>Create_Readout_Case__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <!-- Retired; nothing reads it. Kept only so the field can be deleted
+         together with this value in a later cleanup. -->
+    <values>
+        <field>Create_Readout_Task__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>Default_Readout_Owner__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <!-- Resume_Link_Base_URL__c IS DELIBERATELY ABSENT FROM THIS FILE.
+         Not blank; absent. The two are very different here, and the
+         difference used to make this record's own instruction impossible to
+         follow.
+
+         A site URL is org state, not source: it differs per org and
+         scripts/check-references.py rightly flags a committed one. So it is set
+         directly in the target org (docs/runbooks/questionnaire-resume.md).
+         But this file previously carried an explicit <value xsi:nil="true"/>
+         for it, and a custom-metadata deploy WRITES the fields it lists, so
+         every ./scripts/deploy.sh silently re-blanked the value an operator had
+         just been told to set, and resume emails stopped going out with no
+         error anywhere.
+
+         Verified against gtm-dev before making this change: deploying this
+         record with the field OMITTED leaves the org's existing value intact,
+         which is exactly the behaviour wanted. Do not "tidy" the field back in
+         with a nil value.
+
+         Until it is set in a given org, GtmAssessmentDraftController falls back
+         to Site.getBaseSecureUrl() and, failing that, declines to send a resume
+         email rather than sending one with a broken or foreign link in it. -->
+</CustomMetadata>

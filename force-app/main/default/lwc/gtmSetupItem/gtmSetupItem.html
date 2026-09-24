@@ -1,0 +1,49 @@
+<template>
+    <template lwc:if={item}>
+        <div class={rowClass} data-key={key}>
+            <lightning-icon class={iconClass} icon-name={icon.name} alternative-text={icon.alt}
+                            size="x-small"></lightning-icon>
+            <div class="body">
+                <div class="head">
+                    <span class="title slds-text-title_bold">{item.title}</span>
+                    <template lwc:if={marker}>
+                        <span class="marker slds-badge slds-badge_lightest">{marker}</span>
+                    </template>
+                    <template lwc:if={isCollapsible}>
+                        <lightning-button-icon class="toggle" variant="bare" icon-name={toggleIcon}
+                                               alternative-text={toggleLabel} aria-expanded={isExpanded}
+                                               onclick={handleToggle}></lightning-button-icon>
+                    </template>
+                </div>
+                <template lwc:if={isExpanded}>
+                    <p class="why slds-text-color_weak">{item.why}</p>
+                    <template lwc:if={hasDetail}>
+                        <p class="detail">{item.detail}</p>
+                    </template>
+                    <template lwc:if={hasBlockedBy}>
+                        <p class="blocked-by slds-text-color_weak">{blockedByText}</p>
+                    </template>
+                    <template lwc:if={isSimpleAction}>
+                        <div class="action">
+                            <lightning-button class="action-button" label={actionLabel} variant="neutral"
+                                              disabled={actionDisabled} onclick={handleAction}></lightning-button>
+                        </div>
+                    </template>
+                    <template lwc:if={isPicker}>
+                        <div class="action picker">
+                            <lightning-input class="picker-search" type="search" variant="label-hidden"
+                                             label="Search users" placeholder="Search users"
+                                             onchange={handleSearch}></lightning-input>
+                            <lightning-combobox class="picker-select" variant="label-hidden" label="User"
+                                                placeholder="Choose a user" options={pickerOptions}
+                                                value={selectedUserId}
+                                                onchange={handlePickerChange}></lightning-combobox>
+                            <lightning-button class="assign-button" label={actionLabel} variant="neutral"
+                                              disabled={assignDisabled} onclick={handleAssign}></lightning-button>
+                        </div>
+                    </template>
+                </template>
+            </div>
+        </div>
+    </template>
+</template>

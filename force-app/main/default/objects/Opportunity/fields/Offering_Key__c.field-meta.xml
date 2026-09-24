@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Offering_Key__c</fullName>
+    <label>Offering Key</label>
+    <description>Which GTM offering this Opportunity was created for. Matches
+        GTM_Offering__mdt.Offering_Key__c, same pattern as the field of the
+        same name on GTM_Assessment_Request__c et al. Set once, server-side,
+        by GtmSavedConfigurationController.resolveOpportunity and
+        GtmAssessmentRequestController.ensureOpportunity at insert time --
+        never client-supplied, never backfilled onto existing rows (issue
+        #32). Used by GtmOpenOpportunityDuplicateCheck to scope the
+        open-Opportunity duplicate check to the same offering; a null value
+        here (pre-existing Opportunities) simply never matches that check
+        rather than being treated as a wildcard. Deliberately required=false
+        so no backfill is forced.
+    </description>
+    <required>false</required>
+    <length>100</length>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

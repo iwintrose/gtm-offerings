@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Default_Readout_Owner__c</fullName>
+    <label>Default Readout Owner</label>
+    <description>Username of the fallback owner for an auto-generated readout when no rep can be resolved from the Opportunity, the assessment request or the running user — i.e. a direct guest booking with no Engagement Link. Left blank on purpose: with no fallback configured, readout generation is skipped rather than producing a record owned by the site guest user, which under the Private sharing model would be invisible to every rep and would publish the guest user's contact details to the prospect.</description>
+    <type>Text</type>
+    <length>255</length>
+    <required>false</required>
+    <unique>false</unique>
+</CustomField>

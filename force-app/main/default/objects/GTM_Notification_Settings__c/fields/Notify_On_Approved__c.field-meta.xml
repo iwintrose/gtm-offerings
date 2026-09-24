@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Notify_On_Approved__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Task + bell fires for the submitting rep when a readout clears approval (GtmReadoutApprovalHandler.stampApproval).</description>
+    <externalId>false</externalId>
+    <label>Notify On Approved</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Archived__c</fullName>
+    <defaultValue>false</defaultValue>
+    <inlineHelpText>Soft-archives this OFFERING as a whole, hiding it from the GTM Offerings Dashboard listing. Only meaningful on the offering&apos;s own tile section (Section_Key__c=&apos;tile&apos;, Template_Type__c=&apos;offerings-listing&apos;) -- it is not a per-section field, and it never deletes the record or its content. Independent of Offering_Status__c: either one hides the offering. This is NOT the same as Status__c (that section&apos;s own edit is unpublished) or Active__c (hides one section only).</inlineHelpText>
+    <label>Archived</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

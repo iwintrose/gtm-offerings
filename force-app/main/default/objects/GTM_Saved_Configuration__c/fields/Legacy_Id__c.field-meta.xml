@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Legacy_Id__c</fullName>
+    <label>Legacy Id</label>
+    <description>The Id this record had as an MA_Saved_Configuration__c row, for the handful of already-distributed guest URLs (?cfgId=&lt;old id&gt;) that predate the D6 rename. Salesforce Ids are permanently bound to their originating object, so an old link can never resolve directly against this record -- every guest-facing entry point that accepts a configId first tries it as a native Id, then falls back to a lookup here via GtmLegacyConfigId.resolve(). Blank on every record created after the cutover.</description>
+    <type>Text</type>
+    <length>18</length>
+    <unique>true</unique>
+    <externalId>true</externalId>
+    <required>false</required>
+</CustomField>

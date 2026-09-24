@@ -1,0 +1,27 @@
+:host {
+    display: block;
+}
+
+.gtm-control {
+    --gtm-control-h: 32px;
+}
+
+/* Keep every button in this panel on the shared 32px control height. */
+.setup-toggle {
+    min-height: var(--gtm-control-h, 32px);
+}
+
+.setup-toggle {
+    cursor: pointer;
+    text-align: left;
+}
+
+.setup-loading {
+    min-height: var(--gtm-control-h, 32px);
+}
+
+.setup-notice-link {
+    display: inline-block;
+    min-height: var(--gtm-control-h, 32px);
+    line-height: var(--gtm-control-h, 32px);
+}

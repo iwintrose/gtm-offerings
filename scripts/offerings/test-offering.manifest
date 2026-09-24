@@ -1,0 +1,7 @@
+# Offering pack: Test Offering (proves a blank install works).
+# One offering record, no instrument, one clearly labelled seed row.
+# The metadata lives under test-fixtures/ (a non-default packageDirectory), NOT
+# force-app/, so scripts/deploy.sh can never ship it to gtm-prod (Production).
+cmdt: test-fixtures/test-offering/main/default/customMetadata/GTM_Offering.Test_Offering.md-meta.xml
+seed: data/seed/test-offering.sections.json
+seed: data/seed/test-offering.records.json

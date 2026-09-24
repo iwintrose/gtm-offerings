@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Readout__c</fullName>
+    <label>Readout</label>
+    <description>The readout that was self-approved. Lookup rather than master-detail: this log must survive independently as the audit trail even if the readout it names is later deleted, the same reasoning GTM_Readout__c.Approved_By__c already uses for its own User lookup.</description>
+    <type>Lookup</type>
+    <referenceTo>GTM_Readout__c</referenceTo>
+    <relationshipLabel>Approval Logs</relationshipLabel>
+    <relationshipName>Approval_Logs</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

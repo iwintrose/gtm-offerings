@@ -1,0 +1,253 @@
+<template>
+    <lightning-card title="Conduit Migration Plan" icon-name="standard:flow">
+        <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-top_small slds-p-bottom_x-small">
+            <p class="slds-text-body_small slds-text-color_weak">{planSubtitle}</p>
+        </div>
+
+        <!-- ── Initial ───────────────────────────────────────────────── -->
+        <template lwc:if={showInitial}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <p class="slds-text-body_regular slds-m-bottom_medium">{initialCta}</p>
+                <lightning-button label="Load Migration Plan" variant="brand" onclick={handleLoadPlan}>
+                </lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Loading (plan) ─────────────────────────────────────────── -->
+        <template lwc:if={isLoadingPlan}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_large slds-text-align_center">
+                <lightning-spinner alternative-text="Loading…" size="medium"></lightning-spinner>
+                <p class="slds-m-top_medium slds-text-heading_small">Building migration plan…</p>
+            </div>
+        </template>
+
+        <!-- ── Error ─────────────────────────────────────────────────── -->
+        <template lwc:if={error}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">
+                    {error}
+                </div>
+                <lightning-button label="Retry" onclick={handleLoadPlan}></lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Results ───────────────────────────────────────────────── -->
+        <template lwc:if={planData}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+
+                <!-- Plan summary bar -->
+                <div class="slds-grid slds-gutters slds-m-bottom_large plan-summary-bar">
+                    <div class="slds-col slds-text-align_center">
+                        <p class="summary-number">{planData.summary.steps}</p>
+                        <p class="summary-label">Total Steps</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center">
+                        <p class="summary-number">{planData.summary.averageConfidence}%</p>
+                        <p class="summary-label">Avg Confidence</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center">
+                        <p class="summary-number">{planData.totalGaps}</p>
+                        <p class="summary-label">Structural Gaps</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center">
+                        <p class="summary-number slds-text-color_error">{planData.blockers}</p>
+                        <p class="summary-label">Blockers</p>
+                    </div>
+                </div>
+
+                <!-- Migration waves header -->
+                <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small wave-section-header">
+                    <h3 class="section-heading">MIGRATION WAVES</h3>
+                    <div>
+                        <template lwc:if={isLoadingWaveNotes}>
+                            <span class="wave-notes-loading">
+                                <lightning-spinner alternative-text="Generating…" size="x-small"></lightning-spinner>
+                                <span class="slds-m-left_x-small">Claude is writing notes…</span>
+                            </span>
+                        </template>
+                        <template lwc:else>
+                            <lightning-button
+                                label={waveNotesButtonLabel}
+                                variant="neutral"
+                                onclick={handleWaveNotes}>
+                            </lightning-button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Overall guidance (if wave notes exist) -->
+                <template lwc:if={hasOverallGuidance}>
+                    <div class="overall-guidance slds-m-bottom_medium">
+                        <p class="overall-guidance-text">{waveNotes.overallGuidance}</p>
+                    </div>
+                </template>
+
+                <!-- Wave cards -->
+                <template for:each={wavesWithMeta} for:item="wave">
+                    <div key={wave.index} class={wave.cardClass}>
+                        <!-- Wave header -->
+                        <div class="slds-grid slds-gutters_x-small slds-m-bottom_x-small">
+                            <div class="slds-col">
+                                <span class={wave.badgeClass}>Wave {wave.index}</span>
+                                <span class="wave-name slds-m-left_x-small">{wave.name}</span>
+                            </div>
+                            <div class="slds-col slds-text-align_right">
+                                <span class="wave-total">{wave.stats.total} entities</span>
+                            </div>
+                        </div>
+                        <p class="wave-desc slds-m-bottom_small">{wave.description}</p>
+
+                        <!-- Wave stats row -->
+                        <div class="slds-grid slds-gutters wave-stats slds-m-bottom_small">
+                            <div class="slds-col slds-text-align_center">
+                                <p class="wave-stat-num slds-text-color_success">{wave.stats.create}</p>
+                                <p class="wave-stat-label">Create</p>
+                            </div>
+                            <div class="slds-col slds-text-align_center">
+                                <p class="wave-stat-num">{wave.stats.update}</p>
+                                <p class="wave-stat-label">Update</p>
+                            </div>
+                            <div class="slds-col slds-text-align_center">
+                                <p class="wave-stat-num slds-text-color_weak">{wave.stats.skip}</p>
+                                <p class="wave-stat-label">Skip</p>
+                            </div>
+                            <div class="slds-col slds-text-align_center">
+                                <p class="wave-stat-num">{wave.stats.averageConfidence}%</p>
+                                <p class="wave-stat-label">Confidence</p>
+                            </div>
+                        </div>
+
+                        <!-- Gate criteria -->
+                        <div class="gate-callout slds-m-bottom_small">
+                            <span class="gate-label">Exit gate: </span>{wave.gate}
+                        </div>
+
+                        <!-- Toggle entities -->
+                        <button class="toggle-btn" onclick={handleToggleWave} data-index={wave.index}>
+                            <template lwc:if={wave.expanded}>Hide entities ▲</template>
+                            <template lwc:else>Show entities ▼</template>
+                        </button>
+
+                        <template lwc:if={wave.expanded}>
+                            <ul class="entity-list slds-m-top_x-small">
+                                <template for:each={wave.steps} for:item="step">
+                                    <li key={step.order} class="entity-row">
+                                        <span class="entity-name">{step.entityName}</span>
+                                        <span class={step.actionClass}>{step.action}</span>
+                                        <span class="conf-pill">{step.confidence}%</span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </template>
+
+                        <!-- Wave notes (if generated) -->
+                        <template lwc:if={wave.hasWaveNote}>
+                            <div class="notes-panel">
+                                <p class="notes-heading">Implementation Notes</p>
+                                <p class="notes-text">{wave.waveNote}</p>
+                                <template lwc:if={wave.hasWatchPoints}>
+                                    <p class="watch-heading">Watch Points</p>
+                                    <ul class="watch-list">
+                                        <template for:each={wave.watchPoints} for:item="wp">
+                                            <li key={wp} class="watch-item">{wp}</li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <template lwc:if={wave.hasKeyDecision}>
+                                    <div class="key-decision">
+                                        <span class="key-decision-label">Key Decision: </span>{wave.keyDecision}
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                    </div>
+                </template>
+
+                <!-- AI Scope Estimate section -->
+                <div class="slds-m-top_large">
+                    <h3 class="section-heading">AI SCOPE ESTIMATE
+                        <span class="ai-badge">Claude</span>
+                    </h3>
+
+                    <!-- Saved estimate display -->
+                    <template lwc:if={hasScopeEstimate}>
+                        <div class="scope-panel slds-m-bottom_medium">
+                            <p class="scope-summary slds-m-bottom_medium">{scopeEstimate.summary}</p>
+                            <div class="slds-grid slds-gutters slds-m-bottom_medium">
+                                <div class="slds-col slds-text-align_center">
+                                    <p class="scope-big-num">{scopeEstimate.totalCalendarWeeks}</p>
+                                    <p class="scope-big-label">Total Weeks</p>
+                                </div>
+                                <div class="slds-col">
+                                    <p class="scope-team">{scopeEstimate.teamRecommendation}</p>
+                                </div>
+                            </div>
+
+                            <!-- Per-wave estimates -->
+                            <template for:each={scopeEstimate.waves} for:item="sw">
+                                <div key={sw.name} class="scope-wave-row slds-m-bottom_x-small">
+                                    <div class="slds-grid slds-gutters_x-small">
+                                        <div class="slds-col slds-size_1-of-3">
+                                            <span class="scope-wave-name">{sw.name}</span>
+                                        </div>
+                                        <div class="slds-col slds-text-align_center">
+                                            <span class="scope-hours">{sw.estimatedHours}h</span>
+                                        </div>
+                                        <div class="slds-col slds-text-align_center">
+                                            <span class="scope-weeks">{sw.calendarWeeks} wks</span>
+                                        </div>
+                                        <div class="slds-col slds-text-align_right">
+                                            <span class={sw.riskClass}>{sw.riskLevel}</span>
+                                        </div>
+                                    </div>
+                                    <p class="scope-risk-note">{sw.riskNote}</p>
+                                </div>
+                            </template>
+
+                            <!-- Top risks -->
+                            <template lwc:if={hasScopeRisks}>
+                                <div class="slds-m-top_small">
+                                    <p class="scope-risks-title">Key Risks</p>
+                                    <ul class="scope-risks-list">
+                                        <template for:each={scopeEstimate.topRisks} for:item="risk">
+                                            <li key={risk} class="scope-risk-item">{risk}</li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Generate button -->
+                    <template lwc:if={isLoadingScope}>
+                        <div class="slds-text-align_center slds-m-bottom_medium">
+                            <lightning-spinner alternative-text="Estimating…" size="small"></lightning-spinner>
+                            <p class="slds-m-top_x-small slds-text-color_weak">
+                                Claude is estimating scope… (~20s)
+                            </p>
+                        </div>
+                    </template>
+                    <template lwc:else>
+                        <lightning-button
+                            label={scopeButtonLabel}
+                            variant="neutral"
+                            onclick={handleScopeEstimate}>
+                        </lightning-button>
+                    </template>
+                </div>
+
+                <!-- Footer -->
+                <div class="slds-grid slds-grid_align-spread slds-m-top_medium">
+                    <p class="slds-text-body_small slds-text-color_weak">
+                        Source: {planData.sourcePlatform} → {planData.targetPlatform}
+                    </p>
+                    <lightning-button label="Re-run Plan" onclick={handleLoadPlan} size="small">
+                    </lightning-button>
+                </div>
+
+            </div>
+        </template>
+
+    </lightning-card>
+</template>

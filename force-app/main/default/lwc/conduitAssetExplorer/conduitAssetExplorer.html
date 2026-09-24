@@ -1,0 +1,69 @@
+<template>
+    <lightning-card title="Conduit Asset Explorer" icon-name="standard:asset_object">
+        <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-top_small slds-p-bottom_x-small">
+            <p class="slds-text-body_small slds-text-color_weak">{subtitle}</p>
+        </div>
+
+        <template lwc:if={isLoadingAssets}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_large slds-text-align_center">
+                <lightning-spinner alternative-text="Loading assets…" size="medium"></lightning-spinner>
+                <p class="slds-m-top_medium slds-text-color_weak">Loading estate assets…</p>
+            </div>
+        </template>
+
+        <template lwc:if={error}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">{error}</div>
+                <lightning-button label="Retry" onclick={handleLoadAssets}></lightning-button>
+            </div>
+        </template>
+
+        <template lwc:if={hasAssets}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+
+                <!-- Filter bar -->
+                <div class="filter-bar slds-m-bottom_medium">
+                    <div class="filter-group">
+                        <span class="filter-label">Type:</span>
+                        <template for:each={typeFilters} for:item="f">
+                            <button key={f.value} class={f.cls} onclick={handleTypeFilter} data-filter={f.value}>{f.label}</button>
+                        </template>
+                    </div>
+                    <div class="filter-group slds-m-top_x-small">
+                        <span class="filter-label">Freshness:</span>
+                        <template for:each={freshnessFilters} for:item="f">
+                            <button key={f.value} class={f.cls} onclick={handleFreshnessFilter} data-filter={f.value}>{f.label}</button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Asset table -->
+                <p class="asset-count slds-m-bottom_x-small">Showing {filteredAssets.length} of {summary.total} assets</p>
+                <div class="asset-table">
+                    <div class="table-header slds-grid">
+                        <div class="slds-col slds-size_4-of-12 th">Name</div>
+                        <div class="slds-col slds-size_2-of-12 th">Type</div>
+                        <div class="slds-col slds-size_2-of-12 th">Freshness</div>
+                        <div class="slds-col slds-size_2-of-12 th">Last Modified</div>
+                        <div class="slds-col slds-size_2-of-12 th">Last Campaign</div>
+                    </div>
+                    <template for:each={filteredAssets} for:item="asset">
+                        <div key={asset.id} class="table-row slds-grid">
+                            <div class="slds-col slds-size_4-of-12 td asset-name">{asset.name}</div>
+                            <div class="slds-col slds-size_2-of-12 td">
+                                <span class={asset.typeClass}>{asset.typeLabel}</span>
+                            </div>
+                            <div class="slds-col slds-size_2-of-12 td">
+                                <span class={asset.freshnessClass}>{asset.freshnessLabel}</span>
+                            </div>
+                            <div class="slds-col slds-size_2-of-12 td date-cell">{asset.lastModifiedFormatted}</div>
+                            <div class="slds-col slds-size_2-of-12 td date-cell">{asset.lastCampaignFormatted}</div>
+                        </div>
+                    </template>
+                </div>
+
+            </div>
+        </template>
+
+    </lightning-card>
+</template>

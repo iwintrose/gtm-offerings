@@ -1,0 +1,723 @@
+<template>
+  <div class={rootClass} style={rootStyle}>
+    <!-- KEEP THIS FIRST. The wizard must be the first child of this
+         container. gtmConfigWizard._measureChromeOffset reads
+         host.getBoundingClientRect().top + window.scrollY — an absolute
+         document offset — and feeds it to a position: fixed overlay, which
+         needs a viewport offset. Mounted at the top those cancel out
+         (rect.top falls as you scroll, scrollY rises), so it resolves to the
+         Salesforce chrome height at any scroll position. Mounted lower it
+         resolves to the host's page position instead and the wizard renders
+         off-screen/off-position — this bites specifically when
+         gtmConfigurator is rendered nested inside another component's
+         preview pane (e.g. gtmRepLinkFinder's Pages tab preview), where the
+         host's document offset is no longer near 0. Fix the mount point,
+         not the wizard: it also renders on two other Lightning tabs and two
+         Experience Cloud sites. Mirrors gtmOverview.html's own "KEEP THIS
+         FIRST" wizard mount. -->
+    <c-gtm-config-wizard
+      is-open={customizeOpen}
+      offering-key={effectiveOfferingKey}
+      state={tokenState}
+      company={company}
+      industry={industryKey}
+      accent={accent}
+      saved-record-id={savedRecordId}
+      notify-email={notifyEmail}
+      onclose={handleCloseCustomize}
+      onfieldchange={handleFieldChange}
+      oncompanychange={handleCompanyChange}
+      onindustrychange={handleIndustryChange}
+      onaccentchange={handleAccentChange}
+      onconfigsaved={handleConfigSaved}
+    ></c-gtm-config-wizard>
+
+    <template if:true={showLoadError}>
+      <div class="load-error" role="status">{_loadError}</div>
+    </template>
+
+    <!-- No offering identity resolved at all -- no saved-record override, no
+         ?offering= URL param, and no Experience Builder page default. Shown
+         instead of ever silently rendering as Migration Accelerator's
+         content (see effectiveOfferingKey / OFFERING_LABEL). -->
+    <template if:true={isUnconfigured}>
+      <div class="unconfigured-notice" role="status">This offering hasn't been configured yet.</div>
+    </template>
+
+    <!-- A Rep_Direct record has no branded page underneath it (issue
+         rep-initiated-assessment-no-page-2-share-and-continue) -- the
+         branded top bar/stage-actions/readout-gate below are skipped
+         entirely in favour of showRepDirectQuestionnaire's plain rendering
+         further down. -->
+    <template if:false={isRepDirect}>
+    <div class="psbar" data-section="header">
+      <span class="wm wm--brand"><span class="wm-black">publicis</span><span class="wm-red">sapient</span></span>
+      <div class="bar-right">
+        <template if:true={showCustomizeButton}>
+          <a class="backlink" href={industryUrl}>← Industry</a>
+          <a class="backlink" href={offeringsUrl}>← Offerings</a>
+        </template>
+        <template if:false={viewOnly}>
+          <c-gtm-saved-links-bar lwc:ref="savedLinksBar"></c-gtm-saved-links-bar>
+        </template>
+        <!-- The gap on .cta already separates these two flex items; the
+             &nbsp; that used to be here doubled it. -->
+        <template if:false={hasSubmittedAssessment}>
+          <button class="cta" onclick={handleOpenBooking}>
+            <span class="cta-long">Get an</span>environment assessment →
+          </button>
+        </template>
+        <template if:true={hasSubmittedAssessment}>
+          <button class="cta" onclick={handleTopCtaClick} disabled={topCtaDisabled}>
+            {topCtaLabel}
+          </button>
+        </template>
+        <template if:true={showCustomizeButton}>
+          <!-- Gus is the way in now. "Customize" named a panel; this names
+               who you are asking, and it is the same character as the
+               assistant in the corner. -->
+          <button class="tbtn tbtn-gus" title="Fill in client details with Gus"
+                  onclick={handleOpenCustomize}>
+            <c-gtm-mascot size="sm"></c-gtm-mascot>
+            <span class="tbtn-gus-lbl">Gus</span>
+          </button>
+        </template>
+        <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
+      </div>
+    </div>
+    <c-gtm-stage-actions
+      config-id={savedRecordId}
+      is-config-manager={isConfigManager}
+      view-only={viewOnly}
+      onstagesent={handleStageSent}
+      onpreviewclient={handleStagePreview}
+    ></c-gtm-stage-actions>
+
+    <!-- Published: every prior section (progress bar through the closing
+         footer) is replaced with a single "view your assessment" entry
+         point. Draft/Approved/no-readout are unaffected here — those only
+         change the top-nav CTA and the "next step" section below.
+         Ported from claude/salesforce-marketing-maturity-bsxmxs. -->
+    <template if:true={showPublishedGate}>
+      <section class="chap readout-gate">
+        <div class="wrap wrap-tight">
+          <div class="eyebrow rv">Your assessment</div>
+          <h2 class="rv d1">Your assessment is ready.</h2>
+          <p class="lede rv d2">
+            We've finished your environment assessment. Open it below to see
+            what we found and what we'd recommend as the next step.
+          </p>
+          <button class="cta" onclick={handleOpenReadoutView}>
+            View your assessment →
+          </button>
+        </div>
+      </section>
+    </template>
+    </template>
+
+    <template if:true={showChapterBody}>
+
+    <div class="progress" style={progressStyle}></div>
+
+    <template if:true={showCrmStrip}>
+      <div class="crm-strip">
+        <span class="crm-label">CRM</span>
+        <template if:true={hasCrmAccount}>
+          <a class="crm-chip crm-chip--account" href={crmAccountUrl} target="_blank" rel="noopener">
+            <span class="crm-chip-icon">🏢</span>{crmAccountName}
+          </a>
+        </template>
+        <template if:true={hasCrmOpp}>
+          <a class="crm-chip crm-chip--opp" href={crmOppUrl} target="_blank" rel="noopener">
+            <span class="crm-chip-icon">💼</span>{crmOppName}
+            <template if:true={crmEstimatedValue}>
+              <span class="crm-chip-value">{crmEstimatedValue}</span>
+            </template>
+          </a>
+        </template>
+        <template if:true={hasCrmContact}>
+          <span class="crm-chip crm-chip--contact">
+            <a class="crm-contact-link" href={crmContactUrl} target="_blank" rel="noopener">
+              <span class="crm-chip-icon">👤</span>{crmContactName}
+            </a>
+            <template if:true={crmContactEmail}>
+              <a class="crm-contact-email" href={crmContactMailto}>{crmContactEmail}</a>
+            </template>
+          </span>
+        </template>
+      </div>
+    </template>
+
+    <!-- 00 COVER -->
+    <section class="chap cover" data-section={previewIndustrySection}>
+      <div class="wrap">
+        <template if:true={hasCompany}>
+          <div class="cobrand rv">
+            <span class="cb-mono">{companyInitials}</span>
+            <span class="cn">{company}</span>
+            <span class="cx">with Publicis Sapient</span>
+          </div>
+        </template>
+        <div class="eyebrow rv">{chCover.eyebrow}</div>
+        <h1 class="rv d1">
+          <lightning-formatted-rich-text value={chCover.head}></lightning-formatted-rich-text>
+        </h1>
+        <div class="rule rv d2"></div>
+        <p class="lede rv d2">
+          <lightning-formatted-rich-text value={chCover.lede}></lightning-formatted-rich-text>
+        </p>
+        <template if:true={showIndustryDefault}>
+          <p class="lede rv d2 ind-slot">
+            <lightning-formatted-rich-text value={coverSub}></lightning-formatted-rich-text>
+          </p>
+        </template>
+        <template if:true={hasCustomNote}>
+          <p class="lede rv d2 ind-slot custom-note">{customNoteDisplay}</p>
+        </template>
+        <template if:true={hasCompany}>
+          <div class="prepared rv d3">
+            Prepared for <b>{company}</b> · Marketing Technology
+          </div>
+        </template>
+      </div>
+      <button type="button" class="scrollcue" onclick={handleScrollNext}>
+        <span>read on</span><span class="ln"></span>
+      </button>
+    </section>
+
+    <!-- 01 CONTEXT -->
+    <!-- 01 PARTNER -->
+    <section class="chap" data-section="partner">
+      <span class="chap-num">01</span>
+      <div class="wrap wrap-tight">
+        <div class="eyebrow rv">{chPartner.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chPartner.head}></lightning-formatted-rich-text>
+        </h2>
+        <p class="lede rv d2">
+          <lightning-formatted-rich-text value={chPartner.lede}></lightning-formatted-rich-text>
+        </p>
+        <div class="cards3 rv d3">
+          <template for:each={chPartner.cards} for:item="card">
+            <div key={card.title} class="pcard">
+              <div class="pk">{card.title}</div>
+              <p>{card.body}</p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 CHALLENGE -->
+    <section class="chap band" data-section="challenge">
+      <span class="chap-num">02</span>
+      <div class="wrap wrap-tight">
+        <div class="eyebrow rv">{chChallenge.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chChallenge.head}></lightning-formatted-rich-text>
+        </h2>
+        <template if:false={hasIndustry}>
+          <p class="lede rv d2">
+            <lightning-formatted-rich-text value={chChallenge.lede}></lightning-formatted-rich-text>
+          </p>
+        </template>
+        <template if:true={hasIndustry}>
+          <p class="lede rv d2 challenge-extra">
+            <lightning-formatted-rich-text value={challengeExtra}></lightning-formatted-rich-text>
+          </p>
+        </template>
+        <div class="chips rv d3">
+          <template for:each={chips} for:item="chip">
+            <span key={chip} class="chip"><span class="x">—</span> {chip}</span>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 APPROACH -->
+    <section class="chap" data-section="approach">
+      <span class="chap-num">03</span>
+      <div class="wrap">
+        <div class="eyebrow rv">{chApproach.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chApproach.head}></lightning-formatted-rich-text>
+        </h2>
+        <p class="lede rv d2">
+          <lightning-formatted-rich-text value={chApproach.lede}></lightning-formatted-rich-text>
+        </p>
+        <div class="cards3 rv d3">
+          <template for:each={chApproach.cards} for:item="card">
+            <div key={card.title} class="pcard">
+              <div class="pk">{card.title}</div>
+              <p>{card.body}</p>
+            </div>
+          </template>
+        </div>
+        <template if:true={hasIndustry}>
+          <div class="indbox rv d3">
+            <div class="ib-k">For {industryTag}</div>
+            <p class="ib-uc">
+              <lightning-formatted-rich-text value={useCase}></lightning-formatted-rich-text>
+            </p>
+            <p class="ib-sol">
+              <lightning-formatted-rich-text value={solution}></lightning-formatted-rich-text>
+            </p>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <!-- 04 SEE IT -->
+    <section class="chap band" data-section="proof">
+      <span class="chap-num">04</span>
+      <div class="wrap">
+        <div class="eyebrow rv">{chProof.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chProof.head}></lightning-formatted-rich-text>
+        </h2>
+        <p class="lede rv d2">
+          <lightning-formatted-rich-text value={chProof.lede}></lightning-formatted-rich-text>
+        </p>
+        <template if:true={hasIndustry}>
+          <p class="lede rv d2 proof-line">{proofLine}</p>
+        </template>
+        <div class="proof-panel rv d3">
+          <div class={proofClass}>
+            <div class="proof-bar">
+              <span class="pd"></span><span class="pd"></span><span class="pd"></span>
+              <span class="pt">
+                {chProof.panelTitle} · <b>{clientDisplay}</b>
+              </span>
+            </div>
+            <div class="proof-body">
+              <div class="proof-cta">
+                <p class="proof-cta-text">
+                  <lightning-formatted-rich-text value={chProof.ctaText}></lightning-formatted-rich-text>
+                </p>
+                <button class="cta" onclick={handleReveal}>{chProof.ctaLabel}</button>
+              </div>
+              <div class="proof-result">
+                <div class="metrics">
+                  <div class="metric">
+                    <div class="mn">{objectsText}</div>
+                    <div class="ml">{chProof.assetsLabel}</div>
+                  </div>
+                  <div class="metric">
+                    <div class="metric-row">
+                      <div class="gauge-ring" style={gaugeStyle}>
+                        <span>{gaugeValue}</span>
+                      </div>
+                      <div class="ml ml-flush">{chProof.healthLabel}</div>
+                    </div>
+                  </div>
+                  <div class="metric">
+                    <div class="mn">{depsText}</div>
+                    <div class="ml">{chProof.depsLabel}</div>
+                  </div>
+                </div>
+                <div class="dep">
+                  <div class="dep-h">{chProof.depHead}</div>
+                  <div class="dep-flow">
+                    <span class="node root">{demoRoot}</span>
+                    <span class="arrow">→</span>
+                    <template for:each={demoDeps} for:item="dep">
+                      <span key={dep} class="node">
+                        {dep} <span class="tag">found</span>
+                      </span>
+                    </template>
+                  </div>
+                </div>
+                <div class="proof-foot">
+                  <lightning-formatted-rich-text value={chProof.foot}></lightning-formatted-rich-text>
+                </div>
+                <div class="proof-status">
+                  <span class="lv"></span> {chProof.statusLine}
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="proof-note rv">
+            Preview figures are illustrative until populated with&nbsp;{clientDisplay}'s actual assessment; the behavior shown is real.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 WHAT YOU GET -->
+    <section class="chap" data-section="deliverables">
+      <span class="chap-num">05</span>
+      <div class="wrap">
+        <div class="eyebrow rv">{chDeliverables.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chDeliverables.head}></lightning-formatted-rich-text>
+        </h2>
+        <template if:true={chDeliverables.lede}>
+          <p class="lede rv d2">
+            <lightning-formatted-rich-text value={chDeliverables.lede}></lightning-formatted-rich-text>
+          </p>
+        </template>
+        <div class="deliv rv d2">
+          <template for:each={chDeliverables.cards} for:item="card">
+            <div key={card.title} class={card.cls}>
+              <span class="dnum">{card.num}</span>
+              <span class="dt">{card.title}</span>
+              <span class="dd">{card.body}</span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 ENGAGEMENT -->
+    <section class="chap band" data-section="engagement">
+      <span class="chap-num">06</span>
+      <div class="wrap">
+        <div class="eyebrow rv">{chEngagement.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chEngagement.head}></lightning-formatted-rich-text>
+        </h2>
+        <p class="lede rv d2">
+          <lightning-formatted-rich-text value={chEngagement.lede}></lightning-formatted-rich-text>
+        </p>
+        <div class="phases rv d3">
+          <template for:each={chEngagement.phases} for:item="phase">
+            <div key={phase.title} class="phase">
+              <div class="pdot"></div>
+              <div class="php">{phase.step}</div>
+              <div class="pht">{phase.title}</div>
+              <div class="phb">{phase.body}</div>
+            </div>
+          </template>
+        </div>
+        <span class="starthere rv">{chEngagement.footnote}</span>
+      </div>
+    </section>
+
+    <!-- 07 WHY PS -->
+    <section data-section="why" class="chap">
+      <span class="chap-num">07</span>
+      <div class="wrap">
+        <div class="eyebrow rv">{chWhy.eyebrow}</div>
+        <h2 class="rv d1">{whyHead}</h2>
+        <template if:true={chWhy.lede}>
+          <p class="lede rv d1">
+            <lightning-formatted-rich-text value={chWhy.lede}></lightning-formatted-rich-text>
+          </p>
+        </template>
+        <template if:true={hasIndustry}>
+          <p class="lede rv d1 why-line">{whyLine}</p>
+        </template>
+        <div class="why rv d2">
+          <template for:each={chWhy.cards} for:item="card">
+            <div key={card.title} class="wcol">
+              <div class="wt">{card.title}</div>
+              <p>{card.body}</p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 NEXT STEP -->
+    <section class="chap band" data-section="closing">
+      <span class="chap-num">08</span>
+      <div class="wrap wrap-tight">
+        <div class="eyebrow rv">{chClosing.eyebrow}</div>
+        <h2 class="rv d1">
+          <lightning-formatted-rich-text value={chClosing.head}></lightning-formatted-rich-text>
+        </h2>
+        <div class="next-card rv d2">
+          <template if:false={hasSubmittedAssessment}>
+            <div class="nh">
+              <lightning-formatted-rich-text value={chClosing.cardHead}></lightning-formatted-rich-text>
+            </div>
+            <p>
+              <lightning-formatted-rich-text value={chClosing.body}></lightning-formatted-rich-text>
+            </p>
+            <div class="next-actions">
+              <button class="cta" onclick={handleOpenBooking}>{chClosing.ctaLabel}</button>
+              <a
+                href={chClosing.altCtaUrl}
+                target="_blank"
+                rel="noopener"
+                class="cta line"
+              >{chClosing.altCtaLabel}</a>
+            </div>
+          </template>
+          <template if:true={hasSubmittedAssessment}>
+            <div class="nh">Your request has been submitted.</div>
+            <p>
+              Thanks — your environment assessment request is with our team.
+              We'll be in touch, and this page will let you know the moment
+              it's ready to view.
+            </p>
+            <div class="next-actions">
+              <a
+                href={chClosing.altCtaUrl}
+                target="_blank"
+                rel="noopener"
+                class="cta line"
+              >{chClosing.altCtaLabel}</a>
+            </div>
+          </template>
+          <div class="next-meta">
+            <span>
+              Your contact ·
+              <a href={mailtoHref}>
+                <span class={contactNameTokClass}>{contactNameDisplay}</span>
+              </a>
+              · <span class={contactEmailTokClass}>{contactEmailDisplay}</span>
+            </span>
+            <span>
+              <a href={chClosing.altCtaUrl} target="_blank" rel="noopener">
+                publicissapient.com
+              </a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- The assistant, previewed in place. On the live page he floats in the
+         corner and only the rep sees him; in the editor he is drawn in the
+         flow so the rail can scroll to him and the copy being edited is
+         visible, which floating over the editor never was. -->
+    <template if:true={showAssistantPreview}>
+      <section class="asst-dock" data-section="assistant">
+        <p class="asst-note">Floats in the corner of the live page. Only the rep sees it.</p>
+        <c-gtm-agent-bubble
+          docked={alwaysTrue}
+          assistant-name={assistantName}
+          assistant-role={assistantRole}
+          label={assistantLabel}
+          greeting={assistantGreeting}
+          placeholder={assistantPlaceholder}
+        ></c-gtm-agent-bubble>
+      </section>
+    </template>
+
+    <footer class="pf" data-section="footer">
+      <span class="wm"><span class="tick"></span> {footerLeft}</span>
+      <span>{footerRight}</span>
+    </footer>
+
+    </template>
+
+    <!-- The assistant sits in the corner, not inside the Customize form. It
+         only appears for the rep, the same rule the Customize button follows:
+         a prospect on a shared link has nothing to configure. -->
+    <template if:true={showAssistant}>
+      <c-gtm-agent-bubble
+        session-token={agentSessionToken}
+        config-id={savedRecordId}
+        assistant-name={assistantName}
+        assistant-role={assistantRole}
+        label={assistantLabel}
+        greeting={assistantGreeting}
+        placeholder={assistantPlaceholder}
+        onagentdelta={handleAgentDelta}
+      ></c-gtm-agent-bubble>
+    </template>
+
+    <!-- THE GUEST ASSESSMENT (ADR-0008 / backlog D11).
+         This overlay used to hold c-gtm-config-booking, a short form that sent
+         no `answers` array at all -- so every real prospect submission through
+         the live link produced a request with no scored dimensions and a
+         readout generated from nothing. It now holds the real questionnaire,
+         which is what dc4ad5d built it to be replaced by; the swap on the live
+         surface was simply never performed.
+
+         Hosted HERE, rather than on a route of its own, because this is the
+         only place the engagement link's context exists: savedRecordId,
+         submissionToken (the password gate), the visit session, and the link's
+         own offering. A standalone page has none of them, and a submission
+         without them is un-attributable and scored against a guessed offering.
+
+         The scrim/card/close chrome is lifted from gtmConfigBooking so the
+         modal frame outlives the component that used to own it.
+
+         Rendered behind if:true={bookingOpen} rather than always-rendered and
+         styled shut: the questionnaire does real work in connectedCallback
+         (getPlatforms, getQuestionnaire, draft restore) and must not do it on
+         every page load for every prospect who never opens the form. A fresh
+         mount is also the reset, and it removes the ordering hazard where the
+         overlay could open before the link's offering had loaded. In-progress
+         answers survive the unmount via localStorage on every change plus the
+         server draft. -->
+    <template if:true={bookingOpen}>
+      <div class="bk open" onclick={handleOverlayClick}>
+        <div class="bk-card bk-card--assessment">
+          <button class="bk-x" aria-label="Close" onclick={handleCloseBooking}>&times;</button>
+          <c-gtm-assessment-questionnaire
+            embedded={alwaysTrue}
+            offering-key={effectiveOfferingKey}
+            saved-record-id={savedRecordId}
+            submission-token={submissionToken}
+            resume-token={resumeToken}
+            prospect={company}
+            industry-label={industryLabel}
+            prefill-company={company}
+            booking-url={bookingUrl}
+            session-id={visitSessionId}
+            onsubmitted={handleBookingSubmitted}
+            onsubmitfailed={handleBookingFailed}
+            onformresumed={handleFormResumed}
+          ></c-gtm-assessment-questionnaire>
+        </div>
+      </div>
+    </template>
+
+    <!-- Ported from claude/salesforce-marketing-maturity-bsxmxs. -->
+    <template if:true={readoutViewOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="readoutTitle" class="scrim">
+        <div class="modal modal--readout">
+          <header class="modal-h">
+            <h2 id="readoutTitle">Your assessment</h2>
+            <button class="modal-x" onclick={handleCloseReadoutView} aria-label="Close">&times;</button>
+          </header>
+          <div class="modal-b modal-b--scroll">
+            <template if:true={readoutLoadError}>
+              <p class="modal-note">{readoutLoadError}</p>
+            </template>
+            <template if:false={readoutLoadError}>
+              <lightning-formatted-rich-text value={readoutContent}></lightning-formatted-rich-text>
+            </template>
+          </div>
+          <template if:true={hasReadoutRep}>
+            <div class="modal-rep">
+              <div class="modal-rep-label">Your contact</div>
+              <div class="modal-rep-name">{readoutRepName}</div>
+              <template if:true={hasReadoutRepEmail}>
+                <a href="mailto:{readoutRepEmail}" class="modal-rep-line">{readoutRepEmail}</a>
+              </template>
+              <template if:true={hasReadoutRepPhone}>
+                <a href="tel:{readoutRepPhone}" class="modal-rep-line">{readoutRepPhone}</a>
+              </template>
+            </div>
+          </template>
+          <footer class="modal-f">
+            <lightning-button label="Close" onclick={handleCloseReadoutView}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <template if:true={showGateLoading}>
+      <div class="expired on"></div>
+    </template>
+
+    <template if:true={showPasswordGate}>
+      <div class="expired on pw-gate">
+        <div class="pw-card">
+          <div class="xt">This link is password protected.</div>
+          <p>Enter the access password provided by your Publicis Sapient contact.</p>
+          <form onsubmit={handlePasswordSubmit}>
+            <input
+              class="pw-input"
+              type="password"
+              placeholder="Access password"
+              value={passwordGateInput}
+              onchange={handlePasswordInput}
+              autocomplete="current-password"
+            />
+            <template if:true={passwordGateError}>
+              <div class="pw-error" role="alert">{passwordGateError}</div>
+            </template>
+            <button class="cta pw-btn" type="submit" disabled={passwordGateChecking}>
+              {passwordGateSubmitLabel}
+            </button>
+          </form>
+        </div>
+      </div>
+    </template>
+
+    <template if:true={expired}>
+      <div class="expired on">
+        <div>
+          <div class="xt">This preview link has expired.</div>
+          <p>
+            Please reach out to your Publicis Sapient contact for an up-to-date
+            version.
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <template if:true={inactive}>
+      <div class="expired on">
+        <div>
+          <div class="xt">This preview link is no longer active.</div>
+          <p>
+            Please reach out to your Publicis Sapient contact for an up-to-date
+            version.
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <!-- THE PAGELESS (REP_DIRECT) ASSESSMENT (issue
+         rep-initiated-assessment-no-page-2-share-and-continue).
+         A Rep_Direct record (GtmSavedConfigurationController.
+         createRepDirectAssessment()) was never given branded page content --
+         no Config_Payload__c, no company/industry/accent to render. So
+         instead of the overlay-on-top-of-a-page pattern the branded
+         showChapterBody path uses, this renders the SAME questionnaire
+         component directly as the entire page: no cover, no chapters, no
+         "Get an environment assessment" CTA to click first. Gated behind
+         exactly the same password/expiry/inactive/access checks as the
+         branded path -- see showRepDirectQuestionnaire. -->
+    <template if:true={showRepDirectQuestionnaire}>
+      <div class="rep-direct-root">
+        <c-gtm-assessment-questionnaire
+          offering-key={effectiveOfferingKey}
+          saved-record-id={savedRecordId}
+          submission-token={submissionToken}
+          resume-token={resumeToken}
+          prospect={company}
+          industry-label={industryLabel}
+          prefill-company={company}
+          booking-url={bookingUrl}
+          session-id={visitSessionId}
+          onsubmitted={handleBookingSubmitted}
+          onsubmitfailed={handleBookingFailed}
+          onformresumed={handleFormResumed}
+        ></c-gtm-assessment-questionnaire>
+      </div>
+    </template>
+
+    <template if:true={accessBlocked}>
+      <div class="expired on">
+        <template if:true={showLoginPrompt}>
+          <div data-id="access-blocked-login-prompt">
+            <div class="xt">Log in to continue.</div>
+            <p>
+              This wizard link is for Publicis Sapient reps. Log in with your
+              Salesforce account to continue.
+            </p>
+            <p>
+              <a href={loginUrl} data-id="access-blocked-login-link">Log in with Salesforce &rarr;</a>
+            </p>
+          </div>
+        </template>
+        <template if:true={accessBlockedPlain}>
+          <div data-id="access-blocked-plain">
+            <div class="xt">This page needs a link.</div>
+            <p>
+              You've reached this page without one. If Publicis Sapient sent
+              you a link, please use that; otherwise reach out to your contact.
+            </p>
+          </div>
+        </template>
+        <template if:true={accessCheckFailed}>
+          <div data-id="access-check-failed">
+            <div class="xt">Access check failed.</div>
+            <p>
+              We couldn't confirm your access to this page. Please contact your
+              administrator.
+            </p>
+          </div>
+        </template>
+      </div>
+    </template>
+  </div>
+</template>

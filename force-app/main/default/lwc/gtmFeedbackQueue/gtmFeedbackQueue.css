@@ -1,0 +1,44 @@
+.q-card { border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+          box-shadow: 0 1px 1px rgba(0,0,0,.05); margin-top: 1rem; }
+.q-head { display: flex; align-items: center; gap: .5rem; padding: .7rem 1rem;
+          border-bottom: 1px solid #eee; }
+.q-h { font-size: 14px; font-weight: 700; margin: 0; }
+.q-count { margin-left: auto; font-size: 12px; color: #747474; }
+.q-body { position: relative; min-height: 3rem; padding: .5rem 1rem 1rem; font-size: 13px; }
+.q-msg { color: #747474; font-size: 12.5px; }
+.q-msg--err { color: #a1500a; }
+
+.q-list { list-style: none; margin: 0; padding: 0; }
+.q-note { padding: .75rem 0; border-bottom: 1px solid #f0f0f0; }
+.q-note:last-child { border-bottom: 0; }
+/* Already asked and still waiting: not the writer's move, so it recedes. */
+.q-note--waiting { opacity: .7; }
+.q-top { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; font-size: 11.5px; }
+.q-who { font-weight: 600; color: #181818; }
+.q-off { color: #747474; }
+.q-when { margin-left: auto; color: #9a9a9a; }
+.q-text { margin: .3rem 0 0; font-size: 12.5px; color: #3b3b3b; }
+.q-reply { margin: .4rem 0 0 .6rem; padding-left: .6rem; border-left: 2px solid #d7e5f5;
+           font-size: 12.5px; color: #3b3b3b; }
+.q-reply-k { display: block; font-size: 10.5px; letter-spacing: .05em;
+             text-transform: uppercase; color: #0b3d75; }
+.q-wait { margin: .3rem 0 0; font-size: 11.5px; color: #7a4a05; }
+
+.q-acts { margin-top: .45rem; }
+.q-btn { font-size: 12px; }
+.q-btn[disabled] { opacity: .5; cursor: default; }
+
+.q-form { margin-top: .5rem; }
+.q-input { width: 100%; min-height: 4rem; padding: .5rem .6rem; border: 1px solid #d8d8d8;
+           border-radius: 4px; font: inherit; font-size: 12.5px; resize: vertical; }
+.q-input:focus { outline: 2px solid #0176d3; outline-offset: -1px; border-color: #0176d3; }
+.q-form-row { display: flex; align-items: center; gap: .5rem; margin-top: .5rem; }
+.q-status { width: 12rem; }
+.q-form-row .q-btn--primary { margin-left: auto; }
+
+.q-pill { padding: .05rem .4rem; border-radius: 999px; font-size: 10.5px; font-weight: 600; }
+.q-pill--new             { background: #dce9fb; color: #0b3d75; }
+.q-pill--needs-more-info { background: #fdeacb; color: #7a4a05; }
+.q-pill--in-progress     { background: #ece3fb; color: #43308a; }
+.q-pill--resolved        { background: #d7f0e0; color: #14532d; }
+.q-pill--declined        { background: #ececec; color: #545454; }

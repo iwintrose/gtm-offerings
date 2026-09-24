@@ -1,0 +1,102 @@
+<template>
+    <div class="slds-p-around_medium slds-max-width_medium">
+        <h1 class="slds-text-heading_medium slds-m-bottom_small">Notifications</h1>
+        <p class="slds-text-body_regular slds-m-bottom_medium">
+            Controls which readout/assessment-request lifecycle events fire a Task + bell notification, org-wide.
+        </p>
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+
+        <template if:true={loadError}>
+            <div class="slds-text-color_error slds-m-bottom_small">{loadError}</div>
+        </template>
+
+        <template if:false={isLoading}>
+            <h2 class="slds-text-heading_small slds-m-top_medium slds-m-bottom_x-small">Submit for approval</h2>
+            <lightning-input
+                type="checkbox"
+                label="Notify approver when a readout is submitted for approval"
+                checked={notifyOnSubmitForApproval}
+                disabled={isSaving}
+                onchange={handleNotifyOnSubmitForApprovalChange}
+            ></lightning-input>
+            <lightning-input
+                type="checkbox"
+                label="Auto-close the approver's Task once approved"
+                checked={autoCloseSubmitTasks}
+                disabled={isSaving}
+                onchange={handleAutoCloseSubmitTasksChange}
+            ></lightning-input>
+            <lightning-input
+                type="checkbox"
+                label="Auto-close the originating new-request Task when submitted for approval"
+                checked={autoCloseNewRequestTasks}
+                disabled={isSaving}
+                onchange={handleAutoCloseNewRequestTasksChange}
+            ></lightning-input>
+
+            <h2 class="slds-text-heading_small slds-m-top_medium slds-m-bottom_x-small">Approved</h2>
+            <lightning-input
+                type="checkbox"
+                label="Notify the submitting rep when a readout is approved"
+                checked={notifyOnApproved}
+                disabled={isSaving}
+                onchange={handleNotifyOnApprovedChange}
+            ></lightning-input>
+            <lightning-input
+                type="checkbox"
+                label="Auto-close that Task once published"
+                checked={autoCloseApprovedTasks}
+                disabled={isSaving}
+                onchange={handleAutoCloseApprovedTasksChange}
+            ></lightning-input>
+
+            <h2 class="slds-text-heading_small slds-m-top_medium slds-m-bottom_x-small">Published</h2>
+            <lightning-combobox
+                label="What fires on publish"
+                value={publishedNotificationMode}
+                options={modeOptions}
+                disabled={isSaving}
+                onchange={handlePublishedNotificationModeChange}
+            ></lightning-combobox>
+            <template if:true={isBellAndTaskMode}>
+                <lightning-input
+                    type="checkbox"
+                    label="Auto-close the published Task on the next lifecycle event"
+                    checked={autoClosePublishedTasks}
+                    disabled={isSaving}
+                    onchange={handleAutoClosePublishedTasksChange}
+                ></lightning-input>
+            </template>
+
+            <h2 class="slds-text-heading_small slds-m-top_medium slds-m-bottom_x-small">New assessment request</h2>
+            <lightning-input
+                type="checkbox"
+                label="Notify when a new assessment request comes in"
+                checked={notifyOnNewAssessmentRequest}
+                disabled={isSaving}
+                onchange={handleNotifyOnNewAssessmentRequestChange}
+            ></lightning-input>
+
+            <h2 class="slds-text-heading_small slds-m-top_medium slds-m-bottom_x-small">Returned to draft</h2>
+            <lightning-input
+                type="checkbox"
+                label="Notify the rep when a manager returns a readout to draft"
+                checked={notifyOnReturnedToDraft}
+                disabled={isSaving}
+                onchange={handleNotifyOnReturnedToDraftChange}
+            ></lightning-input>
+
+            <div class="slds-m-top_medium">
+                <lightning-button
+                    variant="brand"
+                    label="Save"
+                    disabled={isSaving}
+                    onclick={handleSave}
+                ></lightning-button>
+            </div>
+        </template>
+    </div>
+</template>

@@ -1,0 +1,110 @@
+<template>
+    <lightning-card title="Engagement Links" icon-name="utility:link">
+        <div slot="actions" class="engagement-actions">
+            <template lwc:if={showScopeToggle}>
+                <lightning-combobox
+                    name="scope"
+                    label="Scope"
+                    variant="label-hidden"
+                    value={scope}
+                    options={scopeOptions}
+                    onchange={handleScopeChange}
+                    class="scope-toggle"
+                ></lightning-combobox>
+            </template>
+            <lightning-button-icon
+                icon-name="utility:refresh"
+                variant="border-filled"
+                alternative-text="Refresh"
+                title="Refresh"
+                onclick={handleRefresh}
+            ></lightning-button-icon>
+        </div>
+
+        <div class="slds-card__body slds-card__body_inner">
+            <template lwc:if={loading}>
+                <div class="slds-p-around_medium engagement-loading">
+                    <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                </div>
+            </template>
+            <template lwc:if={error}>
+                <p class="slds-text-color_error engagement-error">
+                    Engagement links could not be loaded. Try Refresh.
+                </p>
+            </template>
+            <template lwc:if={hasSummaries}>
+                <template for:each={groups} for:item="group">
+                    <div key={group.key} class="engagement-group">
+                        <p class="engagement-group-header">
+                            <span class="contact-name">{group.contactName}</span>
+                            <template lwc:if={group.company}>
+                                <span class="group-sep"> — </span><span class="company-name">{group.company}</span>
+                            </template>
+                        </p>
+                        <ul class="slds-list_vertical engagement-rows">
+                            <template for:each={group.rows} for:item="row">
+                                <li key={row.linkId} class="engagement-row" data-state={row.state}>
+                                    <a
+                                        href="#"
+                                        class="link-name slds-truncate"
+                                        data-link-id={row.linkId}
+                                        data-account-id={row.accountId}
+                                        data-contact-id={row.contactId}
+                                        onclick={handleLinkClick}
+                                    >{row.linkName}</a>
+                                    <span class="row-state slds-text-body_small slds-text-color_weak">{row.stateLabel}</span>
+                                    <template lwc:if={row.hasAction}>
+                                        <template lwc:if={row.isSendDisabled}>
+                                            <lightning-button
+                                                label={row.primaryActionLabel}
+                                                disabled
+                                                title="102-3 will add manual Send -- Publish already emails the prospect automatically; this covers the rare case where that send failed."
+                                                class="row-action row-action--disabled"
+                                            ></lightning-button>
+                                        </template>
+                                        <template lwc:else>
+                                            <button
+                                                type="button"
+                                                class="row-action slds-button slds-button_neutral"
+                                                data-action={row.primaryAction}
+                                                data-record-id={row.recordId}
+                                                data-link-id={row.linkId}
+                                                data-account-id={row.accountId}
+                                                data-contact-id={row.contactId}
+                                                onclick={handlePrimaryAction}
+                                            >{row.primaryActionLabel}</button>
+                                        </template>
+                                    </template>
+                                    <template lwc:else>
+                                        <span class="row-action row-action--none slds-text-color_weak">—</span>
+                                    </template>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </template>
+            <template lwc:if={showEmptyState}>
+                <p class="slds-text-color_weak empty-state">{emptyStateMessage}</p>
+            </template>
+        </div>
+
+        <template lwc:if={hasSummaries}>
+            <div class="slds-card__footer engagement-footer">
+                <span class="paging-label slds-text-body_small">{pagingLabel}</span>
+                <lightning-button
+                    label="Previous"
+                    disabled={prevDisabled}
+                    onclick={handlePrevPage}
+                    class="paging-prev"
+                ></lightning-button>
+                <lightning-button
+                    label="Next"
+                    disabled={nextDisabled}
+                    onclick={handleNextPage}
+                    class="paging-next"
+                ></lightning-button>
+            </div>
+        </template>
+    </lightning-card>
+</template>

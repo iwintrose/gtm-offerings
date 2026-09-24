@@ -1,0 +1,12 @@
+{
+  "activeViewId" : "af1726ca-42e3-4b34-8e3c-0c6ae316e634",
+  "appPageId" : "2ccc52cc-3526-4666-b109-aff8cc07e506",
+  "configurationTags" : [ ],
+  "devName" : "OfferingChooser__c",
+  "id" : "d6ebc0da-a9e6-4b22-818c-999738857926",
+  "label" : "Offering Chooser",
+  "pageAccess" : "UseParent",
+  "routeType" : "custom-offering-chooser",
+  "type" : "route",
+  "urlPrefix" : "choose-offering"
+}

@@ -1,0 +1,185 @@
+<template>
+  <div class="an">
+    <c-gtm-page-header icon-name="standard:dashboard" eyebrow="Analytics"
+                      title="Your engagement analytics" meta={rangeMeta}>
+      <lightning-combobox slot="actions"
+        class="an-range"
+        variant="label-hidden"
+        value={rangeKey}
+        options={rangeOptions}
+        onchange={handleRangeChange}>
+      </lightning-combobox>
+      <lightning-button-icon slot="actions" icon-name="utility:refresh" variant="border-filled"
+                              alternative-text="Refresh" title="Refresh"
+                              onclick={handleRefresh}></lightning-button-icon>
+    </c-gtm-page-header>
+
+    <!-- Issue #177: the cross-rep leaderboard is a view toggle here, not a
+         second tab -- hidden entirely from a rep via hasTeamAccess(). -->
+    <template if:true={canViewTeam}>
+      <div class="view-toggle" role="group" aria-label="Analytics view">
+        <lightning-button label="My Analytics" variant={myViewVariant} data-mode="my" onclick={handleViewModeChange}></lightning-button>
+        <lightning-button label="Team" variant={teamViewVariant} data-mode="team" onclick={handleViewModeChange}></lightning-button>
+      </div>
+    </template>
+
+    <template if:true={isTeamViewActive}>
+      <c-gtm-analytics-team></c-gtm-analytics-team>
+    </template>
+
+    <template if:true={isMyViewActive}>
+    <template if:true={loadError}>
+      <div class="an-err">{loadError}</div>
+    </template>
+
+    <template if:true={isLoading}>
+      <div class="an-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+    </template>
+
+    <template if:true={showEmpty}>
+      <p class="an-empty">
+        No engagement links in this window yet. Create a link from the
+        Home page, and its opens, assessments, and readouts will show up
+        here.
+      </p>
+    </template>
+
+    <template if:true={hasContent}>
+      <div class="kpi-row">
+        <div class="kpi">
+          <p class="kpi-label">Links created</p>
+          <p class="kpi-value">{linksCreated}</p>
+          <template if:true={linksDelta}>
+            <span class={linksDelta.cssClass}>{linksDelta.pct}%</span>
+          </template>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">Assessments submitted</p>
+          <p class="kpi-value">{assessmentsSubmitted}</p>
+          <template if:true={submittedDelta}>
+            <span class={submittedDelta.cssClass}>{submittedDelta.pct}%</span>
+          </template>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">Readouts published</p>
+          <p class="kpi-value">{readoutsPublished}</p>
+          <template if:true={publishedDelta}>
+            <span class={publishedDelta.cssClass}>{publishedDelta.pct}%</span>
+          </template>
+        </div>
+        <div class="kpi">
+          <p class="kpi-label">Avg. time to publish</p>
+          <p class="kpi-value">{avgDaysToPublish}<span class="kpi-unit">d</span></p>
+          <template if:true={publishSpeedDelta}>
+            <span class={publishSpeedDelta.cssClass}>{publishSpeedDelta.pct}%</span>
+          </template>
+        </div>
+      </div>
+
+      <div class="main-grid">
+        <div class="panel">
+          <h2 class="panel-title">Engagement volume</h2>
+          <template if:true={hasTrend}>
+            <svg class="trend-svg" viewBox="0 0 560 150" preserveAspectRatio="none" role="img"
+                 aria-label="Weekly link opens and assessments submitted">
+              <polyline points={trendPolylines.opens} class="trend-line trend-line--opens"></polyline>
+              <polyline points={trendPolylines.submitted} class="trend-line trend-line--submitted"></polyline>
+              <template for:each={trendPolylines.opensMarkers} for:item="m">
+                <circle key={m.key} cx={m.cx} cy={m.cy} r="3.5" class="trend-dot trend-dot--opens"></circle>
+              </template>
+              <template for:each={trendPolylines.submittedMarkers} for:item="m">
+                <circle key={m.key} cx={m.cx} cy={m.cy} r="3.5" class="trend-dot trend-dot--submitted"></circle>
+              </template>
+            </svg>
+            <div class="trend-legend">
+              <span class="legend-item"><i class="dot dot--opens"></i>Link opens</span>
+              <span class="legend-item"><i class="dot dot--submitted"></i>Assessments submitted</span>
+            </div>
+          </template>
+          <template if:false={hasTrend}>
+            <p class="panel-empty">Not enough activity in this range to chart a trend yet.</p>
+          </template>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">Conversion funnel</h2>
+          <div class="funnel">
+            <template for:each={funnelSteps} for:item="step">
+              <div class="fstep" key={step.key}>
+                <span class="fstep-label">{step.label}</span>
+                <div class="fstep-track"><div class="fstep-fill" style={step.pct}></div></div>
+                <span class="fstep-value">{step.value}</span>
+              </div>
+            </template>
+          </div>
+
+          <h2 class="panel-title panel-title--sub">Readiness tier mix</h2>
+          <template if:true={tierRows.length}>
+            <div class="tier-list">
+              <template for:each={tierRows} for:item="t">
+                <div class="tier-row" key={t.key}>
+                  <div class="tier-name"><span>{t.tier}</span><span>{t.pctLabel}%</span></div>
+                  <div class="tier-track"><div class={t.barClass} style={t.pct}></div></div>
+                </div>
+              </template>
+            </div>
+          </template>
+          <template if:false={tierRows.length}>
+            <p class="panel-empty">No scored assessments in this range yet.</p>
+          </template>
+
+          <h2 class="panel-title panel-title--sub">Rep follow-up status</h2>
+          <template if:true={followUpRows.length}>
+            <div class="tier-list">
+              <template for:each={followUpRows} for:item="s">
+                <div class="tier-row" key={s.key}>
+                  <div class="tier-name"><span>{s.status}</span><span>{s.count}</span></div>
+                  <div class="tier-track"><div class="tier-bar tier-bar--follow-up" style={s.pct}></div></div>
+                </div>
+              </template>
+            </div>
+          </template>
+          <template if:false={followUpRows.length}>
+            <p class="panel-empty">No assessment requests in this range yet.</p>
+          </template>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-title">By offering</h2>
+        <template if:true={rows.length}>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Offering</th>
+                  <th class="num">Links</th>
+                  <th class="num">Submitted</th>
+                  <th class="num">Avg. score</th>
+                  <th class="num">Published</th>
+                  <th>Top tier</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={rows} for:item="r">
+                  <tr key={r.key}>
+                    <td class="offer-cell">{r.offering}</td>
+                    <td class="num">{r.links}</td>
+                    <td class="num">{r.submitted}</td>
+                    <td class="num">{r.avgScore}</td>
+                    <td class="num">{r.published}</td>
+                    <td><span class={r.tierClass}>{r.topTier}</span></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <template if:false={rows.length}>
+          <p class="panel-empty">No offerings with links in this range yet.</p>
+        </template>
+      </div>
+    </template>
+    </template>
+  </div>
+</template>

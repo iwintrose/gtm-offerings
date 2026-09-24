@@ -1,0 +1,54 @@
+<template>
+    <template if:true={isRepDirect}>
+        <lightning-card title="Pageless assessment" icon-name="standard:assessment">
+            <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                <template if:true={hasShareLink}>
+                    <p class="slds-text-heading_small slds-m-bottom_x-small">
+                        Share this link with your prospect:
+                    </p>
+                    <p class="slds-m-bottom_x-small">
+                        <lightning-formatted-url
+                            value={generatedUrl}
+                            label={generatedUrl}
+                            target="_blank"
+                        ></lightning-formatted-url>
+                    </p>
+                    <p class="slds-m-bottom_medium">
+                        Password: <strong>{password}</strong>
+                    </p>
+                </template>
+
+                <template if:true={shareError}>
+                    <p class="slds-text-color_error slds-m-bottom_small" role="alert">{shareError}</p>
+                </template>
+
+                <lightning-button
+                    data-id="share-button"
+                    label={shareButtonLabel}
+                    variant="brand"
+                    onclick={handleShare}
+                    disabled={sharing}
+                ></lightning-button>
+
+                <div class="slds-m-top_medium">
+                    <lightning-button
+                        data-id="prefill-button"
+                        label={prefillButtonLabel}
+                        onclick={handleTogglePrefill}
+                    ></lightning-button>
+                </div>
+
+                <template if:true={showPrefill}>
+                    <div class="slds-m-top_medium slds-box">
+                        <c-gtm-assessment-questionnaire
+                            offering-key={offeringKey}
+                            saved-record-id={recordId}
+                            resume-token={resumeToken}
+                            ondraftsaved={handleDraftSaved}
+                        ></c-gtm-assessment-questionnaire>
+                    </div>
+                </template>
+            </div>
+        </lightning-card>
+    </template>
+</template>

@@ -1,0 +1,66 @@
+<template>
+    <template if:true={showRail}>
+        <div class={railClass}>
+
+            <!-- BD/Sales: full workflow controls -->
+            <template if:true={isConfigManager}>
+                <div class="sa-left">
+                    <span class={stagePillClass}>{stageLabel}</span>
+                    <template if:true={hasRequester}>
+                        <span class="sa-requester">
+                            {requesterName}
+                            <template if:true={requesterCompany}>
+                                &nbsp;·&nbsp;{requesterCompany}
+                            </template>
+                        </span>
+                    </template>
+                </div>
+                <div class="sa-actions">
+                    <template if:true={showStartProposal}>
+                        <button class="slds-button slds-button_neutral sa-btn sa-btn--secondary" onclick={handleStartProposal}>
+                            Start proposal
+                        </button>
+                    </template>
+                    <template if:true={showSaveDraft}>
+                        <button class="slds-button slds-button_neutral sa-btn sa-btn--secondary" onclick={handleSaveDraft}>
+                            Save draft
+                        </button>
+                    </template>
+                    <template if:true={showPreview}>
+                        <button class="slds-button slds-button_neutral sa-btn sa-btn--secondary" onclick={handlePreview}>
+                            Preview as client
+                        </button>
+                    </template>
+                    <template if:true={showSend}>
+                        <button class="slds-button slds-button_brand sa-btn sa-btn--primary" onclick={handleSend}
+                                disabled={sending}>
+                            {sendLabel}
+                        </button>
+                    </template>
+                    <template if:true={showRevise}>
+                        <button class="slds-button slds-button_neutral sa-btn sa-btn--secondary" onclick={handleRevise}>
+                            Revise
+                        </button>
+                    </template>
+                    <template if:true={showViewAssessment}>
+                        <button class="slds-button slds-button_neutral sa-btn sa-btn--ghost" onclick={handleViewAssessment}>
+                            View assessment
+                        </button>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Client: status-only message -->
+            <template if:false={isConfigManager}>
+                <div class="sa-client-msg">
+                    <span class="sa-client-icon">✦</span>
+                    <span>{clientStatusMessage}</span>
+                </div>
+            </template>
+
+            <template if:true={errorMsg}>
+                <div class="sa-error" role="alert">{errorMsg}</div>
+            </template>
+        </div>
+    </template>
+</template>

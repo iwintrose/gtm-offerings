@@ -1,0 +1,68 @@
+{
+  "appPageId" : "2ccc52cc-3526-4666-b109-aff8cc07e506",
+  "componentName" : "siteforce:dynamicLayout",
+  "dataProviders" : [ ],
+  "id" : "32117df2-c16e-4d04-8ba5-9f5cbce4c528",
+  "label" : "Home",
+  "regions" : [ {
+    "components" : [ {
+      "componentAttributes" : {
+        "background" : "background: rgba(0,0,0,0)",
+        "backgroundOverlay" : "rgba(0,0,0,0.5)",
+        "contentAreaWidth" : 100,
+        "sectionConfig" : {
+          "UUID" : "14fcac0b-630a-40f3-a97d-7a4fd685a2c6",
+          "columns" : [ {
+            "UUID" : "5dbac92d-8372-4651-a557-9ad397133fd4",
+            "columnKey" : "1",
+            "columnName" : "Column 1",
+            "columnWidth" : "12",
+            "seedComponents" : [ ]
+          } ]
+        },
+        "sectionHeight" : 300
+      },
+      "componentName" : "forceCommunity:section",
+      "id" : "14fcac0b-630a-40f3-a97d-7a4fd685a2c6",
+      "regions" : [ {
+        "components" : [ {
+          "componentAttributes" : { },
+          "componentName" : "c:gtmHomeRedirect",
+          "id" : "134d86de-8998-4d9b-9871-8d167407d085",
+          "renderPriority" : "NEUTRAL",
+          "renditionMap" : { },
+          "type" : "component"
+        } ],
+        "id" : "5dbac92d-8372-4651-a557-9ad397133fd4",
+        "regionLabel" : "Column 1",
+        "regionName" : "1",
+        "renditionMap" : { },
+        "type" : "region"
+      } ],
+      "renderPriority" : "NEUTRAL",
+      "renditionMap" : { },
+      "type" : "component"
+    } ],
+    "id" : "26533d05-a38f-4abd-b7ce-409cde343b42",
+    "regionName" : "content",
+    "type" : "region"
+  }, {
+    "components" : [ {
+      "componentAttributes" : {
+        "customHeadTags" : "",
+        "description" : "",
+        "title" : "Publicis Sapient"
+      },
+      "componentName" : "forceCommunity:seoAssistant",
+      "id" : "f35a124b-4b9c-4cd5-8be1-afba1a5230df",
+      "renditionMap" : { },
+      "type" : "component"
+    } ],
+    "id" : "4e0edb64-f0f6-44db-a883-582d35469fe5",
+    "regionName" : "sfdcHiddenRegion",
+    "type" : "region"
+  } ],
+  "themeLayoutType" : "Inner",
+  "type" : "view",
+  "viewType" : "home"
+}

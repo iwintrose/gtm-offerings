@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>GTM Instrument Author</masterLabel>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__Tab</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__AppPage">
+            <property name="offeringKey" type="String" label="Offering Key" description="Offering key, matching GTM_Offering__mdt.Offering_Key__c. Optional preset -- when placed on the GTM_Instrument_Author tab, the offering is normally supplied instead via the standard__navItemPage c__offering navigation state set by gtmOverview.js's Assessment action."/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

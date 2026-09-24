@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Ceiling_Reason__c</fullName>
+    <label>Ceiling Reason</label>
+    <description>Why the excluded options are not on offer, shown next to them. Required whenever Max_Attainable__c is set: a ceiling with no stated reason is indistinguishable from a rigged scale.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>1000</length>
+    <visibleLines>4</visibleLines>
+</CustomField>

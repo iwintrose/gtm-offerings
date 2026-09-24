@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Rules_JSON__c</fullName>
+    <label>Rules JSON</label>
+    <description>JSON array of branching rules for this question -- shape carried forward unchanged from GTM_Instrument_Question__c.Rules_JSON__c (docs/architecture/gtm-instrument-editor.md section 3.2), see docs/architecture/gtm-instrument-schema.md section 3.2 for the restated contract.</description>
+    <type>LongTextArea</type>
+    <length>32768</length>
+    <visibleLines>5</visibleLines>
+    <required>false</required>
+</CustomField>

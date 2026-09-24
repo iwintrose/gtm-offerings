@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RemoteSiteSetting xmlns="http://soap.sforce.com/2006/04/metadata">
+    <url>https://unavatar.io</url>
+    <isActive>true</isActive>
+    <disableProtocolSecurity>false</disableProtocolSecurity>
+    <description>Server-side fetch for the Customize panel's brand-color lookup (GtmBrandLookupController). Fetching here instead of from the browser sidesteps CORS entirely -- Apex callouts aren't subject to it.</description>
+</RemoteSiteSetting>

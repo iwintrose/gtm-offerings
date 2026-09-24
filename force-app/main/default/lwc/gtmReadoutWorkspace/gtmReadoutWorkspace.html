@@ -1,0 +1,77 @@
+<template>
+    <div class="grw">
+        <div class="grw-bar">
+            <button type="button" class="grw-back" onclick={handleBack}>← Back</button>
+        </div>
+
+        <template if:true={loadError}>
+            <p class="grw-err">{loadError}</p>
+        </template>
+
+        <!-- Preview action only (issue-pages-preview-fixes): the Assessment
+             Link/Password fields that used to live here duplicated
+             gtmRepLinkFinder's always-visible Engagement Link box -- same
+             URL, same password, same Apex, a few inches apart on screen.
+             That box is the single source of the link/password UI now;
+             this section keeps only "Preview the assessment", which opens
+             GtmAssessmentPreviewModal and is distinct from gtmRepLinkFinder's
+             own "Preview" (which toggles the live c-gtm-configurator page
+             inline). Only renders when this request has a saved link to
+             show. -->
+        <template if:true={hasCfg}>
+            <div class="grw-link-section">
+                <div class="grw-preview-toggle-row">
+                    <lightning-button
+                        label={previewToggleLabel}
+                        icon-name="utility:preview"
+                        variant="neutral"
+                        onclick={handleTogglePreview}
+                    ></lightning-button>
+                </div>
+            </div>
+        </template>
+
+        <lightning-tabset variant="scoped" active-tab-value={activeTabValue} onactive={handleActiveTabChange}>
+            <lightning-tab label="Assessment" value="assessment" icon-name="utility:trending">
+                <c-gtm-assessment-detail
+                    record-id={assessmentRequestId}
+                    tabset-mode
+                    onopenreadout={handleOpenReadoutFromDetail}
+                ></c-gtm-assessment-detail>
+            </lightning-tab>
+
+            <lightning-tab label="Readout" value="readout" icon-name="standard:report">
+                <template if:false={isSubmitted}>
+                    <p class="grw-not-submitted">{notSubmittedMessage}</p>
+                </template>
+                <template if:true={isSubmitted}>
+                    <template if:true={showGenerateReadout}>
+                        <div class="grw-generate">
+                            <p class="grw-generate-note">
+                                No readout has been generated for this assessment yet.
+                            </p>
+                            <lightning-button
+                                label="Generate Readout"
+                                variant="brand"
+                                disabled={generatingReadout}
+                                onclick={handleGenerateReadout}
+                            ></lightning-button>
+                        </div>
+                    </template>
+                    <template if:true={hasReadout}>
+                        <c-gtm-readout-review record-id={assessmentRequestId}></c-gtm-readout-review>
+                    </template>
+                </template>
+            </lightning-tab>
+
+            <template if:true={hasConduit}>
+                <lightning-tab label="Conduit" value="conduit" icon-name="utility:routing_offline">
+                    <template if:false={isSubmitted}>
+                        <p class="grw-not-submitted grw-not-submitted--note">{notSubmittedNote}</p>
+                    </template>
+                    <c-conduit-dashboard record-id={assessmentRequestId}></c-conduit-dashboard>
+                </lightning-tab>
+            </template>
+        </lightning-tabset>
+    </div>
+</template>

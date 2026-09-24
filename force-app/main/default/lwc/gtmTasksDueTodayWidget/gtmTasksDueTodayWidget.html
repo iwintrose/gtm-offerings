@@ -1,0 +1,64 @@
+<template>
+    <article class="slds-card ov-card ov-tasks-today" data-id="tasks-due-today-widget">
+        <div class="slds-card__header ov-card-h">
+            <span class="ov-ic ov-ic--tasks">
+                <lightning-icon icon-name="standard:task" size="small"></lightning-icon>
+            </span>
+            <h2 class="ov-h">Your tasks due today</h2>
+        </div>
+        <div class="slds-card__body ov-card-b">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading tasks" size="small"></lightning-spinner>
+        </template>
+
+        <template if:true={loadError}>
+            <div class="slds-text-color_error" data-id="tasks-error">
+                <p>{loadError}</p>
+                <lightning-button label="Retry" onclick={handleRetry}></lightning-button>
+            </div>
+        </template>
+
+        <template if:true={actionError}>
+            <div class="slds-text-color_error slds-m-bottom_x-small" data-id="tasks-action-error">
+                <p>{actionError}</p>
+            </div>
+        </template>
+
+        <template if:true={showEmpty}>
+            <p class="ov-empty" data-id="tasks-empty">
+                No open tasks due today or overdue.
+            </p>
+        </template>
+
+        <template if:true={showRows}>
+            <ul class="slds-has-dividers_top-space" data-id="tasks-list">
+                <template for:each={rows} for:item="row">
+                    <li key={row.taskId} class="slds-item ov-row" data-id="task-row" data-task-id={row.taskId}>
+                        <div class="slds-grid slds-grid_vertical-align-start ov-row-grid">
+                            <div class="ov-row-check" data-id="task-complete-check">
+                                <lightning-input type="checkbox" variant="label-hidden"
+                                    label={row.completeLabel} data-id="task-complete-checkbox"
+                                    data-task-id={row.taskId}
+                                    onchange={handleCompleteChange} onclick={handleCheckboxClick}>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col ov-row-main" data-id="task-row-main"
+                                data-task-id={row.taskId} data-account-id={row.accountId}
+                                role="button" tabindex="0" aria-label={row.rowAriaLabel}
+                                onclick={handleRowActivate} onkeydown={handleRowActivate}>
+                                <div class="slds-grid slds-grid_align-spread">
+                                    <span class="slds-truncate">{row.subject}</span>
+                                    <span class="slds-badge" data-id="task-due-label">{row.dueLabel}</span>
+                                </div>
+                                <template if:true={row.whatName}>
+                                    <div class="slds-text-body_small slds-text-color_weak">{row.whatName}</div>
+                                </template>
+                            </div>
+                        </div>
+                    </li>
+                </template>
+            </ul>
+        </template>
+        </div>
+    </article>
+</template>

@@ -1,0 +1,60 @@
+<template>
+    <lightning-card title="Conduit Audit History" icon-name="standard:metrics">
+        <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-top_small slds-p-bottom_x-small">
+            <p class="slds-text-body_small slds-text-color_weak">
+                A timeline of every Conduit assessment run for this account.
+                Track how the estate health score changes as clean-up and migration work progresses.
+            </p>
+        </div>
+        <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+
+            <!-- Trend banner -->
+            <template lwc:if={hasTrend}>
+                <div class={trendBannerClass}>
+                    <span class="trend-arrow">{trend.arrow}</span>
+                    Health score {trend.direction} <strong>{trend.points} pts</strong> over {auditRuns.length} runs
+                </div>
+            </template>
+
+            <!-- Empty state -->
+            <template lwc:if={isEmpty}>
+                <p class="slds-text-body_regular slds-text-color_weak slds-text-align_center slds-p-around_large">
+                    No previous audits found. Run an estate analysis first.
+                </p>
+            </template>
+
+            <!-- History list -->
+            <template lwc:if={hasHistory}>
+                <ul class="history-list">
+                    <template for:each={historyWithDelta} for:item="run">
+                        <li key={run.Id} class={run.itemClass}>
+                            <div class="slds-grid slds-gutters slds-wrap">
+                                <div class="slds-col slds-size_1-of-6 slds-text-align_center">
+                                    <p class={run.scoreClass}>{run.Health_Score__c}</p>
+                                    <p class="score-label">/100</p>
+                                </div>
+                                <div class="slds-col slds-size_3-of-6">
+                                    <p class="run-date">{run.runAtFormatted}</p>
+                                    <p class="run-platform">{run.Source_Platform__c}</p>
+                                    <div class="run-stats">
+                                        <span>{run.Total_Assets__c} assets</span>
+                                        <span class="stat-sep">·</span>
+                                        <span>{run.Migration_Steps__c} steps</span>
+                                        <span class="stat-sep">·</span>
+                                        <span>{run.confidencePct}% confidence</span>
+                                    </div>
+                                </div>
+                                <div class="slds-col slds-size_2-of-6 slds-text-align_right">
+                                    <template lwc:if={run.hasDelta}>
+                                        <span class={run.deltaClass}>{run.deltaLabel}</span>
+                                    </template>
+                                </div>
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+
+        </div>
+    </lightning-card>
+</template>

@@ -1,0 +1,140 @@
+/* ── Platform-fallback notice ────────────────────────────────────────── */
+.platform-notice {
+    background: #fff8e6;
+    border-left: 3px solid #f5b800;
+    padding: 0.6rem 0.85rem 0.7rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+.platform-notice-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #7a5b00;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.platform-notice-list {
+    list-style: disc;
+    margin: 0;
+    padding-left: 1.15rem;
+}
+.platform-notice-item {
+    font-size: 0.8rem;
+    color: #4a3800;
+    line-height: 1.5;
+    margin-bottom: 0.15rem;
+}
+
+/* ── Shared typography ───────────────────────────────────────────────── */
+.section-heading {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ── Stat row (top numbers) ──────────────────────────────────────────── */
+.stat-row { border-bottom: 1px solid #e5e5e5; padding-bottom: 1.25rem; }
+
+.stat-cell { padding: 0 0.5rem; }
+
+.stat-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value { line-height: 1; }
+
+.score-number { font-size: 2.5rem; font-weight: 700; line-height: 1; }
+
+.stat-denom { font-size: 1rem; font-weight: 400; color: #888; }
+
+.stat-sub { font-size: 0.7rem; color: #aaa; margin-top: 0.2rem; }
+
+.score-warning { color: #ff9e2c; }
+
+/* ── Freshness tiles ─────────────────────────────────────────────────── */
+.freshness-tile {
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    border-radius: 0.375rem;
+    background: #f8f8f8;
+    margin: 0 0.2rem;
+}
+
+.freshness-count { font-size: 1.75rem; font-weight: 700; line-height: 1; margin-bottom: 0.2rem; }
+.freshness-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.1rem; }
+.freshness-desc  { font-size: 0.65rem; color: #aaa; }
+
+.freshness-active    .freshness-count { color: #2e844a; }
+.freshness-recent    .freshness-count { color: #0176d3; }
+.freshness-stale     .freshness-count { color: #ff9e2c; }
+.freshness-abandoned .freshness-count { color: #c23934; }
+
+/* ── Migration plan bar ──────────────────────────────────────────────── */
+.plan-bar {
+    background: #f0f4ff;
+    border-radius: 0.375rem;
+    padding: 1rem 0.5rem;
+    border-left: 3px solid #0176d3;
+}
+
+.plan-number { font-size: 1.75rem; font-weight: 700; color: #0176d3; line-height: 1; margin-bottom: 0.2rem; }
+.plan-label  { font-size: 0.65rem; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ── AI gap analysis ─────────────────────────────────────────────────── */
+.gap-section { border-top: 1px solid #e5e5e5; padding-top: 1rem; }
+
+.ai-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    background: #f0edff;
+    color: #5a3ec8;
+    padding: 0.15rem 0.4rem;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+}
+
+.gap-summary {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #333;
+    background: #fafafa;
+    border-left: 3px solid #c9b8f5;
+    padding: 0.75rem 1rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.gap-list { list-style: none; padding: 0; margin: 0; }
+
+.gap-item {
+    padding: 0.65rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.gap-item:last-child { border-bottom: none; }
+
+.gap-entity {
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: #333;
+    margin-bottom: 0.2rem;
+}
+
+.gap-remediation {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #555;
+}

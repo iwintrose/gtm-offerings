@@ -1,0 +1,43 @@
+.gms-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9000;
+  display: none;
+}
+.gms-scrim.open { display: block; }
+
+.gms-sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100%;
+  background: #fff;
+  z-index: 9001;
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.2);
+}
+.gms-sheet.open { transform: translateX(0); }
+
+.gms-head-wrap {
+  border-bottom: 1px solid #dddbda;
+}
+.gms-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+}
+.gms-title { font-weight: 700; font-size: 1rem; }
+.gms-x { background: none; border: none; font-size: 1.25rem; cursor: pointer; }
+
+.gms-extras {
+  padding: 0 1rem;
+}
+
+.gms-body { padding: 1rem; overflow-y: auto; flex: 1 1 auto; }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>OpenAI_API_Key__c</fullName>
+    <description>OpenAI API key for the GUS chat proxy, used when Chat_Provider__c is OpenAI. Set in Setup → Custom Settings → GTM Agent Settings → Manage → New (org default). Plain Text (175-char max) -- verified real-world OpenAI "sk-..." / "sk-proj-..." key lengths fit within that ceiling. GTM_Agent_Settings__c is a Hierarchy Custom Setting, which does not support EncryptedText; protection for this value is the Apex-level write-only/never-prefill boundary in GtmAgentSettingsController, matching Claude_API_Key__c's existing shape/precedent.</description>
+    <label>OpenAI API Key</label>
+    <length>175</length>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

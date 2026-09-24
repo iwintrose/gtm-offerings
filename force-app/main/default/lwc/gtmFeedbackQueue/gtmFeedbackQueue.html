@@ -1,0 +1,60 @@
+<template>
+  <article class="slds-card q-card">
+    <div class="slds-card__header q-head">
+      <lightning-icon icon-name="standard:feedback" size="small"></lightning-icon>
+      <h2 class="q-h">From the field</h2>
+      <template if:true={hasNotes}><span class="q-count">{countLabel}</span></template>
+    </div>
+    <div class="slds-card__body q-body">
+      <template if:true={loading}>
+        <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+      </template>
+      <template if:true={error}><p class="q-msg q-msg--err">{error}</p></template>
+      <template if:true={showEmpty}>
+        <p class="q-msg">Nothing waiting. Feedback left on the GTM Offerings overview lands here.</p>
+      </template>
+
+      <template if:true={hasNotes}>
+        <ul class="q-list">
+          <template for:each={rows} for:item="n">
+            <li key={n.key} class={n.rowClass}>
+              <div class="q-top">
+                <span class="q-who">{n.who}</span>
+                <span class="q-off">{n.offering}</span>
+                <template if:true={n.page}><span class="q-off">{n.page}</span></template>
+                <span class={n.statusClass}>{n.status}</span>
+                <span class="q-when">{n.when}</span>
+              </div>
+              <p class="q-text">{n.body}</p>
+              <template if:true={n.hasResponse}>
+                <p class="q-reply"><span class="q-reply-k">You said</span>{n.response}</p>
+              </template>
+              <template if:true={n.waitingOnThem}>
+                <p class="q-wait">Waiting on them to answer.</p>
+              </template>
+
+              <div class="q-acts">
+                <button class="slds-button slds-button_neutral q-btn" data-id={n.key} onclick={handleToggle}>{n.replyLabel}</button>
+              </div>
+
+              <template if:true={n.isOpen}>
+                <div class="q-form">
+                  <textarea class="q-input" placeholder="What are you doing about it, or what do you need to know?"
+                            value={reply} onchange={handleReplyChange}></textarea>
+                  <div class="q-form-row">
+                    <lightning-combobox label="Then it is" variant="label-hidden"
+                                        value={nextStatus} options={statusOptions}
+                                        onchange={handleStatusChange} class="q-status">
+                    </lightning-combobox>
+                    <button class="slds-button slds-button_brand q-btn q-btn--primary" disabled={saveDisabled}
+                            onclick={handleSave}>Send it back</button>
+                  </div>
+                </div>
+              </template>
+            </li>
+          </template>
+        </ul>
+      </template>
+    </div>
+  </article>
+</template>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Opportunity__c</fullName>
+    <label>Opportunity</label>
+    <description>Populated from the client link's own Opportunity lookup at submission time, so the request shows as a related record on the deal in Sales Cloud.</description>
+    <type>Lookup</type>
+    <referenceTo>Opportunity</referenceTo>
+    <relationshipLabel>Assessment Requests</relationshipLabel>
+    <relationshipName>GTM_Assessment_Requests</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

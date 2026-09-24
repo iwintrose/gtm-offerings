@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Points_Per_Unit__c</fullName>
+    <label>Points Per Unit</label>
+    <description>Score multiplier applied per unit of the guest's selected value for a Numeric_Scale question (points = selected value * Points_Per_Unit__c). Ignored for other Question_Type__c values, which instead use per-option points authored in Options_JSON__c.</description>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>false</required>
+</CustomField>

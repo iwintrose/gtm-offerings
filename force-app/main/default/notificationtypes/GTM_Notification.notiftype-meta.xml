@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomNotificationType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <masterLabel>GTM Offerings</masterLabel>
+    <description>Task/bell lifecycle events gated by GTM_Notification_Settings__c (readout approval, publish, return-to-draft, new assessment request).</description>
+    <customNotifTypeName>GTM_Notification</customNotifTypeName>
+    <desktop>true</desktop>
+    <mobile>true</mobile>
+</CustomNotificationType>

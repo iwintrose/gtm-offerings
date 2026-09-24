@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <isExposed>false</isExposed>
+    <masterLabel>GTM Readout Account Finder</masterLabel>
+    <description>A rep's Account -&gt; Contact -&gt; Assessment Request Miller-columns trail, modeled on gtmRepLinkFinder's Account -&gt; Contact -&gt; Link pattern. Mounted only by gtmReadoutsOverview's "By Account or Contact" browse mode; not a standalone drop-in.</description>
+</LightningComponentBundle>

@@ -1,0 +1,51 @@
+<template>
+  <div class={hdrClass}>
+    <div class="slds-page-header__row">
+      <div class="slds-page-header__col-title">
+        <lightning-icon icon-name={iconName} size="medium" class="hdr-icon"></lightning-icon>
+        <div class="slds-media__body">
+          <p class="slds-page-header__name-title hdr-eyebrow">{eyebrow}</p>
+          <h1 class="hdr-title">{title}</h1>
+          <p class="slds-page-header__name-meta hdr-meta">{meta}</p>
+        </div>
+      </div>
+      <div class="slds-page-header__col-actions">
+        <slot name="actions"></slot>
+        <template lwc:if={showMenu}>
+          <lightning-button-menu
+            class="hdr-menu"
+            icon-name="utility:rows"
+            alternative-text="Page actions"
+            menu-alignment="right"
+            onselect={handleMenuSelect}
+          >
+            <template for:each={actions} for:item="action">
+              <lightning-menu-item
+                key={action.name}
+                class="hdr-menu-item"
+                value={action.name}
+                label={action.label}
+                prefix-icon-name={action.iconName}
+                disabled={action.disabled}
+              ></lightning-menu-item>
+            </template>
+          </lightning-button-menu>
+        </template>
+        <template lwc:elseif={showButtons}>
+          <template for:each={actions} for:item="action">
+            <lightning-button
+              key={action.name}
+              class="hdr-action"
+              data-name={action.name}
+              label={action.label}
+              icon-name={action.iconName}
+              variant={action.variant}
+              disabled={action.disabled}
+              onclick={handleActionClick}
+            ></lightning-button>
+          </template>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>

@@ -1,0 +1,97 @@
+<template>
+    <lightning-card title="Audience View" icon-name="standard:groups">
+        <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-top_small slds-p-bottom_x-small">
+            <p class="slds-text-body_small slds-text-color_weak">{subtitle}</p>
+        </div>
+
+        <!-- ── Loading ───────────────────────────────────────────────── -->
+        <template lwc:if={isLoading}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_large slds-text-align_center">
+                <lightning-spinner alternative-text="Loading…" size="medium"></lightning-spinner>
+                <p class="slds-m-top_medium">Loading audiences…</p>
+            </div>
+        </template>
+
+        <!-- ── Error ─────────────────────────────────────────────────── -->
+        <template lwc:if={error}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">{error}</div>
+                <lightning-button label="Retry" onclick={handleLoad}></lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Results ───────────────────────────────────────────────── -->
+        <template lwc:if={hasData}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+
+                <!-- Summary bar -->
+                <div class="aud-summary-bar slds-m-bottom_medium">
+                    <div class="slds-grid slds-gutters">
+                        <div class="slds-col slds-text-align_center">
+                            <p class="aud-count aud-high-color">{audienceData.summary.byRisk.high}</p>
+                            <p class="aud-count-label">High Risk</p>
+                        </div>
+                        <div class="slds-col slds-text-align_center">
+                            <p class="aud-count aud-medium-color">{audienceData.summary.byRisk.medium}</p>
+                            <p class="aud-count-label">Medium Risk</p>
+                        </div>
+                        <div class="slds-col slds-text-align_center">
+                            <p class="aud-count">{audienceData.summary.byRisk.low}</p>
+                            <p class="aud-count-label">Low Risk</p>
+                        </div>
+                        <div class="slds-col slds-text-align_center">
+                            <p class="aud-count">{audienceData.summary.withGaps}</p>
+                            <p class="aud-count-label">With Gaps</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filter-group slds-m-bottom_x-small">
+                    <span class="filter-label">Risk:</span>
+                    <template for:each={riskFilters} for:item="f">
+                        <button key={f.value} class={f.cls} onclick={handleRiskFilter} data-filter={f.value}>{f.label}</button>
+                    </template>
+                </div>
+                <div class="filter-group slds-m-bottom_medium">
+                    <span class="filter-label">Type:</span>
+                    <template for:each={kindFilters} for:item="f">
+                        <button key={f.value} class={f.cls} onclick={handleKindFilter} data-filter={f.value}>{f.label}</button>
+                    </template>
+                </div>
+
+                <!-- Table -->
+                <p class="aud-showing slds-m-bottom_x-small">Showing {filteredAudiences.length} of {audienceData.summary.total}</p>
+                <div class="aud-table">
+                    <div class="aud-header slds-grid">
+                        <div class="slds-col slds-size_4-of-12 th">Name</div>
+                        <div class="slds-col slds-size_2-of-12 th">Type</div>
+                        <div class="slds-col slds-size_2-of-12 th">Size</div>
+                        <div class="slds-col slds-size_2-of-12 th">Filter Complexity</div>
+                        <div class="slds-col slds-size_2-of-12 th">Risk</div>
+                    </div>
+                    <template for:each={filteredAudiences} for:item="aud">
+                        <div key={aud.id} class="aud-row slds-grid">
+                            <div class="slds-col slds-size_4-of-12 td aud-name">
+                                {aud.name}
+                                <template lwc:if={aud.hasGap}>
+                                    <span class="gap-flag" title={aud.gap.reason}>⚠</span>
+                                </template>
+                            </div>
+                            <div class="slds-col slds-size_2-of-12 td">
+                                <span class={aud.kindClass}>{aud.kindLabel}</span>
+                            </div>
+                            <div class="slds-col slds-size_2-of-12 td aud-meta">{aud.sizeLabel}</div>
+                            <div class="slds-col slds-size_2-of-12 td aud-meta">{aud.complexLabel}</div>
+                            <div class="slds-col slds-size_2-of-12 td">
+                                <span class={aud.riskClass}>{aud.riskLevel}</span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+            </div>
+        </template>
+
+    </lightning-card>
+</template>

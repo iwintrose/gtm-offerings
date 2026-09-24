@@ -1,0 +1,112 @@
+<template>
+  <div class="ov">
+    <c-gtm-page-header icon-name="standard:report" eyebrow="Submissions" title="Find an assessment">
+      <lightning-button-icon slot="actions" icon-name="utility:refresh" variant="border-filled"
+                              alternative-text="Refresh" title="Refresh"
+                              onclick={handleRefresh}></lightning-button-icon>
+    </c-gtm-page-header>
+
+    <template if:true={showWorkspace}>
+      <c-gtm-readout-workspace
+        assessment-request-id={selectedAssessmentRequestId}
+        readout-id={selectedReadoutId}
+        offering-key={selectedOfferingKey}
+        initial-tab={initialWorkspaceTab}
+        onback={handleWorkspaceBack}
+      ></c-gtm-readout-workspace>
+    </template>
+
+    <template if:false={showWorkspace}>
+      <!-- Page-level spinner for first paint only: isLoading with no rows loaded yet.
+           The datatable's own is-loading attribute stays untouched below for
+           subsequent "load more" pagination. -->
+      <template if:true={showInitialSpinner}>
+        <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+      </template>
+      <c-gtm-filter-bar
+        class="ov-toolbar-bar"
+        filters={filterConfig}
+        values={filterValues}
+        result-count={barResultCount}
+        result-label="assessments"
+        label="Assessment filters"
+        storage-key="assessments"
+        onfilterchange={handleFilterChange}
+        onfiltersearch={handleFilterSearch}
+        onclear={handleFiltersClear}
+      ></c-gtm-filter-bar>
+
+        <template if:true={loadError}>
+          <div class="ov-err">
+            {loadError}
+            <button type="button" class="slds-button slds-button_neutral ov-retry" onclick={handleRetry}>Retry</button>
+          </div>
+        </template>
+
+        <template if:true={totalIsCapped}>
+          <p class="ov-count" aria-live="polite">{countCappedText}</p>
+        </template>
+
+        <template if:true={showTable}>
+          <div class="ov-table">
+            <c-gtm-link-datatable
+              key-field="recordId"
+              columns={columns}
+              data={rows}
+              hide-checkbox-column
+              sorted-by={sortedByField}
+              sorted-direction={sortedDirection}
+              is-loading={isTableLoading}
+              enable-infinite-loading={canLoadMore}
+              load-more-offset="20"
+              onsort={handleSort}
+              onloadmore={handleLoadMore}
+              onrowaction={handleRowAction}
+            ></c-gtm-link-datatable>
+          </div>
+        </template>
+
+        <template if:true={showFilteredEmpty}>
+          <div class="ov-empty ov-empty--filtered">
+            <p>No assessments match these filters.</p>
+            <lightning-button variant="base" label="Clear all filters" onclick={handleFiltersClear}></lightning-button>
+          </div>
+        </template>
+
+        <template if:true={showTrueEmpty}>
+          <p class="ov-empty">
+            No assessment submissions yet. An assessment appears here as soon as
+            a prospect submits one.
+          </p>
+        </template>
+    </template>
+
+    <!-- Rep-Direct entry point: opened via c__repDirectId URL state, set by
+         gtmOverview's handleRepDirectCreated the moment a pageless
+         assessment is created. c-gtm-rep-direct-share is unchanged --
+         reused as-is inside this modal shell rather than duplicated. -->
+    <template if:true={showRepDirectModal}>
+      <section class="slds-modal slds-fade-in-open" role="dialog" tabindex="-1"
+               aria-modal="true" aria-labelledby="rep-direct-modal-title">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <lightning-button-icon icon-name="utility:close" variant="bare"
+                                    alternative-text="Close" title="Close"
+                                    class="slds-modal__close"
+                                    onclick={handleCloseRepDirectModal}></lightning-button-icon>
+            <h2 id="rep-direct-modal-title" class="slds-modal__title slds-hyphenate">
+              Pageless assessment
+            </h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <c-gtm-rep-direct-share record-id={repDirectModalId}></c-gtm-rep-direct-share>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button label="Done" variant="brand" onclick={handleCloseRepDirectModal}></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  </div>
+</template>

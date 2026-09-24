@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Options_JSON__c</fullName>
+    <label>Options JSON</label>
+    <description>JSON array of this question's answer options, each shaped as {label, value, points} -- see docs/architecture/gtm-instrument-editor.md for the full contract consumed by sub-issue 02 (Apex) and sub-issue 04 (gtmInstrumentAuthor LWC).</description>
+    <type>LongTextArea</type>
+    <length>32768</length>
+    <visibleLines>5</visibleLines>
+    <required>false</required>
+</CustomField>

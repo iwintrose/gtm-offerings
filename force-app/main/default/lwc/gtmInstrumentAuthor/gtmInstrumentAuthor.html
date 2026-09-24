@@ -1,0 +1,206 @@
+<template>
+    <div class="ia">
+        <c-gtm-page-header icon-name="utility:knowledge_base" eyebrow="Content"
+                          title="Instrument Editor" meta={headerMeta}>
+        </c-gtm-page-header>
+
+        <header class="ia-bar">
+            <span class="ia-brand">Instrument editor</span>
+            <template if:true={showOfferingPicker}>
+                <span class="ia-sep"></span>
+                <lightning-combobox
+                    label="Offering"
+                    variant="label-hidden"
+                    placeholder="Choose an offering"
+                    value={selectedOffering}
+                    options={offeringOptions}
+                    onchange={handleOfferingChange}
+                    class="ia-pick">
+                </lightning-combobox>
+            </template>
+
+            <template if:true={hasDefinition}>
+                <div class="ia-tabs">
+                    <button type="button" class={questionsTabClass} onclick={handleViewQuestions}>Questions</button>
+                    <button type="button" class={outcomesTabClass} onclick={handleViewOutcomes}>Outcome Mapping</button>
+                    <button type="button" class={previewTabClass} onclick={handleViewPreview}>Flow-map Preview</button>
+                </div>
+                <div class="ia-actions">
+                    <button type="button" class="slds-button slds-button_neutral" onclick={handleSave} disabled={loading}>Save</button>
+                    <button type="button" class="slds-button slds-button_brand" onclick={handlePublish} disabled={loading}>Publish</button>
+                    <button type="button" class="slds-button slds-button_destructive-text" onclick={handleArchive} disabled={loading}>Archive</button>
+                </div>
+            </template>
+        </header>
+
+        <template if:true={error}>
+            <div class="ia-msg ia-msg--error">{error}</div>
+        </template>
+        <template if:true={message}>
+            <div class="ia-msg ia-msg--ok">{message}</div>
+        </template>
+        <template if:true={circularWarning}>
+            <div class="ia-msg ia-msg--error">{circularWarning}</div>
+        </template>
+
+        <template if:false={hasOffering}>
+            <div class="ia-empty">Choose an offering to begin.</div>
+        </template>
+
+        <template if:true={hasOffering}>
+            <template if:false={hasDefinition}>
+                <div class="ia-empty">
+                    <p>No instrument yet for {offeringLabel}.</p>
+                    <button type="button" class="slds-button slds-button_brand" onclick={handleCreate}>Create instrument</button>
+                </div>
+            </template>
+
+            <template if:true={hasDefinition}>
+                <div class="ia-defhead">
+                    <label class="ia-field">
+                        <span>Name</span>
+                        <input type="text" data-field="name" value={definitionName} onchange={handleRenameOrRestatus} />
+                    </label>
+                    <label class="ia-field">
+                        <span>Theme key</span>
+                        <input type="text" data-field="themeKey" value={definitionThemeKey} onchange={handleRenameOrRestatus} />
+                    </label>
+                </div>
+
+                <!-- ─── Questions tab: inline Logic Jump on every option ─── -->
+                <template if:true={isQuestionsView}>
+                    <div class="ia-questions">
+                        <template for:each={questionCards} for:item="q">
+                            <article key={q._localId} class="ia-qcard">
+                                <header class="ia-qcard-head">
+                                    <span class="ia-qorder">#{q.slotOrder}</span>
+                                    <input type="text" class="ia-qtext" placeholder="Question text"
+                                           data-index={q.index} data-field="questionText"
+                                           value={q.questionText} onchange={handleQuestionField} />
+                                    <input type="text" class="ia-qkey" placeholder="question_key"
+                                           data-index={q.index} data-field="questionKey"
+                                           value={q.questionKey} onchange={handleQuestionField} />
+                                    <select data-index={q.index} data-field="questionType"
+                                            onchange={handleQuestionField}>
+                                        <template for:each={q.questionTypeOptions} for:item="t">
+                                            <option key={t.value} value={t.value} selected={t.selected}>{t.label}</option>
+                                        </template>
+                                    </select>
+                                    <label class="ia-required">
+                                        <input type="checkbox" data-index={q.index} data-field="required"
+                                               checked={q.required} onchange={handleQuestionField} /> Required
+                                    </label>
+                                    <div class="ia-qmoves">
+                                        <button type="button" data-index={q.index} data-dir="up" disabled={q.first}
+                                                onclick={handleMoveQuestion} title="Move up">↑</button>
+                                        <button type="button" data-index={q.index} data-dir="down" disabled={q.last}
+                                                onclick={handleMoveQuestion} title="Move down">↓</button>
+                                        <button type="button" class="ia-del" data-index={q.index}
+                                                onclick={handleDeleteQuestion} title="Delete question">✕</button>
+                                    </div>
+                                </header>
+
+                                <template if:true={q.showsOptions}>
+                                    <div class="ia-opts">
+                                        <template for:each={q.options} for:item="o">
+                                            <div key={o.index} class="ia-opt-row">
+                                                <input type="text" class="ia-opt-label" placeholder="Label"
+                                                       data-index={q.index} data-option-index={o.index} data-field="label"
+                                                       value={o.label} onchange={handleOptionField} />
+                                                <input type="text" class="ia-opt-value" placeholder="value"
+                                                       data-index={q.index} data-option-index={o.index} data-field="value"
+                                                       value={o.value} onchange={handleOptionField} />
+                                                <input type="number" class="ia-opt-points" placeholder="Points"
+                                                       data-index={q.index} data-option-index={o.index} data-field="points"
+                                                       value={o.points} onchange={handleOptionField} />
+                                                <!-- Logic Jump: inline on the option, not a separate rule list. -->
+                                                <lightning-combobox
+                                                    class="ia-jump-action"
+                                                    variant="label-hidden"
+                                                    data-index={q.index} data-option-index={o.index}
+                                                    value={o.jumpAction}
+                                                    options={jumpActionOptions}
+                                                    onchange={handleOptionJumpAction}>
+                                                </lightning-combobox>
+                                                <template if:true={o.jumpAction}>
+                                                    <lightning-combobox
+                                                        class="ia-jump-target"
+                                                        variant="label-hidden"
+                                                        placeholder="Target question"
+                                                        data-index={q.index} data-option-index={o.index}
+                                                        value={o.jumpTarget}
+                                                        options={o.targetOptions}
+                                                        onchange={handleOptionJumpTarget}>
+                                                    </lightning-combobox>
+                                                </template>
+                                                <button type="button" class="ia-del" data-index={q.index} data-option-index={o.index}
+                                                        onclick={handleDeleteOption} title="Delete option">✕</button>
+                                            </div>
+                                        </template>
+                                        <button type="button" class="slds-button slds-button_neutral ia-add-opt"
+                                                data-index={q.index} onclick={handleAddOption}>+ Option</button>
+                                    </div>
+                                </template>
+
+                                <template if:true={q.showsNumeric}>
+                                    <div class="ia-numeric">
+                                        <label>Min <input type="number" data-index={q.index} data-field="minValue" value={q.minValue} onchange={handleQuestionField} /></label>
+                                        <label>Max <input type="number" data-index={q.index} data-field="maxValue" value={q.maxValue} onchange={handleQuestionField} /></label>
+                                        <label>Points per unit <input type="number" data-index={q.index} data-field="pointsPerUnit" value={q.pointsPerUnit} onchange={handleQuestionField} /></label>
+                                    </div>
+                                </template>
+                            </article>
+                        </template>
+                        <button type="button" class="slds-button slds-button_brand ia-add-q" onclick={handleAddQuestion}>+ Question</button>
+                    </div>
+                </template>
+
+                <!-- ─── Outcome Mapping tab ─── -->
+                <template if:true={isOutcomesView}>
+                    <div class="ia-outcomes">
+                        <template if:true={rangeOverlapWarning}>
+                            <div class="ia-msg ia-msg--warn">{rangeOverlapWarning}</div>
+                        </template>
+                        <template for:each={outcomeCards} for:item="r">
+                            <div key={r._localId} class="ia-range-row">
+                                <label>Min <input type="number" data-index={r.index} data-field="minScore" value={r.minScore} onchange={handleRangeField} /></label>
+                                <label>Max <input type="number" data-index={r.index} data-field="maxScore" value={r.maxScore} onchange={handleRangeField} /></label>
+                                <label>Tier label <input type="text" data-index={r.index} data-field="tierLabel" value={r.tierLabel} onchange={handleRangeField} /></label>
+                                <label>Readout template key <input type="text" data-index={r.index} data-field="readoutTemplateKey" value={r.readoutTemplateKey} onchange={handleRangeField} /></label>
+                                <label>Sort <input type="number" data-index={r.index} data-field="sortOrder" value={r.sortOrder} onchange={handleRangeField} /></label>
+                                <button type="button" class="ia-del" data-index={r.index} onclick={handleDeleteRange} title="Delete range">✕</button>
+                            </div>
+                        </template>
+                        <button type="button" class="slds-button slds-button_brand ia-add-range" onclick={handleAddRange}>+ Outcome range</button>
+                    </div>
+                </template>
+
+                <!-- ─── Read-only flow-map preview ─── -->
+                <template if:true={isPreviewView}>
+                    <div class="ia-preview">
+                        <div class="ia-preview-score">{previewScoreLine} <template if:true={previewOutcome}> · Tier: {previewOutcome}</template></div>
+                        <button type="button" class="slds-button slds-button_neutral" onclick={handleClearPreview}>Clear answers</button>
+                        <template for:each={previewFlow} for:item="s">
+                            <div key={s._localId} class="ia-pslot">
+                                <template if:true={s.hidden}>
+                                    <div class="ia-pslot-hidden">Hidden by a firing Logic Jump: {s.questionText}</div>
+                                </template>
+                                <template if:false={s.hidden}>
+                                    <p class="ia-pquestion">{s.questionText} <template if:true={s.required}> *</template></p>
+                                    <div class="ia-popts">
+                                        <template for:each={s.options} for:item="o">
+                                            <button key={o.value} type="button" class={o.cls}
+                                                    data-key={s.questionKey} data-value={o.value} onclick={handlePreviewChoice}>
+                                                {o.label} ({o.points})
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </template>
+        </template>
+    </div>
+</template>

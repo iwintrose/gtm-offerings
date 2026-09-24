@@ -1,0 +1,84 @@
+{
+  "appPageId": "2ccc52cc-3526-4666-b109-aff8cc07e506",
+  "componentName": "siteforce:dynamicLayout",
+  "dataProviders": [],
+  "id": "7ad20ca2-29bb-41cb-a1ab-1dbf2f037d53",
+  "label": "Industry",
+  "regions": [
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "background": "background: rgba(0,0,0,0)",
+            "backgroundOverlay": "rgba(0,0,0,0.5)",
+            "contentAreaWidth": 100,
+            "sectionConfig": {
+              "UUID": "6f178642-562f-44e1-91ae-6f788cd62429",
+              "columns": [
+                {
+                  "UUID": "518da2da-1094-4e84-8b97-f57150c71f82",
+                  "columnKey": "1",
+                  "columnName": "Column 1",
+                  "columnWidth": "12",
+                  "seedComponents": []
+                }
+              ]
+            },
+            "sectionHeight": 300
+          },
+          "componentName": "forceCommunity:section",
+          "id": "6f178642-562f-44e1-91ae-6f788cd62429",
+          "regions": [
+            {
+              "components": [
+                {
+                  "componentAttributes": {
+                    "configuratorUrl": "/gtm/s/configurator",
+                    "offeringsUrl": "/gtm/s/choose-offering"
+                  },
+                  "componentName": "c:chooseIndustry",
+                  "id": "a944b2d5-6c06-44eb-b2de-70d340194274",
+                  "renderPriority": "NEUTRAL",
+                  "renditionMap": {},
+                  "type": "component"
+                }
+              ],
+              "id": "518da2da-1094-4e84-8b97-f57150c71f82",
+              "regionLabel": "Column 1",
+              "regionName": "1",
+              "renditionMap": {},
+              "type": "region"
+            }
+          ],
+          "renderPriority": "NEUTRAL",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "5191a336-7e68-4917-9e7f-e4133cbaed2f",
+      "regionName": "content",
+      "type": "region"
+    },
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "customHeadTags": "",
+            "description": "",
+            "title": "Industry"
+          },
+          "componentName": "forceCommunity:seoAssistant",
+          "id": "3ca63c06-9c00-41ad-b558-3329c4d77ce1",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "1de3a205-4b47-415c-9c1f-3d1abb0e01b6",
+      "regionName": "sfdcHiddenRegion",
+      "type": "region"
+    }
+  ],
+  "themeLayoutType": "Inner",
+  "type": "view",
+  "viewType": "custom-industry"
+}

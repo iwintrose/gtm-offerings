@@ -1,0 +1,30 @@
+.rdp-body { padding: 0; overflow-y: visible; }
+.rdp-hint { color: #444; font-size: 0.85rem; margin-bottom: 0.75rem; }
+.rdp-field { margin-bottom: 0.5rem; }
+.rdp-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #dddbda;
+  border-radius: 4px;
+}
+.rdp-chiprow { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem; }
+.rdp-chip {
+  text-align: left;
+  padding: 0.5rem;
+  border: 1px solid #dddbda;
+  border-radius: 4px;
+  background: #f3f3f3;
+  cursor: pointer;
+}
+.rdp-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: #f3f3f3;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+.rdp-mini-link { background: none; border: none; color: #0176d3; cursor: pointer; }
+.rdp-error { color: #c23934; font-size: 0.85rem; margin: 0.5rem 0; }
+.rdp-actions { margin-top: 1rem; }

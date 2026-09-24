@@ -1,0 +1,20 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "GTM_Page_Section__c",
+        "referenceId": "testSecHeader"
+      },
+      "Section_Address__c": "test-offering::story::header",
+      "Offering_Key__c": "test-offering",
+      "Template_Type__c": "story",
+      "Section_Key__c": "header",
+      "Label__c": "Header",
+      "Help_Text__c": "TEST RECORD - safe to delete",
+      "Layout_Type__c": "page-header",
+      "Width__c": "standard",
+      "Sort_Order__c": 5,
+      "Active__c": true
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <!-- Issue #184: no longer a standalone destination. gtmRecycleBin is now
+         embedded exclusively as a section child of gtmOfferingsSettings and
+         gtmContentManagerSettings, per the issue's placement redirect. Not
+         exposed/targeted so it cannot be re-added as a standalone
+         lightning__AppPage/lightning__Tab via App Builder or Setup. -->
+    <isExposed>false</isExposed>
+    <masterLabel>GTM Recycle Bin</masterLabel>
+</LightningComponentBundle>

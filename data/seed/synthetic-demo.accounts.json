@@ -1,0 +1,116 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "Account",
+        "referenceId": "demoAcct1"
+      },
+      "Name": "[DEMO] Northwind Apparel Group",
+      "Industry": "Retail",
+      "BillingCity": "Columbus",
+      "BillingState": "OH",
+      "BillingCountry": "USA",
+      "Website": "https://demo.northwind-apparel.invalid",
+      "NumberOfEmployees": 1800,
+      "Description": "Synthetic demo account seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Account",
+        "referenceId": "demoAcct2"
+      },
+      "Name": "[DEMO] Cascade Regional Health",
+      "Industry": "Healthcare",
+      "BillingCity": "Portland",
+      "BillingState": "OR",
+      "BillingCountry": "USA",
+      "Website": "https://demo.cascade-health.invalid",
+      "NumberOfEmployees": 4200,
+      "Description": "Synthetic demo account seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Account",
+        "referenceId": "demoAcct3"
+      },
+      "Name": "[DEMO] Ironclad Freight & Logistics",
+      "Industry": "Transportation",
+      "BillingCity": "Memphis",
+      "BillingState": "TN",
+      "BillingCountry": "USA",
+      "Website": "https://demo.ironclad-freight.invalid",
+      "NumberOfEmployees": 950,
+      "Description": "Synthetic demo account seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Account",
+        "referenceId": "demoAcct4"
+      },
+      "Name": "[DEMO] Brightfield Financial Partners",
+      "Industry": "Financial Services",
+      "BillingCity": "Charlotte",
+      "BillingState": "NC",
+      "BillingCountry": "USA",
+      "Website": "https://demo.brightfield-financial.invalid",
+      "NumberOfEmployees": 620,
+      "Description": "Synthetic demo account seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Account",
+        "referenceId": "demoAcct5"
+      },
+      "Name": "[DEMO] Solvent Materials Corp",
+      "Industry": "Manufacturing",
+      "BillingCity": "Grand Rapids",
+      "BillingState": "MI",
+      "BillingCountry": "USA",
+      "Website": "https://demo.solvent-materials.invalid",
+      "NumberOfEmployees": 2600,
+      "Description": "Synthetic demo account seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Account",
+        "referenceId": "demoAcct6"
+      },
+      "Name": "[DEMO] Helix BioSciences",
+      "Industry": "Biotechnology",
+      "BillingCity": "Cambridge",
+      "BillingState": "MA",
+      "BillingCountry": "USA",
+      "Website": "https://demo.helix-bio.invalid",
+      "NumberOfEmployees": 950,
+      "Description": "Synthetic demo account seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Account",
+        "referenceId": "demoAcct7"
+      },
+      "Name": "[DEMO] Prime Stream Media",
+      "Industry": "Media",
+      "BillingCity": "Los Angeles",
+      "BillingState": "CA",
+      "BillingCountry": "USA",
+      "Website": "https://demo.primestream-media.invalid",
+      "NumberOfEmployees": 2600,
+      "Description": "Synthetic demo account seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Account",
+        "referenceId": "demoAcct8"
+      },
+      "Name": "[DEMO] Civic Works Authority",
+      "Industry": "Government",
+      "BillingCity": "Austin",
+      "BillingState": "TX",
+      "BillingCountry": "USA",
+      "Website": "https://demo.civicworks-authority.invalid",
+      "NumberOfEmployees": 3400,
+      "Description": "Synthetic demo account seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "GTM_Readout_Version__c",
+        "referenceId": "demoRdv1"
+      },
+      "Readout__c": "@demoRdo3",
+      "Version_Number__c": 1,
+      "Status_At_Snapshot__c": "Approved",
+      "Change_Summary__c": "[DEMO] Initial approved snapshot (synthetic demo data, safe to delete via --teardown)."
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout_Version__c",
+        "referenceId": "demoRdv2"
+      },
+      "Readout__c": "@demoRdo3",
+      "Version_Number__c": 2,
+      "Status_At_Snapshot__c": "Published",
+      "Change_Summary__c": "[DEMO] Published snapshot (synthetic demo data, safe to delete via --teardown)."
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout_Version__c",
+        "referenceId": "demoRdv3"
+      },
+      "Readout__c": "@demoRdo1",
+      "Version_Number__c": 1,
+      "Status_At_Snapshot__c": "Draft",
+      "Change_Summary__c": "[DEMO] Working draft snapshot (synthetic demo data, safe to delete via --teardown)."
+    },
+    {
+      "attributes": {
+        "type": "GTM_Readout_Version__c",
+        "referenceId": "demoRdv4"
+      },
+      "Readout__c": "@demoRdo5",
+      "Version_Number__c": 1,
+      "Status_At_Snapshot__c": "Approved",
+      "Change_Summary__c": "[DEMO] Approved snapshot (notification sent) (synthetic demo data, safe to delete via --teardown)."
+    }
+  ]
+}

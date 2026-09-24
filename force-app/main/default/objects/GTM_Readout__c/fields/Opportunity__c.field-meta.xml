@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Opportunity__c</fullName>
+    <label>Opportunity</label>
+    <description>Carried over from the Assessment Request's Opportunity so the readout shows as a related record on the deal.</description>
+    <type>Lookup</type>
+    <referenceTo>Opportunity</referenceTo>
+    <relationshipLabel>Readouts</relationshipLabel>
+    <relationshipName>GTM_Readouts</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

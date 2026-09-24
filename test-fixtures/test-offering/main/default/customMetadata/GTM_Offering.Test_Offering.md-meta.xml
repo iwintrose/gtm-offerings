@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <!-- TEST FIXTURE. Lives outside force-app/ on purpose: scripts/deploy.sh
+         builds its source list from force-app/main/default/*, so this record
+         can never reach gtm-dev (Production). Installed only by the
+         with-offering test-offering option of scripts/deploy-fresh-org.sh.
+         See docs/architecture/blank-install.md. -->
+    <label>Test Offering</label>
+    <protected>false</protected>
+    <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">test-offering</value>
+    </values>
+    <values>
+        <field>Label__c</field>
+        <value xsi:type="xsd:string">Test Offering</value>
+    </values>
+    <values>
+        <field>Monthly_Target__c</field>
+        <value xsi:type="xsd:double">0</value>
+    </values>
+    <values>
+        <field>Annual_Target__c</field>
+        <value xsi:type="xsd:double">0</value>
+    </values>
+    <values>
+        <field>CMS_Channel_Id__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Site_Path__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Has_Conduit__c</field>
+        <value xsi:type="xsd:boolean">false</value>
+    </values>
+</CustomMetadata>

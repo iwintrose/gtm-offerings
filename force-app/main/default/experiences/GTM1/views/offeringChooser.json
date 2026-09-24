@@ -1,0 +1,83 @@
+{
+  "appPageId": "2ccc52cc-3526-4666-b109-aff8cc07e506",
+  "componentName": "siteforce:dynamicLayout",
+  "dataProviders": [],
+  "id": "af1726ca-42e3-4b34-8e3c-0c6ae316e634",
+  "label": "Offering Chooser",
+  "regions": [
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "background": "background: rgba(0,0,0,0)",
+            "backgroundOverlay": "rgba(0,0,0,0.5)",
+            "contentAreaWidth": 100,
+            "sectionConfig": {
+              "UUID": "68e85fb3-0433-45a0-8c47-b214f7eec286",
+              "columns": [
+                {
+                  "UUID": "eddaa412-dcaa-4793-b7b2-bceb56acbb34",
+                  "columnKey": "1",
+                  "columnName": "Column 1",
+                  "columnWidth": "12",
+                  "seedComponents": []
+                }
+              ]
+            },
+            "sectionHeight": 300
+          },
+          "componentName": "forceCommunity:section",
+          "id": "68e85fb3-0433-45a0-8c47-b214f7eec286",
+          "regions": [
+            {
+              "components": [
+                {
+                  "componentAttributes": {
+                    "industryUrl": "/gtm/s/choose-industry"
+                  },
+                  "componentName": "c:offeringChooser",
+                  "id": "ee061eeb-15ce-402c-9a36-4e306d98bfcb",
+                  "renderPriority": "NEUTRAL",
+                  "renditionMap": {},
+                  "type": "component"
+                }
+              ],
+              "id": "eddaa412-dcaa-4793-b7b2-bceb56acbb34",
+              "regionLabel": "Column 1",
+              "regionName": "1",
+              "renditionMap": {},
+              "type": "region"
+            }
+          ],
+          "renderPriority": "NEUTRAL",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "ada5fe8c-417e-4bc9-b26a-44c02dfb12f5",
+      "regionName": "content",
+      "type": "region"
+    },
+    {
+      "components": [
+        {
+          "componentAttributes": {
+            "customHeadTags": "",
+            "description": "",
+            "title": "Choose Your Offering"
+          },
+          "componentName": "forceCommunity:seoAssistant",
+          "id": "a8b3edbe-00a8-4b7e-b764-bc644b133473",
+          "renditionMap": {},
+          "type": "component"
+        }
+      ],
+      "id": "fbe67960-dd87-46ea-8deb-72cc901dd6b8",
+      "regionName": "sfdcHiddenRegion",
+      "type": "region"
+    }
+  ],
+  "themeLayoutType": "Inner",
+  "type": "view",
+  "viewType": "custom-offering-chooser"
+}

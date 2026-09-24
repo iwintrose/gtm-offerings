@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Notify_On_New_Assessment_Request__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Whether a new GTM_Assessment_Request__c (Status = New) becomes an active Task + bell event in addition to the existing passive GtmHomeSnapshotController dashboard count.</description>
+    <externalId>false</externalId>
+    <label>Notify On New Assessment Request</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

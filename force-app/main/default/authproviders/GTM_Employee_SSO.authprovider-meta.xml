@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Same-org "Login with Salesforce" Auth Provider for issue #106. Wired to
+  the GTM1 site's existing salesforceIdentity:socialLogin2 component
+  (force-app/main/default/experiences/GTM1/views/login.json), which
+  auto-discovers configured Auth Providers, no change to that file needed.
+
+  This is the BUILT-IN Salesforce provider type, not a custom Apex plugin.
+  An earlier version of this fix went down a much longer road, a custom
+  Auth.AuthProviderPluginClass with hand-rolled PKCE, a Custom Metadata
+  Type, and a side-table for the PKCE handshake, built on the wrong
+  premise that the built-in provider type had no PKCE support at all.
+
+  It does: the built-in type has an isPkceEnabled field (defaults to
+  true when created interactively in Setup, but a metadata-deployed record
+  that never sets it explicitly gets false). The original attempt at this
+  fix used the built-in type without ever setting this field, so it silently
+  ran without PKCE and failed live with "missing required code challenge"
+  once the org's OAuth policy required it. That single missing field was
+  the entire problem, confirmed by a dry-run probe against gtm-dev that
+  isPkceEnabled is a real, accepted field on this provider type.
+
+  registrationHandler maps an incoming SSO identity to an EXISTING internal
+  user only (GtmEmployeeSsoRegHandler.cls), it never provisions a new
+  user. That is a deliberate fail-closed choice, not an oversight.
+
+  executionUser and consumerKey/consumerSecret below are PLACEHOLDERS ONLY,
+  filled in locally at deploy time and never committed with real values,
+  see TASK_SCOPE.md for the manual Setup steps that provide them
+  (Consumer Key/Secret from the GTM_Employee_SSO Connected App's Manage
+  Consumer Details page, My Domain from Company Information).
+-->
+<AuthProvider xmlns="http://soap.sforce.com/2006/04/metadata">
+    <friendlyName>GTM Employee SSO</friendlyName>
+    <providerType>Salesforce</providerType>
+    <authorizeUrl>https://REPLACE_WITH_MY_DOMAIN.my.salesforce.com/services/oauth2/authorize</authorizeUrl>
+    <tokenUrl>https://REPLACE_WITH_MY_DOMAIN.my.salesforce.com/services/oauth2/token</tokenUrl>
+    <consumerKey>REPLACE_AFTER_DEPLOY</consumerKey>
+    <consumerSecret>REPLACE_AFTER_DEPLOY</consumerSecret>
+    <executionUser>REPLACE_WITH_EXECUTION_USER</executionUser>
+    <isPkceEnabled>true</isPkceEnabled>
+    <defaultScopes>api web refresh_token</defaultScopes>
+    <registrationHandler>GtmEmployeeSsoRegHandler</registrationHandler>
+    <sendAccessTokenInHeader>true</sendAccessTokenInHeader>
+    <sendClientCredentialsInHeader>true</sendClientCredentialsInHeader>
+    <sendSecretInApis>false</sendSecretInApis>
+</AuthProvider>

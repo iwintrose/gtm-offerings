@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Offering__c</fullName>
+    <label>Offering</label>
+    <description>Native lookup to the GTM_Instrument_Definition__c record (one per
+        offering, per docs/architecture/gtm-instrument-schema.md section 2.1) this
+        submission was scored against, alongside the existing Offering_Key__c text
+        field kept for backward query compatibility during the rebuild transition
+        (ADR-0009's existing text-key convention). Populated server-side, best-effort,
+        by matching the resolved offering key to an Active GTM_Instrument_Definition__c
+        row -- null whenever that offering has not yet been authored on the new
+        schema (every offering starts unmigrated per gtm-instrument-schema.md section
+        7). Never client-supplied.</description>
+    <type>Lookup</type>
+    <referenceTo>GTM_Instrument_Definition__c</referenceTo>
+    <relationshipLabel>Assessment Requests</relationshipLabel>
+    <relationshipName>GTM_Assessment_Requests</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

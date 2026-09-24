@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Gemini_API_Key__c</fullName>
+    <description>Google Gemini API key for the GUS chat proxy, used when Chat_Provider__c is Gemini. Plain Text: GTM_Agent_Settings__c is a Hierarchy Custom Setting, which does not support EncryptedText; protection is the Apex-level write-only/never-prefill boundary in GtmAgentSettingsController, matching Claude_API_Key__c and OpenAI_API_Key__c.</description>
+    <label>Gemini API Key</label>
+    <length>175</length>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

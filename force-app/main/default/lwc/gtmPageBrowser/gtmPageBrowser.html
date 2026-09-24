@@ -1,0 +1,22 @@
+<template>
+  <div class="pb">
+    <c-gtm-page-header icon-name="standard:contact_list" eyebrow="Pages"
+                      title={headerTitle} meta={headerMeta} class="pb-head">
+      <template if:true={showBackToPages}>
+        <lightning-button slot="actions" label="Back to Pages" icon-name="utility:back"
+                          variant="neutral" class="pb-back"
+                          onclick={handleBackToPages}></lightning-button>
+      </template>
+    </c-gtm-page-header>
+
+    <template if:true={isStoryMode}>
+      <div class="pb-stage">
+        <c-gtm-story offering-key={storyOfferingKey} key={storyOfferingKey}></c-gtm-story>
+      </div>
+    </template>
+    <template if:false={isStoryMode}>
+      <c-gtm-rep-link-finder target-record-id={linkRecordId} target-company={linkCompany}
+        target-offering-key={linkOfferingKey} key={linkRecordId}></c-gtm-rep-link-finder>
+    </template>
+  </div>
+</template>

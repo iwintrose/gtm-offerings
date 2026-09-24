@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>GTM Offering Chooser</masterLabel>
+    <targets>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+<targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property name="offeringKey" type="String" label="Offering Key"
+                      description="Offering key, matching GTM_Offering__mdt.Offering_Key__c. Not used for identity on this framework-level page; each tile forwards its own offering key onward."/>
+            <property
+                name="industryUrl"
+                type="String"
+                label="Industry page URL"
+                default="/choose-industry"
+                description="Where each live offering tile links to."
+            />
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

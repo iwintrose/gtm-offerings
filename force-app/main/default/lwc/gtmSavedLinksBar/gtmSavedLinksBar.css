@@ -1,0 +1,317 @@
+:host {
+  /* No box of its own when the template renders nothing (guest/no
+     access) -- avoids leaving an empty gap in whichever top bar this
+     is embedded in. */
+  display: contents;
+  /* Fixed, page-independent accent -- this component is embedded in
+     three different pages, each with its own --coral/--accent (or
+     neither, like chooseIndustry, which only defines --accent). Using
+     the parent's variable made this bar's own accent color silently
+     change depending on which page it happened to be on. */
+  --sl-accent: #ee3d23;
+}
+
+.sl-root {
+  position: relative;
+  display: inline-flex;
+  font-family: inherit;
+}
+
+.sl-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  height: 32px;
+  padding: 0 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--line, rgba(127, 127, 127, 0.3));
+  background: transparent;
+  color: var(--ink-soft, inherit);
+  cursor: pointer;
+}
+
+.sl-toggle:hover {
+  color: var(--ink, inherit);
+  border-color: var(--sl-accent);
+}
+
+.sl-chevron {
+  color: inherit;
+  transition: transform 0.15s ease;
+  flex: none;
+}
+
+.sl-chevron.open {
+  transform: rotate(180deg);
+}
+
+.sl-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 100;
+  min-width: 340px;
+  max-width: 440px;
+  max-height: 68vh;
+  overflow-y: auto;
+  background: var(--paper, #fff);
+  color: var(--ink, #1a1a1a);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42), 0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 0.4rem;
+}
+
+.sl-panel.open {
+  display: block;
+}
+
+.sl-empty {
+  font-size: 0.82rem;
+  opacity: 0.7;
+  margin: 0.5rem;
+}
+
+.sl-error {
+  margin: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(224, 49, 49, 0.1);
+  border: 1px solid rgba(224, 49, 49, 0.35);
+  color: #b3261e;
+  font-size: 0.76rem;
+}
+
+.sl-offering {
+  margin-bottom: 0.5rem;
+}
+
+.sl-offering-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.45;
+  margin: 0.7rem 0.55rem 0.35rem;
+}
+/* A hairline that runs out from the label, so sections read as sections
+   without another box around them. */
+.sl-offering-name::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.18;
+}
+
+.sl-industry {
+  margin: 0.2rem 0;
+}
+
+.sl-industry-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.38;
+  margin: 0.45rem 0.55rem 0.2rem;
+}
+
+.sl-link {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.sl-link:hover {
+  background: rgba(127, 127, 127, 0.09);
+  border-color: rgba(127, 127, 127, 0.18);
+}
+
+.sl-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.42rem;
+  border-radius: 50%;
+  background: #2e9e52;
+  box-shadow: 0 0 0 3px rgba(46, 158, 82, 0.18);
+}
+
+.sl-dot.off {
+  background: #8d8d8d;
+  box-shadow: 0 0 0 3px rgba(141, 141, 141, 0.15);
+}
+
+.sl-link-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The client's name is the label, not an alert. It used to be painted in the
+   brand coral, which reads as a warning in a list where warnings also exist.
+   The accent moves to the hover, where it means "this is a link". */
+.sl-link-name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sl-link-name:hover {
+  color: var(--sl-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sl-link.inactive .sl-link-name {
+  color: inherit;
+  opacity: 0.6;
+}
+
+.sl-link-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  opacity: 0.55;
+  margin-top: 0.1rem;
+}
+
+.sl-link-record {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sl-link-record:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+/* The list is something you read; the controls are something you reach for.
+   They stay legible but recede until the row is under the pointer -- and stay
+   put whatever their state, so nothing jumps as you move down the list. */
+.sl-link-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: none;
+  opacity: 0.35;
+  transition: opacity .12s ease;
+}
+
+.sl-link:hover .sl-link-actions,
+.sl-link:focus-within .sl-link-actions {
+  opacity: 1;
+}
+
+.sl-toggle-active {
+  background: transparent;
+  border: 1px solid rgba(127, 127, 127, 0.32);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.22rem 0.62rem;
+  color: inherit;
+  white-space: nowrap;
+  transition: border-color .12s ease, background .12s ease;
+}
+
+.sl-toggle-active:hover {
+  border-color: currentColor;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.sl-toggle-active:hover {
+  opacity: 1;
+  border-color: var(--sl-accent);
+}
+
+.sl-delete {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.4;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.3rem;
+  color: inherit;
+}
+
+.sl-delete:hover {
+  opacity: 1;
+}
+
+/* ── the deal ──────────────────────────────────────────────────────────────
+   Which deal a link belongs to is the thing that stops two links for one
+   client being a guess, so it gets a line of its own rather than being
+   crushed into the meta row. */
+.sl-deal {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  min-width: 0;
+}
+
+.sl-deal-name {
+  font-size: 0.72rem;
+  opacity: 0.62;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sl-deal--none {
+  opacity: 0.75;
+  font-style: italic;
+}
+
+/* The stage, coloured by how far along it is. Early is cool and quiet, the
+   middle warms up, won is green, lost is muted red -- so a column of these
+   reads as a pipeline at a glance instead of a column of words. */
+.sl-stage {
+  flex: none;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.sl-stage--early { color: #6f8fb5; }
+.sl-stage--mid   { color: #b8892b; }
+.sl-stage--late  { color: #c2703a; }
+.sl-stage--won   { color: #2e9e52; }
+.sl-stage--lost  { color: #a8555a; }
+
+/* Two links on one deal, which is usually accidental. */
+.sl-dupe {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.08rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(184, 137, 43, 0.55);
+  background: rgba(184, 137, 43, 0.14);
+  color: #c99a3d;
+  font-size: 0.64rem;
+  font-weight: 600;
+}

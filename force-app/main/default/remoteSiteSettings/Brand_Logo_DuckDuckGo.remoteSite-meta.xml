@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RemoteSiteSetting xmlns="http://soap.sforce.com/2006/04/metadata">
+    <url>https://icons.duckduckgo.com</url>
+    <isActive>true</isActive>
+    <disableProtocolSecurity>false</disableProtocolSecurity>
+    <description>Fallback source for the Customize panel's brand-color lookup (GtmBrandLookupController), fetched server-side.</description>
+</RemoteSiteSetting>

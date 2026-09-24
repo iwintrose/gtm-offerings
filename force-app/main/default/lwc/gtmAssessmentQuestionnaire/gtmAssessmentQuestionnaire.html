@@ -1,0 +1,565 @@
+<template>
+    <div class={rootClass}>
+        <div class="q-top"></div>
+
+        <template if:true={loading}>
+            <div class="q-loading">Loading the assessment…</div>
+        </template>
+
+        <template if:false={loading}>
+            <template if:true={submitted}>
+                <section class="q-done">
+                    <p class="q-eyebrow">Assessment received</p>
+                    <h1 class="q-title">Thank you</h1>
+                    <p class="q-lede">{confirmMessage}</p>
+                    <!-- The "book an assessment" half of the CTA's promise.
+                         gtmConfigBooking's confirmation panel rendered this from
+                         the engagement link's ?book= parameter; carried across
+                         when that component was retired (ADR-0008 consequences).
+
+                         NOT carried across: gtmConfigBooking's "Didn't send?
+                         Re-open the request" link. That was the un-guarded
+                         resubmit path, and after the one-per-link server guard
+                         it would only offer a prospect a form the server will
+                         refuse. -->
+                    <template if:true={hasBookingUrl}>
+                        <a
+                            class="q-cta"
+                            href={bookingUrl}
+                            target="_blank"
+                            rel="noopener"
+                        >Pick a time in our calendar →</a>
+                    </template>
+                </section>
+            </template>
+
+            <template if:false={submitted}>
+                <!-- progress -->
+                <header class="q-head">
+                    <p class="q-eyebrow">Migration readiness assessment</p>
+                    <div class="q-progress">
+                        <span class="q-progress-label">{progressLabel}</span>
+                        <div class="q-progress-track">
+                            <div class="q-progress-bar" style={progressStyle}></div>
+                        </div>
+                    </div>
+                    <h1 class="q-title">{step.title}</h1>
+                    <template if:true={isReadiness}>
+                        <p class="q-lede">{groupBlurb}</p>
+                    </template>
+                </header>
+
+                <template if:true={resumeNotice}>
+                    <p class="q-notice" role="status">{resumeNotice}</p>
+                </template>
+                <template if:true={restoredFromLink}>
+                    <p class="q-notice" role="status">
+                        Picked up where you left off. Everything you had answered is below.
+                    </p>
+                </template>
+
+                <template if:true={errorMessage}>
+                    <p class="q-error" role="alert">{errorMessage}</p>
+                </template>
+
+                <!-- ── routing ─────────────────────────────────────────── -->
+                <template if:true={isRouting}>
+                    <p class="q-lede">
+                        These two answers decide which questions the rest of this form asks.
+                        We ask them first for that reason, not for form's sake.
+                    </p>
+                    <div class="q-grid">
+                        <label class={sourceFieldClass}>
+                            <span class="q-label">What are you moving from?</span>
+                            <select data-field="source" onchange={handleRouting}>
+                                <option value="">Select…</option>
+                                <template for:each={sourceOptions} for:item="p">
+                                    <option key={p.value} value={p.value} selected={p.selected}>{p.label}</option>
+                                </template>
+                            </select>
+                        </label>
+                        <label class="q-field">
+                            <span class="q-label">What are you moving to?</span>
+                            <select data-field="target" onchange={handleRouting}>
+                                <option value="">Select…</option>
+                                <template for:each={targetOptions} for:item="p">
+                                    <option key={p.value} value={p.value} selected={p.selected}>{p.label}</option>
+                                </template>
+                            </select>
+                        </label>
+                        <label class="q-field">
+                            <span class="q-label">When would this start?</span>
+                            <select data-field="timeline" onchange={handleRouting}>
+                                <option value="">Select…</option>
+                                <template for:each={timelineChoices} for:item="t">
+                                    <option key={t.value} value={t.value} selected={t.selected}>{t.value}</option>
+                                </template>
+                            </select>
+                        </label>
+                        <label class="q-field">
+                            <span class="q-label">Roughly how large is the estate?</span>
+                            <select data-field="environmentSize" onchange={handleRouting}>
+                                <option value="">Select…</option>
+                                <template for:each={sizeChoices} for:item="sz">
+                                    <option key={sz.value} value={sz.value} selected={sz.selected}>{sz.value}</option>
+                                </template>
+                            </select>
+                        </label>
+                    </div>
+                </template>
+
+                <!-- ── readiness ───────────────────────────────────────── -->
+                <template if:true={isReadiness}>
+                    <!-- The posture statement, ONCE, above the first questions
+                         rather than repeated under every screen of them. -->
+                    <template if:true={postureStatement}>
+                        <p class="q-posture q-posture--lead">{postureStatement}</p>
+                    </template>
+                    <template if:true={resolutionNote}>
+                        <p class="q-posture q-posture--lead">{resolutionNote}</p>
+                    </template>
+                    <template for:each={currentSlots} for:item="slot">
+                        <fieldset key={slot.key} class={slot.cardCls}>
+                            <legend class="q-card-legend">
+                                <span class="q-pos">{slot.positionLabel}</span>
+                                <span class="q-card-label">{slot.label}</span>
+                            </legend>
+                            <p class="q-question">{slot.question}</p>
+                            <div class="q-opts">
+                                <template for:each={slot.options} for:item="opt">
+                                    <div key={opt.key} class={opt.cls}>
+                                        <button
+                                            type="button"
+                                            class="q-opt-btn"
+                                            data-key={slot.key}
+                                            data-value={opt.value}
+                                            data-bucket="readiness"
+                                            disabled={opt.unavailable}
+                                            aria-pressed={opt.checked}
+                                            onclick={handleChoice}
+                                        >
+                                            <span class="q-opt-mark" aria-hidden="true"></span>
+                                            <span class="q-opt-text">{opt.label}</span>
+                                        </button>
+                                        <template if:true={opt.unavailable}>
+                                            <p class="q-opt-why">
+                                                <span class="q-opt-why-tag">Not available on this move</span>
+                                                {opt.unavailableReason}
+                                            </p>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                            <!-- The respondent's hint. Its consultant-facing
+                                 counterpart, the evidence prompt, is not reachable
+                                 from this template: GtmAssessmentInstrument.Slot does
+                                 not expose it to Lightning at all. -->
+                            <template if:true={slot.respondentHint}>
+                                <p class="q-evidence">{slot.respondentHint}</p>
+                            </template>
+                        </fieldset>
+                    </template>
+                </template>
+
+                <!-- ── complexity ──────────────────────────────────────── -->
+                <template if:true={isComplexity}>
+                    <p class="q-lede">
+                        A separate axis, and it is never added to your readiness score.
+                        This one sizes the work; a heavy estate means a bigger engagement,
+                        not a worse answer.
+                    </p>
+                    <template for:each={currentComplexity} for:item="cq">
+                        <fieldset key={cq.key} class={cq.cardCls}>
+                            <legend class="q-card-legend">
+                                <span class="q-card-label">{cq.label}</span>
+                            </legend>
+                            <p class="q-question">{cq.question}</p>
+                            <div class="q-opts">
+                                <template for:each={cq.options} for:item="opt">
+                                    <div key={opt.key} class={opt.cls}>
+                                        <button
+                                            type="button"
+                                            class="q-opt-btn"
+                                            data-key={cq.key}
+                                            data-value={opt.value}
+                                            data-bucket="complexity"
+                                            aria-pressed={opt.checked}
+                                            onclick={handleChoice}
+                                        >
+                                            <span class="q-opt-mark" aria-hidden="true"></span>
+                                            <span class="q-opt-text">{opt.label}</span>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                            <template if:true={cq.respondentHint}>
+                                <p class="q-evidence">{cq.respondentHint}</p>
+                            </template>
+                        </fieldset>
+                    </template>
+                </template>
+
+                <!-- ── supplements ─────────────────────────────────────── -->
+                <template if:true={isSupplements}>
+                    <!-- Once, on the first of these screens. -->
+                    <template if:true={isFirstSupplementStep}>
+                        <div class="q-aside">
+                            <p class="q-aside-tag">These do not affect your score</p>
+                            <p class="q-aside-body">
+                                They ask whether the platform you are moving to is ready to
+                                receive you, which is a different question from how hard your
+                                estate is to move. They are reported on their own index,
+                                beside the readiness score and never inside it.
+                            </p>
+                        </div>
+                    </template>
+                    <!-- Scored and free-text questions are interleaved by
+                         orderedSupplements, so this one loop renders both kinds in
+                         the order they are asked. -->
+                    <template for:each={currentSupplements} for:item="sq">
+                        <fieldset key={sq.key} class="q-card">
+                            <p class="q-question">{sq.question}</p>
+                            <template if:true={sq.scored}>
+                                <div class="q-opts">
+                                    <template for:each={sq.options} for:item="opt">
+                                        <div key={opt.key} class={opt.cls}>
+                                            <button
+                                                type="button"
+                                                class="q-opt-btn"
+                                                data-key={sq.key}
+                                                data-value={opt.value}
+                                                data-bucket="supplement"
+                                                aria-pressed={opt.checked}
+                                                onclick={handleChoice}
+                                            >
+                                                <span class="q-opt-mark" aria-hidden="true"></span>
+                                                <span class="q-opt-text">{opt.label}</span>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template if:true={sq.verbatim}>
+                                <p class="q-note-hint">
+                                    In your own words. Nothing is computed from this — it is
+                                    recorded as you said it.
+                                </p>
+                                <textarea
+                                    class="q-textarea"
+                                    rows="3"
+                                    data-key={sq.key}
+                                    onchange={handleNote}
+                                >{sq.value}</textarea>
+                            </template>
+                        </fieldset>
+                    </template>
+                </template>
+
+                <!-- ── BD context (ADR-0008 section 5) ─────────────────
+                     Eleven fields the readout depends on, carried over when
+                     gtmConfigBooking was retired. Every one optional, the whole
+                     block skippable in one click, and none of them scored. -->
+                <template if:true={isBdContext}>
+                    <template if:true={isFirstBdContextStep}>
+                        <div class="q-aside">
+                            <p class="q-aside-tag">These do not affect your score</p>
+                            <p class="q-aside-body">
+                                Every question here is optional and none of them is
+                                counted. They are what your readout quotes back to
+                                you in your own words rather than as a number, so
+                                anything you do answer makes it more useful — and
+                                skipping the lot costs you nothing.
+                            </p>
+                        </div>
+                    </template>
+                    <template for:each={currentBdContext} for:item="bd">
+                        <fieldset key={bd.key} class="q-card">
+                            <p class="q-question">
+                                {bd.question}
+                                <span class="q-optional">optional</span>
+                            </p>
+                            <template if:true={bd.isTextarea}>
+                                <textarea
+                                    class="q-textarea"
+                                    rows="3"
+                                    data-key={bd.key}
+                                    placeholder={bd.placeholder}
+                                    onchange={handleBdContext}
+                                >{bd.value}</textarea>
+                            </template>
+                            <template if:true={bd.isSelect}>
+                                <select class="q-select" data-key={bd.key} onchange={handleBdContext}>
+                                    <template for:each={bd.options} for:item="opt">
+                                        <option key={opt.key} value={opt.value} selected={opt.selected}>
+                                            {opt.label}
+                                        </option>
+                                    </template>
+                                </select>
+                            </template>
+                            <template if:true={bd.isNumber}>
+                                <input
+                                    class="q-input"
+                                    type="number"
+                                    min="0"
+                                    data-key={bd.key}
+                                    value={bd.value}
+                                    placeholder={bd.placeholder}
+                                    onchange={handleBdContext}
+                                />
+                            </template>
+                            <template if:true={bd.isText}>
+                                <input
+                                    class="q-input"
+                                    type="text"
+                                    data-key={bd.key}
+                                    value={bd.value}
+                                    placeholder={bd.placeholder}
+                                    onchange={handleBdContext}
+                                />
+                            </template>
+                        </fieldset>
+                    </template>
+                </template>
+
+                <!-- ── contact ─────────────────────────────────────────── -->
+                <template if:true={isContact}>
+                    <div class="q-grid">
+                        <label class={nameFieldClass}>
+                            <span class="q-label">Your name</span>
+                            <input type="text" data-field="name" value={contact.name} onchange={handleContact} />
+                        </label>
+                        <label class={emailFieldClass}>
+                            <span class="q-label">Work email</span>
+                            <input type="email" data-field="email" value={contact.email} onchange={handleContact} />
+                        </label>
+                        <label class="q-field">
+                            <span class="q-label">Company</span>
+                            <input type="text" data-field="company" value={contact.company} onchange={handleContact} />
+                        </label>
+                        <label class="q-field">
+                            <span class="q-label">Your role</span>
+                            <input type="text" data-field="role" value={contact.role} onchange={handleContact} />
+                        </label>
+                    </div>
+                    <label class="q-field q-field--wide">
+                        <span class="q-label">Anything we should know before we read this back to you?</span>
+                        <textarea class="q-textarea" rows="3" data-field="context" onchange={handleContact}>{contact.context}</textarea>
+                    </label>
+                </template>
+
+                <!-- ── footer ──────────────────────────────────────────── -->
+                <footer class="q-foot">
+                    <div class="q-foot-left">
+                        <template if:false={isFirstStep}>
+                            <button type="button" class="q-btn q-btn--quiet" onclick={handleBack}>
+                                Back
+                            </button>
+                        </template>
+                        <template if:true={showRunningTotal}>
+                            <span class="q-count">{runningTotalLabel}</span>
+                        </template>
+                    </div>
+                    <!-- Past the WHOLE optional block, not just this screen: a
+                         respondent who does not want to answer these does not
+                         want to be asked the same thing again on the next one. -->
+                    <template if:true={isBdContext}>
+                        <button
+                            type="button"
+                            class="q-btn q-btn--quiet q-skip"
+                            onclick={handleSkipBdContext}
+                        >
+                            Skip this
+                        </button>
+                    </template>
+                    <button
+                        type="button"
+                        class="q-btn q-btn--go"
+                        disabled={submitting}
+                        onclick={handleNext}
+                    >
+                        {nextLabel}
+                    </button>
+                </footer>
+
+                <!-- ── keeping your place ──────────────────────────────
+                     The wording here is state-dependent on purpose. Before a
+                     draft exists it says so; once one does it says what the
+                     link is and who can use it. Someone who assumes they are
+                     saved and is not loses a quarter of an hour and does not
+                     come back. -->
+                <template if:true={hasSavedProgress}>
+                    <section class="q-keep">
+                        <template if:true={nothingSavedYet}>
+                            <p class="q-keep-line">
+                                <span class="q-keep-tag">Saved on this device only</span>
+                                Your answers are kept in this browser, so a refresh or a closed
+                                tab will not lose them. They are not anywhere else yet.
+                            </p>
+                            <div class="q-keep-actions">
+                                <button
+                                    type="button"
+                                    class="q-btn q-btn--quiet q-btn--sm"
+                                    disabled={savingDraft}
+                                    onclick={handleSaveMyPlace}
+                                >{saveButtonLabel}</button>
+                                <span class="q-keep-hint">
+                                    Gives you a link that works on any device. No email needed.
+                                </span>
+                            </div>
+                        </template>
+
+                        <template if:false={nothingSavedYet}>
+                            <p class="q-keep-line">
+                                <span class="q-keep-tag">Your place is saved</span>
+                                Open this link on any device to carry on from the step you are on.
+                                <template if:true={expiryLabel}>
+                                    It works until {expiryLabel}, and stops working as soon as you
+                                    send the assessment.
+                                </template>
+                            </p>
+                            <div class="q-keep-link">
+                                <input
+                                    type="text"
+                                    class="q-keep-url"
+                                    readonly
+                                    value={resumeUrl}
+                                    aria-label="Your resume link"
+                                />
+                                <button
+                                    type="button"
+                                    class="q-btn q-btn--quiet q-btn--sm"
+                                    onclick={handleCopyLink}
+                                >{copyLabel}</button>
+                            </div>
+                            <p class="q-keep-warn">
+                                Anyone with this link can see and change these answers, so keep it
+                                to yourself.
+                            </p>
+                            <div class="q-keep-actions">
+                                <label class="q-keep-email">
+                                    <span class="q-label">Email it to yourself (optional)</span>
+                                    <input
+                                        type="email"
+                                        value={resumeEmail}
+                                        onchange={handleResumeEmail}
+                                        placeholder="you@company.com"
+                                    />
+                                </label>
+                                <button
+                                    type="button"
+                                    class="q-btn q-btn--quiet q-btn--sm"
+                                    disabled={emailBusy}
+                                    onclick={handleEmailLink}
+                                >{emailButtonLabel}</button>
+                            </div>
+                            <p class="q-keep-hint">
+                                Used once, to send you this link. It is not stored, and nobody is
+                                contacted about your assessment until you send it.
+                            </p>
+                            <template if:true={showEmailMessage}>
+                                <p class="q-keep-said">{emailMessage}</p>
+                            </template>
+                        </template>
+
+                        <template if:true={draftError}>
+                            <p class="q-keep-bad">
+                                {draftError}
+                                <button type="button" class="q-linkbtn" onclick={handleNewLink}>
+                                    Get a fresh link
+                                </button>
+                            </p>
+                        </template>
+
+                        <div class="q-startover">
+                            <template if:false={confirmingStartOver}>
+                                <button
+                                    type="button"
+                                    class="slds-button slds-button_neutral q-startover-btn"
+                                    data-id="start-over"
+                                    onclick={handleAskStartOver}
+                                >
+                                    <lightning-icon
+                                        icon-name="utility:refresh"
+                                        size="x-small"
+                                        alternative-text=""
+                                        class="slds-m-right_x-small"
+                                    ></lightning-icon>Start over
+                                </button>
+                                <span class="q-keep-hint">Erases all your answers</span>
+                            </template>
+                            <template if:true={confirmingStartOver}>
+                                <div
+                                    class="q-startover-confirm"
+                                    role="alertdialog"
+                                    aria-labelledby="q-startover-title"
+                                    aria-describedby="q-startover-body"
+                                >
+                                    <h2 id="q-startover-title" class="q-startover-title">
+                                        Start over and erase everything?
+                                    </h2>
+                                    <p id="q-startover-body" class="q-keep-line">
+                                        All of your answers so far will be erased and cannot be
+                                        recovered: your routing choices, every question you have
+                                        answered, and any contact details or notes you have typed.
+                                        You will begin again from the first step.
+                                    </p>
+                                    <div class="q-keep-actions">
+                                        <button
+                                            type="button"
+                                            class="slds-button slds-button_neutral q-startover-btn"
+                                            data-id="keep-answers"
+                                            onclick={handleKeepAnswers}
+                                        >Keep my answers</button>
+                                        <button
+                                            type="button"
+                                            class="slds-button slds-button_destructive q-startover-btn"
+                                            data-id="confirm-start-over"
+                                            onclick={handleConfirmStartOver}
+                                        >Erase everything and start over</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
+                </template>
+            </template>
+        </template>
+
+        <!-- ── token re-auth overlay ────────────────────────────────────
+             Shown in place of a raw error when the 30-minute password-gate
+             token has gone stale. Nothing below it is unmounted -- all
+             answers stay exactly as they were; submit() is simply retried
+             once a fresh token exists. -->
+        <template if:true={showReauthOverlay}>
+            <div class="q-reauth-overlay">
+                <div class="q-reauth-card">
+                    <p class="q-eyebrow">Session timed out</p>
+                    <h2 class="q-title">Enter the access password again</h2>
+                    <p class="q-lede">
+                        Everything you have answered is still here. We just need the access
+                        password once more before we can send it.
+                    </p>
+                    <form onsubmit={handleReauthSubmit}>
+                        <label class="q-field q-field--wide">
+                            <span class="q-label">Access password</span>
+                            <input
+                                type="password"
+                                value={reauthPasswordInput}
+                                onchange={handleReauthInput}
+                                autocomplete="off"
+                            />
+                        </label>
+                        <template if:true={reauthError}>
+                            <p class="q-error" role="alert">{reauthError}</p>
+                        </template>
+                        <button
+                            type="submit"
+                            class="q-btn q-btn--go q-reauth-submit"
+                            disabled={reauthChecking}
+                        >{reauthSubmitLabel}</button>
+                    </form>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

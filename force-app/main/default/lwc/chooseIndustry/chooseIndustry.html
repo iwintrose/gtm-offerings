@@ -1,0 +1,61 @@
+<template>
+  <div class={rootClass}>
+    <template if:true={_loadError}>
+      <div class="load-error" role="status">{_loadError}</div>
+    </template>
+    <template if:true={_industriesEmpty}>
+      <div class="empty-note" role="status" aria-live="polite">No industries have been set up yet, so you can continue without one.</div>
+    </template>
+
+
+    <div class="bar" data-section="header">
+      <div class="bar-wm">
+        <span class="tick"></span> {brandLabel}
+        <span class="bar-tag mono">{brandTag}</span>
+      </div>
+      <div class="bar-right">
+        <a class="bar-back mono" href={offeringsUrl}>← offerings</a>
+        <c-gtm-saved-links-bar></c-gtm-saved-links-bar>
+        <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
+      </div>
+    </div>
+
+    <div class="wrap" data-section="intro">
+      <div class="eyebrow"><span class="bead"></span> {eyebrow}</div>
+      <h1>{headline}</h1>
+      <p class="sub">{subhead}</p>
+
+      <div class="grid">
+        <template for:each={industries} for:item="ind">
+          <div key={ind.key} class={ind.wrapClass} data-section={ind.sectionKey}>
+            <a class="tile" href={ind.href}>
+              <div class="tile-name">{ind.label}</div>
+              <div class="tile-desc">{ind.desc}</div>
+              <div class="tile-go">Configure for this industry →</div>
+            </a>
+          </div>
+        </template>
+
+        <a class="tile skip" href={skipHref}>
+          <div class="tile-name">Skip for now</div>
+          <div class="tile-desc">
+            Start from the generic version and pick an industry later in the
+            Customize panel.
+          </div>
+          <div class="tile-go">Continue without one →</div>
+        </a>
+      </div>
+
+      <div class="footnote">
+        This picks a starting point for the configurator, not a locked-in
+        choice. Company name, industry, and branding all stay editable on the
+        next page through the Customize panel.
+      </div>
+    </div>
+
+    <footer class="pf" data-section="footer">
+      <span>{footerLeft}</span>
+      <span>{footerRight}</span>
+    </footer>
+  </div>
+</template>

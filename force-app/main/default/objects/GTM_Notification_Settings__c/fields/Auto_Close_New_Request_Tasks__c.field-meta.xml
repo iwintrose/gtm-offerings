@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Auto_Close_New_Request_Tasks__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Whether the originating new-request Task (if one was created) auto-closes at GtmReadoutController.submitForApproval time -- the resolved trigger moment per ADR-0010's Unit 3 addendum. Independent of Auto_Close_Submit_Tasks__c, which closes a different Task on the same call.</description>
+    <externalId>false</externalId>
+    <label>Auto Close New Request Tasks</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,23 @@
+.gtm-link-cell {
+    display: block;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.gtm-link-cell_interactive {
+    color: #0176d3;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.gtm-link-cell_interactive:hover,
+.gtm-link-cell_interactive:focus {
+    text-decoration: underline;
+}
+
+.gtm-link-cell_static {
+    color: #444;
+}

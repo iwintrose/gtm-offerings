@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>GTM Instrument Outcome Range</label>
+    <pluralLabel>GTM Instrument Outcome Ranges</pluralLabel>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ControlledByParent</sharingModel>
+    <enableActivities>false</enableActivities>
+    <enableFeeds>false</enableFeeds>
+    <nameField>
+        <type>AutoNumber</type>
+        <label>Outcome Range Number</label>
+        <displayFormat>OR-{0000}</displayFormat>
+    </nameField>
+</CustomObject>

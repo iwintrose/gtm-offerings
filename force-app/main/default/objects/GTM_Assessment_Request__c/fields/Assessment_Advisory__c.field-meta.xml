@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Assessment_Advisory__c</fullName>
+    <label>Advisory Only</label>
+    <description>TRUE when the routing answer named a source/target pair the accelerator cannot process. The readiness tier is suppressed entirely (Assessment_Tier__c is left null) rather than shown with a caveat: banding a migration-feasibility instrument for a pair the tool cannot handle is a promise the offering cannot keep. The raw score and section breakdown are still stored, because they are still useful qualitative input for a manual conversation. Set by GtmAssessmentScoring; see Advisory_Reason__c for which half of the pair was the problem.</description>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+</CustomField>

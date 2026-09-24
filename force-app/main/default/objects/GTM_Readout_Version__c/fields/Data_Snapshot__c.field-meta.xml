@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Data_Snapshot__c</fullName>
+    <description>The structured half of the snapshot, alongside Snapshot__c which holds the prose half. A version row that carried only the prose could not prove what numbers, bands or provenance chips the approver actually saw, because those are rendered from Approved_Data__c rather than written into the prose.</description>
+    <externalId>false</externalId>
+    <label>Data Snapshot</label>
+    <length>131072</length>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>6</visibleLines>
+</CustomField>

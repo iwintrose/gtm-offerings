@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Theme_Key__c</fullName>
+    <label>Theme Key</label>
+    <description>Optional free-text key matching GTM_Instrument_Theme__mdt.DeveloperName -- same plain-text convention as Offering_Key__c (ADR-0009), no formal metadata relationship. Blank means the instrument renders with the default (unthemed) style.</description>
+    <type>Text</type>
+    <length>100</length>
+    <required>false</required>
+</CustomField>

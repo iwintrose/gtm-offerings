@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Archived__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Mirrors the archived state of the offering's tile GTM_Page_Section__c row (Section_Key__c='tile', Template_Type__c='offerings-listing') that shares this record's Offering_Key__c. Set by GtmPageSectionArchiveCascade's cascade, not edited directly -- see docs/architecture/offering-archive-cascade.md.</description>
+    <inlineHelpText>Soft-archives this content row along with its offering. Set by the offering&apos;s tile archive cascade, not edited directly.</inlineHelpText>
+    <label>Archived</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

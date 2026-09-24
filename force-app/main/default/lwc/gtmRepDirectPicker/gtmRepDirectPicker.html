@@ -1,0 +1,44 @@
+<template>
+  <c-gtm-modal-shell is-open={isOpen} title="New assessment (no page)" onclose={handleClose}>
+    <div class="rdp-body">
+      <p class="rdp-hint">
+        Search for the contact this assessment is for. Only a real,
+        existing contact can be picked here -- add them in Sales Cloud
+        first if they aren't found.
+      </p>
+
+      <template if:false={hasSelected}>
+        <div class="rdp-field">
+          <input
+            class="rdp-input"
+            placeholder="Search by contact name, email, or account"
+            value={searchValue}
+            oninput={handleSearchInput}
+          />
+        </div>
+        <template if:true={hasResults}>
+          <div class="rdp-chiprow">
+            <template for:each={results} for:item="c">
+              <button key={c.id} type="button" class="rdp-chip" data-id={c.id} onclick={handleSelect}>{c.summary}</button>
+            </template>
+          </div>
+        </template>
+      </template>
+
+      <template if:true={hasSelected}>
+        <div class="rdp-selected">
+          {selectedSummary}
+          <button type="button" class="rdp-mini-link" onclick={handleChangeSelection}>Change</button>
+        </div>
+      </template>
+
+      <template if:true={_error}>
+        <p class="rdp-error" role="alert">{_error}</p>
+      </template>
+
+      <div class="rdp-actions">
+        <button type="button" class="slds-button slds-button_brand" disabled={confirmDisabled} onclick={handleConfirm}>Start assessment</button>
+      </div>
+    </div>
+  </c-gtm-modal-shell>
+</template>

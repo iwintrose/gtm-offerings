@@ -1,0 +1,48 @@
+<template>
+    <div class="slds-p-around_medium">
+        <h1 class="slds-text-heading_medium slds-m-bottom_small">Scheduled Jobs</h1>
+        <p class="slds-text-body_regular slds-m-bottom_medium">
+            Purge jobs that keep archived content and expired assessment drafts from
+            piling up indefinitely. Each runs on a fixed daily schedule once scheduled here --
+            no Setup or Developer Console access required.
+        </p>
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+
+        <template if:true={loadError}>
+            <div class="slds-text-color_error slds-m-bottom_small">{loadError}</div>
+        </template>
+
+        <template if:false={isLoading}>
+            <table class="slds-table slds-table_bordered">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th scope="col">Job</th>
+                        <th scope="col">Status</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={rows} for:item="row">
+                        <tr key={row.jobKey} data-job-key={row.jobKey} class="scheduled-job-row">
+                            <td>{row.label}</td>
+                            <td>
+                                <span class={row.statusClass}>{row.nextRunDescription}</span>
+                            </td>
+                            <td>
+                                <lightning-button
+                                    label={row.buttonLabel}
+                                    data-job-key={row.jobKey}
+                                    disabled={row.isScheduling}
+                                    onclick={handleScheduleNow}
+                                ></lightning-button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+    </div>
+</template>

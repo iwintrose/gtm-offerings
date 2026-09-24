@@ -1,0 +1,131 @@
+.an {
+    /* Always mounted inside gtmAnalytics' own "Team" view now (issue #177),
+       not a standalone page -- no outer page padding here, that belongs to
+       the parent. */
+    font-variant-numeric: tabular-nums;
+}
+
+.an-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.an-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.an-title--sub {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #374151;
+}
+
+.an-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.an-range {
+    width: 12rem;
+}
+
+.an-err {
+    background: #fdecea;
+    color: #b5432f;
+    border: 1px solid #f3c6bd;
+    border-radius: 0.4rem;
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.an-loading {
+    padding: 2rem 0;
+    display: flex;
+    justify-content: center;
+}
+
+.an-empty {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #e2e5ec;
+    border-radius: 0.6rem;
+    padding: 1rem 1.1rem;
+}
+
+.panel-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #374151;
+    margin: 0 0 0.7rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.data-table th {
+    text-align: left;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7280;
+    border-bottom: 1px solid #e2e5ec;
+    padding: 0 0.6rem 0.6rem 0;
+}
+
+.data-table td {
+    padding: 0.65rem 0.6rem 0.65rem 0;
+    border-bottom: 1px solid #eef0f4;
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table .num {
+    text-align: right;
+}
+
+.offer-cell {
+    font-weight: 600;
+}
+
+.panel + .panel,
+.an-err + .panel {
+    margin-top: 1rem;
+}
+
+.an-more {
+    color: #6b7280;
+    font-size: 0.78rem;
+    margin: -0.2rem 0 0.6rem;
+}
+
+.flagged-row {
+    cursor: pointer;
+}
+
+.flagged-row:hover {
+    background: #f7f8fa;
+}

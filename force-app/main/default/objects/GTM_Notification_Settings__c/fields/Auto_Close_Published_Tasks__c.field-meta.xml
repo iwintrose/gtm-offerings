@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Auto_Close_Published_Tasks__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Only meaningful when Published_Notification_Mode__c = 'Bell + Task'; ignored under 'None'/'Bell Only'.</description>
+    <externalId>false</externalId>
+    <label>Auto Close Published Tasks</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

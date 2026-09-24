@@ -1,0 +1,354 @@
+/* Content Manager home. A landing view, not an editor: it exists so nobody
+   arrives inside a page they did not choose. */
+
+:host {
+    --gtm-text: #181818;
+    --gtm-text-muted: #747474;
+    --gtm-border: #e5e5e5;
+    --gtm-bg-surface: #fff;
+    --gtm-bg-hover: #fafaf9;
+    --gtm-danger: #ba0517;
+    --gtm-radius: 4px;
+    --gtm-font-size-base: 13px;
+    --gtm-font-size-label: 10.5px;
+}
+
+.home {
+    /* See gtmOverview.css: 3vw resolves to the full 2rem on any normal
+       desktop, which is twice Salesforce's own gutter. */
+    padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem;
+    background: #f3f3f3;
+    min-height: 100%;
+    color: #181818;
+    font-size: 13px;
+}
+
+/* Header bar is now c-gtm-page-header (issue B14) — same shape as the
+   Overview page, which shares the component rather than a duplicated
+   pair of home-head and ov-head classes. */
+
+.home-error {
+    display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem;
+    padding: .5rem .7rem; border: 1px solid #fe9339; border-left-width: 3px;
+    border-radius: 4px; background: #fef5ec; font-size: 12.5px;
+}
+.home-error-x { margin-left: auto; border: 0; background: none; cursor: pointer; font-size: 16px; color: #747474; }
+
+.home-loading { position: relative; min-height: 160px; }
+.home-empty { padding: 2.5rem 1rem; text-align: center; color: #444; }
+.home-empty-sub { color: #747474; font-size: 12px; max-width: 26rem; margin: .3rem auto 0; line-height: 1.5; }
+
+/* Grid auto-placement fills cells in source order regardless of how many
+   explicit columns are declared -- with 4 direct children here (search,
+   the conditional no-results line, off-grid, and the aside) and only 2
+   columns, the browser was placing off-grid itself into column 2's narrow
+   18rem track (the search bar was the only thing that landed in column 1's
+   row), squeezing every offering card into a sliver on the right with a
+   dead column of empty space to its left. Every child needs an explicit
+   column now that there are more of them than the grid declares.
+   The row placement is explicit too, and deliberately does NOT use -1 for
+   the sidebar's end line: -1 addresses the *explicit* grid, and this grid
+   only ever declares columns, never grid-template-rows, so its rows are
+   entirely implicit. "1 / -1" collapsed back to just line 1, which pinned
+   the aside to row 1 and forced that row to grow to the sidebar's full
+   height (button + the whole Activity feed) -- exactly the tall grey gap
+   between the search bar and the cards this was meant to fix. Naming row 2
+   on both off-grid and the aside puts them side by side under the search
+   bar instead. */
+.home-body { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1rem; align-items: start; }
+.home-body > .home-search { grid-column: 1; grid-row: 1; }
+.home-body > .home-no-results,
+.home-body > .off-grid { grid-column: 1; grid-row: 2; }
+.home-body > .side { grid-column: 2; grid-row: 2; }
+@media (max-width: 1100px) {
+    .home-body { grid-template-columns: minmax(0, 1fr); }
+    .home-body > .home-search,
+    .home-body > .home-no-results,
+    .home-body > .off-grid,
+    .home-body > .side { grid-column: 1; grid-row: auto; }
+}
+
+/* ── offering cards ──────────────────────────────────────────────────────────
+   Two columns, so a second offering sits beside the first rather than below
+   it. The framework holds the first cell: the pages it owns sit above every
+   offering, so it leads rather than queues. */
+.off-grid {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem; align-items: stretch;
+}
+@media (max-width: 780px) { .off-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.off {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
+    display: flex; flex-direction: column;
+}
+/* Every card carries the same 3px rail; the colour is what differs, and it
+   matches the card's own icon. The framework had the only accent, which read
+   as "this one is special" rather than "these are two kinds of thing" -- an
+   exception where a system was wanted. */
+.off { border-top: 3px solid #747474; }
+.off--framework { border-top-color: #06a59a; }
+.off:not(.off--framework) { border-top-color: #9050e9; }
+
+/* A fixed slot for the header: one card's title wraps to two lines and
+   another's does not, which is what pushed the bodies out of line with each
+   other. The slot is tall enough for two lines and centres one. */
+.off-head {
+    padding: .75rem .75rem .6rem;
+    border-bottom: 1px solid #f3f3f3;
+    min-height: 4.5rem;
+    display: flex;
+    align-items: center;
+}
+.off-head .slds-media { width: 100%; }
+.off-head .slds-media { display: flex; align-items: center; gap: .6rem; }
+.off-head .slds-media__body { min-width: 0; flex: 1 1 auto; }
+.off-name {
+    margin: 0; font-size: 15px; font-weight: 700; line-height: 1.25;
+    display: flex; align-items: center; gap: .3rem; min-width: 0;
+}
+.off-name > span {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.off-rename {
+    border: 0; background: none; padding: .1rem; cursor: pointer; color: #747474;
+    border-radius: 3px; line-height: 0; opacity: 0; transition: opacity .12s;
+}
+.off:hover .off-rename, .off-rename:focus { opacity: 1; }
+.off-rename:hover { background: #f3f3f3; color: #0176d3; }
+.off-key {
+    margin: .1rem 0 0; font-size: 11px; color: #747474;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.off-stat { flex: none; }
+.off-headright {
+    display: flex; flex-direction: column; align-items: flex-end; gap: .25rem;
+}
+/* Steady-state onboarding hint: what's still unbuilt, named. Sits under the
+   summary badge and renders nothing once an offering is fully built. */
+.off-nextstep {
+    font-size: 10.5px; color: #8c6a1a; text-align: right; max-width: 11rem;
+    line-height: 1.35;
+}
+/* The rename used to put the field and two buttons on one line inside a card
+   header, which is only as wide as half the grid -- the input ended up a few
+   characters wide and you could not read what you were typing. It gets the
+   full width of the card now and the buttons sit under it. */
+.off-rename-row { display: flex; flex-direction: column; gap: .4rem; width: 100%; }
+.off-rename-in { width: 100%; }
+.off-rename-acts { display: flex; gap: .35rem; }
+.off-rename-note { white-space: normal; }
+
+/* Renaming needs room, so the header grows for it rather than squeezing. */
+.off-head:has(.off-rename-row) { min-height: 0; align-items: flex-start; }
+
+.off-body { flex: 1 1 auto; display: flex; flex-direction: column; }
+.off-body .pg-list { flex: 1 1 auto; }
+
+.off-foot {
+    padding: .4rem .5rem; border-top: 1px solid #f3f3f3; background: #fafaf9;
+    display: flex; align-items: center; gap: .5rem;
+}
+.off-foot-btn {
+    display: flex; align-items: center; gap: .35rem; flex: 1 1 auto; min-width: 0;
+    border: 0; background: none; cursor: pointer; padding: 0 .35rem;
+    min-height: var(--gtm-control-h, 32px); box-sizing: border-box;
+    font: inherit; font-size: 12px; color: #0176d3; border-radius: 3px;
+}
+.off-foot-btn:hover { background: #eef4ff; }
+
+/* Settings is a different kind of action from "add a page" -- muted and
+   right-aligned rather than styled like the primary blue action, and set off
+   by a divider so it doesn't read as one more item in the same list. */
+.off-foot-settings {
+    display: flex; align-items: center; gap: .3rem; flex: none;
+    border: 0; border-left: 1px solid #e5e5e5; background: none; cursor: pointer;
+    padding: .3rem .35rem .3rem .6rem; margin-left: .1rem;
+    font: inherit; font-size: 12px; color: #706e6b; border-radius: 0;
+}
+.off-foot-settings:hover { color: #0176d3; }
+.off-foot-settings lightning-icon { --sds-c-icon-color-foreground-default: #706e6b; }
+.off-foot-settings:hover lightning-icon { --sds-c-icon-color-foreground-default: #0176d3; }
+
+/* "Manage offering" (dashboard Status/Archive) sits between the primary
+   "add a page" action and "Settings" -- its own divider on the left keeps it
+   visually distinct from both, so it never reads as a second Settings link
+   or as one more item in the add-a-page action. */
+.off-foot-manage {
+    display: flex; align-items: center; gap: .3rem; flex: none;
+    border: 0; border-left: 1px solid #e5e5e5; background: none; cursor: pointer;
+    padding: .3rem .35rem .3rem .6rem; margin-left: .1rem;
+    font: inherit; font-size: 12px; color: #706e6b; border-radius: 0;
+}
+.off-foot-manage:hover { color: #0176d3; }
+.off-foot-manage lightning-icon { --sds-c-icon-color-foreground-default: #706e6b; }
+.off-foot-manage:hover lightning-icon { --sds-c-icon-color-foreground-default: #0176d3; }
+
+/* The Draft/Archived badge on a card's own title, so a hidden offering reads
+   as hidden without opening Manage to find out. */
+.off-manage-badge { margin-left: .35rem; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+
+/* Manage modal rows: a hint sentence paired with the one button that acts on
+   it, stacked so the consequence is read before the button is reached. */
+.mg-row { display: flex; flex-direction: column; gap: .4rem; }
+.mg-row lightning-button { align-self: flex-start; }
+
+.modal-danger { --slds-c-button-text-color: #ba0517; }
+.modal-danger button { color: #ba0517; }
+
+.pg-icon { flex: none; --sds-c-icon-color-foreground-default: #747474; }
+.side-card { border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+             box-shadow: 0 1px 1px rgba(0,0,0,.05); }
+.side-card .slds-card__header { padding: .75rem .75rem .5rem; border-bottom: 1px solid #f3f3f3; }
+.side-card .slds-media { display: flex; align-items: center; gap: .6rem; }
+
+.pg-list { list-style: none; margin: 0; padding: .3rem; display: flex; flex-direction: column; gap: 1px; }
+.pg-row { display: flex; align-items: center; gap: .15rem; }
+.pg {
+    flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: .6rem;
+    padding: .55rem .6rem; border: 1px solid transparent; border-radius: 4px;
+    background: none; cursor: pointer; text-align: left; font: inherit; color: inherit;
+}
+/* Same "reveal on hover" treatment as an offering's own rename button. */
+.pg-rename {
+    flex: none; border: 0; background: none; padding: .35rem; cursor: pointer;
+    color: #747474; border-radius: 3px; line-height: 0; opacity: 0; transition: opacity .12s;
+}
+.pg-row:hover .pg-rename, .pg-rename:focus { opacity: 1; }
+.pg-rename:hover { background: #f3f3f3; color: #0176d3; }
+.pg-rename-row {
+    display: flex; align-items: center; gap: .5rem; width: 100%;
+    padding: .35rem .6rem;
+}
+.pg-rename-in { flex: 1 1 auto; min-width: 0; }
+.pg-rename-acts { display: flex; gap: .35rem; flex: none; }
+.pg:hover { background: #eef4ff; border-color: #0176d3; }
+.pg-main { display: flex; flex-direction: column; min-width: 0; }
+.pg-name { font-size: 13px; font-weight: 600; }
+.pg-detail { font-size: 11px; color: #747474; margin-top: 1px; }
+.pg-go { margin-left: auto; color: #0176d3; }
+.pg--unbuilt { cursor: not-allowed; opacity: .55; }
+.pg--unbuilt:hover { background: none; border-color: transparent; }
+.pg-flag {
+    margin-left: auto; font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+    color: #8c6a1a; background: #fef5ec; border: 1px solid #fe9339;
+    border-radius: 3px; padding: .05rem .3rem; white-space: nowrap;
+}
+
+/* ── recent edits ────────────────────────────────────────────────────────── */
+.side { display: flex; flex-direction: column; gap: 1rem; }
+.side-h { margin: 0; font-size: 14px; font-weight: 700; }
+.side-card .slds-card__body_inner { padding: .4rem .35rem .5rem; }
+.side-empty { margin: .3rem .5rem .5rem; font-size: 12px; color: #747474; }
+.rec-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.rec {
+    width: 100%; display: flex; flex-direction: column; gap: 1px;
+    padding: .45rem .5rem; border: 1px solid transparent; border-radius: 4px;
+    background: none; cursor: pointer; text-align: left; font: inherit; color: inherit;
+}
+.rec:hover { background: #eef4ff; border-color: #0176d3; }
+.rec-what { font-size: 12.5px; font-weight: 600; }
+.rec-where { font-size: 11px; color: #747474; }
+.rec-when {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10.5px; color: #969696;
+}
+
+/* ── modal ───────────────────────────────────────────────────────────────── */
+.scrim {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,20,24,.5); display: grid; place-items: center; padding: 1rem;
+}
+.modal {
+    width: min(28rem, 100%); background: #fff; border-radius: 8px;
+    box-shadow: 0 10px 34px rgba(0,0,0,.22);
+    /* Not overflow:hidden — a combobox drops its menu outside the modal box,
+       and clipping it makes the picker look broken. The rounded corners are
+       kept by clipping only the header and footer, which are what touch them. */
+    overflow: visible;
+}
+.modal-h { border-radius: 8px 8px 0 0; }
+.modal-f { border-radius: 0 0 8px 8px; }
+.modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid #e5e5e5; }
+.modal-h h2 { margin: 0 0 .2rem; font-size: 16px; font-weight: 700; }
+.modal-h p { margin: 0; font-size: 12.5px; color: #444; }
+.modal-b { padding: .9rem 1.15rem; display: flex; flex-direction: column; gap: .7rem; }
+.modal-note { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
+.modal-f {
+    padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
+    display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
+}
+
+/* ── flare, where it carries meaning ───────────────────────────────────────
+   Salesforce's own surfaces are calm, so the character here comes from
+   rhythm and response rather than ornament: cards that answer the pointer,
+   page rows that show where they lead, numbers that read as numbers. */
+
+.off {
+  transition: box-shadow .14s ease, transform .14s ease, border-color .14s ease;
+}
+.off:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .09);
+  transform: translateY(-1px);
+}
+
+/* A page row is a doorway. The chevron leans toward the door on approach. */
+.pg { transition: background .12s ease, border-color .12s ease; }
+.pg .pg-go { transition: transform .14s ease, opacity .14s ease; opacity: .45; }
+.pg:hover .pg-go { transform: translateX(3px); opacity: 1; }
+
+/* An empty page is not a failure state, so it reads as an invitation rather
+   than a warning: dashed, quiet, and it firms up when you approach it. */
+.pg--unbuilt { border-style: dashed; border-color: #d8d8d8; }
+.pg--unbuilt:hover { border-style: solid; }
+.pg-flag {
+  background: #f3f3f3;
+  color: #6b6b6b;
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* The count on a card header is a fact, so it is set like one. */
+.off-stat { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .off, .pg, .pg .pg-go { transition: none; }
+  .off:hover { transform: none; }
+  .pg:hover .pg-go { transform: none; }
+}
+
+/* ── SLDS spacing that a grid must not inherit ─────────────────────────────
+   SLDS ships `.slds-card + .slds-card { margin-top: 1rem }` for cards stacked
+   down a page. In a grid every card after the first is an adjacent sibling,
+   so each one was pushed a rem below its neighbour while the grid stretched
+   them to a common bottom -- the cards looked bottom-aligned because the
+   margin ate the top. The same blueprint puts margins on the header, body and
+   footer, which this file already spaces itself.
+
+   The selectors are two classes deep on purpose: `.slds-card + .slds-card` is
+   specificity (0,2,0) and would otherwise win. */
+.off-grid > .off + .off,
+.off-grid > .off { margin: 0; }
+.off-grid > .off > .slds-card__header,
+.off-grid > .off > .slds-card__body,
+.off-grid > .off > .slds-card__footer { margin: 0; }
+
+/* Home responsive (issue home-responsive): one column and tighter gaps on
+   small widths; controls keep the shared 32px height token. */
+.home-body, .off-grid, .off { min-width: 0; }
+.home-body .slds-input, .home-body .slds-button, .home-body .slds-combobox__input { min-height: var(--gtm-control-h, 32px); }
+@media (max-width: 768px) {
+    .home-body, .off-grid { gap: .75rem; }
+    .off-grid { grid-template-columns: minmax(0, 1fr); }
+    .home-body > .side { min-width: 0; overflow-wrap: anywhere; }
+}
+@media (max-width: 480px) {
+    .home-body, .off-grid { gap: .5rem; }
+    .home-empty-sub { max-width: 100%; }
+}

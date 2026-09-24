@@ -1,0 +1,74 @@
+<template>
+  <section class="ra">
+    <header class="ra-head">
+      <lightning-icon icon-name="utility:einstein" size="x-small"></lightning-icon>
+      <span class="ra-title">GUS</span>
+      <span class="ra-sub">Your deal context, folded into the readout.</span>
+      <lightning-button class="ra-toggle" label={toggleLabel} onclick={handleToggle}></lightning-button>
+    </header>
+
+    <template if:true={isOpen}>
+      <template if:true={hasReadOnlyNotice}>
+        <div class="ra-notice" role="status">
+          <lightning-icon icon-name="utility:lock" size="xx-small"></lightning-icon>
+          <span>{readOnlyNotice}</span>
+        </div>
+      </template>
+
+      <div class="ra-grid">
+        <!-- What the rep knows that the questionnaire never asked. Internal:
+             never published, never part of the readout content. -->
+        <div class="ra-col">
+          <span class="ra-label">Deal context</span>
+          <p class="ra-hint">
+            Discovery notes, call summaries, anything the prospect did not put in the assessment.
+            Internal only — this is never published and never sent to the client.
+          </p>
+          <lightning-textarea
+            class="ra-notes"
+            label="Deal context"
+            variant="label-hidden"
+            value={notes}
+            onchange={handleNotesChange}
+            placeholder="e.g. On the 14th they told us the SFMC contract ends in March and procurement is the real blocker, not the tech."
+          ></lightning-textarea>
+          <div class="ra-notes-foot">
+            <lightning-button label="Save context" onclick={handleSaveNotes}
+                              disabled={saveNotesDisabled}></lightning-button>
+          </div>
+
+          <label class="ra-label ra-label--spaced">Files</label>
+          <p class="ra-hint">
+            Attach anything. GUS reads plain text, Markdown, CSV, TSV, JSON, XML and log files.
+            It <strong>cannot</strong> read PDF, Word, PowerPoint, Excel or images — Salesforce has no
+            parser for them — so it will name the file and ask you to paste the part that matters.
+          </p>
+          <lightning-file-upload
+            label="Attach a file"
+            record-id={uploadRecordId}
+            onuploadfinished={handleUploadFinished}
+            multiple>
+          </lightning-file-upload>
+          <template if:true={hasUploads}>
+            <ul class="ra-files">
+              <template for:each={uploadedFiles} for:item="f">
+                <li key={f.id} class="ra-file">{f.name}</li>
+              </template>
+            </ul>
+          </template>
+        </div>
+
+        <!-- The conversation. The server owns the prompt and the tools; this
+             is the same component the configurator uses, in readout mode. -->
+        <div class="ra-col ra-col--chat">
+          <c-gtm-agent-chat
+            mode="readout"
+            readout-id={readoutId}
+            working-draft={workingDraft}
+            onagentdelta={handleAgentDelta}
+          ></c-gtm-agent-chat>
+        </div>
+      </div>
+    </template>
+  </section>
+</template>

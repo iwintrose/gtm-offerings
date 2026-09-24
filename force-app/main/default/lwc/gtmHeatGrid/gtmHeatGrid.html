@@ -1,0 +1,88 @@
+<template>
+    <article class="slds-card ov-card ov-heat">
+        <div class="slds-card__header ov-card-h">
+            <span class="ov-ic ov-ic--heat">
+                <lightning-icon icon-name="standard:high_velocity_sales" size="small"></lightning-icon>
+            </span>
+            <h2 class="ov-h">Who's hot right now</h2>
+        </div>
+        <div class="slds-card__body ov-card-b">
+    <div class="heat-grid-scroll">
+    <div class="heat-grid" role="table" aria-label="Who's hot right now">
+        <template if:true={loading}>
+            <div class="heat-grid__status">
+                <lightning-spinner alternative-text="Loading who's hot right now" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:true={error}>
+            <div class="heat-grid__status heat-grid__status--error" role="alert">{error}</div>
+        </template>
+
+        <template if:true={showEmpty}>
+            <div class="heat-grid__status">No account activity in the last 14 days.</div>
+        </template>
+
+        <template if:true={hasRows}>
+            <div class="heat-grid__header" role="row">
+                <span class="heat-grid__col heat-grid__col--account">Account</span>
+                <span class="heat-grid__col heat-grid__col--contact">Contact</span>
+                <span class="heat-grid__col heat-grid__col--stage">Stage</span>
+                <span class="heat-grid__col heat-grid__col--strip">Last 14 days</span>
+                <span class="heat-grid__col heat-grid__col--signal">Latest signal</span>
+                <span class="heat-grid__col heat-grid__col--action">Next best action</span>
+            </div>
+
+            <template for:each={rows} for:item="row">
+                <div class="heat-grid__row" role="row" key={row.key} onrowaction={handleLinkCellAction}>
+                    <span class="heat-grid__col heat-grid__col--account" role="cell">
+                        <c-gtm-link-cell value={row.accountName} type-attributes={row.accountCellAttrs}></c-gtm-link-cell>
+                    </span>
+                    <span class="heat-grid__col heat-grid__col--contact" role="cell">
+                        <c-gtm-link-cell value={row.contactName} type-attributes={row.contactCellAttrs}></c-gtm-link-cell>
+                    </span>
+                    <span class="heat-grid__col heat-grid__col--stage" role="cell">
+                        <span class="gtm-link-cell gtm-link-cell_static" title={row.opportunityStage}>{row.opportunityStage}</span>
+                    </span>
+                    <span class="heat-grid__col heat-grid__col--strip" role="cell">
+                        <span class="heat-strip">
+                            <template for:each={row.days} for:item="day">
+                                <span key={day.key} class={day.cellClass} title={day.title}></span>
+                            </template>
+                        </span>
+                    </span>
+                    <span class="heat-grid__col heat-grid__col--signal" role="cell">
+                        <span class="gtm-link-cell gtm-link-cell_static" title={row.latestSignal}>{row.latestSignal}</span>
+                    </span>
+                    <span class="heat-grid__col heat-grid__col--action" role="cell">
+                        <!-- A disabled HTML element never fires hover/focus events, so a
+                             `title` on a disabled lightning-button's inner <button> is
+                             inert -- it can never surface. Wrapping in this span (which is
+                             never itself disabled) keeps the tooltip alive on hover/focus,
+                             and tabindex="0" (only when the button is disabled -- see
+                             gtmHeatGridModel's actionTooltipTabIndex) gives keyboard users
+                             a stop to land on and see it too, since they'd otherwise skip
+                             straight past a disabled button. -->
+                        <span
+                            class="heat-grid__action-tip gtm-link-cell"
+                            title={row.actionTitle}
+                            tabindex={row.actionTooltipTabIndex}
+                        >
+                            <lightning-button
+                                label={row.actionLabel}
+                                variant={row.actionVariant}
+                                disabled={row.actionDisabled}
+                                data-action={row.actionKey}
+                                data-account-id={row.accountId}
+                                onclick={handleActionClick}
+                            ></lightning-button>
+                        </span>
+                    </span>
+                </div>
+            </template>
+        </template>
+    </div>
+    </div>
+        </div>
+    </article>
+</template>

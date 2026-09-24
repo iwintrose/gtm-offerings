@@ -1,0 +1,150 @@
+<template>
+  <div class="an">
+    <header class="an-bar">
+      <h2 class="an-title an-title--sub">Team</h2>
+      <div class="an-controls">
+        <lightning-combobox
+          class="an-range"
+          variant="label-hidden"
+          value={rangeKey}
+          options={rangeOptions}
+          onchange={handleRangeChange}>
+        </lightning-combobox>
+        <lightning-button-icon icon-name="utility:refresh" variant="border-filled"
+                                alternative-text="Refresh" title="Refresh"
+                                onclick={handleRefresh}></lightning-button-icon>
+      </div>
+    </header>
+
+    <template if:true={loadError}>
+      <div class="an-err">{loadError}</div>
+    </template>
+
+    <template if:true={isLoading}>
+      <div class="an-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+    </template>
+
+    <template if:true={showEmpty}>
+      <p class="an-empty">No reps have created engagement links in this range yet.</p>
+    </template>
+
+    <template if:true={hasRows}>
+      <div class="panel table-panel">
+        <h2 class="panel-title">Leaderboard, by readouts published</h2>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Rep</th>
+                <th class="num">Links</th>
+                <th class="num">Submitted</th>
+                <th class="num">Avg. score</th>
+                <th class="num">Published</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={rows} for:item="r">
+                <tr key={r.key}>
+                  <td class="offer-cell">{r.repName}</td>
+                  <td class="num">{r.links}</td>
+                  <td class="num">{r.submitted}</td>
+                  <td class="num">{r.avgScore}</td>
+                  <td class="num">{r.published}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
+
+    <template if:true={flaggedError}>
+      <div class="an-err">{flaggedError}</div>
+    </template>
+
+    <template if:true={flaggedLoading}>
+      <div class="an-loading"><lightning-spinner alternative-text="Loading flagged assessments" size="small"></lightning-spinner></div>
+    </template>
+
+    <template if:true={showFlaggedEmpty}>
+      <p class="an-empty">No flagged or advisory assessments in this range.</p>
+    </template>
+
+    <template if:true={hasFlaggedRows}>
+      <div class="panel table-panel">
+        <h2 class="panel-title">Flagged &amp; advisory assessments</h2>
+        <template if:true={flaggedHasMore}>
+          <p class="an-more">{flaggedMoreMessage}</p>
+        </template>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Request</th>
+                <th>Rep</th>
+                <th>Created</th>
+                <th>Reason(s)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={flaggedRows} for:item="r">
+                <tr key={r.key} data-id={r.key} onclick={handleFlaggedRowClick} class="flagged-row">
+                  <td class="offer-cell">{r.requestName}</td>
+                  <td>{r.repName}</td>
+                  <td>{r.createdDate}</td>
+                  <td>{r.reasons}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
+
+    <template if:true={versionLoadError}>
+      <div class="an-err">{versionLoadError}</div>
+    </template>
+
+    <template if:true={versionIsLoading}>
+      <div class="an-loading"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+    </template>
+
+    <template if:true={versionShowEmpty}>
+      <p class="an-empty">No assessment requests in this range yet.</p>
+    </template>
+
+    <template if:true={versionHasRows}>
+      <div class="panel table-panel">
+        <h2 class="panel-title">Instrument versions, by pair</h2>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Pair</th>
+                <th>Version</th>
+                <th class="num">Submitted</th>
+                <th class="num">Avg. score</th>
+                <th>Tier mix</th>
+                <th class="num">Published</th>
+                <th class="num">Publish rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={versionRows} for:item="r">
+                <tr key={r.key}>
+                  <td class="offer-cell">{r.pairKey}</td>
+                  <td>{r.version}</td>
+                  <td class="num">{r.submitted}</td>
+                  <td class="num">{r.avgScore}</td>
+                  <td>{r.tierMix}</td>
+                  <td class="num">{r.published}</td>
+                  <td class="num">{r.publishRate}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>

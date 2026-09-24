@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Engagement_Link_Info__c</fullName>
+    <label>Engagement Link Info</label>
+    <description>Read-only, clickable "Offering - SC Page Name" pointing back at the Engagement_Link__c this Opportunity came from, so the source is visible without clicking through a separate related list. Blank when Engagement_Link__c isn't set (e.g. Opportunities created outside this app).</description>
+    <type>Text</type>
+    <formula>IF(
+    ISBLANK(Engagement_Link__c),
+    &quot;&quot;,
+    HYPERLINK(
+        &quot;/lightning/n/GTM_Pages?c__template=link&amp;c__recordId=&quot; &amp; Engagement_Link__c,
+        CASE(Engagement_Link__r.Offering__c,
+            &quot;migration-accelerator&quot;, &quot;Migration Accelerator&quot;,
+            Engagement_Link__r.Offering__c)
+        &amp; &quot; - &quot; &amp; Engagement_Link__r.Name,
+        &quot;_self&quot;
+    )
+)</formula>
+    <formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs>
+</CustomField>

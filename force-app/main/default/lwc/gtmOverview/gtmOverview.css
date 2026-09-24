@@ -1,0 +1,577 @@
+:host { display: block; }
+/* Mounted straight onto a tab, so nothing above supplies the gutter: without
+   horizontal padding the cards touch the browser edge. The amount is the
+   judgement call -- the Content Manager's clamp(1rem, 3vw, 2rem) resolves to
+   the full 2rem on any normal desktop, which is twice Salesforce's own page
+   gutter and costs a column's worth of the deals table. This is the same
+   shape, tightened, and both pages now use it. */
+.ov { padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem; font-size: 13px; color: #181818; background: #f3f3f3; min-height: 100%; }
+
+/* Header bar is now c-gtm-page-header (issue B14) — same shape as the
+   Content Manager home, which shares the component rather than a
+   duplicated pair of ov-head and home-head classes. */
+
+/* Today/Offerings toggle (issue overview-bd-heat-redesign-1-layout-toggle):
+   a plain two-button segmented control, existing tokens only. */
+.ov-view-toggle {
+    display: inline-flex; gap: 0; margin: 0 0 1rem;
+    border: 1px solid #d8d8d8; border-radius: 999px; overflow: hidden;
+    width: fit-content;
+}
+.ov-toggle-btn {
+    border: 0; background: #fff; color: #3e3e3c;
+    font-size: 12.5px; font-weight: 600; line-height: 1.4;
+    padding: .4rem 1rem; cursor: pointer;
+}
+.ov-toggle-btn + .ov-toggle-btn { border-left: 1px solid #d8d8d8; }
+.ov-toggle-btn:hover { background: #f7f7f7; }
+.ov-toggle-btn--active { background: #0176d3; color: #fff; }
+.ov-toggle-btn--active:hover { background: #0176d3; }
+
+/* A column so the body takes the slack: with the grid stretching the cards to
+   one height, a non-flex card leaves its content floating at the top and the
+   card bottom empty. */
+.ov-card {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.ov-card-h {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
+    min-height: 3rem;
+}
+.ov-card-b { padding: .5rem .6rem .65rem; flex: 1 1 auto; }
+
+/* Icon-circle slot for every .ov-card-h header (issue
+   overview-bd-heat-redesign-5-visual-parity): one shared shape, a
+   per-card background-color modifier, and the icon's own foreground
+   color set via lightning-icon's SLDS 2 styling hook rather than
+   swapping components. Applied uniformly to all six Today-view cards --
+   the three widgets built in issues -2/-3/-4 plus the two pre-existing
+   cards (Opportunities to follow up on, Assessment results) that only
+   ever had a bare icon dropped into the header row. */
+.ov-ic {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 28px;
+}
+.ov-ic--heat, .ov-ic--deals { background-color: #fdece0; }
+.ov-ic--heat lightning-icon, .ov-ic--deals lightning-icon { --sds-c-icon-color-foreground: #c23934; }
+.ov-ic--tasks { background-color: #eef4fb; }
+.ov-ic--tasks lightning-icon { --sds-c-icon-color-foreground: #0b5cab; }
+.ov-ic--readouts, .ov-ic--results { background-color: #e3f4ea; }
+.ov-ic--readouts lightning-icon, .ov-ic--results lightning-icon { --sds-c-icon-color-foreground: #2e844a; }
+.ov-ic--offerings { background-color: #f2e9fc; }
+.ov-ic--offerings lightning-icon { --sds-c-icon-color-foreground: #9050e9; }
+.ov-err {
+    margin-bottom: 0.75rem; padding: 0.6rem 0.8rem;
+    border: 1px solid #f2c2c2; border-radius: 5px; background: #fdf2f2; color: #ba0517;
+}
+/* Guidance, not failure -- deliberately quieter than .ov-err above, which is
+   the red alert. Nothing went wrong here; the rep just has to say which
+   offering they mean. */
+.ov-hint {
+    margin-bottom: 0.75rem; padding: 0.5rem 0.8rem;
+    border: 1px solid #e0e5ee; border-radius: 5px; background: #f7f9fb; color: #3e3e3c;
+    font-size: 0.82rem;
+}
+
+/* Row 2: the funnel and the follow-up table, side by side. One custom
+   property sets the CAP for every card that uses it (both Row 2 cards and the
+   Row 3 results card). Cards are as tall as their content and never grow past
+   the cap; side by side, the grid stretches the shorter card to match. */
+.ov-cols {
+    --ov-row2-cap: 470px;
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 1rem;
+    align-items: stretch;
+}
+.ov-row2-card { height: auto; max-height: var(--ov-row2-cap); min-height: 0; }
+@media (max-width: 1100px) {
+    /* Stacked, each card is content-sized and capped on its own; the cap
+       narrows so a short viewport cannot trap a taller scroll region. */
+    .ov-cols { grid-template-columns: minmax(0, 1fr); --ov-row2-cap: min(470px, 70vh); }
+}
+/* Row 2/Row 3 each hold a single card now that the funnel card and the
+   Offerings card have moved out (issue
+   overview-bd-heat-redesign-1-layout-toggle): one column, full width,
+   rather than a two-column grid stretching a lone child. */
+.ov-row2--solo, .ov-row3--solo { grid-template-columns: minmax(0, 1fr); }
+
+/* Daily widgets row (issue overview-bd-heat-redesign-4-integration): tasks
+   due today beside readouts awaiting response, equal-width siblings. Reuses
+   .ov-cols for gap/align-items and the single 1100px stack breakpoint; each
+   child widget now renders its own full .ov-card chrome (issue
+   overview-bd-heat-redesign-5-visual-parity), so this row adds spacing
+   only, not a card wrapper of its own. */
+.ov-daily-widgets {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    margin: 0 0 1rem;
+}
+@media (max-width: 1100px) {
+    .ov-daily-widgets { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Heat grid card (issue overview-heat-grid-spacing-fix): custom elements
+   default to display: inline with no box model, so the bare
+   <c-gtm-heat-grid> host renders with no bottom spacing and crowds the
+   Act Today row beneath it. Style the host tag from the parent (this is
+   normal light-DOM styling, not reaching into the child's shadow DOM) to
+   match the 1rem bottom-margin convention every other row on this page
+   uses (.ov-daily-widgets, .at-row). */
+c-gtm-heat-grid {
+    display: block;
+    margin-bottom: 1rem;
+}
+
+/* Row 1: "Act today" tiles. Existing tokens only (no new hex). */
+.at-row {
+    list-style: none; margin: 0 0 1rem; padding: 0;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem;
+}
+.at-error { margin-bottom: 1rem; }
+.at-tile {
+    display: flex; flex-direction: column; gap: .15rem; min-width: 0;
+    padding: .7rem .8rem .8rem;
+    border: 1px solid #e5e5e5; border-top: 3px solid #0176d3; border-radius: .25rem;
+    background: #fff; box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    cursor: pointer;
+}
+.at-tile:hover { background: #f7f7f7; }
+.at-tile:focus-visible { outline: 2px solid #0176d3; outline-offset: 1px; }
+.at-tile--quiet { border-top-color: #a1500a; }
+.at-tile--zero { border-top-color: #e5e5e5; }
+.at-label { font-size: 11.5px; color: #747474; }
+.at-count { font-size: 26px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; color: #181818; }
+.at-hint { font-size: 11.5px; color: #5c5c5c; line-height: 1.4; }
+.at-names { list-style: none; margin: .3rem 0 0; padding: 0; }
+/* Issue 274: this used to duplicate gtmLinkCell.css's overflow/ellipsis
+   rules under its OWN class name (`.at-name`) with no visible relationship
+   to the original. A cross-bundle CSS `@import 'c/gtmLinkCell'` was tried to
+   share the real rules directly, but it also pulls in gtmLinkCell's JS
+   module as a dependency and broke Jest compilation ("Class constructor
+   GtmLinkCell cannot be invoked without 'new'") -- there's no working
+   shared-stylesheet mechanism for a real component bundle in this SDK
+   version (shadow DOM scopes each component's CSS to itself; see
+   gtmHeatGrid.css's identical note). This element instead now carries BOTH
+   `.at-name` (font treatment, below) and the shared `.gtm-link-cell` class
+   name in its markup, and this rule is kept intentionally identical to
+   gtmLinkCell.css's `.gtm-link-cell` truncation block -- one class name,
+   traceable by name across all three files, standing in for a real shared
+   stylesheet until one exists. */
+.at-name {
+    font-size: 12.5px; font-weight: 600; color: #181818;
+}
+.gtm-link-cell {
+    display: block;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+@media (max-width: 1100px) {
+    .at-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.ov-col {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
+    padding: 0.7rem 0.8rem 0.9rem;
+}
+/* Inside a card header this is the card's title, so it is a title, not a
+   micro-label above a group. */
+.ov-h { margin: 0; font-size: 14px; font-weight: 700; color: #181818; }
+.ov-empty { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
+
+/* ── left: stats ─────────────────────────────────────────────────────────── */
+.tile { padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; }
+.tile:last-child { border-bottom: 0; padding-bottom: 0; }
+.tile-top { display: flex; align-items: center; gap: 0.35rem; }
+.tile-ico { --sds-c-icon-color-foreground-default: #747474; }
+.tile-label { font-size: 11.5px; color: #747474; }
+.tile-value {
+    margin-top: 0.15rem;
+    font-size: 26px; font-weight: 700; line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+.tile-value--good { color: #2e844a; }
+
+/* ── right: the action ───────────────────────────────────────────────────── */
+/* SLDS 2 styling hooks in place of the old hardcoded hex, with the same
+   values as the fallback so the (currently unused -- the third column this
+   was written for was folded into the page-header actions, see the .ov-cols
+   comment above) rendering is unchanged if this is ever wired back up. */
+.act {
+    display: flex; align-items: flex-start; gap: 0.5rem; width: 100%;
+    padding: 0.65rem 0.7rem; margin-bottom: 0.5rem;
+    border: 1px solid var(--slds-c-button-brand-color-border, #0176d3);
+    border-radius: 5px;
+    background: var(--slds-c-button-brand-color-background, #0176d3);
+    color: var(--slds-c-button-brand-text-color, #fff);
+    cursor: pointer; text-align: left; text-decoration: none;
+}
+.act:hover {
+    background: var(--slds-c-button-brand-color-background-hover, #014486);
+    border-color: var(--slds-c-button-brand-color-border-hover, #014486);
+}
+.act--quiet {
+    background: var(--slds-c-button-neutral-color-background, #fff);
+    color: var(--slds-c-button-neutral-text-color, #181818);
+    border-color: var(--slds-c-button-neutral-color-border, #e5e5e5);
+}
+.act--quiet:hover {
+    background: var(--slds-c-button-neutral-color-background-hover, #f7f7f7);
+    border-color: var(--slds-c-button-neutral-color-border-hover, #c9c9c9);
+}
+.act-plus { font-size: 18px; line-height: 1.1; }
+.act-main { display: flex; flex-direction: column; gap: 0.1rem; }
+.act-label { font-size: 13px; font-weight: 700; }
+.act-sub { font-size: 11.5px; opacity: 0.85; line-height: 1.4; }
+.act--quiet .act-sub { color: #747474; opacity: 1; }
+
+/* ── offerings ───────────────────────────────────────────────────────────── */
+.cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 0.75rem;
+    align-items: stretch;
+}
+.ocard {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.ocard-top {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
+    min-height: 3rem;
+}
+.ocard-id { display: flex; flex-direction: column; min-width: 0; }
+.ocard-sum, .ocard-acts { padding-left: .75rem; padding-right: .75rem; }
+.ocard-acts { padding-bottom: .7rem; }
+.ocard-name { font-size: 13.5px; font-weight: 700; }
+.ocard-key {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px; color: #969696;
+}
+.ocard-sum { margin: 0.55rem 0 0.6rem; font-size: 11.5px; color: #747474; flex: 1 1 auto; }
+.ocard-acts { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: auto; }
+/* "Read the story" / the feedback toggle / "Send to the writers" now render
+   as slds-button slds-button_neutral / slds-button_brand directly in markup
+   (see gtmOverview.html) rather than through this custom class, so SLDS 2
+   owns their color/border/radius via its own styling hooks. */
+.ocard-acts .slds-button { font-size: 12px; }
+
+/* ── modal ───────────────────────────────────────────────────────────────── */
+.scrim {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,20,24,.5); display: grid; place-items: center; padding: 1rem;
+}
+.modal {
+    width: min(28rem, 100%); background: #fff; border-radius: 8px;
+    box-shadow: 0 10px 34px rgba(0,0,0,.22);
+    /* Not overflow:hidden — a combobox drops its menu outside the modal box,
+       and clipping it makes the picker look broken. The rounded corners are
+       kept by clipping only the header and footer, which are what touch them. */
+    overflow: visible;
+}
+.modal-h { border-radius: 8px 8px 0 0; }
+.modal-f { border-radius: 0 0 8px 8px; }
+.modal-h { padding: 1rem 1.15rem .75rem; border-bottom: 1px solid #e5e5e5; }
+.modal-h h2 { margin: 0 0 .2rem; font-size: 16px; font-weight: 700; }
+.modal-h p { margin: 0; font-size: 12.5px; color: #444; }
+.modal-b { padding: .9rem 1.15rem; display: flex; flex-direction: column; gap: .7rem; }
+.modal-note { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
+.modal-f {
+    padding: .8rem 1.15rem; border-top: 1px solid #e5e5e5; background: #fafaf9;
+    display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
+}
+
+/* ── same language as the Content Manager home ─────────────────────────────
+   These are sibling pages and should feel like one product: the same card
+   rail, the same response to the pointer, the same restraint. */
+.ov-card, .ocard {
+  border-top: 3px solid #747474;
+  transition: box-shadow .14s ease, transform .14s ease;
+}
+.ocard         { border-top-color: #9050e9; }
+
+.ov-card:hover, .ocard:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .09);
+  transform: translateY(-1px);
+}
+
+/* The numbers are the point of the snapshot, so they get to be numbers:
+   aligned, tabular, and large enough to read across the room. */
+.tile-value { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-card, .ocard { transition: none; }
+  .ov-card:hover, .ocard:hover { transform: none; }
+}
+
+/* The offerings section holds offerings, so it carries their colour. Every
+   card on the page now has a rail; none is an exception. */
+.ov-offerings { border-top-color: #9050e9; }
+
+/* Same SLDS grid trap as the Content Manager home: `.slds-card + .slds-card`
+   adds a rem of top margin to every card after the first, which in a grid is
+   every card but the leftmost of the first row. */
+.ov-cols > .ov-card + .ov-card,
+.ov-cols > .ov-card { margin: 0; }
+.cards > .ocard + .ocard,
+.cards > .ocard { margin: 0; }
+.ov-offerings { margin-top: 1rem; }
+.ov-cols > .ov-card > .slds-card__header,
+.ov-cols > .ov-card > .slds-card__body,
+.cards > .ocard > .slds-card__header,
+.cards > .ocard > .slds-card__body { margin: 0; }
+.side > .side-card + .side-card,
+.side > .side-card { margin: 0; }
+
+/* ── Opportunities to follow up on ─────────────────────────────────────────────────────────
+   A table drawn with grid rather than <table>: the columns have to stay in
+   step across rows, and the last one has to be able to wrap on a narrow
+   window without the others moving. */
+.ov-deals { border-top-color: #fe9339; }
+/* Rail colours for the three widgets rebuilt onto .ov-card chrome (issue
+   overview-bd-heat-redesign-5-visual-parity), matching each card's
+   icon-circle family so the rail and the icon read as one accent. */
+.ov-heat { border-top-color: #c23934; }
+.ov-tasks-today { border-top-color: #0b5cab; }
+.ov-readouts { border-top-color: #2e844a; }
+/* The body is the scroll container (card is a flex column capped at
+   --ov-row2-cap with min-height: 0 down the chain). No top padding, so the sticky header sits
+   flush against the card header instead of leaving a gap rows scroll through. */
+.ov-deals-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-top: 0; }
+.ov-sticky { position: sticky; top: 0; z-index: 1; background: #fff; }
+.ov-h-note {
+    margin-left: auto;
+    font-size: .75rem;
+    color: #5c5c5c;
+}
+.deals { display: flex; flex-direction: column; }
+.deal {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) minmax(160px, 1.2fr) minmax(160px, 1.2fr);
+    gap: .75rem;
+    align-items: start;
+    padding: .7rem .25rem;
+    border-bottom: 1px solid #e5e5e5;
+    cursor: pointer;
+}
+.deal:last-child { border-bottom: 0; }
+.deal--head {
+    padding-bottom: .4rem;
+    font-size: .7rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #6b6b6b;
+    cursor: default;
+}
+.deal-id, .deal-opp, .deal-assessment { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.deal-name { font-weight: 600; }
+.deal-sub { font-size: .75rem; color: #5c5c5c; }
+.deal-opp-name { color: #0176d3; text-decoration: none; font-weight: 500; }
+.deal-opp-name:hover { text-decoration: underline; }
+.deal-req { color: #0176d3; text-decoration: none; font-weight: 500; cursor: pointer; }
+.deal-req:hover { text-decoration: underline; }
+.deal-none { color: #9a9a9a; }
+/* OPTIONAL: close date (owner may drop) -- delete this rule with its template block. */
+.deal-close { font-size: .75rem; color: #5c5c5c; }
+/* Engagement chip under the offering name; tones reuse existing pill colours. */
+.eng-chip {
+    align-self: flex-start;
+    padding: .05rem .45rem; border-radius: 999px;
+    font-size: .7rem; font-weight: 600; line-height: 1.5;
+    background: #ececec; color: #545454;
+}
+.eng-chip--seen { background: #dce9fb; color: #0b3d75; }
+
+/* Account -> Contact -> Link grouping (issue opportunities-table-redesign-v2).
+   The Account row is name-only, spans the full row; the Contact row is a
+   name-only sub-header, indented one step under it -- neither carries a
+   second column's worth of content, per the approved mockup. */
+.deal-group-head {
+    background: #f7f7f7;
+    grid-template-columns: 1fr;
+    padding: .55rem .5rem;
+    cursor: default;
+}
+.deal-group-head--static { background: transparent; }
+.deal-group-name {
+    font-weight: 700;
+    color: #0176d3;
+    cursor: pointer;
+}
+.deal-group-head--static .deal-group-name { color: #3e3e3c; cursor: default; }
+.deal-contact-head {
+    grid-template-columns: 1fr;
+    padding: .4rem .5rem .4rem 1.25rem;
+    cursor: default;
+    border-bottom: 0;
+}
+.deal-contact-name {
+    font-weight: 600;
+    color: #0176d3;
+    cursor: pointer;
+    font-size: .9rem;
+}
+
+/* One pill per funnel state. Colour carries the meaning, so the shape stays
+   identical: a reader scanning the column is comparing states, not sizes. */
+.pill {
+    display: inline-block;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+.pill--good  { background: #d7f0e0; color: #14532d; }
+.pill--warn  { background: #fdeacb; color: #7a4a05; }
+.pill--info  { background: #dce9fb; color: #0b3d75; }
+.pill--quiet { background: #ececec; color: #545454; }
+
+.tile-value--warn { color: #a1500a; }
+
+@media (max-width: 900px) {
+    /* Stacked, the column headings stop meaning anything, so they go. */
+    .deal--head { display: none; }
+    .deal { grid-template-columns: 1fr 1fr; }
+    .deal-group-head, .deal-contact-head { grid-template-columns: 1fr; }
+}
+
+/* The funnel card ("From link to assessment") that used to live here was
+   removed outright (issue overview-bd-heat-redesign-1-layout-toggle), not
+   migrated. .ov-h-stack survives because the Assessment results card header
+   (Row 3) still uses it. */
+.ov-h-stack { display: flex; flex-direction: column; min-width: 0; }
+.ov-h-stack .ov-h-note { margin-left: 0; }
+
+/* ── Offering feedback ─────────────────────────────────────────────────────
+   Closed by default: the card is for reading about an offering, and a form
+   sitting open on every card turns a reading surface into a form. */
+.ocard-panel { display: none; }
+.ocard-panel--on {
+    display: block;
+    margin-top: .75rem;
+    padding: .75rem .75rem .85rem;
+    border-top: 1px solid #ececec;
+}
+.fb-input {
+    width: 100%;
+    min-height: 4.5rem;
+    padding: .5rem .6rem;
+    border: 1px solid #d8d8d8;
+    border-radius: 4px;
+    font: inherit;
+    font-size: 12.5px;
+    resize: vertical;
+}
+.fb-input:focus { outline: 2px solid #0176d3; outline-offset: -1px; border-color: #0176d3; }
+.fb-send { display: flex; justify-content: flex-end; margin-top: .5rem; }
+
+.notes { list-style: none; margin: .9rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+.note { padding-top: .7rem; border-top: 1px solid #f0f0f0; }
+.note:first-child { border-top: 0; padding-top: 0; }
+.note-head { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; font-size: 11.5px; }
+.note-who { font-weight: 600; color: #181818; }
+.note-page { color: #747474; }
+.note-when { margin-left: auto; color: #9a9a9a; }
+.note-body { margin: .3rem 0 0; font-size: 12.5px; color: #3b3b3b; }
+
+/* The reply is the half that makes this a loop rather than a suggestion box,
+   so it is indented under the note it answers rather than listed beside it. */
+.note-reply {
+    margin: .4rem 0 0 .6rem;
+    padding-left: .6rem;
+    border-left: 2px solid #d7e5f5;
+    font-size: 12.5px;
+    color: #3b3b3b;
+}
+.note-reply-k {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #0b3d75;
+}
+.note-ask { margin: .35rem 0 0; font-size: 11.5px; font-weight: 600; color: #a1500a; }
+
+.note-pill {
+    padding: .05rem .4rem;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 600;
+}
+.note-pill--new             { background: #dce9fb; color: #0b3d75; }
+.note-pill--needs-more-info { background: #fdeacb; color: #7a4a05; }
+.note-pill--in-progress     { background: #ece3fb; color: #43308a; }
+.note-pill--resolved        { background: #d7f0e0; color: #14532d; }
+.note-pill--declined        { background: #ececec; color: #545454; }
+
+/* ── Row 3 (Today view): Assessment results, content-sized, capped by the
+   shared cap, internal scroll. Reuses .ov-cols for the --ov-row2-cap
+   property and the single 1100px breakpoint; .ov-row3--solo above collapses
+   it to one column now that Offerings moved to its own view (issue
+   overview-bd-heat-redesign-1-layout-toggle). ─────────────────── */
+.ov-row3 {
+    margin-top: 1rem;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: start;
+}
+@media (max-width: 1100px) {
+    .ov-row3 { grid-template-columns: minmax(0, 1fr); }
+}
+/* Assessment results is the only .ov-card-h on the page with a stacked,
+   two-row header (.ov-h-stack: the h2 plus .ov-h-note's two
+   lightning-buttons and a middot). The shared .ov-card-h rule above
+   (align-items: center, min-height: 3rem) was written for every other
+   card's single-line header and vertically centers this one against
+   whatever its real content height turns out to be -- which is taller
+   than 3rem once the two lightning-buttons render at their default
+   library size -- so .ov-results-body's padding-top: 0 (inherited from
+   the single-line deals-table pattern, see .ov-deals-body above) starts
+   flush against where a single-line header would have ended, not where
+   this two-line header actually ends. Scoped to .ov-results only: every
+   other header on the page still needs align-items: center. */
+.ov-results .ov-card-h {
+    align-items: flex-start;
+    min-height: 0;
+    padding-bottom: .5rem;
+}
+/* The two action buttons had no dedicated sizing rule anywhere on the
+   page (unlike .ocard-acts .slds-button's 12px scale for the Offerings
+   cards), so they rendered at each browser's default lightning-button
+   size -- taller than the rest of this header's 11.5-13px type scale,
+   which was the other half of the overlap. Same 12px scale as
+   .ocard-acts .slds-button, applied directly to the two named classes
+   the template already puts on these lightning-button elements. */
+.ov-view-all, .ov-ready-to-book {
+    font-size: 12px;
+    line-height: 1.4;
+}
+/* Now that the header reserves exactly its real (flex-start, no forced
+   min-height) content height instead of a floor tuned for a single-line
+   header, the body can go back to sitting flush against it -- re-derived,
+   not assumed, from the corrected header height above. */
+.ov-results-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-top: 0; }
+.ocard-counts {
+    display: flex; gap: 0.9rem; flex-wrap: wrap;
+    margin: 0 0 0.5rem; padding: 0 .75rem; font-size: 11.5px; font-weight: 700;
+}
+.ocount-footnote { margin: 0.6rem 0 0; font-size: 11px; color: #747474; }
+
+/* Home responsive (issue home-responsive): tighten at phone/small-tablet widths. */
+@media (max-width: 768px) {
+    .ov-cols, .ov-row3, .at-row { gap: .75rem; }
+    .at-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .at-tile, .ov-col { min-width: 0; overflow-wrap: anywhere; }
+}
+@media (max-width: 480px) {
+    .at-row { grid-template-columns: minmax(0, 1fr); }
+    .at-count { font-size: 22px; }
+    .ov-col { padding: .6rem .6rem .75rem; }
+}

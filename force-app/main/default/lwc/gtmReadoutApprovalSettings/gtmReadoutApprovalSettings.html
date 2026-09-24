@@ -1,0 +1,37 @@
+<template>
+    <div class="slds-p-around_medium slds-max-width_medium">
+        <c-gtm-page-header eyebrow="Settings" title="Readout Approval Settings"></c-gtm-page-header>
+        <p class="slds-text-body_regular slds-m-vertical_medium">
+            Controls how every GTM_Readout__c is approved, org-wide.
+        </p>
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+
+        <template if:true={loadError}>
+            <div class="slds-text-color_error slds-m-bottom_small">{loadError}</div>
+        </template>
+
+        <template if:false={isLoading}>
+            <article class="slds-card">
+                <div class="slds-card__body slds-card__body_inner">
+                    <lightning-input
+                        type="toggle"
+                        label="Let reps self-approve their own readouts"
+                        message-toggle-active="On: the creating rep can approve their own readout."
+                        message-toggle-inactive="Off: readouts route to the owner's manager for approval (default)."
+                        checked={selfApprovalEnabled}
+                        disabled={isSaving}
+                        onchange={handleToggle}
+                    ></lightning-input>
+
+                    <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">
+                        Self-approvals are always logged to the Readout Approval Log for audit, since they
+                        bypass the standard approval process entirely.
+                    </p>
+                </div>
+            </article>
+        </template>
+    </div>
+</template>

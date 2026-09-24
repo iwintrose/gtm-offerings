@@ -1,0 +1,139 @@
+<template>
+    <div class="slds-p-around_medium slds-max-width_medium">
+        <h1 class="slds-text-heading_medium slds-m-bottom_small">GUS Chat Provider</h1>
+        <p class="slds-text-body_regular slds-m-bottom_medium">
+            Controls which chat provider GUS uses, and each provider's API key and model, org-wide.
+        </p>
+
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+
+        <template if:true={loadError}>
+            <div class="slds-text-color_error slds-m-bottom_small">{loadError}</div>
+        </template>
+
+        <template if:false={isLoading}>
+            <lightning-combobox
+                label="Chat provider"
+                value={chatProvider}
+                options={providerOptions}
+                disabled={isSaving}
+                onchange={handleProviderChange}
+            ></lightning-combobox>
+
+            <template lwc:if={isAnthropicSelected}>
+                <lightning-input
+                    type="password"
+                    label="Claude API Key"
+                    placeholder="Enter a new key to replace the stored one"
+                    value={apiKeyInput}
+                    disabled={isSaving}
+                    onchange={handleApiKeyChange}
+                ></lightning-input>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small slds-m-bottom_medium">
+                    {apiKeyStatusLabel}
+                </p>
+
+                <lightning-input
+                    type="text"
+                    label="Claude Model"
+                    placeholder={modelPlaceholder}
+                    value={model}
+                    disabled={isSaving}
+                    onchange={handleModelChange}
+                ></lightning-input>
+            </template>
+            <template lwc:elseif={isOpenAiSelected}>
+                <lightning-input
+                    type="password"
+                    label="OpenAI API Key"
+                    placeholder="Enter a new key to replace the stored one"
+                    value={openAiApiKeyInput}
+                    disabled={isSaving}
+                    onchange={handleOpenAiApiKeyChange}
+                ></lightning-input>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small slds-m-bottom_medium">
+                    {openAiApiKeyStatusLabel}
+                </p>
+
+                <lightning-input
+                    type="text"
+                    label="OpenAI Model"
+                    placeholder={openAiModelPlaceholder}
+                    value={openAiModel}
+                    disabled={isSaving}
+                    onchange={handleOpenAiModelChange}
+                ></lightning-input>
+            </template>
+            <template lwc:elseif={isGeminiSelected}>
+                <lightning-input
+                    type="password"
+                    label="Gemini API Key"
+                    placeholder="Enter a new key to replace the stored one"
+                    value={geminiApiKeyInput}
+                    disabled={isSaving}
+                    onchange={handleGeminiApiKeyChange}
+                ></lightning-input>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small slds-m-bottom_medium">
+                    {geminiApiKeyStatusLabel}
+                </p>
+
+                <lightning-input
+                    type="text"
+                    label="Gemini Model"
+                    placeholder={geminiModelPlaceholder}
+                    value={geminiModel}
+                    disabled={isSaving}
+                    onchange={handleGeminiModelChange}
+                ></lightning-input>
+            </template>
+            <template lwc:elseif={isAgentforceSelected}>
+                <p class="agentforce-notice slds-text-body_small slds-m-bottom_small">
+                    Saved for the upcoming Agentforce integration — GUS will keep using the first configured provider until it ships.
+                </p>
+                <lightning-input
+                    type="text"
+                    label="Agent ID"
+                    value={agentforceAgentId}
+                    disabled={isSaving}
+                    onchange={handleAgentforceAgentIdChange}
+                ></lightning-input>
+                <lightning-input
+                    type="text"
+                    label="My Domain URL"
+                    placeholder="https://your-domain.my.salesforce.com"
+                    value={agentforceMyDomainUrl}
+                    disabled={isSaving}
+                    onchange={handleAgentforceMyDomainUrlChange}
+                ></lightning-input>
+                <lightning-input
+                    type="text"
+                    label="Consumer Key"
+                    value={agentforceClientId}
+                    disabled={isSaving}
+                    onchange={handleAgentforceClientIdChange}
+                ></lightning-input>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
+                    The consumer secret is not stored here. It will be captured via a Named Credential in the later integration phase.
+                    The Agent API requires an External Client App with client-credentials OAuth, and does not support agents of type "Agentforce (Default)".
+                </p>
+            </template>
+
+            <div class="slds-m-top_medium">
+                <lightning-button
+                    variant="brand"
+                    label="Save"
+                    disabled={isSaving}
+                    onclick={handleSave}
+                ></lightning-button>
+            </div>
+
+            <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">
+                Leaving an API key or model blank when saving keeps that provider's currently stored value
+                unchanged -- you only need to enter a new key when you want to replace it. Switching the chat
+                provider does not clear or require re-entering any other provider's stored values.
+            </p>
+        </template>
+    </div>
+</template>

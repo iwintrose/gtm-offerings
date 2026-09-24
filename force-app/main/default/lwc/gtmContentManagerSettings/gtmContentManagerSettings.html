@@ -1,0 +1,37 @@
+<template>
+    <div class="slds-p-around_medium">
+        <c-gtm-page-header icon-name="standard:settings" eyebrow="GTM Content Manager"
+                          title="Settings" meta={sectionsMeta}>
+        </c-gtm-page-header>
+
+        <div class="slds-grid slds-gutters slds-m-top_medium">
+            <div class="slds-col slds-size_1-of-4">
+                <nav class="slds-nav-vertical" aria-label="Settings sections">
+                    <div class="slds-nav-vertical__section">
+                        <ul>
+                            <template for:each={sections} for:item="section">
+                                <li key={section.id} class={section.navClass}>
+                                    <a
+                                        href="#"
+                                        class="slds-nav-vertical__action"
+                                        data-section-id={section.id}
+                                        onclick={handleSectionSelect}
+                                    >{section.label}</a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            <div class="slds-col slds-size_3-of-4">
+                <article class="slds-card">
+                    <div class="slds-card__body slds-card__body_inner">
+                        <template if:true={isRecycleBinSelected}>
+                            <c-gtm-recycle-bin></c-gtm-recycle-bin>
+                        </template>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</template>

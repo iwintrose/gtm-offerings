@@ -1,0 +1,15 @@
+<template>
+    <template if:true={isInteractive}>
+        <a
+            href="javascript:void(0);"
+            class={cellClass}
+            title={titleText}
+            tabindex={tabIndex}
+            onclick={handleClick}
+            onkeydown={handleKeyDown}
+        >{label}</a>
+    </template>
+    <template if:false={isInteractive}>
+        <span class={cellClass} title={titleText}>{label}</span>
+    </template>
+</template>

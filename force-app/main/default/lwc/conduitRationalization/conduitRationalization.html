@@ -1,0 +1,170 @@
+<template>
+    <lightning-card title="Conduit Rationalization" icon-name="standard:filter">
+        <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-top_small slds-p-bottom_x-small">
+            <p class="slds-text-body_small slds-text-color_weak">
+                Surfaces pre-migration clean-up opportunities: assets to retire, near-duplicate templates to consolidate,
+                and stale content to validate. Claude ranks actions by estimated hours saved and migration risk.
+            </p>
+        </div>
+
+        <!-- ── Initial ─────────────────────────────────────────────── -->
+        <template lwc:if={showInitial}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <p class="slds-text-body_regular slds-m-bottom_x-small">
+                    Identify pre-migration estate clean-up opportunities: assets to retire,
+                    duplicate templates to consolidate, and stale content to review.
+                    Claude prioritizes actions by ROI and migration hours saved.
+                </p>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_medium">
+                    Includes AI prioritization — expect ~20 seconds.
+                </p>
+                <lightning-button label="Analyze Estate" variant="brand" onclick={handleAnalyze}>
+                </lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Loading ──────────────────────────────────────────────── -->
+        <template lwc:if={isLoading}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_large slds-text-align_center">
+                <lightning-spinner alternative-text="Analysing…" size="medium"></lightning-spinner>
+                <p class="slds-m-top_medium slds-text-heading_small">Analysing estate…</p>
+                <p class="slds-text-color_weak slds-m-top_x-small">
+                    Identifying candidates · Running AI prioritization
+                </p>
+            </div>
+        </template>
+
+        <!-- ── Error ────────────────────────────────────────────────── -->
+        <template lwc:if={error}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">{error}</div>
+                <lightning-button label="Retry" onclick={handleAnalyze}></lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Results ──────────────────────────────────────────────── -->
+        <template lwc:if={hasData}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+
+                <!-- Summary counts -->
+                <div class="slds-grid slds-gutters slds-m-bottom_large rat-summary-bar">
+                    <div class="slds-col slds-text-align_center">
+                        <p class="rat-count rat-retire-color">{rationalizationData.summary.retire}</p>
+                        <p class="rat-count-label">Retire</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center">
+                        <p class="rat-count rat-consolidate-color">{rationalizationData.summary.consolidate}</p>
+                        <p class="rat-count-label">Consolidate</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center">
+                        <p class="rat-count rat-review-color">{rationalizationData.summary.review}</p>
+                        <p class="rat-count-label">Review</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center">
+                        <p class="rat-count">{rationalizationData.summary.total}</p>
+                        <p class="rat-count-label">Total Flagged</p>
+                    </div>
+                </div>
+
+                <!-- Retire section -->
+                <template lwc:if={hasRetire}>
+                    <div class="rat-section retire-section slds-m-bottom_medium">
+                        <h4 class="rat-section-heading retire-heading">RETIRE
+                            <span class="rat-section-count">{rationalizationData.retire.length}</span>
+                        </h4>
+                        <p class="rat-section-sub">Abandoned 2+ years · Never used in a tracked campaign</p>
+                        <ul class="rat-asset-list">
+                            <template for:each={rationalizationData.retire} for:item="asset">
+                                <li key={asset.id} class="rat-asset-item">
+                                    <span class="rat-asset-name">{asset.name}</span>
+                                    <span class="rat-asset-meta">{asset.type} · {asset.ageYears}yr old</span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+
+                <!-- Consolidate section -->
+                <template lwc:if={hasConsolidate}>
+                    <div class="rat-section consolidate-section slds-m-bottom_medium">
+                        <h4 class="rat-section-heading consolidate-heading">CONSOLIDATE
+                            <span class="rat-section-count">{rationalizationData.consolidate.length}</span>
+                        </h4>
+                        <p class="rat-section-sub">Duplicate names within same type · Causes template sprawl</p>
+                        <ul class="rat-asset-list">
+                            <template for:each={rationalizationData.consolidate} for:item="group">
+                                <li key={group.reason} class="rat-asset-item">
+                                    <span class="rat-asset-name">{group.namesStr}</span>
+                                    <span class="rat-asset-meta">{group.type}</span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+
+                <!-- Review section -->
+                <template lwc:if={hasReview}>
+                    <div class="rat-section review-section slds-m-bottom_medium">
+                        <h4 class="rat-section-heading review-heading">REVIEW
+                            <span class="rat-section-count">{rationalizationData.review.length}</span>
+                        </h4>
+                        <p class="rat-section-sub">Stale 1–2 years · Validate with stakeholders before migrating</p>
+                        <ul class="rat-asset-list">
+                            <template for:each={rationalizationData.review} for:item="asset">
+                                <li key={asset.id} class="rat-asset-item">
+                                    <span class="rat-asset-name">{asset.name}</span>
+                                    <span class="rat-asset-meta">{asset.type} · {asset.ageYears}yr old</span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+
+                <!-- AI Prioritization -->
+                <template lwc:if={hasAiData}>
+                    <div class="ai-section">
+                        <h3 class="section-heading">AI PRIORITIZATION
+                            <span class="ai-badge">Claude</span>
+                        </h3>
+                        <p class="ai-summary slds-m-bottom_small">{aiData.summary}</p>
+
+                        <!-- Scope reduction callout -->
+                        <div class="scope-reduction slds-m-bottom_medium">
+                            <span class="scope-num">{aiData.scopeReduction.assetsEliminated}</span> assets eliminated ·
+                            <span class="scope-num">{aiData.scopeReduction.percentReduction}%</span> scope reduction ·
+                            <span class="scope-num">~{aiData.scopeReduction.estimatedHoursSaved}h</span> saved
+                        </div>
+
+                        <!-- Prioritized actions -->
+                        <ul class="priority-list">
+                            <template for:each={aiData.prioritized} for:item="item">
+                                <li key={item.priority} class="priority-item">
+                                    <span class="priority-num">{item.priority}</span>
+                                    <div class="priority-content">
+                                        <div class="slds-grid slds-gutters_x-small slds-m-bottom_xx-small">
+                                            <span class={item.actionClass}>{item.action}</span>
+                                            <span class="priority-hours slds-m-left_x-small">~{item.estimatedHoursSaved}h saved</span>
+                                        </div>
+                                        <p class="priority-assets">{item.assetNamesStr}</p>
+                                        <p class="priority-rationale">{item.rationale}</p>
+                                        <p class="priority-risk">Risk if ignored: {item.riskIfIgnored}</p>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+
+                        <p class="ai-recommendation slds-m-top_small">{aiData.recommendation}</p>
+                    </div>
+                </template>
+
+                <!-- Footer -->
+                <div class="slds-m-top_medium slds-text-align_right">
+                    <lightning-button label="Re-analyze" onclick={handleAnalyze} size="small">
+                    </lightning-button>
+                </div>
+
+            </div>
+        </template>
+
+    </lightning-card>
+</template>

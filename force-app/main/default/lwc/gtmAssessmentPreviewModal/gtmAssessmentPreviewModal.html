@@ -1,0 +1,13 @@
+<template>
+    <lightning-modal-header label="Preview the assessment"></lightning-modal-header>
+    <lightning-modal-body>
+        <div class="gapm-stage">
+            <c-gtm-assessment-answers-preview
+                record-id={assessmentRequestId}
+            ></c-gtm-assessment-answers-preview>
+        </div>
+    </lightning-modal-body>
+    <lightning-modal-footer>
+        <lightning-button label="Close" onclick={handleCloseClick}></lightning-button>
+    </lightning-modal-footer>
+</template>

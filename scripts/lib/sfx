@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# sfx: the single guarded, counted entry point for `sf` in repo scripts.
+# Contract: docs/architecture/test-efficiency-request-guard.md. Bash 3.2 safe.
+#   sfx --session [--allow-production] -- <command> [args...]
+#   sfx <sf args...>          (needs a session; refuses gtm-dev; counts calls)
+# Counts CLI invocations, not HTTP requests. Never records arguments.
+set -u
+
+die() { echo "sfx: $1" >&2; exit "${2:-70}"; }
+
+lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+
+# ---------------------------------------------------------------- session mode
+if [ "${1:-}" = "--session" ]; then
+  shift
+  allow=0
+  while [ $# -gt 0 ] && [ "$1" != "--" ]; do
+    case "$1" in
+      --allow-production) allow=1 ;;
+      *) die "unknown session option (usage: sfx --session [--allow-production] -- cmd...)" 2 ;;
+    esac
+    shift
+  done
+  [ "${1:-}" = "--" ] || die "missing -- before command" 2
+  shift
+  [ $# -gt 0 ] || die "no command given" 2
+  for a in "$@"; do [ "$a" = "--allow-production" ] && allow=1; done
+
+  warn_at="${SF_GUARD_WARN_AT:-50}"
+  case "$warn_at" in ''|*[!0-9]*|0) die "SF_GUARD_WARN_AT must be a positive integer: refusing to run" 70 ;; esac
+
+  self="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+  cf="$(mktemp "${TMPDIR:-/tmp}/sfx-count.XXXXXX")" || die "cannot create counter file: refusing to run" 70
+  chmod 600 "$cf"
+  export SF_GUARD_COUNT_FILE="$cf" SF_GUARD_SFX="$self" SF_GUARD_WARN_AT="$warn_at"
+  if [ "$allow" = "1" ]; then export SF_GUARD_ALLOW_FLAG=1; else unset SF_GUARD_ALLOW_FLAG; fi
+
+  summary() {
+    total=$(wc -l < "$cf" 2>/dev/null | tr -d ' ')
+    total="${total:-0}"
+    echo "sf calls this run: $total" >&2
+    if [ "$total" -gt 0 ]; then
+      awk '{print $2" "$3}' "$cf" | sort | uniq -c | sed 's/^ *//' | while read -r n head; do
+        echo "  $n  $head" >&2
+      done
+    fi
+    if [ "$total" -gt "$warn_at" ]; then
+      echo "WARNING: $total sf calls exceeds budget $warn_at; see docs/runbooks/api-request-budget.md" >&2
+    fi
+    echo "(counts CLI invocations, not HTTP requests; one invocation costs several requests)" >&2
+    rm -f "$cf"
+  }
+  trap 'summary' EXIT
+  trap 'exit 130' INT TERM
+  "$@"
+  exit $?
+fi
+
+# ------------------------------------------------------------------ guard mode
+cf="${SF_GUARD_COUNT_FILE:-}"
+if [ -z "$cf" ] || [ -z "${SF_GUARD_SFX:-}" ] || [ ! -f "$cf" ] || [ ! -w "$cf" ]; then
+  die "cannot count sf calls: refusing to run sf" 70
+fi
+
+# Local-only commands make no org request: exempt from guard and count.
+case "${1:-}" in
+  --version|version|help|plugins|config|alias) exec sf "$@" ;;
+esac
+if [ "${1:-}" = "project" ] && { [ "${2:-}" = "convert" ] || [ "${2:-}" = "generate" ]; }; then
+  exec sf "$@"
+fi
+
+# Resolve the org: explicit flag, else SF_TARGET_ORG, else refuse.
+org=""
+prev=""
+for a in "$@"; do
+  if [ "$prev" = "-o" ] || [ "$prev" = "--target-org" ]; then org="$a"; prev=""; continue; fi
+  case "$a" in
+    --target-org=*) org="${a#--target-org=}" ;;
+    -o?*) org="${a#-o}" ;;
+  esac
+  prev="$a"
+done
+[ -n "$org" ] || org="${SF_TARGET_ORG:-}"
+[ -n "$org" ] || die "REFUSED (no explicit org): pass -o/--target-org; the machine default org is never used" 3
+
+org_lc="$(lc "$org")"
+refuse=""
+case "$org" in
+  *@*) refuse="raw username given: use the org alias" ;;
+esac
+
+if [ -z "$refuse" ]; then
+  prod_list="gtm-dev,$(lc "${SF_GUARD_PROD_ALIASES:-}")"
+  oldifs="$IFS"; IFS=','
+  for p in $prod_list; do
+    p="$(printf '%s' "$p" | tr -d ' ')"
+    if [ -n "$p" ] && [ "$p" = "$org_lc" ]; then refuse="production alias"; fi
+  done
+  IFS="$oldifs"
+fi
+
+# Best effort: an alias that maps to the same username as gtm-dev.
+if [ -z "$refuse" ] && command -v python3 >/dev/null 2>&1; then
+  for f in "${SF_HOME:-/nonexistent}/alias.json" "$HOME/.sf/alias.json" "$HOME/.sfdx/alias.json"; do
+    [ -r "$f" ] || continue
+    same="$(python3 - "$f" "$org" <<'PY' 2>/dev/null
+import json, sys
+try:
+    orgs = json.load(open(sys.argv[1])).get("orgs", {})
+except Exception:
+    sys.exit(0)
+prod = orgs.get("gtm-dev")
+mine = orgs.get(sys.argv[2])
+print("same" if prod and mine and prod == mine else "")
+PY
+)"
+    if [ "$same" = "same" ]; then refuse="alias resolves to the production org"; fi
+    break
+  done
+fi
+
+if [ -n "$refuse" ]; then
+  if [ "${SF_GUARD_ALLOW_FLAG:-}" = "1" ] && [ "${GTM_ALLOW_PRODUCTION:-}" = "1" ]; then
+    echo "PRODUCTION ORG: allowed by flag+env" >&2
+  else
+    echo "sfx: REFUSED ($refuse): org '$(printf '%s' "$org" | sed 's/@.*//')' needs both --allow-production and GTM_ALLOW_PRODUCTION=1; see docs/runbooks/api-request-budget.md" >&2
+    exit 3
+  fi
+fi
+
+# Count first (fail closed if the counter cannot be written), args never recorded.
+printf '%s %s %s\n' "$(date +%s)" "${1:-?}" "${2:-_}" >> "$cf" 2>/dev/null || die "cannot count sf calls: refusing to run sf" 70
+exec sf "$@"

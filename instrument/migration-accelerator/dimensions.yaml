@@ -1,0 +1,73 @@
+# The FRAME. This file is the one thing no pair may vary.
+#
+# Eight slots, each scored 1-4, total 8-32, four fixed bands. Every pair gets
+# the same frame; only the CONTENT of a slot adapts (see pairs/*.yaml). That is
+# the whole design: a score has to mean the same thing across prospects, or the
+# instrument's only real output -- "this one is more ready than that one" --
+# stops being true. "19 would have been Accelerator-Ready if you'd come from
+# Marketo" is the sentence this frame exists to make impossible.
+#
+# WORDING IS NOT HERE. The base label, question and four options for each slot
+# live in GTM_Assessment_Question__mdt (records under
+# force-app/main/default/customMetadata/GTM_Assessment_Question.Readiness_*),
+# exactly as they did before the adaptive layer landed, so a consultant can
+# still reword a base question in Setup and deploy nothing. This file declares
+# the frame those rows hang on; pairs/*.yaml declares what a given pair changes.
+#
+# SUBSTITUTABLE. Slots 1 and 8 are pinned. estate_scale is the size question
+# every migration conversation opens with, and decision_readiness is the one
+# that decides whether anything gets bought; if either could be swapped out,
+# two prospects' 24s would no longer be describing the same eight things and
+# the comparability the fixed frame buys would be gone. Everything between them
+# is a risk THEME, and a pair may express that theme with a different question
+# (layer 3) as long as it stays in position and stays 1-4.
+
+instrument: readiness
+version: "2026.09.1"
+
+# Resolved against $MA_MIGRATOR_ROOT (default ../ma-migrator, then
+# /home/user/ma-migrator) by scripts/build-instrument.py, which fails if a
+# cited file is missing. Rationale that cannot be traced to a source is how an
+# instrument quietly turns into folklore.
+source_root_env: MA_MIGRATOR_ROOT
+
+slots:
+  - position: 1
+    key: estate_scale
+    substitutable: false
+    risk_theme: "How much there is to move"
+
+  - position: 2
+    key: source_access
+    substitutable: true
+    risk_theme: "Whether the estate can be read and the target written at all"
+
+  - position: 3
+    key: orchestration_portability
+    substitutable: true
+    risk_theme: "Whether the automation logic survives the move or is rebuilt"
+
+  - position: 4
+    key: content_portability
+    substitutable: true
+    risk_theme: "Whether creative and templates survive the move or are rebuilt"
+
+  - position: 5
+    key: data_model_readiness
+    substitutable: true
+    risk_theme: "Whether the audience/data layer is knowable and mappable"
+
+  - position: 6
+    key: integration_containment
+    substitutable: true
+    risk_theme: "How far the blast radius reaches outside the platform"
+
+  - position: 7
+    key: consent_portability
+    substitutable: true
+    risk_theme: "Whether permission state moves intact and lawfully"
+
+  - position: 8
+    key: decision_readiness
+    substitutable: false
+    risk_theme: "Whether anyone can say yes"

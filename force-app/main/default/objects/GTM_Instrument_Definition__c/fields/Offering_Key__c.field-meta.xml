@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Offering_Key__c</fullName>
+    <label>Offering Key</label>
+    <description>Free-text offering key matching GTM_Offering__mdt.Offering_Key__c by convention -- no formal relationship (ADR-0009 pattern, same convention used by GTM_Instrument__c and the other GTM_Assessment_* metadata types). Drives which offering's guest-facing assessment this instrument definition gates and authors questions for.</description>
+    <type>Text</type>
+    <length>100</length>
+    <required>true</required>
+    <unique>true</unique>
+    <caseSensitive>false</caseSensitive>
+</CustomField>

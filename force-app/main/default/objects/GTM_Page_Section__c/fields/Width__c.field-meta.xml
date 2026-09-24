@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Width__c</fullName>
+    <description>Content column width. Maps to the wrap / wrap wide classes on the rendered section.</description>
+    <label>Width</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>standard</fullName>
+                <default>false</default>
+                <label>standard</label>
+            </value>
+            <value>
+                <fullName>wide</fullName>
+                <default>false</default>
+                <label>wide</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

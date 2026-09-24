@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>GTM Readout Review</masterLabel>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__Tab</target>
+        <target>lightning__RecordPage</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordPage">
+            <objects>
+                <object>GTM_Assessment_Request__c</object>
+            </objects>
+            <property name="hideCaseLink" type="Boolean" label="Hide Case link" description="Set to true on the AR record page to suppress the review Case link for BD users." default="false"/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

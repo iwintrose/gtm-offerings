@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Evidence_Prompt__c</fullName>
+    <label>Evidence Prompt</label>
+    <description>CONSULTANT-ONLY. What the interviewer should actually ask for to get a defensible answer — a count, a checkbox state, a name — rather than an impression. Written ABOUT the respondent, in the second person, so it must never be rendered in the guest questionnaire; GtmAssessmentInstrument.Slot deliberately does not expose it to Lightning for that reason. The prospect-facing counterpart is Respondent_Hint__c. LongTextArea because authored prompts already exceed 255 characters and a Text field would have failed the first deploy.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>1000</length>
+    <visibleLines>3</visibleLines>
+</CustomField>

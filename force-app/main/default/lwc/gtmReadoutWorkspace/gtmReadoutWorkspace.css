@@ -1,0 +1,76 @@
+.grw {
+    min-height: 420px;
+}
+
+.grw-bar {
+    margin-bottom: 0.75rem;
+}
+
+.grw-back {
+    background: none;
+    border: none;
+    color: #0070d2;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    padding: 0;
+}
+
+.grw-err {
+    color: #a80000;
+    margin-bottom: 0.75rem;
+}
+
+.grw-generate {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.grw-generate-note {
+    margin-bottom: 0.75rem;
+    color: #444;
+}
+
+.grw-not-submitted {
+    margin: 0;
+    padding: 1rem;
+    color: #747474;
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+/* Conduit-tab heads-up (issue-gtm-readout-workspace, "require genuine
+   completion" round): a note above the real dashboard, not a blocking
+   message in place of it -- see notSubmittedNote. */
+.grw-not-submitted--note {
+    padding: 0.5rem 1rem;
+    background: #fef8ea;
+    border: 1px solid #f4d78b;
+    border-radius: 0.25rem;
+    margin-bottom: 0.75rem;
+    color: #5c4a1a;
+}
+
+/* Pages-style link/password section, mirroring gtmRepLinkFinder's own
+   view-step block (issue-gtm-readout-workspace refinement #6). */
+.grw-link-section {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: .75rem 1rem; margin-bottom: 1rem;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}
+.grw-view-details {
+    display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: .75rem;
+}
+.grw-view-field {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: .55rem .7rem; flex: 1 1 18rem; min-width: 0;
+}
+.grw-view-label {
+    display: block; font-size: 11px; font-weight: 700; color: #444;
+    text-transform: uppercase; letter-spacing: .03em; margin-bottom: .3rem;
+}
+.grw-linkbox { display: flex; align-items: center; gap: .4rem; }
+.grw-view-input {
+    flex: 1 1 auto; min-width: 0; border: 1px solid #dedede; border-radius: .2rem;
+    padding: .35rem .5rem; font-size: 12.5px; color: #181818; background: #fafafa;
+}
+.grw-preview-toggle-row { margin-top: .5rem; }

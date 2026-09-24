@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Has_Conduit__c</fullName>
+    <label>Has Conduit</label>
+    <description>Whether this offering has a Conduit (migration-planning) dashboard available for its assessment requests. Drives whether gtmReadoutWorkspace's Conduit tab renders for a given link/readout. Generalizes beyond a hardcoded Migration Accelerator offering-key check per docs/backlog.md B15.</description>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+</CustomField>

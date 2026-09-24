@@ -1,0 +1,59 @@
+<template>
+    <lightning-card title="Conduit" icon-name="custom:custom18">
+        <div class="slds-card__body" oncmmactivated={handleCmmActivated}>
+            <lightning-tabset variant="scoped">
+
+                <lightning-tab label="Data" icon-name="utility:upload">
+                    <div class="tab-body">
+                        <c-conduit-data-extract record-id={recordId}></c-conduit-data-extract>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Estate" icon-name="utility:database">
+                    <div class="tab-body">
+                        <c-conduit-asset-explorer record-id={recordId}></c-conduit-asset-explorer>
+                        <c-conduit-audience-view record-id={recordId}></c-conduit-audience-view>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Health" icon-name="utility:heart">
+                    <div class="tab-body" onauditcomplete={handleAuditComplete}>
+                        <c-conduit-audit-panel record-id={recordId}></c-conduit-audit-panel>
+                        <c-conduit-audit-history record-id={recordId}></c-conduit-audit-history>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Rationalization" icon-name="utility:filter">
+                    <div class="tab-body">
+                        <c-conduit-rationalization record-id={recordId}></c-conduit-rationalization>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Migration Plan" icon-name="utility:flow">
+                    <div class="tab-body">
+                        <c-conduit-migration-plan record-id={recordId}></c-conduit-migration-plan>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Runbook" icon-name="utility:file">
+                    <div class="tab-body">
+                        <c-conduit-migration-runbook record-id={recordId}></c-conduit-migration-runbook>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Migration Runs" icon-name="utility:process">
+                    <div class="tab-body">
+                        <c-conduit-migration-run-history record-id={recordId}></c-conduit-migration-run-history>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Gaps" icon-name="utility:error">
+                    <div class="tab-body">
+                        <c-conduit-gap-detail record-id={recordId}></c-conduit-gap-detail>
+                    </div>
+                </lightning-tab>
+
+            </lightning-tabset>
+        </div>
+    </lightning-card>
+</template>

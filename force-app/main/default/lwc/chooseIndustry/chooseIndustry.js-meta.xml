@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>GTM Choose Industry</masterLabel>
+    <targets>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+<targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property name="offeringKey" type="String" label="Offering Key"
+                      description="Offering key, matching GTM_Offering__mdt.Offering_Key__c. This page is framework-level and does not use this value for identity -- the offering actually routed through is read from the incoming ?offering= URL param."/>
+            <property
+                name="offeringsUrl"
+                type="String"
+                label="Offerings page URL"
+                default="/"
+                description="Where the back link points."
+            />
+            <property
+                name="configuratorUrl"
+                type="String"
+                label="Configurator page URL"
+                default="/configurator"
+                description="Industry key is appended as ?industry=&lt;key&gt;."
+            />
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

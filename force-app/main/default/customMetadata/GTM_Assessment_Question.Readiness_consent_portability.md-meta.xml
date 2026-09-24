@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Consent &amp; Preference Portability</label>
+    <protected>false</protected>
+    <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
+        <field>Instrument__c</field>
+        <value xsi:type="xsd:string">Readiness</value>
+    </values>
+    <values>
+        <field>Dimension_Key__c</field>
+        <value xsi:type="xsd:string">consent_portability</value>
+    </values>
+    <values>
+        <field>Dimension_Name__c</field>
+        <value xsi:type="xsd:string">Consent &amp; Preference Portability</value>
+    </values>
+    <values>
+        <field>Measures__c</field>
+        <value xsi:type="xsd:string">Preference-centre and suppression complexity</value>
+    </values>
+    <values>
+        <field>Question_Text__c</field>
+        <value xsi:type="xsd:string">How are consent, preferences and suppressions handled today?</value>
+    </values>
+    <values>
+        <field>Option_1_Label__c</field>
+        <value xsi:type="xsd:string">A custom-built preference centre plus bespoke suppression logic nobody fully owns</value>
+    </values>
+    <values>
+        <field>Option_2_Label__c</field>
+        <value xsi:type="xsd:string">A customised preference centre with several suppression rules, only partly documented</value>
+    </values>
+    <values>
+        <field>Option_3_Label__c</field>
+        <value xsi:type="xsd:string">Light customisation on top of standard preference handling; suppression rules are documented</value>
+    </values>
+    <values>
+        <field>Option_4_Label__c</field>
+        <value xsi:type="xsd:string">Standard out-of-the-box preference and suppression handling only</value>
+    </values>
+    <values>
+        <field>Max_Answer_Value__c</field>
+        <value xsi:type="xsd:double">4.0</value>
+    </values>
+    <values>
+        <field>Sort_Order__c</field>
+        <value xsi:type="xsd:double">70.0</value>
+    </values>
+    <values>
+        <field>Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+</CustomMetadata>

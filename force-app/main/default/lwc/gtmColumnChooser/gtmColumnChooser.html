@@ -1,0 +1,62 @@
+<template>
+    <div
+        class={wrapClass}
+        onkeydown={handleKeydown}
+        onfocusout={handleFocusOut}
+        onmousedown={handlePointerDown}
+        onpointerdown={handlePointerDown}
+        onclick={handleWrapperClick}
+    >
+        <button
+            type="button"
+            class="slds-button slds-button_neutral gtm-col-chooser__trigger"
+            aria-haspopup="dialog"
+            aria-expanded={expanded}
+            aria-controls="gtm-col-chooser-pop"
+            aria-label={triggerAria}
+            data-trigger
+            onclick={handleTriggerClick}
+        >
+            <lightning-icon
+                class="slds-m-right_xx-small"
+                icon-name="utility:table"
+                size="xx-small"
+                alternative-text=""
+            ></lightning-icon>
+            <span class="gtm-col-chooser__trigger-text">{label}</span>
+        </button>
+        <span class="slds-assistive-text" aria-live="polite" data-live>{liveText}</span>
+        <div
+            if:true={isOpen}
+            id="gtm-col-chooser-pop"
+            role="dialog"
+            aria-label="Choose columns"
+            class="slds-dropdown slds-dropdown_left gtm-col-chooser__pop"
+            tabindex="-1"
+            data-pop
+        >
+            <p if:true={hasPinned} class="slds-text-body_small slds-m-bottom_x-small" data-role="pinned">{pinnedLine}</p>
+            <template for:each={groups} for:item="g">
+                <lightning-checkbox-group
+                    key={g.rev}
+                    name="columns"
+                    label="Columns"
+                    variant="label-hidden"
+                    options={options}
+                    value={value}
+                    onchange={handleChange}
+                ></lightning-checkbox-group>
+            </template>
+            <p if:true={hint} class="slds-text-color_error slds-text-body_small slds-m-top_x-small" role="status" data-role="hint">{hint}</p>
+            <div class="slds-m-top_small">
+                <lightning-button
+                    variant="neutral"
+                    label="Reset to default"
+                    disabled={resetDisabled}
+                    onclick={handleReset}
+                    data-role="reset"
+                ></lightning-button>
+            </div>
+        </div>
+    </div>
+</template>

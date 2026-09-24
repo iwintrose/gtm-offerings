@@ -1,0 +1,240 @@
+# SALESFORCE MARKETING CLOUD -> MARKETING CLOUD NEXT.
+#
+# Asymmetric posture, and the asymmetry is the useful part: the SOURCE is
+# instrumented (a real adapter reads classic SFMC, so journey and DE counts on
+# the readout are measured, not claimed) while the TARGET is interview_only (no
+# adapter writes MCN today). The headline posture is therefore the weaker of
+# the two -- interview_only -- but the "estate figures are illustrative" marker
+# is NOT raised, because estate figures come from reading the source and the
+# source is read for real. Collapsing that into one flag would either overstate
+# the target or throw away the one number on the page that is actually measured.
+#
+# ------------------------------------------------------------------------
+# [DECISION NEEDED] D-AMP — does AMPscript survive into Marketing Cloud Next?
+#
+# Two curated sources currently ship and they contradict each other:
+#
+#   skills/mce-mcn-helper/references/framework-reference.md says AMPscript
+#     "Carries over" -- "Core functions work. LookupRows, Field, AttributeValue,
+#     conditional/loop logic. Data target changes from DE to DMO or profile
+#     attribute", and repeats it under "What Carries Over" as a
+#     reduce-change-anxiety talking point.
+#
+#   docs/specs/tier-2/sfmc-next-target-adapter.md says it does not exist --
+#     "there is no AMPscript", capabilities.actions.email_send.ampscript: false
+#     ("critical delta vs classic"), personalization.ampscript status
+#     unsupported, and gap_pattern ampscript_block at severity major.
+#
+# The product owner has been asked and has not answered. This pack seeds the
+# ADAPTER-SPEC position -- no AMPscript -- because it is the one that costs the
+# client money if it is wrong in the optimistic direction: a rebuild you
+# budgeted for and did not need is a refund, a rebuild you did not budget for
+# is a change request mid-programme. The callout carries
+# verification_required: true so the readout hedges the claim rather than
+# asserting it.
+#
+# Whoever resolves this: fix it in ONE place. Both wordings must not ship live.
+# Either the framework reference's row is corrected, or this callout is
+# removed and the recalibration below reverts to the base anchors.
+# ------------------------------------------------------------------------
+
+name: sfmc_to_mcn
+source: sfmc
+target: sfmc_next
+specificity: 1
+active: true
+version: "2026.09.1"
+
+capability_posture: interview_only
+source_posture: instrumented
+target_posture: interview_only
+posture_statement: >-
+  Before you start, one thing about how we will read your answers. We can read
+  your current Marketing Cloud estate directly, so the journey, data extension
+  and automation figures in your readout are measured rather than described.
+  Nothing writes to Marketing Cloud Next yet, so the target-side model is the
+  accelerator's working picture of the platform and several entries are pending
+  verification against a real tenant.
+
+emphasis_slots: [content_portability, data_model_readiness, consent_portability]
+supplement_sets: [mcn_readiness]
+
+overrides:
+  - dimension: content_portability
+    layer: recalibrate
+    question: >-
+      How much of your email content is template and copy that can be rebuilt
+      as-is, versus AMPscript, SSJS and Cloud Pages that have no equivalent on
+      the target?
+    options:
+      - value: 1
+        label: "Heavy AMPscript and SSJS throughout, plus Cloud Pages doing customer-facing work. Content is an application, not a template set."
+      - value: 2
+        label: "AMPscript in most sends — lookups and conditional blocks — and at least one Cloud Page that matters."
+      - value: 3
+        label: "AMPscript confined to simple attribute substitution; no SSJS; Cloud Pages absent or disposable."
+      - value: 4
+        label: "Templates and copy only. Personalisation is merge fields, and the template count is small enough to rebuild deliberately."
+    evidence_prompt: "Ask for a count of email assets containing %%[ ]%% or %%= =%%, and whether any Cloud Page is customer-facing."
+    rationale: >-
+      docs/specs/tier-2/sfmc-next-target-adapter.md — gap_pattern ampscript_block ("AMPscript does not exist in SFMC Next", severity major) and the AMPscript detection regex the adapter uses; skills/mce-mcn-helper/references/framework-reference.md — "SSJS -> Apex / LWC / Flow expressions (Bridge or rebuild). No parity in MCN" and "Cloud Pages -> Experience Cloud pages / LWC (Bridge or rebuild)". Recalibration, not a reword: a 4 on this pair now requires the ABSENCE of scripting, where the base anchor allows a well-templated estate that happens to script. See [DECISION NEEDED] D-AMP in this file's header — if AMPscript is confirmed to carry over, these anchors revert to base.
+
+  - dimension: data_model_readiness
+    layer: recalibrate
+    question: >-
+      How much of your data model is Data Extensions doing data-model work,
+      versus something that already resolves to one person across sources?
+    options:
+      - value: 1
+        label: "Hundreds of DEs, journey-specific, no shared key. The model is whatever the last campaign needed."
+      - value: 2
+        label: "Relational DEs exist but are per-journey; Contact Builder links are manual and partly stale."
+      - value: 3
+        label: "A documented, shared audience layer in DEs, reused across journeys, with a stable Subscriber Key."
+      - value: 4
+        label: "Data Cloud already in use with identity resolution configured; segments and Calculated Insights are live."
+    rationale: skills/mce-mcn-helper/references/framework-reference.md — "Data Extension -> Data Model Object (Rebuilt)" and "Contact Builder -> Data Streams + Identity Resolution (Replaced)"; skills/mce-mcn-helper/references/skills/02-maturity.md — the Stage-2-disguised-as-Stage-3 pattern ("high journey count but each journey has its own DE set") is exactly what a 1 or 2 here is detecting.
+
+  # ---- Slot 7. THE WORKED BRANCH. -----------------------------------------
+  #
+  # Two authored questions, one slot, and the earlier answer decides which one
+  # is asked. This is the pattern the original Marketing Cloud Next readiness
+  # check used ("ask the MCE version if they said MCE, else the MCAE version"),
+  # expressed as data rather than as a fork in a component.
+  #
+  # The FIRST row below is the slot's DEFAULT: no show_when, so it always
+  # applies. The row after it is a VARIANT: it substitutes for the default when
+  # its predicate matches. That ordering is the whole invariant. A variant can
+  # only ever REPLACE the question in position 7 -- there is no authoring shape
+  # that leaves position 7 empty -- so both respondents answer eight questions
+  # and both totals are out of 32. Branching changes WHAT you are asked, never
+  # HOW MANY.
+  #
+  # WHY IT BRANCHES HERE. Slot 6 has just established how far the estate reaches
+  # outside the platform. If the answer was "a long way" (integration_containment
+  # 1 or 2), then asking "how is subscription state modelled inside Marketing
+  # Cloud" is asking about the wrong system: consent is almost certainly
+  # mastered in the CRM or a CDP that is not in this migration's scope and is
+  # owned by somebody who has not been in any of these meetings. That is a
+  # difference of KIND, not of degree -- the same test layer 3 substitution has
+  # to pass -- so it earns a different question rather than a recalibration.
+  - dimension: consent_portability
+    layer: recalibrate
+    question: >-
+      How is subscription and consent state modelled in Marketing Cloud today —
+      Subscriptions and Publication Lists, or a custom preference centre backed
+      by Data Extensions?
+    options:
+      - value: 1
+        label: "A custom preference centre on Cloud Pages, backed by DEs, with AMPscript writing the state. Nobody has reproduced its rules on paper."
+      - value: 2
+        label: "Custom preference centre, but the rules are documented and the state is a small number of fields."
+      - value: 3
+        label: "Native Subscriptions and Publication Lists, used as intended, with lawful basis recorded."
+      - value: 4
+        label: "Consent is already a cross-channel policy outside the send platform, and Marketing Cloud reads it rather than owning it."
+    evidence_prompt: "Ask whether unsubscribe writes to a DE or to All Subscribers. The answer decides whether this is a rebuild or a re-point."
+    rationale: >-
+      skills/mce-mcn-helper/references/framework-reference.md — "Custom Preference Center -> MCN Consent & Custom Preferences (Spring '26+) (Rebuilt). Verify current feature parity before committing to rebuild timeline"; skills/mce-mcn-helper/references/skills/10-roadmap.md — "Preference center: bridge on MCE -> rebuild after Spring '26 parity verification". This is the DEFAULT question for the slot: it assumes the platform owns consent, which is the common case when the estate is contained.
+
+  - dimension: consent_portability
+    layer: substitute
+    variant_key: consent_owned_elsewhere
+    variant_order: 10
+    show_when:
+      all:
+        - { field: integration_containment, op: lte, value: 2 }
+    new_key: consent_ownership_outside_platform
+    label: Consent Ownership Outside the Platform
+    question: >-
+      You have just told us the estate reaches well outside Marketing Cloud. Who
+      actually MASTERS consent — the CRM, a CDP, a preference service — and is
+      that system in scope for this migration or somebody else's roadmap?
+    options:
+      - value: 1
+        label: "Nobody is sure. Consent state exists in more than one system and they are known to disagree."
+        points: 1
+      - value: 2
+        label: "Another team's system masters it, it is out of scope for this programme, and no one from that team has been in these conversations."
+        points: 1
+      - value: 3
+        label: "Another system masters it, the owner is named and engaged, and the interface is documented."
+        points: 3
+      - value: 4
+        label: "A single system masters consent, it is in scope, and the migration can re-point to it without renegotiating ownership."
+        points: 4
+    evidence_prompt: "Get a name, not a system. 'Who do we call when a customer disputes a consent record' is the question that produces one."
+    rationale: >-
+      skills/mce-mcn-helper/references/skills/10-roadmap.md — the external-dependency section, where an adjacent workstream with no named owner is the standard cause of a slipped phase, applied to the one workstream that cannot be descoped for legal reasons. docs/runbooks/assessment-instrument.md — the layer-3 test (same position, same risk theme, different KIND of question) and the branching rules this row is the worked example of.
+
+      NON-LINEAR POINTS, DELIBERATELY. Options 1 and 2 are both worth 1. "The
+      systems disagree" and "another team owns it and has never been in the
+      room" are not one step apart in remediation cost — they are the same
+      problem, discovered at different times, and both mean a consent
+      reconciliation workstream before any send. Making the second worth 2 would
+      have said something the estate does not support. The slot still bottoms at
+      1 and tops at 4, so the pair is still scored out of 32 and still banded at
+      14/20/26: points bought a shape, not a different maximum.
+
+callouts:
+  - pattern: ampscript_block
+    status: unsupported
+    severity: major
+    category: personalization
+    issue: "Email asset contains AMPscript that has no direct SFMC Next equivalent"
+    gloss: "AMPscript does not exist in SFMC Next"
+    workaround: >-
+      Three resolution paths, in preference order: a single-attribute read
+      becomes a merge field; a lookup or calculation becomes a Calculated
+      Insight referenced in the template; a recommendation becomes an Einstein
+      Personalization slot. Each gap needs human review.
+    manual_steps:
+      - "Inventory AMPscript constructs in source email"
+      - "Classify each as merge-field / CI / Einstein"
+      - "Rebuild the email asset in Content Studio with the chosen primitive"
+      - "Validate rendered output against samples"
+    verification_required: true
+    rationale: docs/specs/tier-2/sfmc-next-target-adapter.md — gap_patterns[0], quoted. verification_required is set here even though the manifest does not set it on this entry, because of the unresolved contradiction with framework-reference.md — see [DECISION NEEDED] D-AMP in this file's header. It is the flag that makes the readout hedge rather than assert.
+
+  - pattern: data_extension_dependency
+    status: unsupported
+    severity: blocker
+    category: data_model
+    issue: "Journey reads from or writes to a Data Extension (no DE concept in SFMC Next)"
+    gloss: "DEs are replaced by DMOs in Data Cloud"
+    workaround: >-
+      Re-model the DE as a DMO. The accelerator emits a DMO contract (schema
+      only); the operator wires Data Cloud ingestion.
+    manual_steps:
+      - "Review emitted dmo_<name>.json"
+      - "Create DMO in Data Cloud workspace"
+      - "Configure DLO + ingestion stream OR mapping from existing DMO"
+      - "Run Identity Resolution if the DMO joins on Individual"
+    verification_required: false
+    rationale: docs/specs/tier-2/sfmc-next-target-adapter.md — gap_patterns[1], quoted verbatim.
+
+  - pattern: classic_frequency_cap_proxy
+    status: unsupported
+    severity: blocker
+    category: flow_control
+    issue: "Source journey is a frequency-capping proxy (DE-driven cap logic)"
+    gloss: "SFMC Next has native channel-level Activation Limits"
+    workaround: "Reject the source journey; the operator configures Activation Limits in the tenant."
+    manual_steps:
+      - "Mark source journey as rejected in IR"
+      - "Configure Activation Limits per channel in Marketing Cloud Growth Setup"
+      - "Document weekly/monthly cap policy in tenant runbook"
+    verification_required: false
+    rationale: docs/specs/tier-2/sfmc-next-target-adapter.md — gap_patterns[2], quoted verbatim. The classic-side infrastructure this replaces is capabilities/platforms/sfmc.yaml infrastructure.frequency_capping.
+
+  - pattern: automation_studio_sql
+    status: unsupported
+    severity: major
+    category: data_model
+    issue: "Audience preparation depends on Automation Studio SQL"
+    gloss: "Batch SQL is largely replaced by declarative transforms, Calculated Insights and Flow"
+    workaround: "Rearchitect each query as a Data 360 transform or Calculated Insight; complex SQL is a redesign, not a port."
+    verification_required: false
+    rationale: skills/mce-mcn-helper/references/framework-reference.md — "Automation Studio SQL -> Scheduled Flow + Data 360 Transforms + Calculated Insights (Replaced) ... Complex SQL will need rearchitecting - not a copy."
+
+rationale: docs/specs/tier-2/sfmc-next-target-adapter.md — the target-side capability model and gap catalogue; skills/mce-mcn-helper/references/framework-reference.md — the MCE-to-MCN concept translation table. The two disagree about AMPscript; see [DECISION NEEDED] D-AMP in this file's header.

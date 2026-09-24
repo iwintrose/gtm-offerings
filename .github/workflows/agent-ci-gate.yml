@@ -1,0 +1,236 @@
+name: Agent CI Gate
+
+# Integration gate for the BA -> Architect -> Developer -> QA worktree
+# roster (AGENTS.md §2). Runs on any agent/issue-* branch and on PRs whose
+# head branch matches, so a Developer agent's push and a QA agent's PR both
+# hit the same checks before scripts/agent-workspace.sh complete opens or
+# merges anything.
+
+on:
+  push:
+    branches:
+      - "agent/issue-*"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  gate:
+    # For push events this checks the ref name; for pull_request events
+    # GitHub Actions can't filter `on:` by head branch pattern, so the same
+    # condition is re-checked here against github.head_ref.
+    if: |
+      startsWith(github.ref_name, 'agent/issue-') ||
+      startsWith(github.head_ref, 'agent/issue-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require scope file
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          ISSUE_ID="${BRANCH_NAME#agent/issue-}"
+          SCOPE_FILE="docs/agent-artifacts/task-scope-${ISSUE_ID}.md"
+
+          # TODO(remove after in-flight branches merge): branches created
+          # before the per-task scope path migration only carry the legacy
+          # root-level TASK_SCOPE.md. Accept that path too until those
+          # branches have all merged, then delete this fallback.
+          if [[ ! -f "$SCOPE_FILE" && -f TASK_SCOPE.md ]]; then
+            echo "::warning::$SCOPE_FILE not found — falling back to legacy TASK_SCOPE.md (migration-window fallback, remove after in-flight branches merge)."
+            SCOPE_FILE="TASK_SCOPE.md"
+          fi
+
+          if [[ ! -f "$SCOPE_FILE" ]]; then
+            echo "::error::$SCOPE_FILE is missing. The BA agent must author it before this branch can pass the gate (AGENTS.md §2)." >&2
+            exit 1
+          fi
+          if grep -qE '\[ID\]|\[What is the user trying to achieve\?\]' "$SCOPE_FILE"; then
+            echo "::error::$SCOPE_FILE still has unfilled template placeholders — the BA agent must complete it, not just check in the blank template." >&2
+            exit 1
+          fi
+          # A non-placeholder scope file isn't necessarily the RIGHT
+          # one -- found on the issue-13 test run, where a worktree
+          # branched with the previous issue's already-filled-in scope
+          # file still in place and this check passed anyway. Cross-check
+          # the branch name's issue id against the file's own header.
+          if ! grep -qF "ISSUE #${ISSUE_ID}" "$SCOPE_FILE"; then
+            echo "::error::$SCOPE_FILE doesn't mention 'ISSUE #${ISSUE_ID}' (branch ${BRANCH_NAME}) -- this looks like a stale scope file left over from a different issue, not one written for this branch." >&2
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: LWC Jest suite
+        run: npm test
+
+      - name: Ownership backfill script self-tests (no org)
+        # Offline only: --check makes no org call and no sf invocation.
+        run: python3 scripts/backfill-link-owner.py --check
+
+      - name: Synthetic seed checks (no org)
+        # Offline only: none of these modes calls sf or opens a connection.
+        # --self-test stubs every sf shell-out.
+        run: |
+          python3 scripts/seed-synthetic-data.py --check
+          python3 scripts/seed-synthetic-data.py --check-teardown
+          python3 scripts/seed-synthetic-data.py --self-test
+
+      - name: Static reference / instrument drift audit
+        # Neither check-references.py nor build-instrument.py --check is
+        # compared against a clean-tree baseline by design -- main itself
+        # currently reports pre-existing deploy-blocking findings (issue #33),
+        # and build-instrument.py --check independently fails on EVERY run in
+        # this job (main included) because there is no ma-migrator working
+        # copy checked out here for its rule 5 (cited-path) checks, and this
+        # step never sets MA_MIGRATOR_ROOT or passes
+        # --allow-missing-source-root. Failing the whole job on either
+        # script's raw exit code would fail every PR identically regardless
+        # of what it changes, which is exactly the "permanent red X" this
+        # step exists to avoid.
+        #
+        # Fix: run both scripts against this branch AND against origin/main
+        # (a second worktree at the same commit the PR would merge into),
+        # then fail only when the branch's run reports at least one
+        # deploy-blocking finding line (an "x " line, or check-references.py's
+        # "DANGLING REFERENCES" entries) that main's run does not also report.
+        # A finding already on main is pre-existing debt and does not fail the
+        # PR; a finding that's new is real drift this PR introduced and must
+        # fail it. This deliberately never launders "any count is fine" --
+        # main's own baseline is recomputed fresh on every run, so a PR that
+        # adds one new deploy-blocking finding on top of an otherwise-clean
+        # baseline still fails, even after main's pre-existing debt reaches 0.
+        run: |
+          set -uo pipefail
+
+          extract_findings() {
+            # Every finding line starts "  x ". Two shapes exist: a DANGLING
+            # REFERENCES entry is one complete line by itself, but a
+            # WOULD-NOT-DEPLOY entry is a "  x <path>" line followed by an
+            # indented "      <reason>" continuation line that has to stay
+            # paired with it (so two different findings can never recombine
+            # into a path from one and a reason from another). Buffer each
+            # "  x " line; if the very next line is an indented continuation,
+            # merge them into one tab-separated record, otherwise flush the
+            # buffered line on its own before moving on.
+            awk '
+              function flush() { if (key != "") { print key; key = "" } }
+              /^  x / { flush(); key = $0; next }
+              /^      / { if (key != "") { print key "\t" $0; key = ""; next } }
+              { flush() }
+              END { flush() }
+            ' "$1" | sort -u
+          }
+
+          # GitHub Actions runs `run:` steps under `bash -e` by default (see
+          # the "shell: /usr/bin/bash -e {0}" this step's own log records) --
+          # this script's own `set -uo pipefail` does not cancel that. Both
+          # scripts below are EXPECTED to exit nonzero routinely (36
+          # pre-existing manual-step items alone guarantee it) -- capturing
+          # that exit code is the whole point, not an error to abort on.
+          # `set +e` around each call (rather than `|| true`) so the real
+          # exit code still lands in the variable -- `cmd || true` would
+          # always yield 0 from $?, losing the distinction the later
+          # informational branches depend on.
+          echo "== Running static checks against this branch =="
+          set +e
+          python3 scripts/check-references.py > /tmp/pr-references.txt 2>&1
+          pr_ref_exit=$?
+          python3 scripts/build-instrument.py --check > /tmp/pr-instrument.txt 2>&1
+          pr_bi_exit=$?
+          set -e
+
+          echo "== Checking out origin/main as the baseline =="
+          git fetch origin main --depth=1
+          git worktree add /tmp/main-baseline origin/main >/dev/null
+
+          echo "== Running the identical static checks against main =="
+          set +e
+          (cd /tmp/main-baseline && python3 scripts/check-references.py) > /tmp/main-references.txt 2>&1
+          (cd /tmp/main-baseline && python3 scripts/build-instrument.py --check) > /tmp/main-instrument.txt 2>&1
+          set -e
+
+          git worktree remove /tmp/main-baseline --force
+
+          fail=0
+
+          echo "---- check-references.py: findings new vs. main ----"
+          extract_findings /tmp/pr-references.txt > /tmp/pr-ref-findings.txt
+          extract_findings /tmp/main-references.txt > /tmp/main-ref-findings.txt
+          new_ref=$(comm -23 /tmp/pr-ref-findings.txt /tmp/main-ref-findings.txt)
+          if [[ -n "$new_ref" ]]; then
+            echo "::error::check-references.py reports deploy-blocking finding(s) not present on main:"
+            echo "$new_ref" | sed 's/\t/ -- /'
+            fail=1
+          elif [[ "$pr_ref_exit" -ne 0 ]]; then
+            echo "check-references.py exited nonzero but every deploy-blocking finding already exists on main -- treating as pre-existing debt, not this PR's problem."
+          else
+            echo "No deploy-blocking findings."
+          fi
+
+          echo "---- build-instrument.py --check: findings new vs. main ----"
+          extract_findings /tmp/pr-instrument.txt > /tmp/pr-bi-findings.txt
+          extract_findings /tmp/main-instrument.txt > /tmp/main-bi-findings.txt
+          new_bi=$(comm -23 /tmp/pr-bi-findings.txt /tmp/main-bi-findings.txt)
+          if [[ -n "$new_bi" ]]; then
+            echo "::error::build-instrument.py --check reports finding(s) not present on main:"
+            echo "$new_bi" | sed 's/\t/ -- /'
+            fail=1
+          elif [[ "$pr_bi_exit" -ne 0 ]]; then
+            echo "build-instrument.py --check exited nonzero but every finding already exists on main (e.g. the missing ma-migrator working copy) -- treating as pre-existing, not this PR's problem."
+          else
+            echo "Instrument up to date."
+          fi
+
+          exit "$fail"
+
+      - name: sfx guard self-test
+        run: |
+          bash scripts/tests/test-sfx-guard.sh
+          python3 -m unittest discover -s scripts/tests -p test_sf_guard.py
+
+      - name: Set up Salesforce CLI
+        run: npm install --global @salesforce/cli
+
+      - name: Authenticate to the CI target org (JWT; never gtm-dev)
+        id: sf_auth
+        env:
+          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
+          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+          SF_INSTANCE_URL: ${{ secrets.SF_INSTANCE_URL }}
+          CI_SF_ALIAS: ${{ vars.CI_SF_ALIAS || 'gtm-staging' }}
+        run: |
+          if [[ "${CI_SF_ALIAS,,}" == "gtm-dev" ]]; then
+            echo "::error::CI_SF_ALIAS must not be gtm-dev (locked production org)."
+            exit 1
+          fi
+          if [[ -z "$SF_JWT_KEY" || -z "$SF_CONSUMER_KEY" || -z "$SF_USERNAME" ]]; then
+            echo "::warning::SF_JWT_KEY / SF_CONSUMER_KEY / SF_USERNAME secrets are not configured — skipping the metadata dry-run. They must be gtm-staging credentials, never gtm-dev. Deploy validation is not actually running until these are set on the repo (Settings > Secrets and variables > Actions)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$SF_JWT_KEY" > server.key
+          sf org login jwt \
+            --client-id "$SF_CONSUMER_KEY" \
+            --jwt-key-file server.key \
+            --username "$SF_USERNAME" \
+            --instance-url "${SF_INSTANCE_URL:-https://login.salesforce.com}" \
+            --alias "$CI_SF_ALIAS"
+          rm -f server.key
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Validate metadata (dry run — no org changes)
+        if: steps.sf_auth.outputs.skip == 'false'
+        env:
+          CI_SF_ALIAS: ${{ vars.CI_SF_ALIAS || 'gtm-staging' }}
+        run: |
+          scripts/lib/sfx --session -- bash -c 'exec "$SF_GUARD_SFX" project deploy start --source-dir force-app/main/default --target-org "$CI_SF_ALIAS" --dry-run --ignore-conflicts'

@@ -1,0 +1,32 @@
+.trend-banner { border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.82rem;
+                margin-bottom: 0.75rem; }
+.trend-up   { background: #eaf5ec; color: #2e844a; }
+.trend-down { background: #fce9e9; color: #c23934; }
+.trend-flat { background: #f3f3f3; color: #555; }
+.trend-arrow{ font-weight: 700; margin-right: 0.35rem; }
+
+.history-list { list-style: none; padding: 0; margin: 0; }
+.history-item { padding: 0.75rem 0.5rem; border-bottom: 1px solid #f0f0f0;
+                border-left: 4px solid transparent; }
+.history-item:last-child { border-bottom: none; }
+.history-item-good { border-left-color: #2e844a; }
+.history-item-warn { border-left-color: #ff9e2c; }
+.history-item-bad  { border-left-color: #c23934; }
+
+.score-badge  { font-size: 2rem; font-weight: 700; line-height: 1; }
+.score-good   { color: #2e844a; }
+.score-warn   { color: #ff9e2c; }
+.score-bad    { color: #c23934; }
+.score-label  { font-size: 0.65rem; color: #888; }
+
+.run-date     { font-size: 0.8rem; font-weight: 600; color: #333; }
+.run-platform { font-size: 0.7rem; color: #888; text-transform: uppercase;
+                letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+.run-stats    { font-size: 0.72rem; color: #777; }
+.stat-sep     { margin: 0 0.25rem; color: #ccc; }
+
+.delta-badge  { font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.4rem;
+                border-radius: 999px; }
+.delta-up     { background: #eaf5ec; color: #2e844a; }
+.delta-down   { background: #fce9e9; color: #c23934; }
+.delta-flat   { background: #f3f3f3; color: #888; }

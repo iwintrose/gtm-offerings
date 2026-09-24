@@ -1,0 +1,131 @@
+:host {
+    display: block;
+    min-width: 0;
+    /* One density token for the filter triggers and Clear filters. Never below 24px. */
+    --gtm-control-h: 32px;
+    --gtm-control-pad-x: 0.5rem;
+    --gtm-control-font: 12px;
+}
+
+.gtm-filter-bar {
+    min-width: 0;
+}
+
+/* Pin to the top: rows grow downward only, never re-center (overrides the
+   slds-grid_vertical-align-center class set in js). */
+.gtm-filter-bar.gtm-filter-bar {
+    align-items: flex-start;
+    align-content: flex-start;
+    min-height: max(24px, var(--gtm-control-h, 32px));
+}
+
+.gtm-filter-bar__item {
+    min-width: 0;
+    max-width: 100%;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.gtm-filter-bar__trigger {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+    height: max(24px, var(--gtm-control-h, 32px));
+    min-height: max(24px, var(--gtm-control-h, 32px));
+    line-height: 1;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: var(--gtm-control-pad-x, 0.5rem);
+    padding-right: var(--gtm-control-pad-x, 0.5rem);
+    font-size: var(--gtm-control-font, 12px);
+}
+
+.gtm-filter-bar__x {
+    margin-left: 0.125rem;
+}
+
+.gtm-filter-bar__addlist {
+    min-width: 0;
+}
+
+.gtm-filter-bar__additem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 0.5rem;
+}
+
+.gtm-filter-bar__trigger-text {
+    display: block;
+    min-width: 0;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gtm-filter-bar__trigger--active .gtm-filter-bar__trigger-text {
+    font-weight: 700;
+}
+
+.gtm-filter-bar .gtm-filter-bar__pop {
+    position: absolute;
+    left: auto;
+    right: 0;
+    transform: none;
+    top: 100%;
+    margin-top: 0.125rem;
+    min-width: 12rem;
+    width: max-content;
+    max-width: calc(100vw - 1rem);
+    padding: 0.75rem;
+    overflow: visible;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+.gtm-filter-bar .gtm-filter-bar__pop--more {
+    width: 20rem;
+}
+
+.gtm-filter-bar__section + .gtm-filter-bar__section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.gtm-filter-bar__list {
+    max-height: 14rem;
+    overflow-y: auto;
+    min-width: 0;
+}
+
+.gtm-filter-bar__search {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.gtm-filter-bar__empty {
+    padding: 0.25rem 0;
+}
+
+.gtm-filter-bar__clear {
+    margin-bottom: 0.125rem;
+    min-height: max(24px, var(--gtm-control-h, 32px));
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--gtm-control-font, 12px);
+}
+
+.gtm-filter-bar__count {
+    margin-left: 0.5rem;
+    margin-bottom: 0.125rem;
+    color: #747474;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    /* Control-row height so count text never changes bar height. */
+    line-height: max(24px, var(--gtm-control-h, 32px));
+    margin-top: 0;
+}

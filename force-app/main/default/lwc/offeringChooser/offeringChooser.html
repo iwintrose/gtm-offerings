@@ -1,0 +1,58 @@
+<template>
+  <div class={rootClass}>
+    <template if:true={_loadError}>
+      <div class="load-error" role="status">{_loadError}</div>
+    </template>
+
+
+    <div class="bar" data-section="header">
+      <div class="bar-wm">
+        <span class="tick"></span>
+        <span class="wm-black">{brandLabelFirstWord}</span><span class="wm-red">{brandLabelRest}</span>
+        <span class="bar-tag mono">{brandTag}</span>
+      </div>
+      <div class="bar-right">
+        <c-gtm-saved-links-bar></c-gtm-saved-links-bar>
+        <button class="tbtn" title="Theme" onclick={handleThemeToggle}>◐</button>
+      </div>
+    </div>
+
+    <div class="wrap" data-section="intro">
+      <div class="eyebrow"><span class="bead"></span> {eyebrow}</div>
+      <h1>{headline}</h1>
+      <p class="sub">{subhead}</p>
+
+      <template if:true={hasNoTiles}>
+        <div class="load-error" role="status">No offerings are configured yet.</div>
+      </template>
+
+      <div class="grid">
+        <!-- One element per iteration so the key has somewhere to live: a live
+             tile links onward, a placeholder has no href and does not. -->
+        <template for:each={tiles} for:item="t">
+          <a key={t.id} class={t.tileClass} href={t.href} data-section={t.sectionKey}>
+            <template if:true={t.isLive}>
+              <div class="tile-accent-bar"></div>
+            </template>
+            <div class="tile-mark">{t.mark}</div>
+            <div class="tile-name">{t.name}</div>
+            <div class="tile-desc">
+              <lightning-formatted-rich-text value={t.description}></lightning-formatted-rich-text>
+            </div>
+            <template if:true={t.isLive}>
+              <div class="tile-go">Explore this offering &rarr;</div>
+            </template>
+            <template if:false={t.isLive}>
+              <span class="soon-tag">Coming soon</span>
+            </template>
+          </a>
+        </template>
+      </div>
+    </div>
+
+    <footer class="pf" data-section="footer">
+      <span>{footerLeft}</span>
+      <span>{footerRight}</span>
+    </footer>
+  </div>
+</template>

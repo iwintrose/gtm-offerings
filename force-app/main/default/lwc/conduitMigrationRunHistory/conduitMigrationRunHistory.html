@@ -1,0 +1,121 @@
+<template>
+    <lightning-card title="Conduit Migration Runs" icon-name="standard:process">
+        <lightning-button
+            slot="actions"
+            label="Refresh"
+            icon-name="utility:refresh"
+            onclick={handleRefresh}
+            variant="neutral">
+        </lightning-button>
+
+        <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-top_x-small slds-p-bottom_x-small">
+            <p class="slds-text-body_small slds-text-color_weak">
+                Every migration run for this assessment. Click a run to open its record for full step-level detail, per-step errors, and rollback controls.
+            </p>
+        </div>
+
+        <template lwc:if={isLoading}>
+            <div class="slds-p-around_large slds-text-align_center">
+                <lightning-spinner alternative-text="Loading…" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template lwc:if={loadError}>
+            <div class="slds-p-around_medium">
+                <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">{loadError}</div>
+            </div>
+        </template>
+
+        <template lwc:if={isEmpty}>
+            <div class="slds-p-around_large slds-text-align_center empty-state">
+                <p class="slds-text-heading_small slds-m-bottom_x-small">No migration runs yet.</p>
+                <p class="slds-text-body_small slds-text-color_weak">
+                    Head to the Runbook tab, generate a runbook, and click Execute Migration to create your first run.
+                </p>
+            </div>
+        </template>
+
+        <template lwc:if={hasRuns}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+
+                <!-- Aggregate summary strip -->
+                <div class="summary-strip slds-grid slds-gutters slds-m-bottom_medium">
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num">{summary.runs}</p>
+                        <p class="summary-label">Runs</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num">{summary.total}</p>
+                        <p class="summary-label">Total Steps</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num summary-applied">{summary.applied}</p>
+                        <p class="summary-label">Applied</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num summary-failed">{summary.failed}</p>
+                        <p class="summary-label">Failed</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center summary-cell">
+                        <p class="summary-num summary-skipped">{summary.skipped}</p>
+                        <p class="summary-label">Skipped</p>
+                    </div>
+                </div>
+
+                <!-- Run cards -->
+                <template for:each={runs} for:item="r">
+                    <div key={r.id} class="run-card" data-run-id={r.id} onclick={handleOpenRun}>
+                        <div class="run-header">
+                            <div class="run-header-left">
+                                <span class={r.statusClass}>{r.status}</span>
+                                <span class="run-name">{r.name}</span>
+                                <span class="run-target">→ {r.targetConfig}</span>
+                            </div>
+                            <div class="run-header-right">
+                                <span class="run-when">{r.startedLabel} · {r.duration}</span>
+                            </div>
+                        </div>
+
+                        <div class="run-counts">
+                            <span class="count-chip count-total">Total {r.total}</span>
+                            <span class="count-chip count-applied">Applied {r.succeeded}</span>
+                            <span class="count-chip count-failed">Failed {r.failed}</span>
+                            <span class="count-chip count-skipped">Skipped {r.skipped}</span>
+                            <template lwc:if={r.rollbackEnabled}>
+                                <span class="count-chip count-rollback">Rollback enabled</span>
+                            </template>
+                            <span class="run-by">by {r.startedBy}</span>
+                        </div>
+
+                        <template lwc:if={r.hasSkipBreakdown}>
+                            <div class="run-skips">
+                                <p class="run-skips-label">Skip breakdown:</p>
+                                <div class="run-skips-chips">
+                                    <template for:each={r.skipBreakdown} for:item="s">
+                                        <span key={s.key} class={s.cls}>{s.label}</span>
+                                    </template>
+                                </div>
+                                <template lwc:if={r.haltNote}>
+                                    <p class="run-halt-note">{r.haltNote}</p>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template lwc:if={r.hasErrors}>
+                            <div class="run-errors">
+                                <p class="run-errors-label">First errors:</p>
+                                <ul>
+                                    <template for:each={r.errorLines} for:item="line">
+                                        <li key={line.key}>{line.text}</li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+
+                        <div class="run-open-hint">View run details →</div>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </lightning-card>
+</template>

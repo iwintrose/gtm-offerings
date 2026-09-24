@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Readout_Template_Key__c</fullName>
+    <label>Readout Template Key</label>
+    <description>Free-text key identifying the readout content/template to use when a submission lands in this outcome range. Resolution logic is a sub-issue 02/03 concern; this field only stores the author's chosen key.</description>
+    <type>Text</type>
+    <length>100</length>
+    <required>false</required>
+</CustomField>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Estate_Complexity_Score__c</fullName>
+    <label>Estate Complexity Score</label>
+    <description>The second axis, 6-18 (six dimensions scored 1-3). DELIBERATELY NOT folded into Assessment_Score__c: complexity sizes the engagement, readiness gates whether one can start. A heavy estate is a bigger piece of work, not a worse client, and averaging the two axes together would hide exactly that. Null until estimated.</description>
+    <required>false</required>
+    <precision>18</precision>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

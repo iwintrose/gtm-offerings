@@ -1,0 +1,163 @@
+<template>
+    <div class={rootClass} role="group" aria-label={label} onkeydown={handleKeydown} onfocusout={handleFocusOut} onmousedown={handlePointerDown} onpointerdown={handlePointerDown} onclick={handleWrapperClick}>
+        <template for:each={slots} for:item="s">
+            <div key={s.key} class={s.wrapClass}>
+                <button
+                    type="button"
+                    class={s.triggerClass}
+                    aria-haspopup="dialog"
+                    aria-expanded={s.expanded}
+                    aria-controls={s.popId}
+                    aria-label={s.triggerAria}
+                    data-slot={s.key}
+                    onclick={handleTriggerClick}
+                >
+                    <span class="gtm-filter-bar__trigger-text">{s.triggerText}</span>
+                    <lightning-icon
+                        class="slds-m-left_xx-small"
+                        icon-name="utility:down"
+                        size="xx-small"
+                        alternative-text=""
+                    ></lightning-icon>
+                </button>
+                <div
+                    if:true={s.open}
+                    id={s.popId}
+                    role="dialog"
+                    aria-label={s.popLabel}
+                    class={s.popClass}
+                    tabindex="-1"
+                    data-pop={s.key}
+                >
+                    <template for:each={s.sections} for:item="f">
+                        <div key={f.key} class="gtm-filter-bar__section">
+                            <div if:true={f.showTitle} class="slds-text-title_bold slds-m-bottom_xx-small">{f.label}</div>
+                            <template if:true={f.searchable}>
+                                <lightning-input
+                                    class="gtm-filter-bar__search"
+                                    data-role="search"
+                                    data-key={f.key}
+                                    type="search"
+                                    label={f.searchLabel}
+                                    variant="label-hidden"
+                                    placeholder="Filter options"
+                                    value={f.searchValue}
+                                    onchange={handleSearchChange}
+                                ></lightning-input>
+                            </template>
+                            <template if:true={f.isMulti}>
+                                <div class="gtm-filter-bar__list">
+                                    <lightning-checkbox-group
+                                        if:true={f.hasOptions}
+                                        data-key={f.key}
+                                        name={f.key}
+                                        label={f.label}
+                                        variant="label-hidden"
+                                        options={f.options}
+                                        value={f.value}
+                                        onchange={handleMultiChange}
+                                    ></lightning-checkbox-group>
+                                    <div if:false={f.hasOptions} class="gtm-filter-bar__empty">No matches</div>
+                                </div>
+                            </template>
+                            <template if:true={f.isSingle}>
+                                <div class="gtm-filter-bar__list">
+                                    <lightning-radio-group
+                                        if:true={f.hasOptions}
+                                        data-key={f.key}
+                                        name={f.key}
+                                        label={f.label}
+                                        variant="label-hidden"
+                                        options={f.options}
+                                        value={f.value}
+                                        onchange={handleSingleChange}
+                                    ></lightning-radio-group>
+                                    <div if:false={f.hasOptions} class="gtm-filter-bar__empty">No matches</div>
+                                </div>
+                            </template>
+                            <template if:true={f.isToggle}>
+                                <lightning-input
+                                    data-key={f.key}
+                                    type="toggle"
+                                    name={f.key}
+                                    label={f.label}
+                                    checked={f.checked}
+                                    message-toggle-active=""
+                                    message-toggle-inactive=""
+                                    onchange={handleToggleChange}
+                                ></lightning-input>
+                            </template>
+                            <template if:true={f.isDateRange}>
+                                <lightning-radio-group
+                                    data-key={f.key}
+                                    name={f.key}
+                                    label={f.label}
+                                    variant="label-hidden"
+                                    options={f.options}
+                                    value={f.value}
+                                    onchange={handlePresetChange}
+                                ></lightning-radio-group>
+                                <template if:true={f.showCustom}>
+                                    <lightning-input
+                                        data-key={f.key}
+                                        data-edge="from"
+                                        type="date"
+                                        label="From"
+                                        value={f.from}
+                                        onchange={handleDateChange}
+                                    ></lightning-input>
+                                    <lightning-input
+                                        data-key={f.key}
+                                        data-edge="to"
+                                        type="date"
+                                        label="To"
+                                        value={f.to}
+                                        onchange={handleDateChange}
+                                    ></lightning-input>
+                                </template>
+                            </template>
+                        </div>
+                    </template>
+                    <template if:true={s.isMore}>
+                        <div role="group" aria-label="Add filters" class="gtm-filter-bar__addlist">
+                            <template for:each={s.moreItems} for:item="m">
+                                <div key={m.key} class="gtm-filter-bar__additem">
+                                    <lightning-input
+                                        type="checkbox"
+                                        data-key={m.key}
+                                        label={m.label}
+                                        checked={m.checked}
+                                        disabled={m.disabled}
+                                        onchange={handleMoreToggle}
+                                    ></lightning-input>
+                                    <span if:true={m.help} class="slds-text-body_small gtm-filter-bar__inuse">In use</span>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+                <lightning-button-icon
+                    if:true={s.removable}
+                    class="gtm-filter-bar__x"
+                    icon-name="utility:close"
+                    size="xx-small"
+                    variant="bare"
+                    alternative-text={s.removeLabel}
+                    data-key={s.key}
+                    onclick={handleRemove}
+                ></lightning-button-icon>
+            </div>
+        </template>
+        <div if:true={hasActive} class="gtm-filter-bar__clear slds-m-right_x-small">
+            <lightning-button
+                variant="base"
+                label="Clear filters"
+                onclick={handleClearAll}
+            ></lightning-button>
+        </div>
+        <span class="slds-assistive-text" aria-live="polite">{announcement}</span>
+        <p class="gtm-filter-bar__count" aria-live="polite">
+            <template if:true={hasCount}>{countText}</template>
+        </p>
+    </div>
+</template>

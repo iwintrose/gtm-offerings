@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Target_Posture__c</fullName>
+    <label>Target Posture</label>
+    <description>Posture of the TARGET end alone. An interview_only target is why the gap catalogue on such a pack is a working model rather than a reference.</description>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>interview_only</fullName>
+                <default>true</default>
+                <label>interview_only</label>
+            </value>
+            <value>
+                <fullName>assisted</fullName>
+                <default>false</default>
+                <label>assisted</label>
+            </value>
+            <value>
+                <fullName>instrumented</fullName>
+                <default>false</default>
+                <label>instrumented</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

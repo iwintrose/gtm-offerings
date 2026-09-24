@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Agentforce function backing GTMApplyConfigUpdate.genAiPlugin.
+  Backed by GtmAgentApplyConfigUpdate.execute() (@InvocableMethod).
+  REQUIRES: Agentforce provisioned on the org.
+-->
+<GenAiFunction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Applies a partial JSON config update to the GTM Configurator page.</description>
+    <invocationTarget>GtmAgentApplyConfigUpdate</invocationTarget>
+    <invocationTargetType>apex</invocationTargetType>
+    <isConfirmationRequired>false</isConfirmationRequired>
+    <masterLabel>Apply GTM Configurator Update</masterLabel>
+</GenAiFunction>

@@ -1,0 +1,209 @@
+<template>
+  <div class="rlf">
+    <!-- Page-level spinner: true until all 4 of connectedCallback's concurrent initial
+         Apex calls settle (industries, saved links, link stats, stage counts), so the
+         whole tab shows a clear loading state on first paint. Reuses the same
+         lightning-spinner pattern as the narrower sub-state spinners below. -->
+    <template if:true={initialLoading}>
+      <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+    </template>
+    <!-- The filter bar is the ONLY toolbar (Addendum C.9.4): no scope pills. Hidden on
+         the link detail view. -->
+    <template if:true={showFilterBar}>
+      <c-gtm-filter-bar
+        class="rlf-toolbar-bar"
+        filters={filterConfig}
+        values={filterValues}
+        result-count={filterResultCount}
+        result-label={filterResultLabel}
+        label="Filter links"
+        variant="compact"
+        storage-key="pages"
+        onfilterchange={handleFilterChange}
+        onclear={handleFilterClear}
+      ></c-gtm-filter-bar>
+      <template if:true={stageError}>
+        <p class="rlf-msg rlf-msg--err">{stageError} Showing all links.</p>
+      </template>
+      <template if:true={loadError}>
+        <p class="rlf-msg rlf-msg--err">{loadError}</p>
+      </template>
+
+      <div class="rlf-table-section">
+        <p class="rlf-step-label">Your recent links</p>
+        <template if:true={loadingSavedLinks}>
+          <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+        <template if:true={loadingLinks}>
+          <lightning-spinner alternative-text="Opening link" size="small"></lightning-spinner>
+        </template>
+        <template if:true={stageLoading}>
+          <lightning-spinner alternative-text="Applying filter" size="small"></lightning-spinner>
+        </template>
+        <template if:true={savedLinksError}>
+          <p class="rlf-msg rlf-msg--err">{savedLinksError}
+            <button type="button" class="rlf-change" onclick={handleRetryLinks}>Retry</button></p>
+        </template>
+        <template if:true={statsError}>
+          <p class="rlf-msg rlf-msg--err">Visit details could not be loaded; visits, last visit and funnel stage are unavailable.</p>
+        </template>
+        <template if:true={hasTableRows}>
+          <div class="rlf-table-wrap">
+            <c-gtm-link-datatable
+              key-field="recordId"
+              data={tableRows}
+              columns={columns}
+              hide-checkbox-column
+              resize-column-disabled
+              sorted-by={sortedBy}
+              sorted-direction={sortedDirection}
+              onsort={handleSort}
+              onrowaction={handleRowAction}
+            ></c-gtm-link-datatable>
+          </div>
+        </template>
+        <template if:true={showStageEmpty}>
+          <p class="rlf-empty">
+            {stageEmptyText}
+            <button type="button" class="rlf-change" onclick={handleClearStage}>{clearFiltersLabel}</button>
+          </p>
+        </template>
+        <template if:true={showNoSavedLinks}>
+          <p class="rlf-empty">No saved links yet. Build one from the Home page's configurator wizard.</p>
+        </template>
+      </div>
+    </template>
+
+    <!-- Link detail view (reached by the row action Open or a c__rlfLinkId deep link). -->
+    <template if:true={selectedLink}>
+      <template if:true={loadError}>
+        <p class="rlf-msg rlf-msg--err">{loadError}</p>
+      </template>
+      <template if:true={isViewVisible}>
+        <div class="rlf-view-row">
+          <div class="rlf-col rlf-col--view">
+            <div class="rlf-view">
+              <div class="rlf-view-bar">
+                <button type="button" class="rlf-back" onclick={handleBackToLinks}>{backToLinksLabel}</button>
+                <span class="rlf-view-note">Your view of the link sent to {selectedLinkCompany}.</span>
+              </div>
+              <div class="rlf-view-details">
+                <div class="rlf-view-field">
+                  <label class="rlf-view-label">Engagement Link</label>
+                  <div class="rlf-linkbox">
+                    <input class="rlf-view-input" readonly value={selectedLinkUrl} />
+                    <lightning-button
+                      icon-name="utility:copy"
+                      label={copyLinkLabel}
+                      variant="neutral"
+                      data-url={selectedLinkUrl}
+                      onclick={handleCopySelectedLink}
+                    ></lightning-button>
+                  </div>
+                </div>
+                <div class="rlf-view-field">
+                  <label class="rlf-view-label">Password</label>
+                  <div class="rlf-linkbox">
+                    <input class="rlf-view-input" readonly value={passwordDisplay} />
+                    <template if:false={passwordRevealed}>
+                      <lightning-button
+                        class="rlf-pw-show"
+                        icon-name="utility:preview"
+                        label="Show"
+                        variant="neutral"
+                        disabled={revealingPassword}
+                        onclick={handleRevealPassword}
+                      ></lightning-button>
+                    </template>
+                    <template if:true={passwordRevealed}>
+                      <lightning-button
+                        class="rlf-pw-copy"
+                        icon-name="utility:copy"
+                        label="Copy"
+                        variant="neutral"
+                        data-url={revealedPassword}
+                        onclick={handleCopyRevealedPassword}
+                      ></lightning-button>
+                    </template>
+                    <lightning-button
+                      class="rlf-pw-regen"
+                      icon-name="utility:key"
+                      label="New password"
+                      variant="neutral"
+                      data-id={selectedLinkRecordId}
+                      disabled={regeneratingSelectedLink}
+                      onclick={handleRegeneratePasswordOnView}
+                    ></lightning-button>
+                  </div>
+                </div>
+              </div>
+              <!-- gtmReadoutWorkspace (Preview/Assessment/Readout/Conduit)
+                   renders INLINE here in place of the plain assessment-submission
+                   block, once a rep clicks View/Generate Readout below
+                   (issue-gtm-readout-workspace) -- its own "back" event
+                   (handleWorkspaceBack) returns to the block below. -->
+              <template if:true={showWorkspace}>
+                <c-gtm-readout-workspace
+                  assessment-request-id={selectedLinkRequestId}
+                  readout-id={selectedLinkReadoutId}
+                  offering-key={selectedLinkOfferingKey}
+                  onback={handleWorkspaceBack}
+                ></c-gtm-readout-workspace>
+              </template>
+              <template if:false={showWorkspace}>
+                <template if:true={hasSubmission}>
+                  <div class="rlf-submission">
+                    <div class="rlf-submission-head">
+                      <p class="rlf-step-label">Assessment submission</p>
+                      <template if:true={hasReadout}>
+                        <lightning-button
+                          label="View readout"
+                          variant="brand"
+                          onclick={handleViewReadout}
+                        ></lightning-button>
+                      </template>
+                      <template if:true={showGenerateReadout}>
+                        <lightning-button
+                          label="Generate Readout"
+                          variant="brand"
+                          disabled={generatingReadout}
+                          onclick={handleGenerateReadout}
+                        ></lightning-button>
+                      </template>
+                    </div>
+                    <c-gtm-assessment-detail record-id={selectedLinkRequestId}></c-gtm-assessment-detail>
+                  </div>
+                </template>
+              </template>
+              <div class="rlf-preview-toggle-row">
+                <lightning-button
+                  class="rlf-preview-toggle"
+                  label={previewToggleLabel}
+                  icon-name="utility:preview"
+                  variant="neutral"
+                  onclick={handleTogglePreview}
+                ></lightning-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- BLOCK: the relocated embed itself -- the same c-gtm-configurator
+           that always rendered inline in the view column, now full width and
+           hidden until the rep asks for it via "Preview the link" above. -->
+      <template if:true={showPreview}>
+        <div class="rlf-preview-row">
+          <div class="rlf-col rlf-col--view rlf-stage">
+            <c-gtm-configurator
+              offering-key={selectedLinkOfferingKey}
+              template-type="configurator"
+              view-only={viewStepViewOnly}
+              key={selectedLink.recordId}
+            ></c-gtm-configurator>
+          </div>
+        </div>
+      </template>
+    </template>
+    </div>
+</template>

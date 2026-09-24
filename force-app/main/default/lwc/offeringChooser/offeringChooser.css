@@ -1,0 +1,354 @@
+/* GTM Offerings — shared front door
+   Port of gtm-offerings/index.html
+   :root -> .oc-root (LWC shadow DOM has no :root) */
+
+/* The frame is the viewport, not the browser window.
+   On the site those are the same thing; inside the GTM Content Manager the
+   container is the preview frame, so a phone-width preview renders the phone
+   layout instead of a squashed desktop one. Width-based @media rules below are
+   @container rules for exactly this reason -- they answered the browser, which
+   is why a 414px preview drew three columns and wrapped a card's text one word
+   per line. Colour-scheme and reduced-motion stay @media: they are user
+   preferences, not measurements of this box. */
+:host {
+  container-type: inline-size;
+  container-name: offerings;
+}
+
+:host {
+  display: block;
+}
+
+.oc-root {
+  --bg: #f4f4f6;
+  --paper: #ffffff;
+  --ink: #17181c;
+  --ink-soft: #585b62;
+  --ink-faint: #8b8e96;
+  --line: #E6E6E6;
+  --panel: #E6E6E6;
+  --accent: #E90024;
+  --accent-soft: rgba(233, 0, 36, 0.09);
+  --shadow: 0 16px 40px -20px rgba(23, 24, 28, 0.16);
+  --shadow-soft: 0 6px 18px -10px rgba(23, 24, 28, 0.12);
+
+  display: block;
+  min-height: var(--story-vh, 100vh);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+  .oc-root:not(.light) {
+    --bg: #131417;
+    --paper: #1b1c21;
+    --ink: #ecedf0;
+    --ink-soft: #a9abb4;
+    --ink-faint: #6e717a;
+    --line: #2a2c33;
+    --panel: #1f2025;
+    --accent: #E90024;
+    --accent-soft: rgba(233, 0, 36, 0.15);
+    --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
+    --shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.oc-root.dark {
+  --bg: #131417;
+  --paper: #1b1c21;
+  --ink: #ecedf0;
+  --ink-soft: #a9abb4;
+  --ink-faint: #6e717a;
+  --line: #2a2c33;
+  --panel: #1f2025;
+  --accent: #E90024;
+  --accent-soft: rgba(233, 0, 36, 0.15);
+  --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
+  --shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
+}
+
+.oc-root.light {
+  --bg: #f4f4f6;
+  --paper: #ffffff;
+  --ink: #17181c;
+  --ink-soft: #585b62;
+  --ink-faint: #8b8e96;
+  --line: #E6E6E6;
+  --panel: #E6E6E6;
+  --accent: #E90024;
+  --accent-soft: rgba(233, 0, 36, 0.09);
+  --shadow: 0 16px 40px -20px rgba(23, 24, 28, 0.16);
+  --shadow-soft: 0 6px 18px -10px rgba(23, 24, 28, 0.12);
+}
+
+.oc-root * {
+  box-sizing: border-box;
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem clamp(1.1rem, 4vw, 2rem);
+  border-bottom: 1px solid var(--line);
+}
+.bar-wm {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.bar-wm .tick {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--ink);
+  flex: none;
+}
+/* Live-site wordmark: "publicis" (black) immediately followed by "sapient"
+   (red), lowercase, no letter-spacing/uppercase transform. */
+.bar-wm .wm-black {
+  color: #000000;
+  text-transform: lowercase;
+}
+.bar-wm .wm-red {
+  color: #E90024;
+  text-transform: lowercase;
+}
+.bar-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+@container offerings (max-width: 520px) {
+  .bar-tag {
+    display: none;
+  }
+}
+.tbtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+.tbtn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.wrap {
+  max-width: 58rem;
+  margin: 0 auto;
+  padding: clamp(3rem, 9vh, 5.5rem) clamp(1.1rem, 4vw, 2rem)
+    clamp(4rem, 10vh, 6rem);
+}
+.eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.eyebrow .bead {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+  flex: none;
+}
+h1 {
+  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 800;
+  font-size: clamp(2rem, 6vw, 3.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+.sub {
+  font-size: clamp(1rem, 2.4vw, 1.1rem);
+  color: var(--ink-soft);
+  max-width: 34rem;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 2.8rem;
+}
+@container offerings (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@container offerings (max-width: 560px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- admin edit mode ---- */
+.hd-edit-chip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #0ea5e9;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5625rem;
+  border-radius: 4px;
+  text-decoration: none;
+  margin-bottom: 1.5rem;
+}
+.hd-edit-chip:hover {
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.tile {
+  position: relative;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 14px;
+  padding: 1.5rem 1.4rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.tile.live {
+  --tile-accent: #E90024;
+  --tile-accent-soft: rgba(233, 0, 36, 0.1);
+}
+.tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: var(--tile-accent, var(--accent));
+}
+.tile-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--tile-accent, var(--accent));
+}
+.tile-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--tile-accent-soft, var(--accent-soft));
+  color: var(--tile-accent, var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 1.1rem;
+}
+.tile-name {
+  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: 1.12rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.005em;
+}
+.tile-desc {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin-bottom: 1.1rem;
+}
+.tile-go {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--tile-accent, var(--accent));
+  letter-spacing: 0.02em;
+}
+
+.tile.soon {
+  cursor: default;
+}
+.tile.soon:hover {
+  transform: none;
+  box-shadow: var(--shadow-soft);
+  border-color: var(--line);
+}
+.tile.soon .tile-name,
+.tile.soon .tile-desc {
+  opacity: 0.5;
+}
+.tile.soon .tile-mark {
+  background: var(--panel);
+  color: var(--ink-faint);
+}
+.soon-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  padding: 0.18rem 0.55rem;
+  display: inline-block;
+}
+
+.pf {
+  padding: 1.6rem clamp(1.1rem, 4vw, 2rem) 2.4rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-top: 1px solid var(--line);
+  max-width: 58rem;
+  margin: 0 auto;
+}
+
+/* Shown when a content callout fails. Deliberately visible rather than
+   console-only: both data paths on this page failed silently for months
+   because the only signal was a console warning nobody was watching. */
+.load-error {
+    max-width: 50rem;
+    margin: 0.75rem auto 0;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--warn, #B4842E);
+    border-left-width: 3px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--warn, #B4842E) 8%, transparent);
+    color: var(--ink-soft, #5B5A6B);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}

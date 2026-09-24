@@ -1,0 +1,95 @@
+<template>
+    <div class="setup slds-p-around_medium">
+        <div class="slds-grid slds-grid_vertical-align-center slds-wrap slds-m-bottom_small">
+            <div class="slds-col">
+                <h1 class="slds-text-heading_medium">Setup</h1>
+                <template if:true={hasChecklist}>
+                    <p class="setup-header slds-text-heading_small slds-m-top_x-small">{headerText}</p>
+                </template>
+            </div>
+            <div class="slds-col slds-grow-none">
+                <lightning-button
+                    class="setup-recheck gtm-control"
+                    label="Re-check"
+                    icon-name="utility:refresh"
+                    disabled={recheckDisabled}
+                    onclick={handleRecheck}
+                ></lightning-button>
+            </div>
+        </div>
+
+        <template if:true={hasChecklist}>
+            <lightning-progress-bar
+                class="slds-m-bottom_medium"
+                value={progressValue}
+                size="medium"
+                aria-label="Required setup steps done"
+            ></lightning-progress-bar>
+        </template>
+
+        <template if:true={loading}>
+            <div class="setup-loading slds-is-relative slds-m-vertical_large">
+                <lightning-spinner alternative-text="Checking your setup" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:true={errorMessage}>
+            <div class="setup-error slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert">
+                <lightning-icon icon-name="utility:error" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+                <span>{errorMessage}</span>
+            </div>
+        </template>
+
+        <template if:true={showNotice}>
+            <div class="setup-notice slds-box slds-theme_shade slds-m-bottom_small" role="status">
+                <p class="slds-text-title_bold">{actionNotice.title}</p>
+                <p>{actionNotice.message}</p>
+                <template if:true={actionNotice.setupPath}>
+                    <a class="setup-notice-link" href={actionNotice.setupPath} onclick={handleNoticeLink}>Open Setup</a>
+                </template>
+            </div>
+        </template>
+
+        <template if:true={hasChecklist}>
+            <template for:each={groups} for:item="group">
+                <section key={group.tier} class="setup-group slds-m-bottom_large" data-tier={group.tier}>
+                    <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_x-small">
+                        <template if:true={group.collapsible}>
+                            <button
+                                type="button"
+                                class="setup-toggle slds-button slds-button_reset slds-grid slds-grid_vertical-align-center"
+                                data-tier={group.tier}
+                                aria-expanded={group.expanded}
+                                title={group.toggleLabel}
+                                onclick={handleToggleTier}
+                            >
+                                <lightning-icon icon-name={group.toggleIcon} size="xx-small" alternative-text={group.toggleLabel} class="slds-m-right_x-small"></lightning-icon>
+                                <h2 class="slds-text-heading_small">{group.label}</h2>
+                            </button>
+                        </template>
+                        <template if:false={group.collapsible}>
+                            <h2 class="slds-text-heading_small">{group.label}</h2>
+                        </template>
+                        <span class="slds-text-color_weak slds-m-left_small">{group.countLabel}</span>
+                    </div>
+                    <p class="slds-text-color_weak slds-m-bottom_x-small">{group.hint}</p>
+                    <template if:true={group.expanded}>
+                        <ul class="setup-rows slds-has-dividers_bottom-space">
+                            <template for:each={group.rows} for:item="row">
+                                <li key={row.key} class="setup-row slds-item" data-key={row.key}>
+                                    <c-gtm-setup-item
+                                        item={row.item}
+                                        busy={row.busy}
+                                        picker-users={row.pickerUsers}
+                                        onitemaction={handleItemAction}
+                                        onpickersearch={handlePickerSearch}
+                                    ></c-gtm-setup-item>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+                </section>
+            </template>
+        </template>
+    </div>
+</template>

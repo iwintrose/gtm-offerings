@@ -1,0 +1,180 @@
+<template>
+    <lightning-card title="Conduit Estate Analysis" icon-name="standard:metrics">
+        <div class="slds-card__body slds-card__body_inner slds-p-horizontal_medium slds-p-top_small slds-p-bottom_x-small">
+            <p class="slds-text-body_small slds-text-color_weak">
+                Scores your marketing estate against migration readiness across data model, content assets, and audiences.
+                Returns a 0–100 health score with prioritized findings and AI gap remediation.
+            </p>
+        </div>
+        <!-- ── Initial ───────────────────────────────────────────────── -->
+        <template lwc:if={showInitial}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <p class="slds-text-body_regular slds-m-bottom_medium">
+                    Run a full estate analysis: audit rules, migration planning, and AI-generated gap remediation — all
+                    in one pass.
+                </p>
+                <lightning-button label="Run Estate Analysis" variant="brand" onclick={handleRun}> </lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Loading ───────────────────────────────────────────────── -->
+        <template lwc:if={isLoading}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_large slds-text-align_center">
+                <lightning-spinner alternative-text="Analysing…" size="medium"></lightning-spinner>
+                <p class="slds-m-top_medium slds-text-heading_small">Analysing estate…</p>
+                <p class="slds-text-color_weak slds-m-top_x-small">
+                    Running audit rules · building migration plan · AI reviewing gaps
+                </p>
+            </div>
+        </template>
+
+        <!-- ── Error ─────────────────────────────────────────────────── -->
+        <template lwc:if={error}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">
+                    {error}
+                </div>
+                <lightning-button label="Retry" onclick={handleRun}></lightning-button>
+            </div>
+        </template>
+
+        <!-- ── Results ───────────────────────────────────────────────── -->
+        <template lwc:if={auditResult}>
+            <div class="slds-card__body slds-card__body_inner slds-p-around_medium">
+                <!-- Platform-fallback notice: shown when the assessment's source or
+                     target platform wasn't recognized and we're using defaults -->
+                <template lwc:if={hasPlatformWarnings}>
+                    <div class="platform-notice slds-m-bottom_medium" role="status">
+                        <p class="platform-notice-label">
+                            <lightning-icon icon-name="utility:info_alt" size="xx-small" alternative-text="Notice"></lightning-icon>
+                            Platform configuration notice
+                        </p>
+                        <ul class="platform-notice-list">
+                            <template for:each={platformWarnings} for:item="w">
+                                <li key={w.key} class="platform-notice-item">{w.message}</li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+
+                <!-- SECTION 1: Key stats -->
+                <div class="slds-grid slds-gutters slds-m-bottom_large stat-row">
+                    <div class="slds-col slds-text-align_center stat-cell">
+                        <p class="stat-label">HEALTH SCORE</p>
+                        <p class={scoreClass}>{auditResult.healthScore}<span class="stat-denom"> / 100</span></p>
+                        <p class="stat-sub">{scoreLabel}</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center stat-cell">
+                        <p class="stat-label">TOTAL ASSETS</p>
+                        <p class="slds-text-heading_large stat-value">{auditResult.totalAssets}</p>
+                        <p class="stat-sub">emails · pages · forms</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center stat-cell">
+                        <p class="stat-label">AUDIENCES</p>
+                        <p class="slds-text-heading_large stat-value">{auditResult.totalAudiences}</p>
+                        <p class="stat-sub">lists &amp; segments</p>
+                    </div>
+                    <div class="slds-col slds-text-align_center stat-cell">
+                        <p class="stat-label">DATA OBJECTS</p>
+                        <p class="slds-text-heading_large stat-value">{auditResult.totalDataObjects}</p>
+                        <p class="stat-sub">CDOs &amp; contact schema</p>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Asset freshness -->
+                <div class="slds-m-bottom_large">
+                    <h3 class="section-heading">ASSET FRESHNESS</h3>
+                    <div class="slds-grid slds-gutters">
+                        <div class="slds-col freshness-tile freshness-active">
+                            <p class="freshness-count">{freshness.active}</p>
+                            <p class="freshness-label">Active</p>
+                            <p class="freshness-desc">&lt; 90 days</p>
+                        </div>
+                        <div class="slds-col freshness-tile freshness-recent">
+                            <p class="freshness-count">{freshness.recent}</p>
+                            <p class="freshness-label">Recent</p>
+                            <p class="freshness-desc">90 days – 1 yr</p>
+                        </div>
+                        <div class="slds-col freshness-tile freshness-stale">
+                            <p class="freshness-count">{freshness.stale}</p>
+                            <p class="freshness-label">Stale</p>
+                            <p class="freshness-desc">1 – 2 years</p>
+                        </div>
+                        <div class="slds-col freshness-tile freshness-abandoned">
+                            <p class="freshness-count">{freshness.abandoned}</p>
+                            <p class="freshness-label">Abandoned</p>
+                            <p class="freshness-desc">2+ yrs, no use</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Findings by severity -->
+                <div class="slds-m-bottom_large">
+                    <h3 class="section-heading">FINDINGS BY SEVERITY</h3>
+                    <div class="slds-grid slds-gutters">
+                        <template for:each={severityRows} for:item="row">
+                            <div key={row.label} class="slds-col slds-text-align_center">
+                                <p class={row.cssClass}>{row.count}</p>
+                                <p class="stat-sub">{row.label}</p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- SECTION 4: Migration plan -->
+                <template lwc:if={hasMigrationPlan}>
+                    <div class="slds-m-bottom_large">
+                        <h3 class="section-heading">MIGRATION PLAN</h3>
+                        <div class="plan-bar slds-grid slds-gutters">
+                            <div class="slds-col slds-text-align_center">
+                                <p class="plan-number">{migrationPlan.toCreate}</p>
+                                <p class="plan-label">entities to migrate</p>
+                            </div>
+                            <div class="slds-col slds-text-align_center">
+                                <p class="plan-number">{migrationPlan.totalGaps}</p>
+                                <p class="plan-label">structural gaps</p>
+                            </div>
+                            <div class="slds-col slds-text-align_center">
+                                <p class="plan-number">{migrationPlan.blockers}</p>
+                                <p class="plan-label">blockers</p>
+                            </div>
+                            <div class="slds-col slds-text-align_center">
+                                <p class="plan-number">{confidencePct}%</p>
+                                <p class="plan-label">avg confidence</p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- SECTION 5: AI gap analysis -->
+                <template lwc:if={hasGapAnalysis}>
+                    <div class="slds-m-bottom_large gap-section">
+                        <h3 class="section-heading">
+                            AI GAP ANALYSIS
+                            <span class="ai-badge">Claude</span>
+                        </h3>
+                        <p class="gap-summary slds-m-bottom_medium">{auditResult.gapAnalysis.summary}</p>
+                        <template lwc:if={hasGapItems}>
+                            <ul class="gap-list">
+                                <template for:each={auditResult.gapAnalysis.items} for:item="item">
+                                    <li key={item.sourceCanonicalId} class="gap-item">
+                                        <p class="gap-entity">{item.entityName}</p>
+                                        <p class="gap-remediation">{item.remediation}</p>
+                                    </li>
+                                </template>
+                            </ul>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Footer -->
+                <div class="slds-grid slds-grid_align-spread slds-m-top_small">
+                    <p class="slds-text-body_small slds-text-color_weak">
+                        Analysed {formattedRunAt} · {platformLabel}
+                    </p>
+                    <lightning-button label="Re-run Analysis" onclick={handleRun} size="small"> </lightning-button>
+                </div>
+            </div>
+        </template>
+    </lightning-card>
+</template>

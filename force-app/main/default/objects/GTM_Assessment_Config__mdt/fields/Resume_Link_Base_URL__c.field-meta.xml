@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Resume_Link_Base_URL__c</fullName>
+    <label>Resume Link Base URL</label>
+    <description>Base URL of the page a resume link points at, e.g. https://&lt;site-domain&gt;/gtmaccelerator/s/configurator. Server-side only, and deliberately NOT taken from the browser: an emailed link whose host came from the caller is an open redirect with our name on the envelope. Left blank here and set per org (see docs/runbooks/questionnaire-resume.md); when blank, GtmAssessmentDraftController falls back to Site.getBaseSecureUrl() and refuses to send at all if that is also blank.</description>
+    <type>Url</type>
+    <required>false</required>
+    <unique>false</unique>
+</CustomField>

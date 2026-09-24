@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Queue xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>GTM_Readout_Triage</fullName>
+    <!-- The last step of GtmReadoutController.Generator.resolveOwnerId. A direct
+         booking with no Engagement Link and no Opportunity has no rep to name,
+         and GTM_Readout__c is Private, so a readout with no owner is a readout
+         nobody can see. Before this queue existed the generator refused to
+         create one at all, which meant those assessments quietly produced
+         nothing. Now they land here for a human to claim.
+
+         Named for what a rep sees in a list view and an owner picker, not for
+         the code path that fills it.
+
+         CASE. The review Case that Generator files against the readout follows
+         the same owner, queue included, so an unclaimed readout and its review
+         work sit in one place. Case is listed below and Task is not, and that
+         asymmetry is the whole reason the Task was replaced: queue-owned Cases
+         are a plain platform capability, whereas queue-owned Tasks additionally
+         require the org preference Setup -> Activity Settings -> "Let users
+         assign tasks to queues", which is org state this repo cannot deploy —
+         so the old review Task silently failed to be created in exactly the
+         case (nobody assigned) where it mattered most. -->
+    <name>Unassigned Readouts</name>
+    <doesSendEmailToMembers>false</doesSendEmailToMembers>
+    <queueSobject>
+        <sobjectType>Case</sobjectType>
+    </queueSobject>
+    <queueSobject>
+        <sobjectType>GTM_Readout__c</sobjectType>
+    </queueSobject>
+</Queue>

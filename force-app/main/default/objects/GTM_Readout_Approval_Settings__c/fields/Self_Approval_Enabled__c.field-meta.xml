@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Self_Approval_Enabled__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>When true, GtmReadoutController.selfApproveReadout lets a readout's own owner approve it directly, bypassing the GTM_Readout_Approval ApprovalProcess entirely and logging the action to GTM_Readout_Approval_Log__c instead. When false (default), the existing manager-approval ApprovalProcess path is the only way to approve.</description>
+    <externalId>false</externalId>
+    <label>Self Approval Enabled</label>
+    <type>Checkbox</type>
+</CustomField>

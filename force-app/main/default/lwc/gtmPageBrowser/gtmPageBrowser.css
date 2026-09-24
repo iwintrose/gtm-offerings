@@ -1,0 +1,23 @@
+.pb { padding: 1rem clamp(.75rem, 2vw, 1.25rem) 1.5rem; background: #f3f3f3;
+      min-height: 100%; color: #181818; font-size: 13px; }
+
+/* Header bar is now c-gtm-page-header (issue B14) -- same shape as
+   Overview/Content Home. Sticky positioning is kept here on the host
+   element itself: the link finder's own steps or the Story render right
+   beneath it, and the header staying in view while either scrolls is the
+   one behavior this tab still needs from its old hand-rolled header. */
+.pb-head {
+    display: block;
+    margin-bottom: 1rem;
+    position: sticky; top: 0; z-index: 2;
+}
+
+/* A full-bleed page (Story). It gets its own ground and its own clipping so
+   it reads as the page it is, not a widget in an app shell. */
+.pb-stage {
+    border: 1px solid #e5e5e5;
+    border-radius: .25rem;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}

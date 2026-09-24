@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Agentforce action: apply a partial config delta to the LWC panel.
+  Backed by GtmAgentApplyConfigUpdate.execute() (@InvocableMethod).
+  REQUIRES: Agentforce provisioned on the org.
+-->
+<GenAiPlugin xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Applies a partial JSON config update to the GTM Configurator page. Pass only the fields that should change. Valid fields: company (text, max 120 chars), industry (must be one of the availableIndustries keys), accent (6-digit hex e.g. #FF5733), objectsCount (integer 0-999999), depsCount (integer 0-999999), healthScore (integer 0-100), note (text, max 500 chars). The update is routed via the sessionToken to the correct panel instance.</description>
+    <developerName>GTMApplyConfigUpdate</developerName>
+    <language>en_US</language>
+    <masterLabel>Apply GTM Configurator Update</masterLabel>
+    <pluginType>Topic</pluginType>
+    <genAiFunctions>
+        <functionName>GtmAgentApplyConfigUpdate</functionName>
+    </genAiFunctions>
+    <genAiPluginInstructions>
+        <description>
+            Call this action to update one or more fields on the GTM Configurator page.
+            Always pass the sessionToken from the session variables — it routes the update to the correct panel.
+            Build updatesJson as a JSON object containing only the fields you want to change.
+            If the industry the rep describes does not exactly match an availableIndustries key, call
+            GetGTMConfiguratorState first to get the list, then pick the closest match.
+            After a successful update, confirm which fields were changed and their new values.
+            If success is false, surface the errorMessage to the rep and ask them to clarify.
+        </description>
+        <developerName>GTMApplyConfigUpdateInstructions</developerName>
+        <language>en_US</language>
+        <masterLabel>Apply GTM Configurator Update Instructions</masterLabel>
+    </genAiPluginInstructions>
+</GenAiPlugin>

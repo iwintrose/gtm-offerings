@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Source &amp; Target Access Readiness</label>
+    <protected>false</protected>
+    <values>
+        <field>Offering_Key__c</field>
+        <value xsi:type="xsd:string">migration-accelerator</value>
+    </values>
+    <values>
+        <field>Instrument__c</field>
+        <value xsi:type="xsd:string">Readiness</value>
+    </values>
+    <values>
+        <field>Dimension_Key__c</field>
+        <value xsi:type="xsd:string">source_access</value>
+    </values>
+    <values>
+        <field>Dimension_Name__c</field>
+        <value xsi:type="xsd:string">Source &amp; Target Access Readiness</value>
+    </values>
+    <values>
+        <field>Measures__c</field>
+        <value xsi:type="xsd:string">Whether credentials/API access exist to actually scan the source and write to the target</value>
+    </values>
+    <values>
+        <field>Question_Text__c</field>
+        <value xsi:type="xsd:string">Do you have working API credentials for the platform you are leaving and the one you are moving to?</value>
+    </values>
+    <values>
+        <field>Option_1_Label__c</field>
+        <value xsi:type="xsd:string">No API access to the source platform, and no clear owner who could get it</value>
+    </values>
+    <values>
+        <field>Option_2_Label__c</field>
+        <value xsi:type="xsd:string">Someone could probably get source access eventually; target access has not been discussed</value>
+    </values>
+    <values>
+        <field>Option_3_Label__c</field>
+        <value xsi:type="xsd:string">Source access exists or is one short approval away; target access is being provisioned</value>
+    </values>
+    <values>
+        <field>Option_4_Label__c</field>
+        <value xsi:type="xsd:string">Working API credentials exist for both, with an owner who can hand them over this week</value>
+    </values>
+    <values>
+        <field>Max_Answer_Value__c</field>
+        <value xsi:type="xsd:double">4.0</value>
+    </values>
+    <values>
+        <field>Sort_Order__c</field>
+        <value xsi:type="xsd:double">20.0</value>
+    </values>
+    <values>
+        <field>Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+</CustomMetadata>

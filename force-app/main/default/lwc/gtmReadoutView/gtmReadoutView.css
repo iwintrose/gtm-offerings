@@ -1,0 +1,634 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   The designed readout — Publicis Sapient, Migration Accelerator.
+
+   Port of the readout design into a Lightning web component. Three things
+   about that port are worth knowing before editing:
+
+   1. ONE DOM, TWO MODES. "Present" is a paged, rep-driven pager; "Read" is a
+      continuous document. Both are the same markup with a different
+      stylesheet branch, selected by [data-mode] on .rv-root. Print is a third
+      form and it is CSS-only on purpose — a headless PDF path does not
+      reliably fire beforeprint, and a readout that prints wrong is a readout
+      that gets emailed as a screenshot.
+
+   2. READ MODE IS THE BASE STYLESHEET. Everything renders correctly with no
+      [data-mode] set at all, which is what a guest sees for the frame or two
+      before the mode resolver runs, and what they keep seeing if the JS
+      throws. The pager is the enhancement, never the requirement.
+
+   3. THE COMPONENT SIZES TO ITS CONTAINER, NOT THE WINDOW. container-type on
+      :host is what makes the rep's preview inside gtmReadoutReview lay out as
+      the narrow column it actually is, rather than as a desktop page squeezed
+      into one. Same reasoning as gtmStory.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:host {
+  display: block;
+  container-type: inline-size;
+  container-name: rv;
+  --rv-vh: 100vh;
+}
+
+.rv-root {
+  /* ── tokens ─────────────────────────────────────────────────────────── */
+  --red: #e4002b;
+  --red-text: #e4002b;
+  --rule-red: #e4002b;
+  --ink: #000;
+  --body: #555;
+  --caption: #7f7f7f;
+  --g1: #d9d9d9;
+  --g2: #bfbfbf;
+  --g3: #999;
+  --panel: #f5f5f5;
+  --hair: #e0e0e0;
+  --ground: #fff;
+  --pad: clamp(20px, 4.4vw, 62px);
+
+  --sans: "Roboto", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --display: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  display: block;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: var(--rv-vh);
+}
+
+/* Dark is opt-out, not opt-in: the guest page is read on whatever the
+   recipient's phone is set to, and a white sheet at night is the version that
+   gets closed. .light is the explicit escape hatch for a host that needs the
+   paper look regardless. */
+@media (prefers-color-scheme: dark) {
+  .rv-root:not(.light) {
+    --ink: #fff;
+    --body: #c9c9c9;
+    --caption: #8f8f8f;
+    --g1: #2f2f2f;
+    --g2: #454545;
+    --g3: #6a6a6a;
+    --panel: #161616;
+    --hair: #2a2a2a;
+    --ground: #0a0a0a;
+    --red: #ff3355;
+    --red-text: #ff3355;
+    --rule-red: #ff3355;
+  }
+}
+.rv-root.dark {
+  --ink: #fff;
+  --body: #c9c9c9;
+  --caption: #8f8f8f;
+  --g1: #2f2f2f;
+  --g2: #454545;
+  --g3: #6a6a6a;
+  --panel: #161616;
+  --hair: #2a2a2a;
+  --ground: #0a0a0a;
+  --red: #ff3355;
+  --red-text: #ff3355;
+  --rule-red: #ff3355;
+}
+
+.rv-root *,
+.rv-root *::before,
+.rv-root *::after { box-sizing: border-box; }
+
+.mono { font-family: var(--mono); }
+.lato { font-family: var(--display); }
+.vh {
+  position: absolute !important;
+  width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ── utility bar ────────────────────────────────────────────────────────── */
+.utility {
+  min-height: 44px;
+  border-bottom: 1px solid var(--hair);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px 10px; padding: 6px var(--pad); flex-wrap: nowrap;
+}
+.wordmark {
+  /* Explicit rather than relied-on: color used to be inherited from
+     .rv-root's own `color: var(--ink)`, which is correct as far as the
+     cascade goes, but left the wordmark with no direct tie to the token
+     that actually flips in dark mode -- anything that later sets `color`
+     on an ancestor between .rv-root and .wordmark (e.g. .utility) silently
+     breaks contrast here with no local signal that it did. Referencing
+     --ink directly on the element that has to stay legible removes that
+     dependency on the DOM path staying exactly as it is today. */
+  color: var(--ink);
+  font-family: var(--display); font-weight: 300; font-size: 11px; line-height: 1.1;
+  flex: 0 0 auto;
+}
+.util-right {
+  display: flex; align-items: center; gap: 8px 10px;
+  justify-content: flex-end; min-width: 0; flex-wrap: nowrap;
+}
+.util-meta {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  color: var(--caption); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; min-width: 0;
+}
+.util-meta.sample {
+  color: var(--red-text); border: 1px solid var(--red); padding: 3px 6px; flex: 0 0 auto;
+}
+.viewtoggle {
+  display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; color: var(--caption);
+  margin-left: 10px; padding-left: 16px; border-left: 1px solid var(--hair);
+}
+.viewtoggle button {
+  font-family: inherit; font-size: 9.5px; letter-spacing: .1em; background: none;
+  cursor: pointer; border: 1px solid var(--hair); color: var(--body);
+  padding: 5px 8px; min-height: 28px;
+}
+.viewtoggle button.on { border-color: var(--red); color: var(--red-text); }
+
+/* A truncated warning label is not a warning: below 620px the long form is
+   swapped for a short one that fits whole rather than being allowed to
+   ellipsis into "ILLUSTRAT…". The client name is the safe thing to drop —
+   the masthead directly below repeats it verbatim. */
+@container rv (max-width: 620px) {
+  .util-right > .util-meta:not(.sample) { display: none; }
+  .viewtoggle { margin-left: 4px; padding-left: 8px; }
+  .viewtoggle .vt-label { display: none; }
+  .util-meta.sample { font-size: 0; letter-spacing: 0; }
+  .util-meta.sample::after { content: "SAMPLE"; font-size: 10px; letter-spacing: .1em; }
+}
+
+/* ── panels ─────────────────────────────────────────────────────────────── */
+.stage { display: block; }
+.panel {
+  position: relative;
+  padding: 34px var(--pad) 40px;
+  container-type: inline-size;
+  container-name: pc;
+}
+.panel.red { background: var(--red); color: #fff; }
+.panel.grey { background: var(--panel); }
+
+.sec-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+.eyebrow {
+  font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: .16em;
+  color: var(--red-text); margin: 0 0 12px;
+}
+.panel.red .eyebrow { color: rgba(255, 255, 255, .85); }
+.rv-root h2 {
+  font-family: var(--display); font-weight: 700; margin: 0;
+  font-size: clamp(24px, 5.2vw, 31px); line-height: 1.15; letter-spacing: -.01em; max-width: 24ch;
+}
+.rv-root h3 { font-family: var(--display); font-weight: 700; font-size: 17px; line-height: 1.25; margin: 0; }
+.lede { font-size: 17px; line-height: 1.5; color: var(--body); max-width: 62ch; margin: 12px 0 0; }
+.panel.red .lede { color: rgba(255, 255, 255, .9); }
+.say { font-size: 16px; line-height: 1.6; max-width: 70ch; margin: 22px 0 0; color: var(--body); }
+.foot {
+  display: none;
+  font-family: var(--mono); font-weight: 500; font-size: 10px;
+  letter-spacing: .14em; color: var(--caption); gap: 120px;
+}
+
+/* The rep's prose, rendered through lightning-formatted-rich-text. It arrives
+   as whatever the editor produced, so it is styled by element rather than by
+   class — there are no classes to hook. */
+.prose { margin-top: 20px; max-width: 70ch; color: var(--body); font-size: 16px; line-height: 1.6; }
+.prose p { margin: 0 0 14px; }
+.prose ul, .prose ol { margin: 0 0 14px; padding-left: 20px; }
+.prose li { margin-bottom: 7px; }
+.prose strong, .prose b { color: var(--ink); }
+.panel.red .prose { color: rgba(255, 255, 255, .92); }
+.panel.red .prose strong, .panel.red .prose b { color: #fff; }
+
+/* ── verdict masthead (Read mode: the cover, fused) ─────────────────────── */
+.verdict-masthead {
+  display: block; background: var(--red); color: #fff;
+  margin: -34px calc(-1 * var(--pad)) 22px; padding: 16px var(--pad);
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+.verdict-masthead .l {
+  font-family: var(--mono); font-weight: 500; font-size: 10.5px;
+  letter-spacing: .14em; line-height: 1.9;
+}
+
+/* ── advisory / posture / annotations ───────────────────────────────────── */
+.advisory {
+  margin: 0 0 20px; border: 1px solid var(--red); border-left-width: 4px;
+  padding: 14px 16px; color: var(--ink); font-size: 15px; line-height: 1.55;
+}
+.advisory .t {
+  font-family: var(--mono); font-weight: 700; font-size: 10.5px;
+  letter-spacing: .14em; color: var(--red-text); display: block; margin-bottom: 6px;
+}
+.posture {
+  margin: 0 0 4px; padding: 14px 0 0; border-top: 1px solid var(--hair);
+  font-size: 15px; line-height: 1.55; color: var(--body); max-width: 70ch;
+}
+.posture .t {
+  font-family: var(--mono); font-weight: 700; font-size: 10.5px;
+  letter-spacing: .14em; color: var(--caption); display: block; margin-bottom: 6px;
+}
+.notelist { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.notelist li {
+  display: flex; gap: 10px; font-size: 14.5px; line-height: 1.5; color: var(--body);
+}
+.notelist li .m { font-family: var(--mono); color: var(--red-text); flex: 0 0 auto; }
+
+/* ── verdict scores ─────────────────────────────────────────────────────── */
+.axes { display: grid; grid-template-columns: 1fr; gap: 26px; margin-top: 24px; align-items: start; }
+.axes > * { min-width: 0; }
+@container pc (min-width: 640px) {
+  .axes { grid-template-columns: 1fr 1fr; gap: clamp(24px, 3.4vw, 54px); margin-top: 30px; }
+}
+.axis-lbl {
+  font-family: var(--mono); font-weight: 500; font-size: 10.5px;
+  letter-spacing: .14em; color: var(--caption); margin-bottom: 10px;
+}
+.bigscore {
+  font-family: var(--display); font-weight: 300; line-height: .9;
+  font-size: clamp(52px, 13vw, 96px); letter-spacing: -.03em;
+}
+@container pc (min-width: 640px) { .bigscore { font-size: clamp(62px, 7.6vw, 96px); } }
+.bigscore .of { font-size: 21px; color: var(--g3); letter-spacing: 0; }
+.tiername { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--red-text); margin-top: 8px; }
+.tiername.ink { color: var(--ink); }
+.scalenote { font-size: 13px; color: var(--caption); margin-top: 8px; line-height: 1.45; max-width: 34ch; }
+
+.stair { display: flex; align-items: flex-end; gap: 6px; margin-top: 14px; }
+.step {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; padding-top: 8px; min-width: 0;
+}
+.step .lbl {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  text-align: center; display: none; line-height: 1.15;
+}
+.step .rng { font-family: var(--mono); font-size: 9px; margin-top: 3px; opacity: .75; }
+.step.s0 { height: 44px; background: var(--g1); }
+.step.s1 { height: 56px; background: var(--g2); }
+.step.s2 { height: 68px; background: var(--ground); border: 1px solid var(--ink); }
+.step.s3 { height: 80px; background: var(--ground); border: 1px solid var(--ink); }
+.step.on {
+  background: var(--red); color: #fff; border: none;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+/* Wherever the panel is wide enough to carry them, the ladder names its bands.
+   Placed AFTER the .step rules above rather than beside the other container
+   queries: a container query carries no extra specificity, so the base
+   `display: none` would win on source order alone. */
+@container pc (min-width: 640px) {
+  .step .lbl { display: block; }
+  .step.s0 { height: 64px; } .step.s1 { height: 86px; }
+  .step.s2 { height: 108px; } .step.s3 { height: 130px; }
+}
+
+.cx-grid { display: flex; gap: 6px; margin-top: 14px; }
+.cx { flex: 1; padding: 10px 8px; border: 1px solid var(--hair); text-align: center; min-width: 0; }
+.cx.on {
+  background: var(--ink); color: var(--ground); border-color: var(--ink);
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+.cx .t { font-size: 12px; font-weight: 700; }
+.cx .s { font-family: var(--mono); font-size: 9.5px; margin-top: 3px; opacity: .8; }
+
+/* Read mode puts the big numbers in a compact pair above the fold and lets
+   the axes carry the ladders; Present mode has room for both at full size. */
+.scorepair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+.scorepair > * { min-width: 0; }
+.scorepair .axis-lbl { font-size: 9px; letter-spacing: .08em; margin-bottom: 6px; }
+.scorepair .bigscore { font-size: clamp(44px, 11vw, 64px); }
+.scorepair .bigscore .of { font-size: 17px; }
+.scorepair .tiername { font-size: 17px; margin-top: 4px; }
+.rv-root:not([data-mode="present"]) .axes .bigscore { display: none; }
+.rv-root:not([data-mode="present"]) .axes { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--hair); }
+
+.gate { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--hair); }
+.gate .t {
+  font-family: var(--mono); font-weight: 700; font-size: 10.5px;
+  letter-spacing: .14em; color: var(--red-text); margin-bottom: 7px;
+}
+.gate p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--body); max-width: 70ch; }
+
+/* ── tables ─────────────────────────────────────────────────────────────── */
+.rv-root table { width: 100%; border-collapse: collapse; margin-top: 22px; }
+.rv-root thead th {
+  font-weight: 700; font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink); text-align: left; padding: 0 10px 9px 0; border-bottom: 1px solid var(--rule-red);
+}
+.rv-root tbody td {
+  padding: 11px 10px 11px 0; border-bottom: 1px solid var(--hair);
+  vertical-align: top; font-size: 14px; color: var(--body); line-height: 1.45;
+}
+.rv-root tbody tr:last-child td { border-bottom: 1px solid var(--rule-red); }
+td.dim { font-weight: 700; font-size: 14px; color: var(--ink); }
+td.scr { font-family: var(--mono); font-weight: 500; font-size: 14px; color: var(--ink); width: 62px; }
+
+.ministair { display: flex; align-items: flex-end; gap: 3px; }
+.ms { width: 20px; }
+.ms.h1 { height: 8px; } .ms.h2 { height: 11px; } .ms.h3 { height: 14px; } .ms.h4 { height: 17px; }
+.ms.fill { background: var(--g1); }
+.ms.now { background: var(--red); print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.ms.empty { border: 1px solid var(--hair); }
+
+.prov {
+  display: inline-block; font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em;
+  padding: 2px 6px; border: 1px solid var(--hair); white-space: nowrap; color: var(--body);
+}
+.prov.meas { border-color: var(--red); color: var(--red-text); }
+.prov.part { border-color: var(--g3); color: var(--body); }
+
+/* scan strip */
+.scan { margin-top: 22px; }
+.scan-bars { display: flex; align-items: flex-end; gap: 6px; height: 52px; }
+.scan-bars .b { flex: 1; background: var(--g3); }
+.scan-bars .b.weak { background: var(--red); print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.scan-bars .b.p25 { height: 25%; } .scan-bars .b.p50 { height: 50%; }
+.scan-bars .b.p75 { height: 75%; } .scan-bars .b.p100 { height: 100%; }
+.scan-note { font-size: 14px; color: var(--body); margin: 10px 0 0; line-height: 1.5; max-width: 70ch; }
+
+/* Scorecard reflow: on anything narrow the five-column table becomes a
+   stacked card per row, because a five-column table on a phone is either
+   cropped or unreadable and both of those are worse than being tall. */
+@container pc (max-width: 719px) {
+  .scorecard thead { position: absolute; clip-path: inset(50%); }
+  .scorecard tr {
+    display: grid; grid-template-columns: 1fr auto;
+    grid-template-areas: "dim score" "bar bar" "prov prov" "read read";
+    gap: 6px 12px; padding: 16px 0; border-bottom: 1px solid var(--hair);
+  }
+  .scorecard tr:last-child { border-bottom: 1px solid var(--rule-red); }
+  .rv-root table.scorecard tbody tr td { border: none; padding: 0; width: auto; }
+  .scorecard td.dim { grid-area: dim; font-size: 16px; }
+  .scorecard td.scr { grid-area: score; text-align: right; width: auto; }
+  .scorecard td.stg { grid-area: bar; }
+  .scorecard td.pv { grid-area: prov; }
+  .scorecard td.read { grid-area: read; font-size: 15px; }
+}
+
+/* won't-port grouping */
+.rowgroup th {
+  font-family: var(--mono); font-weight: 700; font-size: 10.5px; letter-spacing: .14em;
+  color: var(--ink); text-align: left; padding: 18px 0 8px; border-bottom: 1px solid var(--rule-red);
+}
+.wontport tbody:first-of-type .rowgroup th { padding-top: 4px; }
+.tierkey { font-size: 14px; line-height: 1.6; color: var(--body); margin: 14px 0 0; max-width: 78ch; }
+.hedge {
+  display: block; margin-top: 6px; font-style: italic; font-size: 13px; color: var(--red-text);
+}
+@container pc (max-width: 719px) {
+  .wontport thead { position: absolute; clip-path: inset(50%); }
+  .wontport tbody tr:not(.rowgroup) { display: block; padding: 14px 0; border-bottom: 1px solid var(--hair); }
+  .rv-root table.wontport tbody tr td {
+    display: block; border: none; padding: 0; font-size: 15px; width: auto;
+  }
+  .wontport td.dim { font-size: 17px; margin-bottom: 6px; }
+  .wontport td.lbl::before {
+    content: attr(data-l); display: block; font-family: var(--mono); font-size: 9.5px;
+    letter-spacing: .14em; color: var(--caption); margin: 8px 0 2px;
+  }
+}
+
+/* ── inventory ──────────────────────────────────────────────────────────── */
+.inv { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px 24px; margin-top: 24px; }
+@container pc (min-width: 640px) { .inv { grid-template-columns: repeat(4, 1fr); gap: 26px 34px; } }
+.iv .n { font-family: var(--display); font-weight: 300; font-size: 40px; line-height: 1; letter-spacing: -.02em; }
+.iv .c { font-family: var(--mono); font-weight: 500; font-size: 9.5px; letter-spacing: .1em; color: var(--body); margin-top: 7px; }
+.facts {
+  display: grid; grid-template-columns: 1fr; gap: 16px 34px; margin-top: 26px;
+  padding-top: 20px; border-top: 1px solid var(--hair);
+}
+@container pc (min-width: 640px) { .facts { grid-template-columns: repeat(2, 1fr); } }
+.fact .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; color: var(--caption); }
+.fact .v { font-size: 15px; color: var(--body); margin-top: 4px; line-height: 1.5; }
+
+/* ── the path ───────────────────────────────────────────────────────────── */
+.pathline { font-size: 15px; color: var(--body); margin: 20px 0 0; max-width: 70ch; }
+.lanes { margin-top: 18px; }
+.lane { display: grid; grid-template-columns: 112px 1fr; gap: 10px; align-items: center; margin-bottom: 6px; }
+@container pc (min-width: 640px) { .lane { grid-template-columns: 150px 1fr; gap: 14px; margin-bottom: 8px; } }
+.lane-lbl {
+  font-family: var(--mono); font-weight: 500; font-size: 9px; letter-spacing: .08em;
+  color: var(--body); text-align: right; line-height: 1.2;
+}
+@container pc (min-width: 640px) { .lane-lbl { font-size: 10px; letter-spacing: .1em; } }
+.lane-track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; height: 22px; }
+@container pc (min-width: 640px) { .lane-track { height: 28px; } }
+.lseg {
+  display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; min-width: 0;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+.lseg.g1 { background: var(--g1); color: var(--ink); }
+.lseg.g2 { background: var(--g2); color: var(--ink); }
+.lseg.red { background: var(--red); color: #fff; }
+.lseg.dark { background: var(--ink); color: var(--ground); }
+.lseg.c1 { grid-column: 1; } .lseg.c2 { grid-column: 2; }
+.lseg.c3 { grid-column: 3; } .lseg.c4 { grid-column: 4; }
+.lseg.c1.n2 { grid-column: 1 / span 2; } .lseg.c1.n4 { grid-column: 1 / span 4; }
+.lseg.c2.n2 { grid-column: 2 / span 2; } .lseg.c3.n2 { grid-column: 3 / span 2; }
+.phase-scale {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
+  font-family: var(--mono); font-size: 9px; color: var(--caption);
+  margin-top: 6px; margin-left: 122px; letter-spacing: .08em;
+}
+@container pc (min-width: 640px) { .phase-scale { margin-left: 164px; font-size: 9.5px; margin-top: 8px; } }
+.horizon { margin-top: 20px; font-size: 15px; color: var(--body); line-height: 1.55; max-width: 64ch; }
+.enable-band {
+  margin-top: 18px; background: var(--ink); color: var(--ground); padding: 12px 14px;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+/* Below the width where a four-column Gantt can carry a readable label, the
+   bars become a shape graphic and the phase list underneath becomes the text.
+   The same two markups; which one is load-bearing changes. */
+.phaselist { display: none; margin-top: 16px; }
+.phase { border-top: 1px solid var(--hair); padding: 14px 0 4px; }
+.phase .ph { font-family: var(--mono); font-weight: 700; font-size: 10.5px; letter-spacing: .14em; color: var(--red-text); }
+.phase ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.phase li { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: baseline; font-size: 15px; color: var(--body); }
+.phase li .ln { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; color: var(--caption); line-height: 1.3; }
+.phase li .w { display: flex; align-items: baseline; gap: 8px; }
+.phase li .sw { flex: 0 0 auto; width: 9px; height: 9px; margin-top: 1px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.sw.g1 { background: var(--g1); } .sw.g2 { background: var(--g2); }
+.sw.red { background: var(--red); } .sw.dark { background: var(--ink); }
+@container pc (max-width: 719px) {
+  .phaselist { display: block; }
+  .lane { grid-template-columns: 74px 1fr; gap: 8px; margin-bottom: 3px; }
+  .lane-lbl { font-size: 9px; }
+  .lane-track { height: 14px; gap: 2px; }
+  .lseg { padding: 0; font-size: 0; overflow: hidden; }
+  .phase-scale { margin-left: 82px; }
+}
+
+/* ── limits / basis ─────────────────────────────────────────────────────── */
+.limits { margin-top: 20px; display: grid; grid-template-columns: 1fr; gap: 14px 34px; }
+@container pc (min-width: 640px) { .limits { grid-template-columns: 1fr 1fr; } }
+.lim { display: flex; gap: 11px; font-size: 15px; line-height: 1.5; color: var(--body); }
+.lim .m { font-family: var(--mono); color: var(--red-text); flex: 0 0 auto; }
+.lim b { color: var(--ink); }
+.basis-h {
+  font-family: var(--mono); font-weight: 700; font-size: 10.5px;
+  letter-spacing: .14em; color: var(--caption); margin: 26px 0 0;
+}
+
+/* ── close ──────────────────────────────────────────────────────────────── */
+.panel.red .basis-h { color: rgba(255, 255, 255, .8); }
+.close-grid { display: flex; gap: 22px; align-items: flex-start; margin-top: 26px; flex-wrap: wrap; }
+.avatar {
+  width: 72px; height: 72px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, .85);
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  font-family: var(--display); font-weight: 300; font-size: 24px; color: #fff;
+}
+.who { color: #fff; min-width: 0; }
+.who .ask { font-family: var(--display); font-weight: 700; font-size: 18px; }
+.who .nm { font-size: 15px; color: rgba(255, 255, 255, .92); margin-top: 6px; word-break: break-word; }
+.who a { color: #fff; text-underline-offset: 3px; }
+
+/* ── comments (the recipient's, write-only — see gtmReadoutView.js) ──────── */
+.rv-comment { padding: 26px var(--pad) 30px; border-top: 1px solid var(--hair); background: var(--panel); }
+.rv-comment-label { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .14em; color: var(--caption); margin-bottom: 6px; }
+.rv-comment-sub { margin: 0 0 14px; font-size: 14px; color: var(--body); line-height: 1.5; max-width: 62ch; }
+.rv-comment-actions { margin-top: 12px; }
+.rv-comment-notice {
+  margin-top: 12px; padding: 10px 12px; border: 1px solid var(--g2);
+  color: var(--body); font-size: 13.5px;
+}
+.rv-comment-notice--error { border-color: var(--red); color: var(--red-text); }
+
+/* ── footers, loading, not-found ────────────────────────────────────────── */
+.docfoot {
+  padding: 22px var(--pad) 40px; border-top: 1px solid var(--hair);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--caption);
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.rv-loading { min-height: 40vh; display: flex; align-items: center; justify-content: center; }
+.rv-notfound { padding: 12vh var(--pad); text-align: center; }
+.rv-nf-title { font-family: var(--display); font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+.rv-nf-sub { margin: 0 auto; color: var(--caption); font-size: 15px; line-height: 1.6; max-width: 44ch; }
+
+/* ══ PRESENT MODE ═══════════════════════════════════════════════════════════
+   A horizontal snap pager. Only ever entered where a pager form actually
+   works (the resolver checks pointer and width), never forced onto a phone. */
+.rv-root[data-mode="present"] { display: flex; flex-direction: column; height: var(--rv-vh); }
+.rv-root[data-mode="present"] .stagewrap { flex: 1 1 auto; position: relative; min-height: 0; }
+.rv-root[data-mode="present"] .stage {
+  height: 100%; display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none;
+}
+.rv-root[data-mode="present"] .stage::-webkit-scrollbar { display: none; }
+.rv-root[data-mode="present"] .panel {
+  flex: 0 0 100%; scroll-snap-align: start; overflow-y: auto;
+  padding: 34px clamp(30px, 4.4vw, 62px) 56px; display: flex; flex-direction: column;
+}
+.rv-root[data-mode="present"] .panel::after {
+  content: ""; position: sticky; bottom: 0; display: block; height: 34px;
+  margin-top: -34px; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--ground));
+}
+.rv-root[data-mode="present"] .panel.red::after {
+  background: linear-gradient(to bottom, transparent, var(--red));
+}
+.rv-root[data-mode="present"] .panel.grey::after {
+  background: linear-gradient(to bottom, transparent, var(--panel));
+}
+.rv-root[data-mode="present"] .verdict-masthead,
+.rv-root[data-mode="present"] .scorepair,
+.rv-root[data-mode="present"] .docfoot,
+.rv-root[data-mode="present"] .rv-comment { display: none; }
+.rv-root[data-mode="present"] .axes { margin-top: 30px; padding-top: 0; border-top: none; }
+.rv-root[data-mode="present"] .axes .bigscore { display: block; }
+.rv-root[data-mode="present"] .step .lbl { display: block; }
+.rv-root[data-mode="present"] .step.s0 { height: 64px; }
+.rv-root[data-mode="present"] .step.s1 { height: 86px; }
+.rv-root[data-mode="present"] .step.s2 { height: 108px; }
+.rv-root[data-mode="present"] .step.s3 { height: 130px; }
+.rv-root[data-mode="present"] .foot { display: flex; margin-top: auto; padding-top: 22px; }
+
+.arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 36px; height: 36px; border: 1px solid var(--hair); background: var(--ground);
+  color: var(--body); cursor: pointer; font-size: 16px; line-height: 1;
+  display: none; align-items: center; justify-content: center;
+}
+.rv-root[data-mode="present"] .arrow { display: flex; }
+.arrow.l { left: 10px; } .arrow.r { right: 10px; }
+.counter {
+  position: absolute; bottom: 14px; right: 20px; z-index: 3; display: none;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--caption);
+}
+.rv-root[data-mode="present"] .counter { display: block; }
+.rv-root[data-mode="present"] .stagewrap[data-tone="red"] .counter { color: rgba(255, 255, 255, .8); }
+.rv-root[data-mode="present"] .stagewrap[data-tone="red"] .arrow {
+  background: transparent; border-color: rgba(255, 255, 255, .5); color: #fff;
+}
+
+/* ══ PRINT ══════════════════════════════════════════════════════════════════
+   The document form, guaranteed by CSS alone. A headless PDF path does not
+   always fire beforeprint and JS may be off entirely, so none of this is
+   allowed to depend on the mode attribute having been changed first. */
+@media print {
+  .rv-root, .rv-root.dark {
+    --red: #e4002b; --red-text: #e4002b; --rule-red: #e4002b;
+    --ink: #000; --body: #444; --caption: #666;
+    --g1: #d9d9d9; --g2: #bfbfbf; --g3: #999;
+    --panel: #f5f5f5; --hair: #ccc; --ground: #fff;
+    display: block !important; height: auto !important; background: #fff; color: #000; font-size: 11pt;
+  }
+  .utility, .viewtoggle, .arrow, .counter, .rv-comment { display: none !important; }
+  .rv-root .stagewrap, .rv-root .stage {
+    display: block !important; height: auto !important; overflow: visible !important;
+  }
+  .rv-root .panel {
+    display: block !important; flex: none !important; overflow: visible !important;
+    break-before: page; padding: 0 0 10mm;
+  }
+  .rv-root .panel:first-of-type { break-before: avoid; }
+  .rv-root .verdict-masthead { display: block !important; margin: 0 0 8mm; padding: 6mm; }
+  .rv-root .scorepair { display: none !important; }
+  .rv-root .axes { grid-template-columns: 1fr 1fr; border: none; padding-top: 0; }
+  .rv-root .axes .bigscore { display: block !important; }
+  /* Name the bands in print. A printed ladder is looked at without a hover, a
+     tooltip or a scroll — if it does not say which band the reader is in, it
+     says nothing. */
+  .rv-root .step .lbl { display: block; }
+  .rv-root .step.s0 { height: 56px; } .rv-root .step.s1 { height: 72px; }
+  .rv-root .step.s2 { height: 88px; } .rv-root .step.s3 { height: 104px; }
+  .rv-root .foot { display: none !important; }
+  .rv-root .phaselist { display: block; }
+  .rv-root .lane { grid-template-columns: 74px 1fr; gap: 8px; margin-bottom: 3px; }
+  .rv-root .lane-track { height: 14px; gap: 2px; }
+  .rv-root .lseg { padding: 0; font-size: 0; overflow: hidden; }
+  .rv-root .phase-scale { margin-left: 82px; }
+  table, .lane, .lanes, .phase, .facts, .close-grid, .scan { break-inside: avoid; }
+  tr { break-inside: avoid; }
+  .panel.red, .panel.grey, .verdict-masthead, .enable-band, .lseg, .ms.now,
+  .scan-bars .b.weak, .step.on, .cx.on, .sw {
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
+  }
+  /* The scorecard and the gap table keep their stacked form in print: a
+     five-column table cropped at the page edge loses the column that says
+     what it would take, which is the only column anyone acts on. */
+  .scorecard thead, .wontport thead { position: absolute; clip-path: inset(50%); }
+  .scorecard tr {
+    display: grid; grid-template-columns: 1fr auto;
+    grid-template-areas: "dim score" "bar bar" "prov prov" "read read";
+    gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--hair);
+  }
+  .rv-root table.scorecard tbody tr td { border: none; padding: 0; width: auto !important; }
+  .scorecard td.dim { grid-area: dim; } .scorecard td.scr { grid-area: score; text-align: right; }
+  .scorecard td.stg { grid-area: bar; } .scorecard td.pv { grid-area: prov; }
+  .scorecard td.read { grid-area: read; }
+  .wontport tbody tr:not(.rowgroup) { display: block; padding: 8px 0; border-bottom: 1px solid var(--hair); }
+  .rv-root table.wontport tbody tr td {
+    display: block; border: none; padding: 0; width: auto !important;
+  }
+  .wontport td.lbl::before {
+    content: attr(data-l); display: block; font-family: var(--mono);
+    font-size: 7pt; letter-spacing: .14em; color: #666; margin: 5px 0 1px;
+  }
+}

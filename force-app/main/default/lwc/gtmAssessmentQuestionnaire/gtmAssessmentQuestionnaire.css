@@ -1,0 +1,692 @@
+/* Publicis Sapient brand system: PS red, Lato/Roboto, Roboto Mono for the
+   small structural labels. Outlined boxes rather than filled cards; no
+   shadows, no gradients, no pills; sentence-case headings.
+
+   Tokens are defined once on .q-root in light, then redefined for dark. The
+   component is guest-facing on a phone as often as on a laptop, so every
+   measurement below is either relative or a single breakpoint. */
+
+:host {
+    display: block;
+}
+
+.q-root {
+    --ps-red: #e4002b;
+    --ps-red-ink: #b30022;
+    /* Text ON the red. White holds against #e4002b; against the lifted dark-mode
+       red it does not, so the token flips rather than the contrast quietly
+       failing on the one control everybody has to press. */
+    --on-red: #ffffff;
+    --ink: #101010;
+    --ink-soft: #4a4a4a;
+    --ink-faint: #767676;
+    --paper: #ffffff;
+    --ground: #f4f4f4;
+    --line: #d4d4d4;
+    --line-strong: #101010;
+    --off: #f7f7f7;
+
+    /* Native selects, inputs and textareas take their UA styling from this.
+       Without it the controls stay light on a dark page — the one part of the
+       form the tokens above cannot reach. */
+    color-scheme: light;
+
+    box-sizing: border-box;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.15rem 3rem;
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Lato, Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+/* Hosted inside gtmConfigurator's overlay: the card supplies the frame, the
+   scroll and the padding, so the full-page assumptions come off. The .q-root
+   block above is deliberately left untouched -- the standalone page must keep
+   rendering byte-identically (ADR-0008 / D11 plan 2.2).
+
+   `color-scheme: light` above is NOT undone here, on purpose. It exists so the
+   native selects, inputs and textareas are legible; the configurator has a
+   dark-theme toggle, so in dark mode this card is a light-schemed form inside a
+   dark page. That is the lesser failure of the two -- a half-styled native
+   <select> is exactly what the declaration was added to prevent -- but it is a
+   visible seam and a human should decide whether it needs more than leaving
+   alone. Flagged in the Dev report; see the plan's open call 3. */
+.q-root--embedded {
+    min-height: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+    .q-root {
+        --ps-red: #ff405f;
+        --ps-red-ink: #ff6b83;
+        --on-red: #16060a;
+        --ink: #f2f2f2;
+        --ink-soft: #bfbfbf;
+        --ink-faint: #8f8f8f;
+        --paper: #0e0e0e;
+        --ground: #171717;
+        --line: #3a3a3a;
+        --line-strong: #f2f2f2;
+        --off: #141414;
+        color-scheme: dark;
+    }
+}
+
+.q-root *,
+.q-root *::before,
+.q-root *::after {
+    box-sizing: inherit;
+}
+
+/* ── head ─────────────────────────────────────────────────────────────── */
+.q-eyebrow {
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ps-red);
+    margin: 0 0 0.5rem;
+}
+.q-title {
+    font-size: 1.6rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0.4rem 0 0.35rem;
+}
+.q-lede {
+    margin: 0 0 1.1rem;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+}
+.q-head {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+}
+.q-loading,
+.q-done {
+    padding: 3rem 0;
+}
+
+/* The calendar CTA on the confirmation panel, carried over from
+   gtmConfigBooking when it was retired. Same weight as .q-btn--go: it is the
+   one remaining action on the page, so it should not read as a footnote. */
+.q-cta {
+    display: inline-block;
+    margin-top: 1.5rem;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 0.7rem 1.4rem;
+    background: var(--ps-red);
+    color: var(--on-red);
+    border: 1px solid var(--ps-red);
+    border-radius: 0;
+}
+.q-cta:hover {
+    background: var(--ps-red-ink);
+    border-color: var(--ps-red-ink);
+    color: var(--on-red);
+}
+.q-cta:focus-visible {
+    outline: 2px solid var(--ps-red);
+    outline-offset: 2px;
+}
+
+/* ── progress ─────────────────────────────────────────────────────────── */
+.q-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.q-progress-label {
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    white-space: nowrap;
+}
+.q-progress-track {
+    flex: 1;
+    height: 3px;
+    background: var(--line);
+}
+.q-progress-bar {
+    height: 3px;
+    background: var(--ps-red);
+    transition: width 0.2s linear;
+}
+
+/* ── fields ───────────────────────────────────────────────────────────── */
+.q-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+}
+.q-field {
+    display: block;
+}
+.q-field--wide {
+    grid-column: 1 / -1;
+}
+.q-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+/* .q-select / .q-input are the BD-context step's controls (ADR-0008 section 5).
+   They live inside .q-card rather than .q-field, so they are named into this
+   existing rule rather than given a second, drifting copy of it. */
+.q-field select,
+.q-field input,
+.q-select,
+.q-input,
+.q-textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    border-radius: 0;
+    padding: 0.55rem 0.6rem;
+    min-height: 2.75rem;
+}
+.q-textarea {
+    resize: vertical;
+    line-height: 1.5;
+}
+.q-field select:focus,
+.q-field input:focus,
+.q-select:focus,
+.q-input:focus,
+.q-textarea:focus,
+.q-opt-btn:focus-visible,
+.q-btn:focus-visible {
+    outline: 2px solid var(--ps-red);
+    outline-offset: 1px;
+}
+.q-field--bad select,
+.q-field--bad input {
+    border-color: var(--ps-red);
+}
+
+/* ── question cards: outlined, never filled ───────────────────────────── */
+.q-card {
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 1rem 1rem 1.1rem;
+    margin: 0 0 1rem;
+    background: var(--paper);
+}
+.q-card--bad {
+    border-color: var(--ps-red);
+}
+.q-card-legend {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0;
+    margin-bottom: 0.15rem;
+}
+.q-pos {
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    white-space: nowrap;
+}
+.q-card-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+}
+.q-question {
+    margin: 0.35rem 0 0.85rem;
+    font-size: 1.02rem;
+    line-height: 1.45;
+}
+
+/* On the BD-context step every field is optional, and saying so beside each
+   question is what stops the block reading as eleven more things you have to
+   do. The aside at the top of the first screen says it once in prose; this says
+   it per field, where the decision to skip is actually made. */
+.q-optional {
+    margin-left: 0.4rem;
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    vertical-align: middle;
+}
+
+/* Sits beside the primary button rather than beside Back: it is an alternative
+   to Continue, not a way back. Quiet, because skipping is a fine answer but not
+   the one being recommended. */
+.q-skip {
+    margin-left: auto;
+}
+
+/* ── options ──────────────────────────────────────────────────────────── */
+.q-opts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.q-opt-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: 0.94rem;
+    line-height: 1.45;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 0.6rem 0.7rem;
+    min-height: 2.75rem;
+    cursor: pointer;
+}
+.q-opt-btn:hover:not(:disabled) {
+    border-color: var(--line-strong);
+}
+.q-opt-mark {
+    flex: none;
+    width: 0.95rem;
+    height: 0.95rem;
+    margin-top: 0.22rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+}
+.q-opt--on .q-opt-btn {
+    border-color: var(--ps-red);
+    border-left-width: 3px;
+}
+.q-opt--on .q-opt-mark {
+    border-color: var(--ps-red);
+    background: var(--ps-red);
+    box-shadow: inset 0 0 0 3px var(--paper);
+}
+
+/* A capped option stays on the page. Struck through, its reason beside it,
+   and unclickable — a prospect who can see that a 4 was not on offer and why
+   can argue with the instrument; one who cannot has been quietly marked down. */
+.q-opt--off .q-opt-btn {
+    color: var(--ink-soft);
+    background: var(--off);
+    border-style: dashed;
+    cursor: not-allowed;
+}
+.q-opt--off .q-opt-text {
+    text-decoration: line-through;
+    text-decoration-color: var(--ink-faint);
+}
+.q-opt--off .q-opt-mark {
+    border-color: var(--line);
+}
+.q-opt-why {
+    margin: 0.3rem 0 0.2rem 0.7rem;
+    padding-left: 0.7rem;
+    border-left: 2px solid var(--line-strong);
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+}
+.q-opt-why-tag {
+    display: block;
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ps-red);
+    margin-bottom: 0.15rem;
+}
+
+.q-evidence {
+    margin: 0.85rem 0 0;
+    padding-top: 0.6rem;
+    border-top: 1px dotted var(--line);
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+}
+.q-note-hint {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+}
+
+/* ── supplements aside ────────────────────────────────────────────────── */
+.q-aside {
+    border: 1px solid var(--line-strong);
+    border-left: 3px solid var(--ps-red);
+    padding: 0.85rem 0.95rem;
+    margin-bottom: 1.1rem;
+}
+.q-aside-tag {
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ps-red);
+    margin: 0 0 0.35rem;
+}
+.q-aside-body {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+}
+
+.q-posture {
+    margin: 1.25rem 0 0;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.87rem;
+    color: var(--ink-faint);
+}
+
+/* The same paragraph, LEADING the first question section rather than trailing
+   the page. It is a rule below rather than above, and it needs the space
+   underneath it that a trailing note did not. */
+.q-posture--lead {
+    margin: 0 0 1.5rem;
+    padding: 0 0 0.95rem;
+    border-top: 0;
+    border-bottom: 1px solid var(--line);
+}
+
+/* ── footer ───────────────────────────────────────────────────────────── */
+.q-error {
+    border: 1px solid var(--ps-red);
+    border-left-width: 3px;
+    padding: 0.6rem 0.7rem;
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: var(--ps-red-ink);
+}
+.q-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--line);
+}
+.q-foot-left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+}
+.q-btn {
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: 0;
+    padding: 0.7rem 1.4rem;
+    min-height: 2.75rem;
+    cursor: pointer;
+}
+.q-btn--go {
+    background: var(--ps-red);
+    color: var(--on-red);
+    border: 1px solid var(--ps-red);
+}
+.q-btn--go:hover:not(:disabled) {
+    background: var(--ps-red-ink);
+    border-color: var(--ps-red-ink);
+    color: var(--on-red);
+}
+.q-btn--go:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+.q-btn--quiet {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+}
+.q-count {
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+}
+.q-saved {
+    margin: 1rem 0 0;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+}
+
+/* ── keeping your place ───────────────────────────────────────────────── */
+/* Outlined like every other box on the page. It sits under the footer rule
+   rather than in a modal because a save affordance behind a dialog is a save
+   affordance nobody finds. */
+.q-keep {
+    margin: 1.1rem 0 0;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--ps-red);
+    padding: 0.85rem 0.95rem;
+}
+.q-keep-line {
+    margin: 0 0 0.6rem;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+}
+.q-keep-line:last-child {
+    margin-bottom: 0;
+}
+.q-keep-tag {
+    display: block;
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ps-red);
+    margin-bottom: 0.2rem;
+}
+.q-keep-link {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+    margin: 0 0 0.5rem;
+}
+.q-keep-url {
+    flex: 1;
+    min-width: 0;
+    font-family: 'Roboto Mono', ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+    background: var(--off);
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 0.45rem 0.5rem;
+    min-height: 2.5rem;
+}
+.q-keep-warn {
+    margin: 0 0 0.75rem;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+}
+.q-keep-actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin: 0 0 0.4rem;
+}
+.q-keep-email {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+.q-keep-email input {
+    width: 100%;
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    border-radius: 0;
+    padding: 0.45rem 0.5rem;
+    min-height: 2.5rem;
+}
+.q-keep-email input:focus,
+.q-keep-url:focus {
+    outline: 2px solid var(--ps-red);
+    outline-offset: 1px;
+}
+.q-btn--sm {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.9rem;
+    min-height: 2.5rem;
+    white-space: nowrap;
+}
+.q-keep-hint {
+    display: block;
+    margin: 0 0 0.2rem;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+}
+.q-keep-said {
+    margin: 0.5rem 0 0;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+}
+.q-keep-bad {
+    margin: 0.6rem 0 0;
+    padding-left: 0.6rem;
+    border-left: 2px solid var(--ps-red);
+    font-size: 0.82rem;
+    color: var(--ps-red-ink);
+}
+
+/* A status line, not an error: arriving on a dead link is a normal thing that
+   happens to honest people, and it should not be shouted at them in red. */
+.q-notice {
+    border: 1px solid var(--line-strong);
+    border-left-width: 3px;
+    padding: 0.6rem 0.7rem;
+    margin: 0 0 1rem;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+}
+.q-linkbtn {
+    font: inherit;
+    font-size: 0.82rem;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--ps-red);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ── token re-auth overlay ────────────────────────────────────────────── */
+/* Covers the form rather than replacing it: the whole point is that nothing
+   underneath is unmounted or cleared while this is up. */
+.q-reauth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(16, 16, 16, 0.55);
+}
+.q-reauth-card {
+    width: 100%;
+    max-width: 24rem;
+    box-sizing: border-box;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    padding: 1.4rem 1.4rem 1.5rem;
+}
+.q-reauth-card .q-field {
+    margin: 0.9rem 0 0;
+}
+.q-reauth-submit {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* ── phone ────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .q-root {
+        padding: 1.1rem 0.9rem 2.5rem;
+    }
+    .q-grid {
+        grid-template-columns: 1fr;
+    }
+    .q-title {
+        font-size: 1.35rem;
+    }
+    .q-foot {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    .q-foot-left {
+        justify-content: space-between;
+    }
+    .q-btn {
+        width: 100%;
+    }
+    .q-btn--quiet {
+        width: auto;
+    }
+    /* The save block is a form in its own right; on a phone it stacks rather
+       than squeezing a URL, a button, an input and a second button onto one
+       row. --sm buttons keep their own width so they do not become full-bleed
+       primaries competing with Continue. */
+    .q-keep-link,
+    .q-keep-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    /* flex-basis is measured along the main axis, so the 14rem that sets a
+       sensible minimum WIDTH in a row becomes 14rem of empty HEIGHT the moment
+       the container stacks. Reset it rather than carrying a phone-sized hole
+       between the email field and its button. */
+    .q-keep-email {
+        flex: 0 0 auto;
+    }
+    .q-btn--sm {
+        width: 100%;
+    }
+}
+
+.q-startover {
+    margin: 0.75rem 0 0;
+}
+.q-startover-btn {
+    min-height: var(--gtm-control-h, 32px);
+    height: var(--gtm-control-h, 32px);
+    line-height: calc(var(--gtm-control-h, 32px) - 2px);
+    white-space: nowrap;
+}
+.q-startover-confirm {
+    border: 1px solid var(--line-strong);
+    padding: 0.75rem;
+}
+.q-startover-title {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    font-weight: 700;
+}

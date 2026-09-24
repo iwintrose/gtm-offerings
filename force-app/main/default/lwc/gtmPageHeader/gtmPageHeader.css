@@ -1,0 +1,64 @@
+:host { display: block; }
+
+/* Salesforce's own record-header proportions, so a page reads as a page in
+   the app rather than a page inside it. Extracted from gtmOverview and
+   gtmContentHome, which hand-rolled the identical block twice
+   (ov-head / home-head — see issue B14). */
+.hdr {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem;
+    padding: .75rem 1rem; margin-bottom: 1rem;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}
+/* flex-wrap lets the actions drop under the title instead of crushing it
+   (issue page-header-layout-fix; contract: docs/architecture/gtm-page-header-layout.md).
+   NEVER add align-items: center here (see icon-shift note below). */
+.hdr .slds-page-header__row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1rem; }
+/* The icon + eyebrow/title stack must stay pinned to a fixed position at the
+   top of the row regardless of whether the meta <p> is populated (issue
+   gtm-page-header-icon-shift). Centering (align-items: center) was the
+   original bug: when the meta line's presence changed the content block's
+   height, the whole block re-centered within the row and dragged the icon
+   and title up/down with it. Top-aligning here removes that re-centering
+   entirely, so the icon and title never move — only the row's bottom edge
+   grows or shrinks with the text stack below them. */
+/* 16rem flex-basis is the title floor: below it the actions column wraps to
+   its own row, so the eyebrow/title never collapse to a sliver. */
+.hdr .slds-page-header__col-title { flex: 1 1 16rem; min-width: 0; display: flex; align-items: flex-start; gap: .75rem; }
+/* Actions wrap among themselves and stay right-aligned when they drop under
+   the title. align-items: center here only aligns buttons with each other. */
+.hdr .slds-page-header__col-actions { flex: 0 1 auto; min-width: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; align-self: flex-end; gap: .5rem; margin-left: auto; }
+/* Compact (< 900px of header width, see gtmPageHeader.js): hamburger sits
+   top-right beside the title; 10rem title floor so the 44px control never
+   wraps under it at 360px. Base 16rem floor above stays for wide. */
+.hdr-compact .slds-page-header__col-actions { align-self: flex-start; flex-wrap: nowrap; }
+.hdr-compact .slds-page-header__col-title { flex-basis: 10rem; }
+.hdr-menu { display: inline-block; min-width: 2.75rem; min-height: 2.75rem; }
+.hdr-icon { flex: none; }
+.hdr-eyebrow { font-size: 12px; color: #444; margin: 0; }
+.hdr-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* The meta line itself always reserves one line of height via min-height,
+   even when {meta} is empty, so the text stack's own height (and therefore
+   the icon/eyebrow/title above it) never changes based on meta content.
+   Only this box's rendered content (visually nothing, when meta is blank)
+   changes — its footprint does not. This keeps the "bar grows, content
+   stays put" behavior local to the meta line rather than depending on a
+   row-level min-height that has to be kept in sync with font/line-height
+   changes elsewhere. */
+.hdr-meta { margin: .1rem 0 0; font-size: 12px; line-height: 1.2; min-height: 1.2em; color: #747474; }
+
+/* Home responsive (issue home-responsive; docs/architecture/home-responsive.md).
+   No fixed widths / 100vw: everything wraps within the host's own width. */
+.hdr, .hdr .slds-page-header__row { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.hdr .slds-button, .hdr lightning-button, .hdr lightning-button-menu { max-width: 100%; }
+@media (max-width: 768px) {
+    .hdr { padding: .6rem .75rem; margin-bottom: .75rem; }
+    .hdr .slds-page-header__row { gap: .6rem; }
+    .hdr .slds-page-header__col-actions { flex: 1 1 100%; justify-content: flex-start; margin-left: 0; align-self: stretch; }
+    .hdr-compact .slds-page-header__col-actions { flex: 0 0 auto; margin-left: auto; align-self: flex-start; }
+}
+@media (max-width: 480px) {
+    .hdr { padding: .5rem .6rem; }
+    .hdr-title { font-size: 17px; }
+    .hdr .slds-page-header__col-title { flex-basis: 100%; }
+    .hdr-compact .slds-page-header__col-title { flex-basis: 8rem; }
+}

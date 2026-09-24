@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Required__c</fullName>
+    <label>Required</label>
+    <description>Whether a guest must answer this question before proceeding. Can be flipped to true at runtime by a MAKE_REQUIRED branching rule (see Rules_JSON__c) even when authored false.</description>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+</CustomField>

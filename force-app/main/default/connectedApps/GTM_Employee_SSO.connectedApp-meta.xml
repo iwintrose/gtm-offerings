@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Backing Connected App for the GTM_Employee_SSO Auth Provider (issue #106).
+
+  Purpose: let an internal rep who is already authenticated on the org's own
+  lightning.force.com domain SSO into the GTM1 Experience Cloud site without
+  retyping credentials, via the standard "Login with Salesforce" mechanism
+  (a same-org Auth Provider backed by this Connected App). See
+  TASK_SCOPE.md §3 for the rejected alternatives and why this is the
+  supported, auditable path.
+
+  Deliberately no <profileName>/<permissionSetName> entries: omitting both
+  is what keeps this Connected App's "Permitted Users" setting at "All users
+  may self-authorize" rather than "Admin approved users are pre-authorized",
+  so no permission-set grant is required for a rep to use it (internal users
+  only — a guest/prospect never holds an internal session to bridge in the
+  first place, so this exposes nothing to them). If a later hardening pass
+  switches to admin-approved users, GTM_Offering_User and GTM_Offering_Admin
+  would each need this app added to their assigned-app list — see
+  TASK_SCOPE.md §3 item 5.
+
+  <consumerKey> is intentionally absent: Salesforce generates the Consumer
+  Key/Secret pair on first deploy of a new Connected App. Manual step 1 in
+  TASK_SCOPE.md retrieves that generated Consumer Key/Secret from Setup and
+  pastes them into authproviders/GTM_Employee_SSO.authprovider-meta.xml —
+  they are never set here.
+
+  callbackUrl is the SITE's own domain and path prefix
+  (https://<site-domain>/<sitePathPrefix>/services/authcallback/GTM_Employee_SSO),
+  NOT the org's my.salesforce.com domain, confirmed live against gtm-dev
+  (issue #106): the OAuth authorize request Salesforce generates for an
+  Auth Provider triggered from a site's login page always targets that
+  site's own domain, and a mismatched callback here fails with
+  redirect_uri_mismatch. An earlier version of this file used the org
+  domain and failed live for exactly that reason.
+-->
+<ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>GTM Employee SSO</label>
+    <contactEmail>REPLACE_WITH_ORG_ADMIN_EMAIL@example.com</contactEmail>
+    <description>Backs the &quot;Login with Salesforce&quot; Auth Provider that lets an internal rep SSO from the org into the GTM1 Experience Cloud site. See TASK_SCOPE.md for issue #106.</description>
+    <oauthConfig>
+        <callbackUrl>https://REPLACE_WITH_SITE_DOMAIN/REPLACE_WITH_SITE_PATH_PREFIX/services/authcallback/GTM_Employee_SSO</callbackUrl>
+        <isAdminApproved>false</isAdminApproved>
+        <isConsumerSecretOptional>false</isConsumerSecretOptional>
+        <scopes>Api</scopes>
+        <scopes>Web</scopes>
+        <scopes>RefreshToken</scopes>
+    </oauthConfig>
+    <oauthPolicy>
+        <ipRelaxation>ENFORCE</ipRelaxation>
+        <refreshTokenPolicy>infinite</refreshTokenPolicy>
+    </oauthPolicy>
+</ConnectedApp>

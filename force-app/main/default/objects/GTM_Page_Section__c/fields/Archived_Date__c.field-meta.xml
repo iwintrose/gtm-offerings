@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Archived_Date__c</fullName>
+    <description>Stamped automatically when Archived__c changes value on this record (see GtmPageSectionArchiveCascade.trigger). Retention/purge tracking and the "Deleted Date" shown to reps -- never set by hand, and never re-stamped when Archived__c is written with the value it already has.</description>
+    <externalId>false</externalId>
+    <label>Archived Date</label>
+    <required>false</required>
+    <type>DateTime</type>
+</CustomField>

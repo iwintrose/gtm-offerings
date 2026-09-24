@@ -1,0 +1,10 @@
+<template>
+    <template if:true={hasCase}>
+        <div class="ar-case-panel">
+            <p class="slds-text-title_caps slds-m-bottom_x-small">Review Case</p>
+            <p><strong>{caseSubject}</strong></p>
+            <p>Status: {caseStatus}</p>
+            <p>Opened: {caseCreatedDate}</p>
+        </div>
+    </template>
+</template>

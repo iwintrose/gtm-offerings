@@ -1,0 +1,45 @@
+<template>
+    <article class="slds-card ov-card ov-readouts" data-id="readouts-awaiting-widget">
+        <div class="slds-card__header ov-card-h">
+            <span class="ov-ic ov-ic--readouts">
+                <lightning-icon icon-name="standard:email" size="small"></lightning-icon>
+            </span>
+            <h2 class="ov-h">Readouts awaiting response</h2>
+        </div>
+        <div class="slds-card__body ov-card-b">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading readouts" size="small"></lightning-spinner>
+        </template>
+
+        <template if:true={loadError}>
+            <div class="slds-text-color_error" data-id="readouts-error">
+                <p>{loadError}</p>
+                <lightning-button label="Retry" onclick={handleRetry}></lightning-button>
+            </div>
+        </template>
+
+        <template if:true={showEmpty}>
+            <p class="ov-empty" data-id="readouts-empty">
+                No published readouts are waiting on a response.
+            </p>
+        </template>
+
+        <template if:true={showRows}>
+            <ul class="slds-has-dividers_top-space" data-id="readouts-list">
+                <template for:each={rows} for:item="row">
+                    <li key={row.readoutId} class={row.rowClass} data-id="readout-row"
+                        data-readout-id={row.readoutId} data-assessment-request-id={row.assessmentRequestId}
+                        data-offering-key={row.offeringKey} role={row.roleAttr} tabindex={row.tabIndexAttr}
+                        aria-label={row.rowAriaLabel} onclick={handleRowActivate} onkeydown={handleRowActivate}>
+                        <div class="slds-truncate">{row.accountName}</div>
+                        <template if:true={row.opportunityName}>
+                            <div class="slds-text-body_small slds-text-color_weak">{row.opportunityName}</div>
+                        </template>
+                        <div class="slds-text-body_small" data-id="readout-proxy-label">{row.proxyLabel}</div>
+                    </li>
+                </template>
+            </ul>
+        </template>
+        </div>
+    </article>
+</template>

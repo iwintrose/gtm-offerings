@@ -1,0 +1,107 @@
+/* Internal tool chrome — SLDS-flavoured, matching gtmContentManager, so it is
+   obvious this is the tool and not the page a prospect sees. The prospect-facing
+   questionnaire carries the Publicis Sapient brand; this deliberately does not,
+   for the same reason gtmContentManager's chrome does not. */
+
+:host { display: block; }
+
+.ia {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 640px;
+    background: #f3f3f3;
+    color: #181818;
+    font-size: 13px;
+}
+
+.ia-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.75rem;
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    flex: none;
+    flex-wrap: wrap;
+}
+.ia-brand { font-weight: 700; white-space: nowrap; }
+.ia-sep { width: 1px; height: 20px; background: #e5e5e5; }
+.ia-pick { display: flex; align-items: center; gap: 0.35rem; font-size: 12px; color: #444; min-width: 14rem; }
+
+.ia-tabs { margin-left: auto; display: flex; gap: 2px; }
+.ia-tab {
+    font: inherit; font-size: 12px; padding: 0 0.7rem;
+    display: inline-flex; align-items: center; box-sizing: border-box;
+    height: 32px;
+    border: 1px solid #c9c9c9; background: #fff; color: #444; cursor: pointer; border-radius: 4px;
+}
+.ia-tab--on { background: #eef4ff; border-color: #0176d3; color: #014486; font-weight: 700; }
+.ia-actions { display: flex; gap: 0.35rem; }
+
+.ia-msg {
+    margin: 0.5rem 0.75rem 0; padding: 0.5rem 0.7rem;
+    border: 1px solid #e5e5e5; border-left-width: 3px; border-radius: 4px;
+    font-size: 12.5px;
+}
+.ia-msg--error { border-color: #fe9339; background: #fef5ec; }
+.ia-msg--warn  { border-color: #ffb75d; background: #fff7e6; }
+.ia-msg--ok    { border-color: #2e844a; background: #ecf8f1; }
+
+.ia-empty { padding: 2rem; color: #444; display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+
+.ia-defhead { display: flex; gap: 1rem; padding: 0.75rem; background: #fff; border-bottom: 1px solid #e5e5e5; }
+.ia-field { display: flex; flex-direction: column; gap: 0.2rem; font-size: 11px; color: #747474; }
+.ia-field input { font: inherit; font-size: 13px; padding: 0.3rem 0.5rem; border: 1px solid #c9c9c9; border-radius: 4px; min-width: 16rem; }
+
+.ia-questions, .ia-outcomes, .ia-preview { padding: 0.85rem; overflow-y: auto; flex: 1; min-height: 0; }
+
+.ia-qcard {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
+    padding: 0.7rem 0.85rem; margin-bottom: 0.7rem;
+}
+.ia-qcard-head { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.ia-qorder { font-family: ui-monospace, monospace; font-size: 11px; color: #747474; }
+.ia-qtext { flex: 2; min-width: 12rem; font: inherit; font-size: 13px; padding: 0.3rem 0.5rem; border: 1px solid #c9c9c9; border-radius: 4px; }
+.ia-qkey { flex: 1; min-width: 8rem; font-family: ui-monospace, monospace; font-size: 12px; padding: 0.3rem 0.5rem; border: 1px solid #c9c9c9; border-radius: 4px; }
+.ia-required { font-size: 11.5px; color: #444; display: flex; align-items: center; gap: 0.2rem; }
+.ia-qmoves { margin-left: auto; display: flex; gap: 0.2rem; }
+.ia-qmoves button, .ia-del {
+    font: inherit; font-size: 12px; width: 24px; height: 24px; line-height: 1;
+    border: 1px solid #c9c9c9; border-radius: 4px; background: #fff; color: #444; cursor: pointer;
+}
+.ia-del { color: #b30000; border-color: #f0b3b3; }
+
+.ia-opts { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.ia-opt-row { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+.ia-opt-label { flex: 2; min-width: 8rem; }
+.ia-opt-value { flex: 1; min-width: 5rem; font-family: ui-monospace, monospace; }
+.ia-opt-points { width: 4.5rem; }
+.ia-opt-label, .ia-opt-value, .ia-opt-points {
+    font: inherit; font-size: 12.5px; padding: 0.25rem 0.4rem; border: 1px solid #c9c9c9; border-radius: 4px;
+}
+.ia-jump-action { min-width: 13rem; }
+.ia-jump-target { min-width: 14rem; }
+.ia-add-opt, .ia-add-q, .ia-add-range { margin-top: 0.4rem; }
+
+.ia-numeric { margin-top: 0.5rem; display: flex; gap: 1rem; font-size: 12px; color: #444; }
+.ia-numeric input { width: 5rem; font: inherit; font-size: 12.5px; padding: 0.25rem 0.4rem; border: 1px solid #c9c9c9; border-radius: 4px; }
+
+.ia-range-row {
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 6px;
+    padding: 0.5rem 0.7rem; margin-bottom: 0.5rem; font-size: 12px;
+}
+.ia-range-row label { display: flex; flex-direction: column; gap: 0.15rem; color: #747474; }
+.ia-range-row input { font: inherit; font-size: 12.5px; padding: 0.25rem 0.4rem; border: 1px solid #c9c9c9; border-radius: 4px; }
+
+.ia-preview-score { font-size: 15px; font-weight: 700; margin-bottom: 0.5rem; }
+.ia-pslot { background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; }
+.ia-pslot-hidden { color: #747474; font-style: italic; font-size: 12px; }
+.ia-pquestion { margin: 0 0 0.5rem; font-size: 13px; }
+.ia-popts { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.ia-popt {
+    font: inherit; font-size: 12px; padding: 0.3rem 0.55rem;
+    border: 1px solid #e5e5e5; border-radius: 4px; background: #fff; color: #181818; cursor: pointer;
+}
+.ia-popt--on { border-color: #0176d3; background: #eef4ff; color: #014486; }

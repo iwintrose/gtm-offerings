@@ -1,0 +1,17 @@
+<template>
+  <div class={scrimClass} onclick={handleScrimClick}></div>
+  <aside class={sheetClass} style={sheetStyle} aria-label={title} aria-labelledby="gtm-modal-shell-title">
+    <div class="gms-head-wrap">
+      <div class="gms-head">
+        <span class="gms-title" id="gtm-modal-shell-title">{title}</span>
+        <button type="button" class="gms-x" aria-label="Close" onclick={handleCloseClick}>&times;</button>
+      </div>
+      <div class="gms-extras">
+        <slot name="header-extras"></slot>
+      </div>
+    </div>
+    <div class="gms-body">
+      <slot></slot>
+    </div>
+  </aside>
+</template>

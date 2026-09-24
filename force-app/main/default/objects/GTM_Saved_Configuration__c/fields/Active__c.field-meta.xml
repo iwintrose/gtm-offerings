@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Active__c</fullName>
+    <label>Active</label>
+    <description>When unchecked, the shared configurator link for this record shows an "inactive" message to the client instead of the configurator, without deleting the record or hiding it from the rep's own Saved Links list.</description>
+    <type>Checkbox</type>
+    <defaultValue>true</defaultValue>
+</CustomField>

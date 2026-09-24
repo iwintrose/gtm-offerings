@@ -1,0 +1,50 @@
+/* CORRECTION (issue overview-bd-heat-redesign-5-visual-parity, visual-parity
+   QA pass): the comment this replaced claimed gtmOverview.css's chrome
+   rules reach this component's own template -- they don't. LWC shadow DOM
+   scopes each component's template to its own stylesheet only, so a class
+   used in this component's .html is invisible to gtmOverview.css no matter
+   what it's named. The shared class NAMES stay (readability/consistency
+   across the four files) but the rules this component's markup actually
+   uses have to be duplicated here. Keep in sync with gtmOverview.css's
+   .ov-card/.ov-card-h/.ov-card-b/.ov-ic/.ov-ic--tasks/.ov-tasks-today/
+   .ov-h/.ov-empty block if that ever changes. */
+.ov-card {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
+    display: flex; flex-direction: column;
+    border-top: 3px solid #747474;
+    transition: box-shadow .14s ease, transform .14s ease;
+}
+.ov-card:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .09); transform: translateY(-1px); }
+@media (prefers-reduced-motion: reduce) {
+    .ov-card { transition: none; }
+    .ov-card:hover { transform: none; }
+}
+.ov-card-h {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
+    min-height: 3rem;
+}
+.ov-card-b { padding: .5rem .6rem .65rem; flex: 1 1 auto; }
+.ov-ic {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 28px;
+}
+.ov-ic--tasks { background-color: #eef4fb; }
+.ov-ic--tasks lightning-icon { --sds-c-icon-color-foreground: #0b5cab; }
+.ov-h { margin: 0; font-size: 14px; font-weight: 700; color: #181818; }
+.ov-empty { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
+.ov-tasks-today { position: relative; border-top-color: #0b5cab; }
+/* Row layout (issue tasks-widget-row-navigation): the checkbox and the
+   clickable main content are two distinct, separately-clickable targets
+   side by side -- .ov-row itself is no longer the click target. */
+.ov-row { border-radius: .2rem; }
+.ov-row-grid { gap: .5rem; }
+.ov-row-check { flex: 0 0 auto; padding-top: .1rem; }
+/* Clickable main content (subject/badge/account name): matches
+   gtmOverview.css's .at-tile hover/focus-visible treatment for the same
+   "this opens something" affordance. */
+.ov-row-main { cursor: pointer; border-radius: .2rem; flex: 1 1 auto; min-width: 0; }
+.ov-row-main:hover { background: #f7f7f7; }
+.ov-row-main:focus-visible { outline: 2px solid #0176d3; outline-offset: 1px; }

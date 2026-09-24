@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Status__c</fullName>
+    <label>Status</label>
+    <description>Draft/Pending Approval/Approved/Published. Draft -&gt; Pending Approval -&gt; Approved is driven by the GTM_Readout_Approval approval process (field updates in workflows/GTM_Readout__c.workflow); Approved -&gt; Published and back are driven by GtmReadoutController. Never free entry.</description>
+    <required>true</required>
+    <defaultValue>"Draft"</defaultValue>
+    <!-- Tracked, so "when did this become Approved / Published" is answerable
+         from the platform's own history rather than only from the version
+         table. Deliberately NOT tracked on Public_Link_Token__c: field history
+         retains old values, and a revoked token surviving in a history table
+         would resurrect a link unpublishReadout exists to kill. -->
+    <trackHistory>true</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Draft</fullName>
+                <default>true</default>
+                <label>Draft</label>
+            </value>
+            <!-- Set by the approval process's initial-submission field update
+                 and cleared again by its rejection and recall actions. It is a
+                 real state, not a flavour of Draft: a readout waiting on a
+                 manager is locked, uneditable, and needs a different action
+                 from one still being written, and a list view that cannot tell
+                 them apart is a list view a rep cannot work from.
+
+                 The UI treats the open ProcessInstance, not this value, as the
+                 authority on "pending" (see GtmReadoutController.approvalOf), so
+                 a field update that failed to fire degrades to a stale label
+                 rather than to a wrong state machine. -->
+            <value>
+                <fullName>Pending Approval</fullName>
+                <default>false</default>
+                <label>Pending Approval</label>
+            </value>
+            <value>
+                <fullName>Approved</fullName>
+                <default>false</default>
+                <label>Approved</label>
+            </value>
+            <value>
+                <fullName>Published</fullName>
+                <default>false</default>
+                <label>Published</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

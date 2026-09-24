@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The readout approval, on the platform.
+
+  Replaces the old custom "Approve" button (GtmReadoutController.approveReadout,
+  removed), which moved Status__c straight to Approved and stamped the approver
+  from whoever clicked it — i.e. it let the author approve their own work and
+  left no audit trail beyond two fields on the record. Submitting, approving,
+  rejecting and recalling now all go through the platform, and
+  ProcessInstance / ProcessInstanceStep are the audit trail.
+
+  WHAT THIS DOES NOT DO: publish. Approval marks a readout approved and stops.
+  Minting the public token stays a separate, deliberate rep action
+  (GtmReadoutController.publishReadout). A manager approving must never, by
+  itself, put a live link in a prospect's inbox — so there is no publish action
+  anywhere in this file, and adding one would be a product regression, not a
+  convenience.
+
+  RECORD LOCKING. Submission locks the record (recordEditability = AdminOnly),
+  which is the point: the content a manager is reading cannot be edited out from
+  under them. GtmReadoutController.saveDraftContent refuses while pending with
+  that explanation rather than letting the DML fail with a platform lock error.
+  Both final actions unlock (finalApprovalRecordLock / finalRejectionRecordLock
+  are false) — an approved readout that stayed locked could not be published,
+  unpublished or returned to draft by the rep who owns it.
+
+  APPROVER. The record owner's manager, via nextAutomatedApprover. That is the
+  one assignment that needs no org-specific metadata (no queue, no named user,
+  no role) and so is the one that deploys the same way into every org. Two
+  consequences are handled in Apex rather than left to fail as a platform error:
+  a queue-owned readout has no manager to route to, and a user with no Manager
+  set cannot submit — GtmReadoutController.submitForApproval refuses the first
+  with "claim this readout first", and surfaces the second as the platform's own
+  message. An org that wants a review queue or a named approver instead should
+  change this step's assignedApprover; nothing in the Apex depends on who the
+  approver is.
+-->
+<ApprovalProcess xmlns="http://soap.sforce.com/2006/04/metadata">
+    <active>true</active>
+    <allowRecall>true</allowRecall>
+    <allowedSubmitters>
+        <type>owner</type>
+    </allowedSubmitters>
+    <allowedSubmitters>
+        <type>creator</type>
+    </allowedSubmitters>
+    <approvalPageFields>
+        <field>Name</field>
+        <field>Status__c</field>
+        <field>Assessment_Request__c</field>
+        <field>Opportunity__c</field>
+        <field>Offering_Key__c</field>
+    </approvalPageFields>
+    <approvalStep>
+        <allowDelegate>true</allowDelegate>
+        <assignedApprover>
+            <approver>
+                <type>userHierarchyField</type>
+            </approver>
+            <whenMultipleApprovers>FirstResponse</whenMultipleApprovers>
+        </assignedApprover>
+        <description>The record owner's manager reads the draft on the record and approves or rejects. Draft_Content__c is a rich text area and cannot be an approval page field, so the approver opens the readout itself -- which is what you want them to do before approving a client deliverable.</description>
+        <label>Manager Review</label>
+        <name>Manager_Review</name>
+        <rejectBehavior>
+            <type>RejectRequest</type>
+        </rejectBehavior>
+    </approvalStep>
+    <description>Draft -&gt; Pending Approval -&gt; Approved for a GTM readout. Approval never publishes; publishing stays a rep action in GtmReadoutController.publishReadout.</description>
+    <enableMobileDeviceAccess>true</enableMobileDeviceAccess>
+    <entryCriteria>
+        <formula>ISPICKVAL(Status__c, "Draft")</formula>
+    </entryCriteria>
+    <finalApprovalActions>
+        <action>
+            <name>Readout_Status_Approved</name>
+            <type>FieldUpdate</type>
+        </action>
+    </finalApprovalActions>
+    <finalApprovalRecordLock>false</finalApprovalRecordLock>
+    <finalRejectionActions>
+        <action>
+            <name>Readout_Status_Draft</name>
+            <type>FieldUpdate</type>
+        </action>
+    </finalRejectionActions>
+    <finalRejectionRecordLock>false</finalRejectionRecordLock>
+    <initialSubmissionActions>
+        <action>
+            <name>Readout_Status_Pending_Approval</name>
+            <type>FieldUpdate</type>
+        </action>
+    </initialSubmissionActions>
+    <label>GTM Readout Approval</label>
+    <nextAutomatedApprover>
+        <useApproverFieldOfRecordOwner>true</useApproverFieldOfRecordOwner>
+        <userHierarchyField>Manager</userHierarchyField>
+    </nextAutomatedApprover>
+    <processOrder>1</processOrder>
+    <recallActions>
+        <action>
+            <name>Readout_Status_Draft</name>
+            <type>FieldUpdate</type>
+        </action>
+    </recallActions>
+    <recordEditability>AdminOnly</recordEditability>
+    <showApprovalHistory>true</showApprovalHistory>
+</ApprovalProcess>

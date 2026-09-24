@@ -1,0 +1,351 @@
+/* ── Download button (anchor styled as SLDS button) ──────────────────── */
+/* Overrides the default anchor underline + visited-color so the <a> looks
+   like a lightning-button. Needed because LWC's Locker Service blocks the
+   programmatic document.createElement('a').click() pattern; a real anchor
+   with `download` + data-URL href is the workaround. */
+.download-btn {
+    text-decoration: none;
+}
+.download-btn:hover,
+.download-btn:focus,
+.download-btn:visited,
+.download-btn:active {
+    text-decoration: none;
+    color: #fff;
+}
+
+/* ── Summary strip ────────────────────────────────────────────────────── */
+.summary-strip {
+    background: #f8f8f8;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.375rem;
+    padding: 0.6rem 0.4rem;
+}
+.summary-cell { padding: 0.1rem 0.3rem; }
+.summary-num {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.15rem;
+    color: #1d1d1d;
+}
+.summary-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin: 0;
+}
+.summary-create  { color: #2e844a; }
+.summary-skip    { color: #888; }
+.summary-blocker { color: #c23934; }
+
+/* ── Toolbar / filters ────────────────────────────────────────────────── */
+.toolbar {
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+}
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+.filter-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #888;
+    margin-right: 0.4rem;
+    white-space: nowrap;
+}
+.filter-btn {
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.72rem;
+    color: #444;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.filter-btn:hover:not(.filter-active) { background: #f3f3f3; }
+.filter-active {
+    background: #0176d3;
+    border-color: #0176d3;
+    color: #fff;
+    font-weight: 600;
+}
+.confidence-slider {
+    width: 100%;
+    accent-color: #0176d3;
+}
+
+/* ── Wave cards ───────────────────────────────────────────────────────── */
+.wave-card {
+    border: 1px solid #e5e5e5;
+    border-radius: 0.375rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.85rem;
+    background: #fff;
+}
+.wave-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.35rem;
+}
+.wave-badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: #eaf5ec;
+    color: #2e844a;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    margin-right: 0.4rem;
+}
+.wave-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1d1d1d;
+}
+.wave-count {
+    font-size: 0.7rem;
+    color: #888;
+}
+.wave-desc {
+    font-size: 0.78rem;
+    color: #555;
+    margin: 0.1rem 0 0.25rem;
+}
+.wave-gate {
+    font-size: 0.72rem;
+    color: #666;
+    background: #f8f8f8;
+    border-left: 2px solid #0176d3;
+    padding: 0.35rem 0.55rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+    margin-bottom: 0.6rem;
+}
+
+/* ── Step table ───────────────────────────────────────────────────────── */
+.step-table {
+    border: 1px solid #f0f0f0;
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+.step-row {
+    display: grid;
+    grid-template-columns: 1.75rem 2.5rem 5rem 12rem 1fr 5.5rem 5rem;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.76rem;
+    border-bottom: 1px solid #f5f5f5;
+    align-items: center;
+}
+.col-check { display: flex; justify-content: center; }
+.col-check input[type="checkbox"] { cursor: pointer; }
+.col-check input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.4; }
+.step-row:last-child { border-bottom: none; }
+.step-row-head {
+    background: #f8f8f8;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+}
+.col-order    { color: #888; }
+.col-entity   { font-family: monospace; color: #1d1d1d; word-break: break-word; }
+.col-preview  { color: #555; line-height: 1.4; }
+
+/* ── Action pills ─────────────────────────────────────────────────────── */
+.action-pill {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 0.2rem;
+}
+.action-create { background: #eaf5ec; color: #2e844a; }
+.action-update { background: #e8f4fd; color: #0176d3; }
+.action-skip   { background: #f3f3f3; color: #888; }
+
+/* ── Result badges (prior-run outcome per step) ───────────────────────── */
+.result-pill {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.2rem;
+    white-space: nowrap;
+}
+.result-not_run { background: #f3f3f3; color: #888; }
+.result-applied { background: #eaf5ec; color: #2e844a; }
+.result-failed  { background: #fde8e8; color: #c23934; }
+.result-skipped { background: #fdf4e6; color: #7a3d00; }
+
+/* ── Confidence badges ────────────────────────────────────────────────── */
+.conf-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 999px;
+}
+.conf-high { background: #eaf5ec; color: #2e844a; }
+.conf-mid  { background: #fff4e5; color: #c45500; }
+.conf-low  { background: #fde8e8; color: #c23934; }
+
+/* ── Wave gaps ────────────────────────────────────────────────────────── */
+.wave-gaps {
+    margin-top: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    background: #fdf4e6;
+    border-left: 2px solid #c45500;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+.wave-gaps-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7a3d00;
+    margin: 0 0 0.35rem;
+}
+.wave-gaps ul {
+    list-style: disc;
+    margin: 0;
+    padding-left: 1.15rem;
+}
+.wave-gaps li {
+    font-size: 0.75rem;
+    color: #4a2600;
+    line-height: 1.4;
+    margin-bottom: 0.1rem;
+}
+.gap-sev {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    margin-right: 0.25rem;
+}
+.gap-name {
+    font-family: monospace;
+    font-weight: 600;
+    color: #1d1d1d;
+}
+
+/* ── Recent runs strip ────────────────────────────────────────────────── */
+.recent-runs-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin: 0 0 0.35rem;
+}
+.recent-runs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.recent-run-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 0.375rem;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+    text-align: left;
+}
+.recent-run-chip:hover { background: #f6faff; border-color: #0176d3; }
+.recent-run-name {
+    font-family: monospace;
+    font-weight: 600;
+    color: #1d1d1d;
+}
+.recent-run-counts { color: #444; }
+.recent-run-when { color: #888; font-size: 0.68rem; }
+
+/* Status pills (shared with conduitMigrationRunHistory) */
+.run-pill {
+    display: inline-block;
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.12rem 0.4rem;
+    border-radius: 0.2rem;
+}
+.run-status-complete    { background: #eaf5ec; color: #2e844a; }
+.run-status-failed      { background: #fde8e8; color: #c23934; }
+.run-status-in-progress { background: #e8f4fd; color: #0176d3; }
+.run-status-rolled-back { background: #f3f3f3; color: #888; }
+.run-status-unknown     { background: #f3f3f3; color: #888; }
+
+/* ── Post-execute banner ──────────────────────────────────────────────── */
+.post-exec-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.375rem;
+    font-size: 0.8rem;
+}
+.post-exec-success { background: #eaf5ec; border-left: 3px solid #2e844a; color: #114b1e; }
+.post-exec-error   { background: #fde8e8; border-left: 3px solid #c23934; color: #6a0f0f; }
+.post-exec-icon {
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.post-exec-text { flex: 1; }
+.post-exec-link {
+    background: none;
+    border: none;
+    color: #0176d3;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0;
+    white-space: nowrap;
+}
+.post-exec-link:hover { text-decoration: underline; }
+
+/* ── Selection banner ─────────────────────────────────────────────────── */
+.selection-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #e8f4fd;
+    border-left: 3px solid #0176d3;
+    padding: 0.4rem 0.65rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+    font-size: 0.75rem;
+    color: #0a3d63;
+}
+.link-btn {
+    background: none;
+    border: none;
+    color: #0176d3;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0;
+    font-size: 0.75rem;
+}
+.link-btn:hover { text-decoration: underline; }

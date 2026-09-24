@@ -1,0 +1,77 @@
+<template>
+  <div class="rb">
+    <c-gtm-page-header icon-name="standard:recycle_bin_empty" eyebrow="Content"
+                      title="Recycle Bin" meta={selectionMeta}
+                      actions={headerActions} onheaderaction={handleHeaderAction}>
+    </c-gtm-page-header>
+
+    <template if:true={loadError}>
+      <div class="rb-error" role="alert">{loadError}</div>
+    </template>
+
+    <template if:true={isLoading}>
+      <div class="rb-loading">
+        <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+      </div>
+    </template>
+
+    <template if:false={isLoading}>
+      <template if:false={hasItems}>
+        <p class="rb-empty">Nothing is archived right now.</p>
+      </template>
+
+      <template if:true={hasItems}>
+        <div class="rb-search">
+          <lightning-input type="search" label="Search archived items" variant="label-hidden"
+                            placeholder="Search archived items…" value={searchTerm}
+                            onchange={handleSearch}></lightning-input>
+        </div>
+
+        <template if:true={hasFilteredItems}>
+          <lightning-datatable
+            key-field="recordId"
+            data={filteredItems}
+            columns={columns}
+            selected-rows={selectedIds}
+            onrowaction={handleRowAction}
+            onrowselection={handleRowSelection}
+          ></lightning-datatable>
+        </template>
+        <template if:false={hasFilteredItems}>
+          <p class="rb-empty">Nothing matches "{searchTerm}".</p>
+        </template>
+      </template>
+    </template>
+
+    <template if:true={showDeleteModal}>
+      <section class="slds-modal slds-fade-in-open" role="dialog" tabindex="-1">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-modal__title">Permanently delete {selectionCount} record(s)?</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template if:true={showDeleteStepOne}>
+              <p>This permanently deletes the selected records. This cannot be undone.</p>
+            </template>
+            <template if:true={showDeleteStepTwo}>
+              <p><b>Are you absolutely sure?</b> There is no further confirmation after this.</p>
+            </template>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button label="Cancel" onclick={handleCancelDelete}></lightning-button>
+            <template if:true={showDeleteStepOne}>
+              <lightning-button label="Continue" variant="destructive"
+                                onclick={handleDeleteStepNext}></lightning-button>
+            </template>
+            <template if:true={showDeleteStepTwo}>
+              <lightning-button label="Permanently Delete" variant="destructive"
+                                disabled={isDeleting}
+                                onclick={handleConfirmDelete}></lightning-button>
+            </template>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  </div>
+</template>

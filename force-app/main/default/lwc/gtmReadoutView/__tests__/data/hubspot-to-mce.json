@@ -1,0 +1,208 @@
+{
+  "v": 1,
+  "generatedAt": "2026-09-04 09:12:00",
+  "company": "Commercial Metals Company",
+  "pair": {
+    "sourceLabel": "HubSpot Marketing Hub",
+    "targetLabel": "SFMC Engagement",
+    "pairKey": "hubspot__sfmc",
+    "instrumentVersion": "2026.09.1",
+    "track": "Marketing Cloud Engagement"
+  },
+  "posture": {
+    "headline": "interview_only",
+    "statement": "No connector reads HubSpot, so nothing below was measured from your tenant. Everything here is your description of the estate, structured against what we know about Marketing Cloud Engagement. Treat every count as illustrative until a working session confirms it — the structural gaps named further down are the part that does not depend on the counts being right.",
+    "illustrative": true,
+    "illustrativeNote": "Estate figures in this readout are illustrative — they are the client's account of the estate, not a measurement taken from it."
+  },
+  "readiness": {
+    "score": 19,
+    "max": 32,
+    "scale": "a higher score means a smaller, simpler, lower-risk estate",
+    "tier": "Prep Required",
+    "tierPhrase": "Prep Required, CRM-decision-gated",
+    "qualifier": "CRM-decision-gated",
+    "bands": [
+      { "label": "Discovery First", "low": 8, "high": 14, "current": false },
+      { "label": "Prep Required", "low": 15, "high": 20, "current": true },
+      { "label": "Accelerator-Ready", "low": 21, "high": 26, "current": false },
+      { "label": "Fast-Track", "low": 27, "high": 32, "current": false }
+    ]
+  },
+  "complexity": {
+    "score": 13,
+    "max": 18,
+    "band": "Moderate",
+    "basis": "Self-Estimated",
+    "scale": "a higher score means a bigger job, not a worse client",
+    "bands": [
+      { "label": "Light", "low": 6, "high": 9, "current": false },
+      { "label": "Moderate", "low": 10, "high": 13, "current": true },
+      { "label": "Heavy", "low": 14, "high": 18, "current": false }
+    ]
+  },
+  "dimensions": [
+    {
+      "label": "Data & audience model",
+      "value": 2, "max": 4, "chip": "SELF-REPORTED",
+      "read": "The CRM lives inside HubSpot, so the system of record moves with the marketing platform. That is a scoping decision, not a mapping exercise.",
+      "emphasised": true
+    },
+    {
+      "label": "Orchestration portability",
+      "value": 2, "max": 4, "chip": "SELF-REPORTED",
+      "read": "Workflow re-enrolment and goal criteria have no Journey Builder equivalent; both halves have to be rebuilt outside the journey.",
+      "emphasised": true
+    },
+    {
+      "label": "Content & code portability",
+      "value": 2, "max": 4, "chip": "SELF-REPORTED",
+      "read": "HubL beyond token substitution and the custom-module library are a manual rebuild, not a port."
+    },
+    {
+      "label": "Source & target access",
+      "value": 2, "max": 4, "chip": "SELF-REPORTED",
+      "read": "No connector reads HubSpot today, which is why this readout is an interview rather than a scan."
+    },
+    {
+      "label": "Decision readiness",
+      "value": 2, "max": 4, "chip": "SELF-REPORTED",
+      "read": "No named owner yet for the CRM decision, and that decision gates Blueprint."
+    },
+    {
+      "label": "Integration containment",
+      "value": 3, "max": 4, "chip": "SELF-REPORTED",
+      "read": "ERP and Sales Cloud sync are documented; distributor-portal forms still need a domain scan."
+    },
+    {
+      "label": "Consent & preferences",
+      "value": 3, "max": 4, "chip": "SELF-REPORTED",
+      "read": "Regional consent variants across the Americas, Poland and Asia operations."
+    },
+    {
+      "label": "Estate scale & structure",
+      "value": 3, "max": 4, "chip": "SELF-REPORTED",
+      "read": "One portal, one business unit — one or two waves, not a programme."
+    }
+  ],
+  "gaps": {
+    "key": "Tiers describe how much of the move is automatic: A fully automated · B setup required · C custom development · D no equivalent, rebuild required.",
+    "groups": [
+      {
+        "tier": "D",
+        "label": "NO EQUIVALENT — REBUILD REQUIRED",
+        "rows": [
+          {
+            "construct": "The CRM lives inside HubSpot",
+            "onTarget": "Marketing automation reads and writes CRM records that live in HubSpot's own CRM, not in an external system of record.",
+            "takes": "This is a scoping decision, not a technical workaround. Force it to the surface in Assess and get it decided before Blueprint.",
+            "severity": "blocker"
+          },
+          {
+            "construct": "Saved reports, dashboards and attribution",
+            "onTarget": "No export path and no target equivalent.",
+            "takes": "Treat reporting as a parallel workstream from day one. Inventory the reports actually used — usually far fewer than exist — rebuild those, and get explicit acceptance that history does not follow.",
+            "severity": "blocker"
+          },
+          {
+            "construct": "Workflow re-enrolment",
+            "onTarget": "Journey Builder has no re-enrolment concept; entry is per-injection.",
+            "takes": "Rebuild re-entry outside the journey: a scheduled Automation Studio query that injects re-qualifiers, plus a last-entered-date guard so a record cannot enter twice inside the intended window.",
+            "severity": "major"
+          },
+          {
+            "construct": "Workflow goal criteria",
+            "onTarget": "A HubSpot goal both exits the record on conversion and supplies the conversion metric. Neither is native.",
+            "takes": "Split the goal in two: the exit half becomes journey exit criteria, the metric half becomes a reporting requirement handed to whoever owns reporting.",
+            "severity": "major",
+            "hedged": true,
+            "hedge": "Unverified against a live tenant — state this as our working model, not as a platform guarantee."
+          },
+          {
+            "construct": "HubDB-backed content",
+            "onTarget": "Nothing in the Salesforce marketing stack renders content from an arbitrary queried table at send time.",
+            "takes": "Split into a data problem and a rendering problem: each table becomes a Data Extension, each render-time query becomes an AMPscript lookup or a value pre-computed into the send audience.",
+            "severity": "blocker"
+          },
+          {
+            "construct": "Forms and CTAs on customer-owned domains",
+            "onTarget": "Embeds across web properties that no tenant export will show you.",
+            "takes": "CloudPages plus Web Collect — a build, not a migration. Run the site form scan first; it is the one HubSpot capability the accelerator already has.",
+            "severity": "major"
+          },
+          {
+            "construct": "HubSpot Sequences",
+            "onTarget": "Sales Hub, not marketing — a different product surface, a different budget and usually a different team.",
+            "takes": "Decide explicitly whether Sequences are in or out, in Assess rather than Execute, and get the answer written down before the SOW.",
+            "severity": "major"
+          }
+        ]
+      },
+      {
+        "tier": "C",
+        "label": "CUSTOM DEVELOPMENT",
+        "rows": [
+          {
+            "construct": "Smart (active) list semantics",
+            "onTarget": "HubSpot active lists are live — contacts join and LEAVE as criteria stop matching. Filtered data extensions refresh on a schedule.",
+            "takes": "Convert each active list to a scheduled-refresh audience and set the cadence from the automation's real sensitivity. Where automatic REMOVAL is load-bearing — suppression lists especially — implement removal explicitly.",
+            "severity": "major"
+          },
+          {
+            "construct": "HubL templating beyond tokens",
+            "onTarget": "Conditionals and loops have no direct equivalent; dynamic content blocks cover part of the ground.",
+            "takes": "Classify every HubL construct before estimating: plain tokens are mechanical, conditionals become dynamic content blocks, anything querying HubDB is a rebuild.",
+            "severity": "major"
+          },
+          {
+            "construct": "Custom modules",
+            "onTarget": "Parameterised HubL components with typed fields; no target-side equivalent library exists.",
+            "takes": "Do not port module by module. Inventory by usage count, build a small target-side component library for the high-usage modules and inline the long tail. Budget the library as its own task before content migration.",
+            "severity": "major"
+          }
+        ]
+      }
+    ]
+  },
+  "estate": {
+    "tiles": [
+      { "n": 240000, "label": "CONTACTS / LEADS" },
+      { "n": 310000, "label": "SENDS PER MONTH" }
+    ],
+    "facts": [
+      { "label": "Environment", "value": "One HubSpot Marketing Hub Enterprise portal, one business unit" },
+      { "label": "Migration team", "value": "5–10 people" },
+      { "label": "Timeline", "value": "Cutover targeted for Q3 2027" },
+      { "label": "Integrations to keep", "value": "Salesforce Sales Cloud, SAP ERP (contractor and distributor master), Cvent, LinkedIn Ads" }
+    ]
+  },
+  "annotations": [
+    { "key": "high_rebuild_ratio", "text": "More of this estate is rebuild than move. The headline score reads better than the build will feel, because readiness measures how knowable the estate is, not how much of it ports." },
+    { "key": "mc_next_use_cases", "text": "Four use cases raised in discovery point at Marketing Cloud Next rather than Engagement. They are recorded as forward-looking and are not part of this migration — there is no working MC Next target path today." }
+  ],
+  "gates": [
+    {
+      "title": "CRM-decision-gated",
+      "block": "The CRM decision sits upstream of everything else here. Until it is made, audience modelling, consent mapping and the integration surface are all provisional, and building against a provisional data contract is how journeys get built twice.",
+      "severity": "blocker"
+    }
+  ],
+  "horizon": "Moderate estates on this pair run to roughly 14 months across four phases, with a deliberate pilot early — high value, low complexity, no custom modules — chosen to prove the operating model rather than the technology.",
+  "basis": {
+    "posture": "interview_only",
+    "how": [
+      { "lead": "Source scan.", "text": "No connector read the source system. The estate figures above are your description of it, structured against what we know about the target." },
+      { "lead": "Self-reported.", "text": "Integrations, consent and team capacity are not machine-readable and came from your answers." },
+      { "lead": "Target modelled.", "text": "Constructs were checked against Marketing Cloud Engagement's real capability set, not a generic checklist." },
+      { "lead": "Not yet run.", "text": "No writes have been made to any system of yours. Nothing here changed anything." }
+    ]
+  },
+  "limits": [
+    { "lead": "Contact and subscriber rows.", "text": "Never extracted. Schema is in scope; your data migration is a separate workstream." },
+    { "lead": "Forms outside the tenant.", "text": "Anything posting in from a microsite or partner site is invisible without a domain list and a separate scan." },
+    { "lead": "Preference-centre mapping.", "text": "Consent structures are assessed by hand, not derived automatically." },
+    { "lead": "A point-in-time snapshot.", "text": "Anything built in the source system after the assessment date is not reflected here." },
+    { "lead": "List membership.", "text": "Audience containers move; who is inside them is reconciled separately." },
+    { "lead": "Decisions stay yours.", "text": "The accelerator proposes what to port, refactor or retire. A human signs it off." }
+  ]
+}

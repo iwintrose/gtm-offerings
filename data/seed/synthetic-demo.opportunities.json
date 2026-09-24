@@ -1,0 +1,172 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp1"
+      },
+      "AccountId": "@demoAcct1",
+      "Name": "[DEMO] Northwind Apparel Group - Migration Accelerator",
+      "StageName": "Prospecting",
+      "CloseDate": "2026-11-15",
+      "Amount": 85000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp2"
+      },
+      "AccountId": "@demoAcct2",
+      "Name": "[DEMO] Cascade Regional Health - Migration Accelerator",
+      "StageName": "Qualification",
+      "CloseDate": "2026-12-01",
+      "Amount": 140000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp3"
+      },
+      "AccountId": "@demoAcct3",
+      "Name": "[DEMO] Ironclad Freight & Logistics - Migration Accelerator",
+      "StageName": "Needs Analysis",
+      "CloseDate": "2026-10-30",
+      "Amount": 62000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp4"
+      },
+      "AccountId": "@demoAcct4",
+      "Name": "[DEMO] Brightfield Financial Partners - Migration Accelerator",
+      "StageName": "Proposal/Price Quote",
+      "CloseDate": "2026-10-15",
+      "Amount": 205000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp5"
+      },
+      "AccountId": "@demoAcct5",
+      "Name": "[DEMO] Solvent Materials Corp - Migration Accelerator",
+      "StageName": "Negotiation/Review",
+      "CloseDate": "2026-09-30",
+      "Amount": 98000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp6"
+      },
+      "AccountId": "@demoAcct6",
+      "Name": "[DEMO] Helix BioSciences - Migration Accelerator",
+      "StageName": "Closed Won",
+      "CloseDate": "2026-08-31",
+      "Amount": 118000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp7"
+      },
+      "AccountId": "@demoAcct7",
+      "Name": "[DEMO] Prime Stream Media - Migration Accelerator",
+      "StageName": "Value Proposition",
+      "CloseDate": "2026-12-15",
+      "Amount": 76000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp8"
+      },
+      "AccountId": "@demoAcct8",
+      "Name": "[DEMO] Civic Works Authority - Migration Accelerator",
+      "StageName": "Negotiation/Review",
+      "CloseDate": "2026-11-30",
+      "Amount": 64000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp9"
+      },
+      "AccountId": "@demoAcct4",
+      "Name": "[DEMO] Brightfield Financial Partners - Direct Inquiry (no link)",
+      "StageName": "Qualification",
+      "CloseDate": "2026-11-20",
+      "Amount": 60000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp10"
+      },
+      "AccountId": "@demoAcct2",
+      "Name": "[DEMO] Cascade Regional Health - Direct Inquiry (no link)",
+      "StageName": "Prospecting",
+      "CloseDate": "2027-01-15",
+      "Amount": 45000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp11"
+      },
+      "AccountId": "@demoAcct3",
+      "Name": "[DEMO] Ironclad Freight & Logistics - Direct Inquiry (no link)",
+      "StageName": "Value Proposition",
+      "CloseDate": "2026-12-20",
+      "Amount": 52000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp12"
+      },
+      "AccountId": "@demoAcct6",
+      "Name": "[DEMO] Helix BioSciences - Direct Inquiry (no link)",
+      "StageName": "Needs Analysis",
+      "CloseDate": "2026-11-05",
+      "Amount": 38000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp13"
+      },
+      "AccountId": "@demoAcct7",
+      "Name": "[DEMO] Prime Stream Media - Direct Inquiry (no link)",
+      "StageName": "Qualification",
+      "CloseDate": "2027-01-31",
+      "Amount": 41000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    },
+    {
+      "attributes": {
+        "type": "Opportunity",
+        "referenceId": "demoOpp14"
+      },
+      "AccountId": "@demoAcct8",
+      "Name": "[DEMO] Civic Works Authority - Direct Inquiry (no link)",
+      "StageName": "Prospecting",
+      "CloseDate": "2027-02-15",
+      "Amount": 33000,
+      "Description": "Synthetic demo opportunity seeded by scripts/seed-synthetic-data.py (issue synthetic-seed-data). Safe to delete via --teardown."
+    }
+  ]
+}

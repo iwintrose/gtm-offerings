@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Slot_Order__c</fullName>
+    <label>Slot Order</label>
+    <description>Display/authoring order of this question within its parent instrument. Zero-based or one-based ordinal assigned by the author UI (sub-issue 04); ties are not guaranteed to resolve deterministically.</description>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>0</scale>
+    <required>true</required>
+</CustomField>

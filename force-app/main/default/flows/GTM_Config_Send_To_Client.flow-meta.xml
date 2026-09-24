@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <description>Fires when a BD/Sales rep marks a client configuration as Sent. Calls GtmStageActionsController to email the client their proposal link.</description>
+    <environments>Default</environments>
+    <interviewLabel>GTM Config — Send To Client {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>GTM Config — Send To Client</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value><stringValue>LightningFlowBuilder</stringValue></value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <runInMode>SystemModeWithoutSharing</runInMode>
+    <status>Active</status>
+
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Presentation_Stage__c</field>
+            <operator>EqualTo</operator>
+            <value><stringValue>Sent</stringValue></value>
+        </filters>
+        <object>GTM_Saved_Configuration__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+        <connector>
+            <targetReference>CheckPriorStage</targetReference>
+        </connector>
+    </start>
+
+    <!-- Only email when this is a fresh Sent transition, not an unrelated field edit -->
+    <decisions>
+        <name>CheckPriorStage</name>
+        <label>Was it already Sent?</label>
+        <locationX>176</locationX>
+        <locationY>120</locationY>
+        <defaultConnector>
+            <targetReference>SendEmail</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>New Sent transition</defaultConnectorLabel>
+        <rules>
+            <name>AlreadySent</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.Presentation_Stage__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue><stringValue>Sent</stringValue></rightValue>
+            </conditions>
+            <label>Already Sent — skip</label>
+        </rules>
+    </decisions>
+
+    <!-- Call the Apex invocable to send the email -->
+    <actionCalls>
+        <name>SendEmail</name>
+        <label>Send Proposal Email</label>
+        <locationX>176</locationX>
+        <locationY>240</locationY>
+        <actionName>GtmStageActionsController</actionName>
+        <actionType>apex</actionType>
+        <inputParameters>
+            <name>configId</name>
+            <value><elementReference>$Record.Id</elementReference></value>
+        </inputParameters>
+        <inputParameters>
+            <name>sharedUrl</name>
+            <value><elementReference>$Record.Generated_URL__c</elementReference></value>
+        </inputParameters>
+    </actionCalls>
+
+</Flow>

@@ -1,0 +1,46 @@
+/* ── Summary bar ─────────────────────────────────────────────────────────── */
+.aud-summary-bar  { background: #f8f8f8; border-radius: 0.375rem; padding: 0.75rem 0.5rem;
+                    border-bottom: 1px solid #e5e5e5; }
+.aud-count        { font-size: 1.75rem; font-weight: 700; line-height: 1; margin-bottom: 0.2rem; }
+.aud-count-label  { font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+                    letter-spacing: 0.06em; color: #888; }
+.aud-high-color   { color: #c23934; }
+.aud-medium-color { color: #c45500; }
+
+/* ── Filter bar ──────────────────────────────────────────────────────────── */
+.filter-group  { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.filter-label  { font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+                 letter-spacing: 0.06em; color: #888; white-space: nowrap; }
+.filter-btn    { background: #f3f3f3; border: 1px solid #e0e0e0; border-radius: 999px;
+                 padding: 0.2rem 0.65rem; font-size: 0.72rem; cursor: pointer; color: #444;
+                 white-space: nowrap; }
+.filter-active { background: #0176d3; border-color: #0176d3; color: #fff; font-weight: 600; }
+
+/* ── Audience table ──────────────────────────────────────────────────────── */
+.aud-showing   { font-size: 0.72rem; color: #888; }
+.aud-table     { border: 1px solid #e5e5e5; border-radius: 0.375rem; overflow: hidden; }
+.aud-header    { background: #f8f8f8; border-bottom: 1px solid #e5e5e5; }
+.th            { font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+                 letter-spacing: 0.06em; color: #888; padding: 0.5rem 0.75rem; }
+.aud-row       { border-bottom: 1px solid #f0f0f0; }
+.aud-row:last-child { border-bottom: none; }
+.td            { font-size: 0.78rem; color: #333; padding: 0.5rem 0.75rem;
+                 display: flex; align-items: center; }
+.aud-name      { font-weight: 600; color: #1d1d1d; gap: 0.35rem; }
+.gap-flag      { color: #c45500; font-size: 0.75rem; cursor: help; }
+.aud-meta      { color: #666; }
+
+/* ── Kind badges ─────────────────────────────────────────────────────────── */
+.kind-badge          { font-size: 0.6rem; font-weight: 700; padding: 0.15rem 0.4rem;
+                       border-radius: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.kind-static-list    { background: #e8f4fd; color: #0176d3; }
+.kind-filtered-segment { background: #eaf5ec; color: #2e844a; }
+.kind-object-audience  { background: #fff4e5; color: #c45500; }
+.kind-all-subscribers  { background: #f3f3f3; color: #666; }
+
+/* ── Risk pills ──────────────────────────────────────────────────────────── */
+.risk-pill   { font-size: 0.6rem; font-weight: 700; padding: 0.15rem 0.4rem;
+               border-radius: 999px; text-transform: uppercase; }
+.risk-high   { background: #fde8e8; color: #c23934; }
+.risk-medium { background: #fff4e5; color: #c45500; }
+.risk-low    { background: #eaf5ec; color: #2e844a; }

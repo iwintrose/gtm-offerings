@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Options_JSON__c</fullName>
+    <label>Options JSON</label>
+    <description>JSON array of exactly four options, [{&quot;value&quot;:1,&quot;label&quot;:&quot;...&quot;,&quot;points&quot;:1}, ...], values 1-4 with no gaps or duplicates. &quot;value&quot; is the option&apos;s IDENTITY -- what a stored answer means -- and never changes. &quot;points&quot; is what that option is WORTH, set by the content author; omitted, it defaults to the value, which is what every option was worth before points were authorable. Points let an author make a scale non-linear (1/1/3/4) without making two prospects&apos; totals incomparable: the build script requires min points 1, max points 4 and no descent, so every slot is still worth 1-4 and the frame is still out of 32. Null inherits the options from the next-least-specific pack, and ultimately from GTM_Assessment_Question__mdt. All four are declared even when Max_Attainable__c caps the slot, because the excluded option still has to render -- greyed, with the reason -- so a prospect can see a 4 was not on offer and why.</description>
+    <required>false</required>
+    <type>LongTextArea</type>
+    <length>32768</length>
+    <visibleLines>12</visibleLines>
+</CustomField>
