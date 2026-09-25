@@ -157,89 +157,166 @@ that switch-over is `gus-live-agentforce-provider-runtime`'s job, gated on
 
 ## 5a. Agentforce live activation (issue `gus-live-agentforce-provider-auth`)
 
-> STATUS: DRAFT SHELL. Filled in only where marked CONFIRMED below; every
-> other field is a PLACEHOLDER pending the coordinator's live Setup-UI
-> execution of this issue's click-list. Do not treat PLACEHOLDER values as
-> real, and do not let `runtime` start coding against them.
+> STATUS: Credential chain confirmed live and metadata reconciled against a
+> real `sf project retrieve` (2026-09-25). **The Agent API endpoint itself
+> is still NOT smoke-tested end-to-end** — see "Open item" at the end of
+> this section. Do not let `runtime` start coding against the request/
+> response shape below as final; it is still unconfirmed.
 
 ### Activation path chosen
 
-CONFIRMED (coordinator, live gtm-staging Setup, 2026-09-24): the org has
+CONFIRMED (coordinator, live gtm-staging Setup, 2026-09-24/25): the org has
 moved to Agent Script / Agentforce Builder as the only creation path for a
-first agent (Setup → Agentforce Studio → Agentforce Agents → "New Agent"
-goes directly into Agent Script; zero existing agents; legacy Bot Builder
-not offered as a path for a new agent). This supersedes the BA's three-way
-ambiguity in task-scope §1.1 (Agent API vs. Invocable Action API wrapper vs.
-embedded `<einstein-copilot-chat>`) at one level: the *creation* tooling is
-Agent Script, not legacy Bot Builder, so `GTM_Configurator_Assistant.bot-meta.xml`
-is superseded (see `force-app/main/default/bots/GTM_Configurator_Assistant/SUPERSEDED.md`).
+first agent (Setup → Agentforce Studio → Agentforce Agents → "New Agent" →
+"Create Agents in the New Agentforce Builder" → `AgentAuthoring/agentAuthoringBuilder.app`;
+zero pre-existing agents; legacy Bot Builder not offered as a path for a new
+agent). This supersedes the BA's three-way ambiguity in task-scope §1.1
+(Agent API vs. Invocable Action API wrapper vs. embedded
+`<einstein-copilot-chat>`): the *creation* tooling is Agent Script, not
+legacy Bot Builder, so `GTM_Configurator_Assistant.bot-meta.xml` is
+superseded (see `force-app/main/default/bots/GTM_Configurator_Assistant/SUPERSEDED.md`).
 
-Still open, pending the live smoke test in the click-list below: whether an
-agent built via Agent Script, once created, is callable through the
-session-based **Agent API** (the chosen path per the task-scope's framing —
-server-side, via `GtmAgentProxyController`-style proxying, consistent with
-the "no LWC changes" non-goal) as long as its type is not "Agentforce
-(Default)". PLACEHOLDER until the live session-start smoke test (click-list
-step 9) returns a real response.
+The chosen call path remains the session-based **Agent API**, server-side
+via `GtmAgentProxyController`-style proxying (consistent with the "no LWC
+changes" non-goal) — confirmed still viable because the created agent's
+type is not "Agentforce (Default)" (see Agent identity table below).
 
 ### Agent identity
 
 | Field | Value |
 |---|---|
-| Agent display name | PLACEHOLDER — set per click-list step 3 |
-| Agent API name | PLACEHOLDER — reported by coordinator after creation |
-| Agent type (must not be "Agentforce (Default)") | PLACEHOLDER — coordinator to confirm from the agent's Setup detail page |
-| Topic(s)/Actions wired | PLACEHOLDER — GTM Configurator state read/write actions, reusing the `sessionToken`/`configId` variable shape from the superseded bot-meta |
+| Agent display name | CONFIRMED: "GTM Configurator Assistant" |
+| Agent API / developer name | CONFIRMED: `GTM_Configurator_Assistant` |
+| Agent type (must not be "Agentforce (Default)") | CONFIRMED not "Agentforce (Default)" — evidenced indirectly via its auto-created default agent user being an "EinsteinServiceAgent User" (`gtm_configurator_assistant@00dgk00000apl69236326146.ext`), which is Salesforce's documented marker for an Agentforce-Builder-created agent, distinct from the legacy "Agentforce (Default)" type. No separate "Type" field was surfaced directly in Setup by the coordinator; treat this as strong-but-indirect confirmation, not a literal UI field read |
+| Topic(s)/Actions wired | CONFIRMED: none. No topics/actions were wired — description and the full `AGENT_INSTRUCTIONS.md` body were pasted into Agent-Level Instructions and saved. Action-wiring (reusing the `sessionToken`/`configId` variable shape from the superseded bot-meta) is explicitly deferred to the `runtime` issue, per this issue's non-goals |
 
 ### External Client App / OAuth
 
 | Field | Value |
 |---|---|
-| External Client App name | PLACEHOLDER — set per click-list step 5 |
-| Consumer Key (client ID) | PLACEHOLDER — reported by coordinator, non-secret, safe to record here |
-| Consumer Secret | NEVER recorded here. Lives only in gtm-staging Setup (External Client App / External Credential Principal). |
-| OAuth flow | Client Credentials (confirmed required by task-scope §1.2) |
-| Scopes | `sfap_api` + "Manage user data via APIs (api)" — both required per task-scope §1.2; confirm exact scope string(s) as shown in the live wizard, which may differ in casing/label from this draft |
-| Callback/redirect URL | PLACEHOLDER — only needed if the wizard requires one for client-credentials flow; confirm live whether it's mandatory |
+| External Client App name | CONFIRMED: "GTM Agentforce Integration", API name `GTM_Agentforce_Integration` |
+| Consumer Key (client ID) | NOT recorded here — the coordinator confirmed it exists on the ECA's Settings > OAuth Settings > Consumer Key and Secret page but did not paste the literal value into chat, and it was not retrievable via `sf project retrieve` of the ExternalCredential (client ID lives on the Principal, not the definition — see below). If a literal value is needed for `GTM_Agent_Settings__c.Agentforce_Client_Id__c`, that's a manual Setup-UI copy/paste step for whoever configures that custom setting, not something this file needs to store |
+| Consumer Secret | NEVER recorded here or anywhere in this repo. Lives only in gtm-staging Setup (External Client App / External Credential Principal `GTM_Agentforce_Principal`) |
+| OAuth flow | CONFIRMED: Client Credentials with Client Secret Flow (`ClientCredentialsClientSecretBasic` per the retrieved ExternalCredential's `AuthProtocolVariant` parameter) |
+| Run-As user | CONFIRMED: the agent's own EinsteinServiceAgent user (`gtm_configurator_assistant@00dgk00000apl69236326146.ext`) |
+| Scopes | CONFIRMED via retrieve: `sfap_api api` (single space-delimited `Scope` AuthParameter value) — matches "Access the Salesforce API Platform (sfap_api)" + "Manage user data via APIs (api)" as shown in the wizard |
+| Callback/redirect URL | CONFIRMED required by the wizard even for client-credentials-only: `https://pu1789790920110.my.salesforce.com/services/oauth2/callback`. Coordinator confirms it is never used at runtime for this flow |
+| Pre-existing ECA in this org | CONFIRMED: none existed; this one was created fresh |
 
 ### Named Credential / External Credential mapping
 
-Draft shells (secret-free, unverified element names — see in-file header
-comments):
+Metadata shells RECONCILED against a live `sf project retrieve -o gtm-staging`
+of the real records (2026-09-25) — the first draft's element names were
+wrong (drafted from memory) and have been replaced with the actual shape:
 
 - `force-app/main/default/externalCredentials/GTM_Agentforce_Credential.externalCredential-meta.xml`
-- `force-app/main/default/namedCredentials/GTM_Agentforce_API.namedCredential-meta.xml`
+  — `authenticationProtocol=Oauth`, `AuthProtocolVariant=ClientCredentialsClientSecretBasic`,
+    `Scope=sfap_api api`, `AuthProviderUrl=https://pu1789790920110.my.salesforce.com/services/oauth2/token`,
+    Principal `GTM_Agentforce_Principal` (`NamedPrincipal`, sequence 1).
+    Confirmed secret-free: grepped the retrieved XML for `secret`/`password`;
+    zero matches (the one `secret` substring hit is the flow-type name
+    `ClientCredentialsClientSecretBasic`, not a value).
+  - `force-app/main/default/namedCredentials/GTM_Agentforce_API.namedCredential-meta.xml`
+  — `Url=https://pu1789790920110.my.salesforce.com` (org's My Domain base),
+    `ExternalCredential=GTM_Agentforce_Credential`, `generateAuthorizationHeader=true`,
+    `allowMergeFieldsInBody/Header=false`, `namedCredentialType=SecuredEndpoint`.
 
 | `GTM_Agent_Settings__c` field | Maps to |
 |---|---|
-| `Agentforce_My_Domain_URL__c` | Named Credential `Url` parameter (currently a PLACEHOLDER in the shell; static per Named Credential, not read dynamically at callout time — see design note in that file) |
-| `Agentforce_Client_Id__c` | External Credential's non-secret consumer key parameter |
-| `Agentforce_Agent_Id__c` | Not part of the Named/External Credential; consumed directly by the runtime Apex call as the Agent API's agent identifier, confirmed sufficient — no new field needed (task-scope §1.3 open question resolved: existing three fields are sufficient) |
+| `Agentforce_My_Domain_URL__c` | Matches the Named Credential's `Url` parameter value (`https://pu1789790920110.my.salesforce.com`), confirmed live — not a placeholder anymore |
+| `Agentforce_Client_Id__c` | The ECA's Consumer Key; not stored in the ExternalCredential definition metadata (lives on the Principal in Setup only) — this custom-setting field is a separate, admin-facing display copy, not something the Named Credential reads from |
+| `Agentforce_Agent_Id__c` | Not part of the Named/External Credential; intended to be consumed directly by the `runtime` issue's Apex call as the Agent API's agent identifier (`GTM_Configurator_Assistant`, confirmed above) — no new field needed |
 
 No new `GTM_Agent_Settings__c` field is required. No FLS change needed
 beyond what's already granted (task-scope §1.3 confirms the existing grant
 in `GTM_Offering_Admin` only, lines 401/406/411, is correct/unchanged).
 
+**Environment-specific URLs, flagged by `check-references.py` (0
+deploy-blocking, correctly categorized as "needs a manual step"):** both
+committed metadata files hardcode `pu1789790920110.my.salesforce.com` —
+gtm-staging's actual My Domain host — in the `AuthProviderUrl` and `Url`
+parameters. This is consistent with this repo's existing pattern for
+org-specific values (same category as the pre-existing
+`GtmSavedConfigurationControllerTest.cls` / `offeringChooser.test.js`
+warnings), but it means **deploying this metadata to `gtm-prod` as-is would
+point the Named Credential at gtm-staging's org**, not prod's. Before any
+`gtm-prod` deploy of this metadata, both the `AuthProviderUrl` and `Url`
+values need to be repointed to prod's own My Domain host as a post-deploy
+(or pre-deploy metadata-override) configuration step — do not copy these
+files verbatim into a prod deploy.
+
 ### Confirmed request/response shape (Agent API)
 
-PLACEHOLDER — to be filled with the actual session-create / message-send /
-session-end request and response JSON observed live against gtm-staging
-(click-list step 9), not copied from Salesforce docs without verification
-(task-scope explicitly flags the Agent API surface "changed materially over
-2025").
+**NOT YET CONFIRMED — open item, blocking this issue's closure.** See
+"Open item" below.
 
 ### Smoke-test evidence
 
-PLACEHOLDER — reference (not paste verbatim if it contains any token) to
-the live response/log captured in click-list step 9.
+**Attempted, did not succeed — open item.** Ran a minimal anonymous Apex
+callout (`sf apex run -o gtm-staging`) as the Developer's own admin CLI
+user:
+
+```apex
+HttpRequest req = new HttpRequest();
+req.setEndpoint('callout:GTM_Agentforce_API/services/data/v62.0/');
+req.setMethod('GET');
+Http h = new Http();
+HttpResponse res = h.send(req);
+```
+
+Result: `System.CalloutException: We couldn't access the credential(s). You
+might not have the required permissions, or the external credential
+"GTM_Agentforce_Credential" might not exist.` The External Credential does
+exist (confirmed via `sf project retrieve`, above) — this is a **Principal
+Access** gap: no permission set currently maps the calling user (or any
+user) to the `GTM_Agentforce_Principal` on `GTM_Agentforce_Credential` via
+Setup > External Credentials > GTM_Agentforce_Credential > Permission Set
+Mappings. That mapping is a required, separate Setup step from creating the
+credential itself, and was not part of this issue's original click-list.
+
+### Open item (blocks calling this issue done)
+
+Two things remain unverified before `runtime` can safely build against this:
+
+1. **Principal Access mapping.** Someone with Setup access needs to add a
+   Permission Set Mapping for `GTM_Agentforce_Principal` on
+   `GTM_Agentforce_Credential` (Setup > External Credentials >
+   GTM_Agentforce_Credential > Permission Set Mappings > New), assigned to
+   whichever permission set the Apex context that will make this call runs
+   under (for a manual smoke test, this can be a temporary grant to the
+   admin's own permission set; for the eventual `runtime` code path, this
+   should be `GTM_Offering_Admin`, consistent with this repo's existing
+   pattern of gating Agentforce integration config to that permission set —
+   confirm with the coordinator/Architect before assuming that's correct
+   for a service-to-service credential, since it's a different access
+   pattern than a UI-visible field).
+2. **Agent API endpoint path.** Once Principal Access is granted, re-run a
+   smoke test against the actual Agent API session-start endpoint (not the
+   generic `/services/data/v62.0/` probe used above, which only proved the
+   named-credential auth chain resolves — it does not prove the Agent API
+   path itself). The task-scope explicitly warns the Agent API surface
+   "changed materially over 2025"; do not assume
+   `callout:GTM_Agentforce_API/einstein/ai-agent/v1/agents/<agentId>/sessions`
+   is correct without observing a real response. Needs either: (a) the
+   coordinator granting Principal Access live and this Developer re-running
+   the anonymous Apex smoke test against the real endpoint, or (b) the
+   coordinator running the smoke test directly and reporting the literal
+   request/response back.
+
+This issue's original acceptance criteria (task-scope §3) requires "the
+live smoke-test response/log from §1.4" as evidence — that is not yet
+satisfied. Recommend the coordinator treat this issue as **not yet done**
+until the two items above close, rather than merging on the credential
+scaffolding alone.
 
 ### Secret-handling confirmation
 
-Grepped this issue's diff for secret-shaped strings before closing:
-PLACEHOLDER — re-run `git diff --stat` / a secret-pattern grep once the
-live consumer key (non-secret) and any other live values are filled in
-above, to confirm no consumer *secret* value was ever pasted into this file
-or any other committed file.
+Grepped the full diff (metadata shells + this doc) for secret-shaped
+strings: `git diff --stat` below plus a manual review of both retrieved and
+committed XML for `secret`/`password`/a bare Consumer Secret value — none
+present. The only match for the substring `secret` is the OAuth flow-type
+name `ClientCredentialsClientSecretBasic`, confirmed not a credential
+value.
 
 ## 6. LWC contract: `gtmOfferingsSettingsAgent`
 
