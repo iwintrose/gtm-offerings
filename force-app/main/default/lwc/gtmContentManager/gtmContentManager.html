@@ -210,12 +210,15 @@
             <template if:false={settingsOpen}>
               <div class="gcm-colhead">
                 <span>Sections</span><span class="gcm-count">{sectionCount}</span>
-                <button class="gcm-industry-toggle" onclick={handleToggleIndustryView}>
-                  <lightning-icon icon-name="utility:world" size="x-small"></lightning-icon>
-                  {industryViewLabel}
-                </button>
+                <template if:true={supportsIndustryVariants}>
+                  <button class="gcm-industry-toggle" onclick={handleToggleIndustryView}>
+                    <lightning-icon icon-name="utility:world" size="x-small"></lightning-icon>
+                    {industryViewLabel}
+                  </button>
+                </template>
               </div>
 
+              <template if:true={supportsIndustryVariants}>
               <template if:true={industryView}>
                 <div class="gcm-industry-picker">
                   <lightning-combobox label="Industry" variant="label-hidden"
@@ -260,6 +263,7 @@
                   <p class="gcm-hint">Choose an industry to see this page's status for it.</p>
                 </template>
               </template>
+              </template>
 
               <template if:false={industryView}>
               <div class="gcm-rail-body">
@@ -294,9 +298,11 @@
                         </template>
                       </span>
                     </template>
-                    <button class="sec-variant-add" data-key={s.sectionKey} onclick={handleOpenVariant}
-                            title="Add an industry variant of this section"
-                            aria-label="Add an industry variant of this section">+ Industry variant</button>
+                    <template if:true={supportsIndustryVariants}>
+                      <button class="sec-variant-add" data-key={s.sectionKey} onclick={handleOpenVariant}
+                              title="Add an industry variant of this section"
+                              aria-label="Add an industry variant of this section">+ Industry variant</button>
+                    </template>
                   </div>
                   <template for:each={s.variants} for:item="v">
                     <div key={v.sectionKey} class={v.itemClass} data-key={v.sectionKey}

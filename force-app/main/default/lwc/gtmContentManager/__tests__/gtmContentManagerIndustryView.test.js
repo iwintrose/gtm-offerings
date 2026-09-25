@@ -107,7 +107,11 @@ Element.prototype.scrollTo = Element.prototype.scrollTo || (() => {});
 
 const OFFERINGS = [{ offeringKey: 'ma-migrator', label: 'Migration Accelerator' }];
 const TEMPLATES = [
-    { templateType: 'story', sectionCount: 2, fieldCount: 2, pageTitle: null }
+    // Industry view is only a real capability on 'configurator' (the one
+    // template carrying the 'industry-profile' layout — see issue
+    // #industry-variant-ui-scoping-fix). Using it here keeps this suite
+    // testing a template the toggle actually renders on.
+    { templateType: 'configurator', sectionCount: 2, fieldCount: 2, pageTitle: null }
 ];
 
 const HERO_SECTION = {
@@ -195,6 +199,10 @@ async function setupOnPage(sections) {
     getTemplateSummary.mockResolvedValue(TEMPLATES);
     getEditorSections.mockResolvedValue(sections);
     getAllContent.mockResolvedValue(RECORDS);
+    // The 'configurator' preview mounts c-gtm-saved-links-bar, which calls
+    // getIndustryProfiles on connectedCallback -- default it so that call
+    // doesn't crash before enterIndustryView sets its own mock.
+    getIndustryProfiles.mockResolvedValue([]);
 
     const element = createElement('c-gtm-content-manager', { is: GtmContentManager });
     document.body.appendChild(element);

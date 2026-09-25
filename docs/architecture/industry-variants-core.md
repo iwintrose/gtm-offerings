@@ -264,3 +264,53 @@ not an editor-preview concern).
 No per-field override, no per-industry visibility/hide/reorder, no
 Migration Accelerator content, no Agentforce authoring aid. See task scope
 §4 for the full list and which follow-up issue owns each.
+
+## 6. UI Scoping Fix (issue `industry-variant-ui-scoping-fix`)
+
+Follow-up bug fix, not a new capability — documented here as a lightweight
+addendum rather than a new architecture doc, per `CLAUDE.md` §4's
+Contract-First requirement. (The addendum format itself is not something
+`docs/agent-artifacts/task-scope-industry-variant-ui-scoping-fix.md`
+prescribes; that scope doc covers the root cause and fix approach only.)
+
+The "Industry view" toggle and "+ Industry variant" button (§3 above)
+originally rendered unconditionally on every template, including
+framework-level, non-industry-aware templates such as `offerings-listing`
+(the shared "choose your offering" tile — see
+`docs/agent-artifacts/task-scope-industry-variant-ui-scoping-fix.md` for the
+full root-cause writeup). Fixed by gating both on a new
+`gtmContentManager.js` getter:
+
+```js
+get supportsIndustryVariants() {
+    const layouts = TEMPLATE_LAYOUTS[this.selectedTemplate];
+    return !!layouts && layouts.includes('industry-profile');
+}
+```
+
+`TEMPLATE_LAYOUTS` is imported from `c/gtmPageLayouts` (already the single
+source of truth for which templates carry which layout types — no
+duplicate/hardcoded template-name list). Today only `configurator` carries
+`'industry-profile'`, so this getter is behaviorally identical to
+`this.selectedTemplate === 'configurator'`, but it stays correct
+automatically if a future template gains `industry-profile` support,
+without a second edit. This mirrors the existing `isFrameworkPage`/
+`isIndustryPage` idiom in the same file (§3 above).
+
+`industryView` (the toggle's own on/off state) is reset to `false`
+whenever a template switch lands on a page that doesn't support industry
+variants — in `loadPage()` (covers `handlePickTemplate`/`handlePageChange`/
+the page-picker auto-select path) and at every call site that clears
+`selectedTemplate` outright (`handleOfferingChange`, `handleBackToPages`,
+`handleSaveAndExit`, `openRequestedPage`) — so a stale toggle from a prior
+`configurator` page can never leave the industry-view rail stuck open
+behind a now-hidden exit control. `handleToggleIndustryView` is also a
+no-op when `!supportsIndustryVariants`, as defense in depth.
+
+No Apex, schema, or `TEMPLATE_LAYOUTS` data changes — this was a pure
+under-scoped LWC render-condition gap; the server already accepted any
+`offeringKey`/`templateType` combination for a variant create with no
+allow-list check. Hardening `GtmPageSectionController.createSection`/
+`GtmPageContentController.createSection` with a server-side guard against
+non-`configurator` variant creates was flagged as an optional follow-up in
+`docs/backlog.md`, out of scope for this fix.

@@ -19,7 +19,7 @@ import setSectionHiddenForIndustry from '@salesforce/apex/GtmPageSectionControll
 import saveIndustrySectionOrder from '@salesforce/apex/GtmPageSectionController.saveIndustrySectionOrder';
 import chatOnContentDraft from '@salesforce/apex/GtmAgentContentDraftController.chat';
 // One definition of what a layout is made of, shared with the renderer.
-import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS, FRAMEWORK_KEY } from 'c/gtmPageLayouts';
+import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS, FRAMEWORK_KEY, TEMPLATE_LAYOUTS } from 'c/gtmPageLayouts';
 
 // Which value column each field type resolves from. Mirrors
 // GtmPageContentController.resolveValue.
@@ -211,6 +211,8 @@ export default class GtmContentManager extends LightningElement {
     openRequestedPage() {
         this.selectedOffering = this._requestedOffering;
         this.selectedTemplate = '';
+        this.industryView = false;
+        this.industryFilterKey = '';
         this.sections = [];
         this.records = [];
         this.activeKey = '';
@@ -313,6 +315,8 @@ export default class GtmContentManager extends LightningElement {
     handleOfferingChange(event) {
         this.selectedOffering = event.detail.value;
         this.selectedTemplate = '';
+        this.industryView = false;
+        this.industryFilterKey = '';
         this.sections = [];
         this.records = [];
         this.activeKey = '';
@@ -367,6 +371,8 @@ export default class GtmContentManager extends LightningElement {
 
     handleBackToPages() {
         this.selectedTemplate = '';
+        this.industryView = false;
+        this.industryFilterKey = '';
         this.sections = [];
         this.records = [];
         this.activeKey = '';
@@ -376,6 +382,12 @@ export default class GtmContentManager extends LightningElement {
     loadPage() {
         this.isLoading = true;
         this.loadError = '';
+        // A stale toggle from a prior template would otherwise leave the
+        // industry-view rail state stuck on behind a now-hidden control.
+        if (!this.supportsIndustryVariants) {
+            this.industryView = false;
+            this.industryFilterKey = '';
+        }
         return Promise.all([
             getEditorSections({ offeringKey: this.selectedOffering, templateType: this.selectedTemplate }),
             getAllContent({ offeringKey: this.selectedOffering, templateType: this.selectedTemplate })
@@ -600,6 +612,7 @@ export default class GtmContentManager extends LightningElement {
     get industryViewVariant() { return this.industryView ? 'brand' : 'neutral'; }
 
     handleToggleIndustryView() {
+        if (!this.supportsIndustryVariants) return;
         this.industryView = !this.industryView;
         if (this.industryView) {
             this.reorderMode = false;
@@ -865,6 +878,8 @@ export default class GtmContentManager extends LightningElement {
     handleSaveAndExit() {
         this.saveDraft();
         this.selectedTemplate = '';
+        this.industryView = false;
+        this.industryFilterKey = '';
         this.sections = [];
         this.records = [];
         this.activeKey = '';
@@ -948,6 +963,16 @@ export default class GtmContentManager extends LightningElement {
      * takes a structural part of the product with it.
      */
     get isFrameworkPage() { return this.selectedOffering === FRAMEWORK_KEY; }
+
+    // Industry variants only exist for templates whose layout set includes
+    // 'industry-profile' -- today that's just 'configurator'. Derived from
+    // TEMPLATE_LAYOUTS (the single source of truth in gtmPageLayouts.js)
+    // rather than a hardcoded template name, so a future template gaining
+    // industry-profile support picks this up automatically.
+    get supportsIndustryVariants() {
+        const layouts = TEMPLATE_LAYOUTS[this.selectedTemplate];
+        return !!layouts && layouts.includes('industry-profile');
+    }
 
     /**
      * What ships fixed on the framework is the set of PAGES, not the sections.

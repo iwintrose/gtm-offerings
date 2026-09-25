@@ -98,8 +98,11 @@ function flushPromises() {
 Element.prototype.scrollTo = Element.prototype.scrollTo || (() => {});
 
 const OFFERINGS = [{ offeringKey: 'ma-migrator', label: 'Migration Accelerator' }];
+// The "+ Industry variant" button only renders on 'configurator' (the one
+// template carrying the 'industry-profile' layout — see issue
+// #industry-variant-ui-scoping-fix), so this suite exercises that template.
 const TEMPLATES = [
-    { templateType: 'story', sectionCount: 1, fieldCount: 2, pageTitle: null }
+    { templateType: 'configurator', sectionCount: 1, fieldCount: 2, pageTitle: null }
 ];
 
 const BASE_SECTION = {
@@ -159,6 +162,13 @@ async function setupOnPage(sections) {
 }
 
 describe('c-gtm-content-manager: industry variants (issue #industry-variants-core)', () => {
+    beforeEach(() => {
+        // The 'configurator' preview mounts c-gtm-saved-links-bar, which calls
+        // getIndustryProfiles on connectedCallback -- default it here so that
+        // call doesn't crash; a test that needs specific data overrides this
+        // afterward, before it renders.
+        getIndustryProfiles.mockResolvedValue([]);
+    });
     afterEach(() => {
         while (document.body.firstChild) {
             document.body.removeChild(document.body.firstChild);
@@ -183,6 +193,11 @@ describe('c-gtm-content-manager: industry variants (issue #industry-variants-cor
 
         const addVariantBtn = element.shadowRoot.querySelector('.sec-variant-add');
         expect(addVariantBtn).not.toBeNull();
+        // c-gtm-saved-links-bar's own connectedCallback already called this
+        // mock once while the page was loading -- clear that call so the
+        // assertion below is actually about the click, not a coincidental
+        // match against an unrelated child component's mount-time fetch.
+        getIndustryProfiles.mockClear();
         addVariantBtn.dispatchEvent(new CustomEvent('click'));
         await flushPromises();
 
@@ -218,7 +233,7 @@ describe('c-gtm-content-manager: industry variants (issue #industry-variants-cor
         expect(createSection).toHaveBeenCalledWith(
             expect.objectContaining({
                 offeringKey: 'ma-migrator',
-                templateType: 'story',
+                templateType: 'configurator',
                 industryKey: 'retail',
                 baseSectionKey: 'problem',
                 fields: [{ fieldKey: 'headline', fieldType: 'text', label: 'Headline' }]
