@@ -295,6 +295,16 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Page_Section__c.Base_Section_Key__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Industry_Key__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>GTM_Page_Section__c.Label__c</field>
         <readable>true</readable>
         <editable>true</editable>

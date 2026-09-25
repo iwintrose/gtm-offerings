@@ -53,6 +53,7 @@ export default class GtmFieldEditor extends LightningElement {
     @api sectionHelp = '';
     @api sectionAddress = '';
     @api layoutType = '';
+    @api industryKey = '';
     @api offeringKey = '';
     @api templateType = '';
     @api busy = false;
@@ -535,7 +536,8 @@ export default class GtmFieldEditor extends LightningElement {
             fieldKey,
             fieldType,
             label,
-            helpText
+            helpText,
+            industryKey: this.industryKey || null
         })
             .then(() => { this.announceChange('Field added'); })
             .catch((err) => { this.raise(err, 'The field could not be added.'); });

@@ -24,7 +24,8 @@ public with sharing class GtmPageSectionController {
         }
         for (GTM_Page_Section__c sec : [
             SELECT Id, Section_Key__c, Label__c, Help_Text__c, Layout_Type__c,
-                   Width__c, Sort_Order__c, Active__c, Status__c, Draft_State__c
+                   Width__c, Sort_Order__c, Active__c, Status__c, Draft_State__c,
+                   Industry_Key__c, Base_Section_Key__c
             FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -32,12 +33,14 @@ public with sharing class GtmPageSectionController {
         ]) {
             Map<String, Object> d = draftOf(sec);
             EditorSection e = new EditorSection();
-            e.id         = sec.Id;
-            e.sectionKey = sec.Section_Key__c;
-            e.label      = sec.Label__c;
-            e.helpText   = sec.Help_Text__c;
-            e.layoutType = sec.Layout_Type__c;
-            e.width      = sec.Width__c;
+            e.id             = sec.Id;
+            e.sectionKey     = sec.Section_Key__c;
+            e.label          = sec.Label__c;
+            e.helpText       = sec.Help_Text__c;
+            e.layoutType     = sec.Layout_Type__c;
+            e.width          = sec.Width__c;
+            e.industryKey    = sec.Industry_Key__c;
+            e.baseSectionKey = sec.Base_Section_Key__c;
             e.sortOrder  = effectiveSort(sec);
             e.active     = effectiveActive(sec);
             e.isNew      = sec.Status__c == 'Draft';
@@ -144,12 +147,71 @@ public with sharing class GtmPageSectionController {
         String label,
         String layoutType,
         String width,
-        List<FieldSeed> fields
+        List<FieldSeed> fields,
+        String industryKey,
+        String baseSectionKey
     ) {
+        // industryKey/baseSectionKey are optional. GtmPageContentController's
+        // createSection wrapper below is updated to pass both through
+        // (null when this is an ordinary section), so this stays a required
+        // 9-arg signature rather than relying on Apex default-value overload
+        // resolution, which @AuraEnabled does not support cleanly.
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
             throw new AuraHandledException('An offering and a page are both required.');
         }
-        String key = GtmContentAddress.normaliseKey(sectionKey);
+        Boolean isVariant = String.isNotBlank(industryKey) || String.isNotBlank(baseSectionKey);
+        if (isVariant && (String.isBlank(industryKey) || String.isBlank(baseSectionKey))) {
+            throw new AuraHandledException(
+                'An industry variant needs both an industry and the base section it varies.'
+            );
+        }
+
+        String key;
+        String normalisedBaseKey;
+        if (isVariant) {
+            normalisedBaseKey = GtmContentAddress.normaliseKey(baseSectionKey);
+            String industrySlug = GtmContentAddress.normaliseKey(industryKey);
+            if (String.isBlank(normalisedBaseKey) || String.isBlank(industrySlug)) {
+                throw new AuraHandledException(
+                    'The base section and industry both need a name made of letters or numbers.'
+                );
+            }
+            // The base section must exist for this offering/page -- a variant
+            // of a section that isn't there would be an orphan with nothing to
+            // fall back to.
+            if ([
+                SELECT Id FROM GTM_Page_Section__c
+                WHERE Offering_Key__c = :offeringKey
+                AND   Template_Type__c = :templateType
+                AND   Section_Key__c = :normalisedBaseKey
+                LIMIT 1
+            ].isEmpty()) {
+                throw new AuraHandledException(
+                    'The section this varies no longer exists.'
+                );
+            }
+            // Server-side duplicate guard: a query, not just a UI-side check,
+            // so two concurrent requests cannot both create a variant for the
+            // same (base, industry) pair.
+            if (![
+                SELECT Id FROM GTM_Page_Section__c
+                WHERE Offering_Key__c = :offeringKey
+                AND   Template_Type__c = :templateType
+                AND   Base_Section_Key__c = :normalisedBaseKey
+                AND   Industry_Key__c = :industrySlug
+                LIMIT 1
+            ].isEmpty()) {
+                throw new AuraHandledException(
+                    'This section already has a variant for that industry.'
+                );
+            }
+            // The key is derived server-side, not taken from the client, so
+            // the server stays authoritative on both the key and the
+            // duplicate check above.
+            key = normalisedBaseKey + '--' + industrySlug;
+        } else {
+            key = GtmContentAddress.normaliseKey(sectionKey);
+        }
         if (String.isBlank(key)) {
             throw new AuraHandledException(
                 'A section needs a name made of letters or numbers.'
@@ -185,6 +247,10 @@ public with sharing class GtmPageSectionController {
         // the public page the moment you name it.
         sec.Status__c          = 'Draft';
         sec.Sort_Order__c      = nextSortOrder(offeringKey, templateType);
+        if (isVariant) {
+            sec.Industry_Key__c    = GtmContentAddress.normaliseKey(industryKey);
+            sec.Base_Section_Key__c = normalisedBaseKey;
+        }
 
         List<GTM_Page_Content__c> rows = new List<GTM_Page_Content__c>();
         Integer position = 0;
@@ -201,6 +267,7 @@ public with sharing class GtmPageSectionController {
             row.Label__c           = f.label;
             row.Sort_Order__c      = position;
             row.Active__c          = true;
+            if (isVariant) row.Industry_Key__c = sec.Industry_Key__c;
             // A json field with no value is not an empty string, it is an
             // empty list; the editor parses this column to build its repeater.
             // A list starts as an empty list and a button as an empty button; the
@@ -319,7 +386,8 @@ public with sharing class GtmPageSectionController {
         String fieldKey,
         String fieldType,
         String label,
-        String helpText
+        String helpText,
+        String industryKey
     ) {
         if (String.isBlank(offeringKey) || String.isBlank(templateType)
             || String.isBlank(sectionKey) || String.isBlank(fieldKey)) {
@@ -344,6 +412,12 @@ public with sharing class GtmPageSectionController {
         row.Label__c           = label;
         row.Help_Text__c       = helpText;
         row.Active__c          = true;
+        // Stamped only when the field is created on an industry-variant
+        // section, so GtmPageContentReader.getPageContent resolves it the
+        // same way it already resolves any other industry-scoped row.
+        if (String.isNotBlank(industryKey)) {
+            row.Industry_Key__c = GtmContentAddress.normaliseKey(industryKey);
+        }
         row.Sort_Order__c      = nextFieldSortOrder(offeringKey, templateType, sectionKey);
         // A list starts as an empty list and a button as an empty button; the
         // editor parses this column to build its controls, and null is neither.
@@ -400,6 +474,10 @@ public with sharing class GtmPageSectionController {
         @AuraEnabled public Boolean isHidden    { get; set; }
         @AuraEnabled public Boolean isDeleted   { get; set; }
         @AuraEnabled public Boolean isDraft     { get; set; }
+        // Set only on a variant row. See createSection's industryKey/
+        // baseSectionKey params below.
+        @AuraEnabled public String  industryKey    { get; set; }
+        @AuraEnabled public String  baseSectionKey { get; set; }
     }
 
     /** Orders sections by their effective sort, blanks last, key as tiebreak. */

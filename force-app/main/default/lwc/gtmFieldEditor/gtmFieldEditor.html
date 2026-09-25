@@ -3,6 +3,9 @@
     <div class="gcm-colhead"><span>Content</span><span class="gcm-count">{fieldCountLabel}</span></div>
     <div class="gcm-fields-body">
       <div class="gcm-sechead">
+        <template if:true={industryKey}>
+          <p class="gcm-variant-banner">Editing: {sectionLabel} &mdash; {industryKey} variant</p>
+        </template>
         <h2>{sectionLabel}</h2>
         <p>{sectionHelp}</p>
         <span class="gcm-addr-chip">{sectionAddress}</span>

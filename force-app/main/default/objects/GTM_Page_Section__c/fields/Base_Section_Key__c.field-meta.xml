@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Base_Section_Key__c</fullName>
+    <description>Optional. Set only on a variant row: the Section_Key__c of the base section this is an industry variant of. Blank on base/generic sections.</description>
+    <externalId>false</externalId>
+    <label>Base Section Key</label>
+    <length>80</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
