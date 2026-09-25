@@ -583,6 +583,25 @@ public without sharing class GtmPageContentController {
     }
 
     /**
+     * The eight structural/Framework page types every offering (or the
+     * framework itself) is built from -- the fixed shape TEMPLATE_LAYOUTS/
+     * STARTER_PAGES in c/gtmPageLayouts hard-code, not something a BA composes
+     * a name for. Deliberately hand-authored and independent of templatesFor()
+     * above: that helper only enumerates 4 framework templateTypes today
+     * (c/gtmPageLayouts' FRAMEWORK_TEMPLATES knows a 5th, 'assistant', which
+     * has no row in the pages list but is still reachable through renamePage()
+     * directly), so deriving this set from templatesFor() would silently drop
+     * 'assistant' from the block-list. Mirrors FRAMEWORK_KEY's own comment
+     * convention above: two independently-maintained copies (this one and
+     * c/gtmPageLayouts' TEMPLATE_LABELS) that must agree, not a shared import
+     * between Apex and LWC.
+     */
+    private static final Set<String> STRUCTURAL_TEMPLATE_TYPES = new Set<String>{
+        'offerings-page', 'industry-chooser', 'faq-bd', 'faq-content-manager',
+        'assistant', 'story', 'configurator', 'offerings-listing'
+    };
+
+    /**
      * Rename a page (what it's called, not what it's made of).
      *
      * templateType itself can't change -- Apex, SOQL and every layout lookup
@@ -590,11 +609,21 @@ public without sharing class GtmPageContentController {
      * address. Stored the same way an offering's own name is: content at a
      * reserved, un-rendered address (page::title), read back by
      * getHomeSummary() into pageTitles as an override over TEMPLATE_LABELS.
+     *
+     * The eight structural/Framework template types (STRUCTURAL_TEMPLATE_TYPES
+     * above) are excluded here before the upsert runs -- what a page IS CALLED
+     * for those is fixed product naming, not offering-owned content, and this
+     * guard is what makes that hold for a direct Apex/API call, not only for
+     * the LWC edit icon (which is gated client-side too, for the row never to
+     * render in the first place).
      */
     @AuraEnabled
     public static String renamePage(String offeringKey, String templateType, String title) {
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) {
             throw new AuraHandledException('An offering and a page are both required.');
+        }
+        if (STRUCTURAL_TEMPLATE_TYPES.contains(templateType)) {
+            throw new AuraHandledException('This page\'s name is fixed and cannot be renamed.');
         }
         String clean = title == null ? '' : title.trim();
         if (String.isBlank(clean)) {

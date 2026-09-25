@@ -23,6 +23,30 @@ import setOfferingArchived from '@salesforce/apex/GtmPageContentController.setOf
 // instead.
 const SETTINGS_TEMPLATES = ['assistant'];
 
+// The eight structural/Framework page types -- what a page IS CALLED for
+// these is fixed product naming (Story, Configurator, Offerings Listing,
+// Offerings Page, Industry Chooser, both FAQ panels, Assistant), not
+// offering-owned content, so the rename affordance never renders for them.
+// Derived from TEMPLATE_LABELS' own keys rather than a third hand-copied
+// list -- TEMPLATE_LABELS already IS the canonical set of every known
+// templateType, imported from c/gtmPageLayouts, the single source of truth
+// this module already depends on for templatesFor()/starterFor(). Apex's
+// own STRUCTURAL_TEMPLATE_TYPES in GtmPageContentController.renamePage() is
+// the independently hand-authored mirror of this same set, matching the
+// FRAMEWORK_KEY comment convention -- server-side is the must-have half of
+// this guard, this is the should-have UX half.
+const STRUCTURAL_TEMPLATE_TYPES = Object.keys(TEMPLATE_LABELS);
+
+// Named export (alongside the default class, same pattern as CHAPTERS/
+// CHAPTER_DEFAULTS in c/gtmConfiguratorCopy) so Jest can assert the guard's
+// logic directly against a fake templateType -- every templateType the pages
+// mapper below ever actually renders comes from templatesFor(), which today
+// is entirely structural, so there is no rendered row a test could use to
+// prove the positive (non-structural, rename-allowed) case.
+export function canRenamePage(templateType) {
+    return STRUCTURAL_TEMPLATE_TYPES.indexOf(templateType) === -1;
+}
+
 // A page reads as what it is before its name is read.
 const PAGE_ICONS = {
     'story': 'utility:socialshare',
@@ -263,6 +287,13 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                             pageKey,
                             label: this.pageLabel(o.offeringKey, t),
                             isRenaming: this.renamingPageKey === pageKey,
+                            // Structural/Framework page types (see
+                            // STRUCTURAL_TEMPLATE_TYPES above) have a fixed
+                            // name -- the rename pencil never renders for
+                            // them. Apex's renamePage() enforces the same
+                            // rule server-side, so a direct API call is
+                            // blocked too, not just this affordance.
+                            canRename: canRenamePage(t),
                             isBuilt,
                             detail: isBuilt
                                 ? `${sections} sections · ${fields} fields`

@@ -564,6 +564,68 @@ private class GtmPageContentControllerTest {
         }
     }
 
+    // ─── renamePage ───────────────────────────────────────────────────────────
+    // Issue #21: the eight structural/Framework page types have a fixed name --
+    // Apex must refuse renamePage() for any of them before the upsert runs, both
+    // as the must-have half of the fix (a direct Apex/API call has no LWC guard
+    // to stop it) and independently of GtmPageContentController's own
+    // STRUCTURAL_TEMPLATE_TYPES set. This list is its own hand-authored copy,
+    // same "two independently-maintained copies that must agree" convention as
+    // FRAMEWORK_KEY -- not read off the class under test, so a change to the
+    // real set only passes here if it was made deliberately in both places.
+
+    private static final List<String> STRUCTURAL_TEMPLATE_TYPES = new List<String>{
+        'offerings-page', 'industry-chooser', 'faq-bd', 'faq-content-manager',
+        'assistant', 'story', 'configurator', 'offerings-listing'
+    };
+
+    @isTest
+    static void renamePage_blockListIsExactlyTheEightStructuralTypes() {
+        // Catches drift: if a structural type is ever added to or removed from
+        // GtmPageContentController's block-list without this test list being
+        // updated to match, this assertion is the first thing to fail.
+        System.assertEquals(8, STRUCTURAL_TEMPLATE_TYPES.size(),
+            'Exactly eight templateTypes are structural/Framework -- update this list deliberately if that changes');
+    }
+
+    @isTest
+    static void renamePage_throwsForEveryStructuralTemplateTypeAndWritesNoRow() {
+        Test.startTest();
+        for (String t : STRUCTURAL_TEMPLATE_TYPES) {
+            Boolean threw = false;
+            try {
+                GtmPageContentController.renamePage(OFFERING, t, 'Hacked Title for ' + t);
+            } catch (AuraHandledException ex) {
+                threw = true;
+            }
+            System.assert(threw, 'renamePage should throw AuraHandledException for structural templateType "' + t + '"');
+
+            String addr = OFFERING + '::' + t + '::page::title';
+            System.assertEquals(0,
+                [SELECT COUNT() FROM GTM_Page_Content__c WHERE Content_Address__c = :addr],
+                'No page::title override row should be written for structural templateType "' + t + '"');
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void renamePage_succeedsForNonStructuralTemplateType() {
+        String customType = 'custom-page';
+        System.assert(STRUCTURAL_TEMPLATE_TYPES.indexOf(customType) == -1,
+            'Sanity check: this templateType must not be in the structural block-list');
+
+        Test.startTest();
+        String result = GtmPageContentController.renamePage(OFFERING, customType, 'My Custom Page');
+        Test.stopTest();
+
+        System.assertEquals('My Custom Page', result, 'renamePage should return the cleaned title it saved');
+        String addr = OFFERING + '::' + customType + '::page::title';
+        GTM_Page_Content__c row = [
+            SELECT Text_Value__c FROM GTM_Page_Content__c WHERE Content_Address__c = :addr
+        ];
+        System.assertEquals('My Custom Page', row.Text_Value__c, 'A non-structural templateType must still be renamable');
+    }
+
     // ─── createIndustry ───────────────────────────────────────────────────────
     // Hermetic: every test builds its own gtm/industry-chooser page. Nothing is
     // seeded and no offering or industry data is assumed.

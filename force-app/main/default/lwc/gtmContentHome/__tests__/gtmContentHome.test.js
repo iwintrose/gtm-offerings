@@ -1,5 +1,5 @@
 import { createElement } from 'lwc';
-import GtmContentHome from 'c/gtmContentHome';
+import GtmContentHome, { canRenamePage } from 'c/gtmContentHome';
 
 // The stock sfdx-lwc-jest navigation stub defines [NavigationMixin.Navigate]
 // on a sealed prototype, so it cannot be spied on or reassigned in place --
@@ -417,5 +417,42 @@ describe('c-gtm-content-home: header actions (issue page-header-actions-menu)', 
             attributes: { apiName: 'GTM_Content_Manager_Settings' },
             state: { c__section: 'recycle-bin' }
         });
+    });
+});
+
+// Issue #21: structural/Framework pages (Offerings Page, Industry Chooser,
+// both FAQ panels, Story, Configurator, Offerings Listing, Assistant) have a
+// fixed name and must not offer the rename pencil. GtmPageContentController's
+// renamePage() enforces the same rule server-side (the must-have half, since
+// it also blocks a direct Apex/API call) -- this suite covers the UX half.
+const STRUCTURAL_TEMPLATE_TYPES = [
+    'offerings-page', 'industry-chooser', 'faq-bd', 'faq-content-manager',
+    'assistant', 'story', 'configurator', 'offerings-listing'
+];
+
+describe('c-gtm-content-home: structural pages cannot be renamed (issue #21)', () => {
+    afterEach(() => {
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+        jest.clearAllMocks();
+    });
+
+    it('renders no .pg-rename button anywhere -- every page HOME_SUMMARY renders today is structural', async () => {
+        const element = await setup();
+        expect(element.shadowRoot.querySelectorAll('.pg-rename').length).toBe(0);
+    });
+
+    // The pages list is driven by templatesFor(), which today only ever
+    // yields the eight structural/Framework templateTypes, so there is no
+    // rendered row that could prove a non-structural page IS still renamable.
+    // The positive case is asserted directly against the exported
+    // canRenamePage() helper the pages mapper itself calls, using a
+    // templateType that does not exist in TEMPLATE_LABELS.
+    it('canRenamePage returns false for every structural templateType and true for a non-structural one', () => {
+        STRUCTURAL_TEMPLATE_TYPES.forEach((t) => {
+            expect(canRenamePage(t)).toBe(false);
+        });
+        expect(canRenamePage('totally-fake-non-structural-page')).toBe(true);
     });
 });

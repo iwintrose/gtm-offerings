@@ -115,12 +115,14 @@
                           </template>
                           <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
                         </button>
-                        <button class="pg-rename" data-offering={p.offeringKey}
-                                data-template={p.templateType} data-current={p.label}
-                                onclick={handleStartPageRename}
-                                title="Rename this page" aria-label="Rename this page">
-                          <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
-                        </button>
+                        <template if:true={p.canRename}>
+                          <button class="pg-rename" data-offering={p.offeringKey}
+                                  data-template={p.templateType} data-current={p.label}
+                                  onclick={handleStartPageRename}
+                                  title="Rename this page" aria-label="Rename this page">
+                            <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
+                          </button>
+                        </template>
                       </template>
                       <template if:true={p.isRenaming}>
                         <div class="pg-rename-row">
@@ -240,12 +242,14 @@
                               </template>
                               <lightning-icon icon-name="utility:chevronright" size="xx-small" class="pg-go"></lightning-icon>
                             </button>
-                            <button class="pg-rename" data-offering={p.offeringKey}
-                                    data-template={p.templateType} data-current={p.label}
-                                    onclick={handleStartPageRename}
-                                    title="Rename this page" aria-label="Rename this page">
-                              <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
-                            </button>
+                            <template if:true={p.canRename}>
+                              <button class="pg-rename" data-offering={p.offeringKey}
+                                      data-template={p.templateType} data-current={p.label}
+                                      onclick={handleStartPageRename}
+                                      title="Rename this page" aria-label="Rename this page">
+                                <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
+                              </button>
+                            </template>
                           </template>
                           <template if:true={p.isRenaming}>
                             <div class="pg-rename-row">
