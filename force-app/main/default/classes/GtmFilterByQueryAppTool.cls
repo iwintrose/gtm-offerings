@@ -88,15 +88,15 @@ public with sharing class GtmFilterByQueryAppTool implements GtmAppTool {
     public String execute(String toolName, Map<String, Object> input, Map<String, Object> accumulatedChanges) {
         try {
             if (!handles(toolName)) return errorJson('unknown tool');
-            Map<String, Object> in = input == null ? new Map<String, Object>() : input;
-            Object tabRaw = in.get('tab');
+            Map<String, Object> args = input == null ? new Map<String, Object>() : input;
+            Object tabRaw = args.get('tab');
             if (!(tabRaw instanceof String) || !TABS.contains((String) tabRaw)) {
                 return errorJson('Invalid or missing tab. Valid tabs: ' + String.join(new List<String>(TABS), ', ') + '.');
             }
             String tab = (String) tabRaw;
             return tab == TAB_PAGES
-                ? executePages(in, accumulatedChanges)
-                : executeAssessments(in, accumulatedChanges);
+                ? executePages(args, accumulatedChanges)
+                : executeAssessments(args, accumulatedChanges);
         } catch (Exception e) {
             return errorJson('Could not build that filter: ' + e.getMessage());
         }
@@ -124,8 +124,8 @@ public with sharing class GtmFilterByQueryAppTool implements GtmAppTool {
 
     // ── Pages ────────────────────────────────────────────────────────────────
 
-    private String executePages(Map<String, Object> in, Map<String, Object> accumulatedChanges) {
-        Object stageRaw = in.get('stage');
+    private String executePages(Map<String, Object> args, Map<String, Object> accumulatedChanges) {
+        Object stageRaw = args.get('stage');
         if (stageRaw == null) {
             return errorJson('No recognizable stage in that query. Try a stage like "quiet" or "hot", or use the Pages filter directly.');
         }
@@ -146,11 +146,11 @@ public with sharing class GtmFilterByQueryAppTool implements GtmAppTool {
 
     // ── Assessments ──────────────────────────────────────────────────────────
 
-    private String executeAssessments(Map<String, Object> in, Map<String, Object> accumulatedChanges) {
+    private String executeAssessments(Map<String, Object> args, Map<String, Object> accumulatedChanges) {
         Map<String, Object> state = new Map<String, Object>();
         Map<String, Object> understood = new Map<String, Object>();
 
-        Object statusRaw = in.get('status');
+        Object statusRaw = args.get('status');
         if (statusRaw != null) {
             if (!(statusRaw instanceof String) || !GtmAssessmentListController.statusKeys().contains((String) statusRaw)) {
                 return errorJson('Invalid status. Valid statuses: '
@@ -160,7 +160,7 @@ public with sharing class GtmFilterByQueryAppTool implements GtmAppTool {
             understood.put('status', statusRaw);
         }
 
-        Object dateRaw = in.get('date_phrase');
+        Object dateRaw = args.get('date_phrase');
         if (dateRaw != null) {
             if (!(dateRaw instanceof String) || !DATE_PHRASES.contains((String) dateRaw)) {
                 return errorJson('Unrecognized date phrase. Supported: today, this_week, this_month.');
@@ -169,7 +169,7 @@ public with sharing class GtmFilterByQueryAppTool implements GtmAppTool {
             understood.put('date', dateRaw);
         }
 
-        Object nameRaw = in.get('account_or_contact');
+        Object nameRaw = args.get('account_or_contact');
         if (nameRaw instanceof String && String.isNotBlank((String) nameRaw)) {
             String term = ((String) nameRaw).trim();
             if (term.length() < MIN_TERM_LENGTH) {
@@ -245,15 +245,15 @@ public with sharing class GtmFilterByQueryAppTool implements GtmAppTool {
     @TestVisible
     private static String rangeFor(String phrase) {
         Date today = Date.today();
-        Date from;
+        Date fromDate;
         if (phrase == 'today') {
-            from = today;
+            fromDate = today;
         } else if (phrase == 'this_week') {
-            from = today.toStartOfWeek();
+            fromDate = today.toStartOfWeek();
         } else {
-            from = today.toStartOfMonth();
+            fromDate = today.toStartOfMonth();
         }
-        return isoDate(from) + '..' + isoDate(today);
+        return isoDate(fromDate) + '..' + isoDate(today);
     }
 
     private static String isoDate(Date d) {
