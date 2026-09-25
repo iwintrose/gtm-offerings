@@ -39,6 +39,7 @@ public with sharing class GtmAppAgentSurface implements GtmAgentToolSurface {
         if (testTools != null) return testTools;
         List<GtmAppTool> registered = new List<GtmAppTool>();
         registered.add(new GtmStageFilterAppTool());
+        registered.add(new GtmFilterByQueryAppTool());
         return registered;
     }
 

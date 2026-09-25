@@ -11,7 +11,11 @@ import { CurrentPageReference, NavigationMixin } from 'lightning/navigation';
 export const ALLOWED_NAVIGATION = {
     home: [],
     GTM_Pages: ['c__stage'],
-    GTM_Assessments: [],
+    // filter_by_query (issue-10): status, account, contact and date-range
+    // params the Assessments tab's filter bar already reads (c__astatus /
+    // c__aacct / c__acontact / c__arange). Tier, readout and offering are
+    // not in v1's understood vocabulary and stay off this list.
+    GTM_Assessments: ['c__astatus', 'c__aacct', 'c__acontact', 'c__arange'],
     GTM_Analytics: []
 };
 
