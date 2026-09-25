@@ -261,27 +261,36 @@ Source-deployable (in the change set):
 - `lwc/gtmGusUtility/*`, edits to `lwc/gtmAgentChat/*`
 - `classes/GtmAppAgentSurface.cls(+meta)`, `GtmAppTool.cls(+meta)`,
   `GtmAgentProxyController.cls` edits, tests
-- NOT in this change (coordinator decision): the UtilityBar flexipage and the
-  app's `<utilityBar>` reference. The org's validator rejected every utility
-  item syntax tried offline (see "Validate-only findings"), so the item is
-  created by hand after deploy and then retrieved into source (steps below).
+- NOW IN SOURCE (2026-09-25): `flexipages/GTM_Offerings_UtilityBar1.flexipage-meta.xml`
+  (retrieved verbatim from gtm-staging after the item was created by hand in
+  App Manager — this is the accepted utility-item syntax the offline validator
+  had rejected) and the `<utilityBar>GTM_Offerings_UtilityBar1</utilityBar>`
+  line in `applications/GTM_Offerings.app-meta.xml`. A checkOnly validate of
+  both files against gtm-staging succeeded, so a normal `deploy.sh` run now
+  carries GUS instead of wiping it.
+  GOTCHA (verified at API v62.0 and v67.0): `sf project retrieve` of the
+  CustomApplication NEVER emits the `<utilityBar>` element, even when the org
+  has it set. The line in the app file was added by hand and must be kept —
+  a future re-retrieve of `GTM_Offerings` will silently drop it; re-add it
+  before committing. Two orphaned UtilityBar FlexiPages left by failed App
+  Builder saves (`GTM_Offerings_UtilityBar`, a `..._UtilityBar1` duplicate)
+  had to be deleted via the Tooling API before the save would succeed; the
+  surviving developer name is therefore `GTM_Offerings_UtilityBar1`, not
+  `GTM_Offerings_UtilityBar`.
 - Permission sets: NO change (class access for `GtmAgentProxyController` already
   on User/Admin; new classes are called from Apex only). No fields/objects.
 - `GTM_Content_Manager` app: UNCHANGED.
 
 Needs an org-side step / cannot be proven offline (record in QA report):
-1. MANUAL STEP after the real deploy (owner, not agents): Setup -> App Manager
-   -> GTM Offerings -> Edit -> Utility Items -> Add Utility Item -> Custom ->
-   Lightning Component `gtmGusUtility`; label `GUS`, icon `chat` (or
-   `einstein`), panel width 420, panel height 560, Start Automatically OFF;
-   Save. Hard refresh and confirm GUS is in the bottom bar. The Content
-   Manager app is not touched.
-   FOLLOW-UP (coordinator): RETRIEVE the resulting FlexiPage (UtilityBar type)
-   and the GTM_Offerings CustomApplication from the org into source so they are
-   version-controlled and the accepted item syntax is captured. Until then a
-   deploy of the app file from source will not carry the utility bar, and
-   deploying the app file can overwrite the manual edit: do not deploy
-   `GTM_Offerings.app-meta.xml` from source before that retrieve is committed.
+1. DONE 2026-09-25 (see "NOW IN SOURCE" above): the utility item is
+   version-controlled, so a fresh org (gtm-prod included) gets GUS from a
+   normal `deploy.sh` run with no App Manager step. The manual App Manager
+   recipe (Custom -> Lightning Component `gtmGusUtility`; label `GUS`, icon
+   `chat`, width 420, height 560, Start Automatically OFF) is kept only as
+   the fallback if a deploy ever rejects the FlexiPage. After ANY deploy or
+   session change, verify with a hard refresh / fresh login: the utility bar
+   is app-shell state and a stale tab keeps showing the old bar (observed:
+   SPA tab navigation did not pick it up; a new frontdoor login did).
 2. An admin must have a provider key saved on the Settings tab (existing
    prerequisite).
 3. `CurrentPageReference` inside a utility item (F2) and NavigationMixin from

@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionOverrides>
-        <actionName>Tab</actionName>
-        <content>GTM_Offerings_Home</content>
+        <actionName>View</actionName>
+        <content>GTM_AR_View_Redirect</content>
         <formFactor>Large</formFactor>
         <skipRecordTypeSelect>false</skipRecordTypeSelect>
         <type>Flexipage</type>
-        <pageOrSobjectType>standard-home</pageOrSobjectType>
+        <pageOrSobjectType>GTM_Assessment_Request__c</pageOrSobjectType>
     </actionOverrides>
-    <!-- BEGIN issue-sc-links-to-pages view overrides -->
     <actionOverrides>
         <actionName>View</actionName>
         <content>GTM_SC_View_Redirect</content>
@@ -17,15 +16,6 @@
         <type>Flexipage</type>
         <pageOrSobjectType>GTM_Saved_Configuration__c</pageOrSobjectType>
     </actionOverrides>
-    <actionOverrides>
-        <actionName>View</actionName>
-        <content>GTM_AR_View_Redirect</content>
-        <formFactor>Large</formFactor>
-        <skipRecordTypeSelect>false</skipRecordTypeSelect>
-        <type>Flexipage</type>
-        <pageOrSobjectType>GTM_Assessment_Request__c</pageOrSobjectType>
-    </actionOverrides>
-    <!-- END issue-sc-links-to-pages view overrides -->
     <actionOverrides>
         <actionName>View</actionName>
         <content>GTM_Account_Record_Page</content>
@@ -50,12 +40,23 @@
         <type>Flexipage</type>
         <pageOrSobjectType>Opportunity</pageOrSobjectType>
     </actionOverrides>
+    <actionOverrides>
+        <actionName>Tab</actionName>
+        <content>GTM_Offerings_Home</content>
+        <formFactor>Large</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+        <pageOrSobjectType>standard-home</pageOrSobjectType>
+    </actionOverrides>
     <brand>
         <headerColor>#EE3D23</headerColor>
+        <shouldOverrideOrgTheme>false</shouldOverrideOrgTheme>
     </brand>
     <formFactors>Large</formFactors>
-    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
     <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
     <label>GTM Offerings</label>
     <navType>Standard</navType>
     <tabs>standard-home</tabs>
@@ -69,4 +70,5 @@
     <tabs>standard-Account</tabs>
     <tabs>standard-Contact</tabs>
     <uiType>Lightning</uiType>
+    <utilityBar>GTM_Offerings_UtilityBar1</utilityBar>
 </CustomApplication>
