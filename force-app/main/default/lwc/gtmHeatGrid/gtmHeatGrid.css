@@ -57,6 +57,16 @@
     padding: 0.5rem 0.75rem;
 }
 
+/* Grid items default to min-width: auto, so a long Account/Contact name
+   grows its track past the 1.2fr share instead of truncating -- that's
+   what let column content merge and shift out of alignment with the
+   header row. min-width: 0 lets the ellipsis rule in gtmLinkCell.css
+   (max-width: 100%) actually have a bounded width to truncate against. */
+.heat-grid__col {
+    min-width: 0;
+    overflow: hidden;
+}
+
 .heat-grid__header {
     font-weight: 700;
     font-size: 0.75rem;

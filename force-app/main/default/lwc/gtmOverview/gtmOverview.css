@@ -321,6 +321,16 @@ c-gtm-heat-grid {
     cursor: default;
 }
 .deal-id, .deal-opp, .deal-assessment { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+/* Truncate with an ellipsis, never wrap -- a wrapped row grows taller than
+   its siblings, which is its own version of the "columns don't stay
+   aligned" problem even though min-width: 0 above stops the worse case
+   (columns actually shifting). */
+.deal-name, .deal-sub, .deal-opp-name, .deal-req {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
 .deal-name { font-weight: 600; }
 .deal-sub { font-size: .75rem; color: #5c5c5c; }
 .deal-opp-name { color: #0176d3; text-decoration: none; font-weight: 500; }
