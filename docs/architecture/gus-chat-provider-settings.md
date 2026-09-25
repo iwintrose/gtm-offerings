@@ -554,6 +554,67 @@ configuration or data change will fix it — the next productive step is
 entitlement verification or a non-Apex request with a manually-minted
 token, not another metadata or data edit.
 
+### RESOLVED (2026-09-25, later same day) — full 200 with a live session
+
+The "authenticated request identical to anonymous request" signal in
+Attempt 3/4 was correct, but the actual cause was **still on our side**,
+not an org entitlement gap — it just took a manually-minted token
+(recommendation #2 above) to isolate. Two fixes were required together;
+neither alone was sufficient:
+
+1. **JWT-based token issuance was off.** The External Client App "GTM
+   Agentforce Integration" had "Issue JSON Web Token (JWT)-based access
+   tokens for named users" unchecked, at BOTH the Settings-tab checkbox
+   and its Policies-tab counterpart (two separate places enforcing the
+   same behavior — both must be on). With it off, the client-credentials
+   flow was minting an opaque `00D...`-prefixed session token instead of
+   a JWT. `api.salesforce.com`'s gateway resolves the target org/tenant
+   from claims inside a JWT; an opaque token gives it nothing to route
+   on, so it answers exactly like a request with no token at all — an
+   empty-body 404. This is exactly why Attempt 3's anonymous-vs-authenticated
+   comparison came back identical: both were, functionally, unroutable.
+   Confirmed the fix directly: had the coordinator run the token-mint
+   curl from `agent-api-get-started.html` by hand and report only the
+   token's first few characters (never the full secret) — `eyJ` confirmed
+   a genuine JWT once the checkbox was on and a fresh token was minted
+   (forced via re-saving the External Credential's Principal, since the
+   Named Credential had a stale opaque token cached and a 404 never
+   triggers Salesforce's own token-refresh-on-401 logic).
+2. **`instanceConfig.endpoint` needed a trailing slash.** Even with a
+   confirmed JWT, the exact same smoke-test callout still 404'd with
+   `instanceConfig.endpoint = "https://pu1789790920110.my.salesforce.com"`.
+   Salesforce's own Agent API reference page's example body
+   (`developer.salesforce.com/docs/ai/agentforce/references/agent-api`)
+   shows this value WITH a trailing slash
+   (`"https://d5e000009s7bceah-dev-ed.my.salesforce.com/"`) — a detail
+   easy to miss since every other page's prose examples omit it. Changing
+   ours to `"https://pu1789790920110.my.salesforce.com/"` (trailing
+   slash added, nothing else changed) flipped the response from an empty
+   404 straight to a 200.
+
+**Live proof** (`sf apex run -o gtm-staging`, same request shape as
+Attempt 2/3 above except the trailing slash):
+
+```
+STATUS=200
+BODY={"sessionId":"01a0dadb-f93d-7987-8531-79ddf2a696a6",...,
+  "messages":[{"type":"Inform","message":"Hi, I'm an AI assistant.
+  How can I help you?",...}]}
+```
+
+A real session ID and a real agent-generated welcome message — this
+issue's original acceptance criteria (§3) is now satisfied. **Any future
+Apex that calls this endpoint (the planned `gus-live-agentforce-provider-runtime`
+wiring) MUST build `instanceConfig.endpoint` with a trailing slash**, or
+it will silently reproduce this exact 404 and look identical to an auth
+failure. This is a documented Agent API requirement, not an org quirk —
+worth a code comment at the call site, not just here.
+
+GUS itself (`GtmAgentProxyController`) does **not** call this endpoint
+yet — `Chat_Provider__c = 'Agentforce'` is still scaffolded-but-unwired
+per §5 above. Wiring it to actually use this now-proven connection is a
+separate, not-yet-started piece of work.
+
 ### Secret-handling confirmation
 
 Grepped the full diff (metadata shells + this doc) for secret-shaped
