@@ -609,21 +609,43 @@ private class GtmPageContentControllerTest {
     }
 
     @isTest
-    static void renamePage_succeedsForNonStructuralTemplateType() {
-        String customType = 'custom-page';
-        System.assert(STRUCTURAL_TEMPLATE_TYPES.indexOf(customType) == -1,
-            'Sanity check: this templateType must not be in the structural block-list');
-
-        Test.startTest();
-        String result = GtmPageContentController.renamePage(OFFERING, customType, 'My Custom Page');
-        Test.stopTest();
-
-        System.assertEquals('My Custom Page', result, 'renamePage should return the cleaned title it saved');
-        String addr = OFFERING + '::' + customType + '::page::title';
-        GTM_Page_Content__c row = [
-            SELECT Text_Value__c FROM GTM_Page_Content__c WHERE Content_Address__c = :addr
-        ];
-        System.assertEquals('My Custom Page', row.Text_Value__c, 'A non-structural templateType must still be renamable');
+    static void renamePage_noNonStructuralTemplateTypeExistsTodayGuardIsForwardLooking() {
+        // A real DML round-trip proving renamePage() "succeeds for a
+        // non-structural templateType" cannot be written today: this method
+        // used to insert with a fake templateType ('custom-page'), but
+        // GTM_Page_Content__c.Template_Type__c (and its GTM_Page_Section__c
+        // mirror) is a RESTRICTED picklist with exactly the eight values in
+        // STRUCTURAL_TEMPLATE_TYPES above -- see
+        // force-app/main/default/objects/GTM_Page_Content__c/fields/Template_Type__c.field-meta.xml.
+        // Any value outside that set is rejected by the picklist itself with
+        // INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST before renamePage()'s own
+        // guard logic is ever exercised, on every org -- not just gtm-staging
+        // -- so that DML failure proved nothing about the guard.
+        //
+        // Instead, assert the absence directly using the same
+        // Schema.getDescribe()/getPicklistValues() pattern this codebase
+        // already uses elsewhere (see GtmAssessmentListControllerTest's
+        // everyReadoutStateMapsToExactlyOneKey / uiFilterVocabulariesMatchThePicklistsTheyFilter):
+        // confirm every value the picklist will actually let through DML is
+        // already accounted for in STRUCTURAL_TEMPLATE_TYPES. Today every
+        // persistable Template_Type__c value is structural, so the "allow"
+        // branch of renamePage()'s guard is currently unreachable via real
+        // data -- the guard exists as forward-looking defense-in-depth for
+        // when a non-structural page type is eventually added to the
+        // picklist. If that happens, this assertion fails and names exactly
+        // which new value needs a real "renamePage succeeds" DML test
+        // written against it, replacing this method.
+        Set<String> persistableValues = new Set<String>();
+        for (Schema.PicklistEntry pe : GTM_Page_Content__c.Template_Type__c.getDescribe().getPicklistValues()) {
+            persistableValues.add(pe.getValue());
+        }
+        System.assert(!persistableValues.isEmpty(), 'Sanity check: the picklist describe must return values');
+        for (String value : persistableValues) {
+            System.assert(STRUCTURAL_TEMPLATE_TYPES.indexOf(value) != -1,
+                'Template_Type__c picklist value "' + value + '" is not in STRUCTURAL_TEMPLATE_TYPES -- ' +
+                'it is a non-structural templateType and renamePage() must be proven to still succeed for it ' +
+                'with a real DML test, not just asserted absent here.');
+        }
     }
 
     // ─── createIndustry ───────────────────────────────────────────────────────
