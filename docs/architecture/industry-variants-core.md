@@ -268,8 +268,10 @@ Migration Accelerator content, no Agentforce authoring aid. See task scope
 ## 6. UI Scoping Fix (issue `industry-variant-ui-scoping-fix`)
 
 Follow-up bug fix, not a new capability — documented here as a lightweight
-addendum rather than a new architecture doc, per the task scope's own
-guidance.
+addendum rather than a new architecture doc, per `CLAUDE.md` §4's
+Contract-First requirement. (The addendum format itself is not something
+`docs/agent-artifacts/task-scope-industry-variant-ui-scoping-fix.md`
+prescribes; that scope doc covers the root cause and fix approach only.)
 
 The "Industry view" toggle and "+ Industry variant" button (§3 above)
 originally rendered unconditionally on every template, including

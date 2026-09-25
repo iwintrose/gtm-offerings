@@ -14,6 +14,7 @@ import getTemplateSummary from '@salesforce/apex/GtmPageContentController.getTem
 import getEditorSections from '@salesforce/apex/GtmPageSectionController.getEditorSections';
 import getAllContent from '@salesforce/apex/GtmPageContentController.getAllContent';
 import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
+import saveDrafts from '@salesforce/apex/GtmPageContentController.saveDrafts';
 
 jest.mock(
     '@salesforce/apex/GtmPageContentController.getOfferings',
@@ -161,6 +162,28 @@ function variantAddButtons(element) {
     return Array.from(element.shadowRoot.querySelectorAll('.sec-variant-add'));
 }
 
+// The offering combobox is the only lightning-combobox carrying '.gcm-pick'
+// without also carrying '.gcm-pick--page' -- the per-page picker inside the
+// breadcrumb has both classes, and the industry-filter combobox (rendered
+// only while industryView is true) carries neither.
+function offeringCombobox(element) {
+    return element.shadowRoot.querySelector('lightning-combobox.gcm-pick:not(.gcm-pick--page)');
+}
+
+// '.gcm-crumb' is also worn by the "Customizer settings" button, so match on
+// its text rather than the class alone.
+function backToPagesButton(element) {
+    return Array.from(element.shadowRoot.querySelectorAll('button.gcm-crumb')).find(
+        (b) => b.textContent.includes('All pages')
+    );
+}
+
+function saveAndExitButton(element) {
+    return Array.from(element.shadowRoot.querySelectorAll('lightning-button')).find(
+        (b) => b.label === 'Save & exit'
+    );
+}
+
 async function setupOnSingleTemplate(templateType, section) {
     getOfferings.mockResolvedValue(OFFERINGS);
     getTemplateSummary.mockResolvedValue([
@@ -263,6 +286,173 @@ describe('c-gtm-content-manager: industry-variant UI scoping (issue #industry-va
         // industry-view) rail mode, not still toggled on from before.
         const pagePicker2 = element.shadowRoot.querySelector('.gcm-pick--page');
         pagePicker2.dispatchEvent(new CustomEvent('change', { detail: { value: 'configurator' } }));
+        await flushPromises();
+        await flushPromises();
+
+        expect(element.shadowRoot.querySelector('.gcm-industry-picker')).toBeNull();
+        expect(industryToggleButton(element).textContent).toContain('Industry view');
+    });
+
+    // The reset above (loadPage()'s guard) is only one of five places the fix
+    // added `this.industryView = false;`. The other four -- handleBackToPages,
+    // handleOfferingChange, handleSaveAndExit and openRequestedPage -- are not
+    // reachable through handlePageChange at all, so they need their own
+    // coverage or a regression in any one of them ships with a fully green
+    // suite. See issue #industry-variant-ui-scoping-fix QA fail notes.
+
+    it('does not leave Industry view stuck on after "Back to pages" and reopening the same configurator', async () => {
+        getOfferings.mockResolvedValue(OFFERINGS);
+        getTemplateSummary.mockResolvedValue([
+            { templateType: 'configurator', sectionCount: 1, fieldCount: 1, pageTitle: null },
+            { templateType: 'offerings-listing', sectionCount: 1, fieldCount: 1, pageTitle: null }
+        ]);
+        getEditorSections.mockImplementation(({ templateType }) =>
+            Promise.resolve(templateType === 'configurator' ? [CONFIGURATOR_SECTION] : [TILE_SECTION])
+        );
+        getAllContent.mockResolvedValue(RECORDS);
+        getIndustryProfiles.mockResolvedValue([]);
+
+        const element = createElement('c-gtm-content-manager', { is: GtmContentManager });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        offeringCombobox(element).dispatchEvent(new CustomEvent('change', { detail: { value: 'ma-migrator' } }));
+        await flushPromises();
+        await flushPromises();
+
+        // Two built pages -- lands on the page picker, not auto-opened.
+        const templateCard = element.shadowRoot.querySelector('[data-template="configurator"]');
+        templateCard.dispatchEvent(new CustomEvent('click'));
+        await flushPromises();
+        await flushPromises();
+
+        const toggle = industryToggleButton(element);
+        expect(toggle).not.toBeUndefined();
+        toggle.dispatchEvent(new CustomEvent('click'));
+        await flushPromises();
+        expect(element.shadowRoot.querySelector('.gcm-industry-picker')).not.toBeNull();
+        // Pick an industry too, so the filter-key reset is actually exercised
+        // (an unset key would trivially "look" cleared either way).
+        const industryFilter = element.shadowRoot.querySelector('.gcm-industry-picker lightning-combobox');
+        industryFilter.dispatchEvent(new CustomEvent('change', { detail: { value: 'healthcare' } }));
+        await flushPromises();
+
+        // handleBackToPages -- distinct from a template switch via the page
+        // picker, which is the only path the pre-existing spec drove.
+        const backButton = backToPagesButton(element);
+        expect(backButton).not.toBeUndefined();
+        backButton.dispatchEvent(new CustomEvent('click'));
+        await flushPromises();
+
+        // Reopen the very same configurator page from the picker.
+        const templateCardAgain = element.shadowRoot.querySelector('[data-template="configurator"]');
+        templateCardAgain.dispatchEvent(new CustomEvent('click'));
+        await flushPromises();
+        await flushPromises();
+
+        expect(element.shadowRoot.querySelector('.gcm-industry-picker')).toBeNull();
+        expect(industryToggleButton(element).textContent).toContain('Industry view');
+        // Re-opening Industry view fresh must not carry over the old filter.
+        industryToggleButton(element).dispatchEvent(new CustomEvent('click'));
+        await flushPromises();
+        expect(
+            element.shadowRoot.querySelector('.gcm-industry-picker lightning-combobox').value
+        ).toBe('');
+    });
+
+    it('does not leave Industry view stuck on after switching to a different offering', async () => {
+        const TWO_OFFERINGS = [
+            { offeringKey: 'ma-migrator', label: 'Migration Accelerator' },
+            { offeringKey: 'other-offering', label: 'Other Offering' }
+        ];
+        getOfferings.mockResolvedValue(TWO_OFFERINGS);
+        getTemplateSummary.mockResolvedValue([
+            { templateType: 'configurator', sectionCount: 1, fieldCount: 1, pageTitle: null }
+        ]);
+        getEditorSections.mockResolvedValue([CONFIGURATOR_SECTION]);
+        getAllContent.mockResolvedValue(RECORDS);
+        getIndustryProfiles.mockResolvedValue([]);
+
+        const element = createElement('c-gtm-content-manager', { is: GtmContentManager });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        // Neither offering is auto-selected (two offerings exist), and each
+        // has exactly one built page, so choosing one auto-opens its
+        // configurator straight into the editor.
+        offeringCombobox(element).dispatchEvent(new CustomEvent('change', { detail: { value: 'ma-migrator' } }));
+        await flushPromises();
+        await flushPromises();
+
+        const toggle = industryToggleButton(element);
+        expect(toggle).not.toBeUndefined();
+        toggle.dispatchEvent(new CustomEvent('click'));
+        await flushPromises();
+        expect(element.shadowRoot.querySelector('.gcm-industry-picker')).not.toBeNull();
+
+        // handleOfferingChange -- the new offering's configurator also
+        // supports industry variants, so this proves the *state* did not
+        // carry over, not merely that the controls disappeared.
+        offeringCombobox(element).dispatchEvent(
+            new CustomEvent('change', { detail: { value: 'other-offering' } })
+        );
+        await flushPromises();
+        await flushPromises();
+
+        expect(element.shadowRoot.querySelector('.gcm-industry-picker')).toBeNull();
+        expect(industryToggleButton(element).textContent).toContain('Industry view');
+    });
+
+    it('does not leave Industry view stuck on after Save & exit and reopening a configurator', async () => {
+        const DRAFT_RECORD = {
+            id: 'rec1',
+            sectionKey: 'hero',
+            fieldKey: 'headline',
+            fieldType: 'text',
+            label: 'Headline',
+            textValue: 'Original',
+            richValue: null,
+            jsonValue: null,
+            draftValue: 'Edited',
+            isDraft: true,
+            active: true,
+            pendingDelete: false
+        };
+        getOfferings.mockResolvedValue(OFFERINGS);
+        getTemplateSummary.mockResolvedValue([
+            { templateType: 'configurator', sectionCount: 1, fieldCount: 1, pageTitle: null }
+        ]);
+        getEditorSections.mockResolvedValue([CONFIGURATOR_SECTION]);
+        // A draft record is what makes hasDrafts (and so the Save & exit
+        // button) render without needing a separate field edit first.
+        getAllContent.mockResolvedValue([DRAFT_RECORD]);
+        getIndustryProfiles.mockResolvedValue([]);
+        saveDrafts.mockResolvedValue();
+
+        const element = createElement('c-gtm-content-manager', { is: GtmContentManager });
+        document.body.appendChild(element);
+        await flushPromises();
+
+        offeringCombobox(element).dispatchEvent(new CustomEvent('change', { detail: { value: 'ma-migrator' } }));
+        await flushPromises();
+        await flushPromises();
+
+        const toggle = industryToggleButton(element);
+        expect(toggle).not.toBeUndefined();
+        toggle.dispatchEvent(new CustomEvent('click'));
+        await flushPromises();
+        expect(element.shadowRoot.querySelector('.gcm-industry-picker')).not.toBeNull();
+
+        // handleSaveAndExit -- back to the page picker with a kept draft.
+        const saveExitButton = saveAndExitButton(element);
+        expect(saveExitButton).not.toBeUndefined();
+        saveExitButton.dispatchEvent(new CustomEvent('click'));
+        await flushPromises();
+
+        // Reopen the same configurator page.
+        const templateCard = element.shadowRoot.querySelector('[data-template="configurator"]');
+        expect(templateCard).not.toBeNull();
+        templateCard.dispatchEvent(new CustomEvent('click'));
         await flushPromises();
         await flushPromises();
 

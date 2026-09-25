@@ -199,6 +199,7 @@ export default class GtmContentManager extends LightningElement {
         this.selectedOffering = this._requestedOffering;
         this.selectedTemplate = '';
         this.industryView = false;
+        this.industryFilterKey = '';
         this.sections = [];
         this.records = [];
         this.activeKey = '';
@@ -302,6 +303,7 @@ export default class GtmContentManager extends LightningElement {
         this.selectedOffering = event.detail.value;
         this.selectedTemplate = '';
         this.industryView = false;
+        this.industryFilterKey = '';
         this.sections = [];
         this.records = [];
         this.activeKey = '';
@@ -357,6 +359,7 @@ export default class GtmContentManager extends LightningElement {
     handleBackToPages() {
         this.selectedTemplate = '';
         this.industryView = false;
+        this.industryFilterKey = '';
         this.sections = [];
         this.records = [];
         this.activeKey = '';
@@ -863,6 +866,7 @@ export default class GtmContentManager extends LightningElement {
         this.saveDraft();
         this.selectedTemplate = '';
         this.industryView = false;
+        this.industryFilterKey = '';
         this.sections = [];
         this.records = [];
         this.activeKey = '';

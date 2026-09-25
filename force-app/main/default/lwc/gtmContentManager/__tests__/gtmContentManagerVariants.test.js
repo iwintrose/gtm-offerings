@@ -193,6 +193,11 @@ describe('c-gtm-content-manager: industry variants (issue #industry-variants-cor
 
         const addVariantBtn = element.shadowRoot.querySelector('.sec-variant-add');
         expect(addVariantBtn).not.toBeNull();
+        // c-gtm-saved-links-bar's own connectedCallback already called this
+        // mock once while the page was loading -- clear that call so the
+        // assertion below is actually about the click, not a coincidental
+        // match against an unrelated child component's mount-time fetch.
+        getIndustryProfiles.mockClear();
         addVariantBtn.dispatchEvent(new CustomEvent('click'));
         await flushPromises();
 
