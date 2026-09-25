@@ -158,10 +158,14 @@ that switch-over is `gus-live-agentforce-provider-runtime`'s job, gated on
 ## 5a. Agentforce live activation (issue `gus-live-agentforce-provider-auth`)
 
 > STATUS: Credential chain confirmed live and metadata reconciled against a
-> real `sf project retrieve` (2026-09-25). **The Agent API endpoint itself
-> is still NOT smoke-tested end-to-end** — see "Open item" at the end of
-> this section. Do not let `runtime` start coding against the request/
-> response shape below as final; it is still unconfirmed.
+> real `sf project retrieve` (2026-09-25). Request shape confirmed correct
+> against current official docs; OAuth scope gap found and fixed live;
+> **the Agent API endpoint still returns a bare 404 indistinguishable from
+> an anonymous, unauthenticated request** — this now looks like an org
+> entitlement/infra question, not a request-shape or scope problem. See
+> "Open item" at the end of this section. Do not let `runtime` start
+> coding against the request/response shape below as final; it is still
+> unconfirmed end-to-end.
 
 ### Activation path chosen
 
@@ -342,35 +346,84 @@ observe further without either a Setup-UI scope change or a different
 diagnostic (e.g. inspecting Agent API request logs in Setup, which needs
 Setup access this Developer doesn't have via CLI).
 
+**Attempt 3 (this pass): scope fix applied, re-tested, STILL 404 — and a
+new diagnostic isolates the failure further.** Coordinator added
+`chatbot_api` and `refresh_token, offline_access` to the ECA live;
+re-retrieved `ExtlClntAppOauthSettings` and confirmed
+`commaSeparatedOauthScopes = Api, RefreshToken, Chatbot, SFApiPlatform` —
+all four documented scopes now present. Re-ran the exact same Apex smoke
+test (twice, ~1 minute apart, in case of scope-propagation delay): both
+runs `STATUS=404`, `BODY=` (empty) — unchanged.
+
+To isolate further, ran three additional diagnostics:
+
+1. Same request with a deliberately invalid `AGENT_ID` (`INVALID_AGENT_ID`
+   instead of the real BotDefinition Id): still `404`, empty body, no
+   `WWW-Authenticate` header. Per the docs' own troubleshooting page, an
+   invalid agent ID should produce an HTTP 400 with `"{VALUE} is not a
+   valid agent ID"` in the body — getting 404 instead means the request
+   isn't reaching the Agent API's own validation logic at all.
+2. Dumped every response header via `res.getHeaderKeys()`: only `date`,
+   `content-length: 0`, `connection: close` — no Salesforce-specific
+   tracing/error headers, consistent with an edge/gateway-level 404
+   rather than an application-level one.
+3. **Sent the identical request unauthenticated, straight from this
+   Developer's shell via plain `curl` (no token, no org context
+   whatsoever)** to `https://api.salesforce.com/einstein/ai-agent/v1/agents/TEST/sessions`:
+   also `HTTP/2 404`, empty body, same minimal header set (`date` only).
+   **The authenticated, correctly-scoped, correctly-shaped request from
+   this org and the fully anonymous public request are byte-for-byte
+   indistinguishable.** That is strong evidence the failure is not (or
+   is no longer) a scope/token/body/path problem on our side — a request
+   this well-formed, if it were reaching real Agent API request-validation
+   logic with a valid bearer token, should differ from an anonymous
+   request in *some* observable way (a 401, a different error body, a
+   trace header). It doesn't.
+
 ### Open item (blocks calling this issue done)
 
-One concrete, actionable item remains, now narrowed from two broad
-unknowns to one specific hypothesis:
+The scope gap (prior leading hypothesis) is now ruled out — confirmed
+fixed and re-tested, no change in outcome. The remaining open item is
+larger than a single Setup click and needs either org-entitlement
+verification or an out-of-Apex diagnostic this Developer cannot run
+without further org access:
 
-1. **Add the missing `chatbot_api` scope (and ideally `refresh_token,
-   offline_access`) to the `GTM_Agentforce_Integration` External Client
-   App's OAuth scopes.** Setup > External Client Apps Manager >
-   GTM_Agentforce_Integration > Settings tab > OAuth Settings > Edit >
-   add "Access chatbot services (chatbot_api)" (and "Perform requests at
-   any time (refresh_token, offline_access)" per the docs' full
-   recommended scope list) > Save. This is a Setup-UI step this Developer
-   cannot perform (no browser tool, and the CLI's metadata retrieve/deploy
-   path for `ExtlClntAppOauthSettings` was used read-only here, not to
-   push a scope change into a live app with an already-issued secret —
-   that's exactly the kind of live OAuth-app edit that should go through
-   Setup, not a blind metadata deploy).
-2. After the scope is added, re-run the exact Apex smoke test above
-   (`sf apex run -o gtm-staging -f <file>` with the body shown) — either
-   this Developer can re-run it immediately once notified, or the
-   coordinator can run it directly and report the literal
-   status/body back.
+1. **Check org entitlement for the Agent API / unified `api.salesforce.com`
+   gateway specifically**, not just "Agentforce enabled with an active
+   agent" (which is confirmed true here). This org's username
+   (`isiah.wintrose@gmail.com2026_09_19_0-2-55.demo`) suggests a demo/trial
+   provisioning, and demo orgs are a plausible candidate for missing a
+   separate Agent-API-specific entitlement/add-on even when Agentforce
+   Studio itself is fully functional in Setup. Check Setup > Company
+   Information or Feature/Permission Set Licenses for anything
+   Agent-API- or `sfap_api`-platform-specific that might not be
+   provisioned, and consider opening a Salesforce support case if nothing
+   is found, since "authenticated request behaves identically to
+   anonymous request" is a strong signal for an infra/entitlement issue
+   rather than a config mistake at this point.
+2. **Get one real, out-of-Apex data point with a manually-minted token.**
+   This Developer cannot mint a token (the consumer secret is intentionally
+   never available to this Developer). If the coordinator or an admin
+   mints a token directly (Workbench, Postman, or a manual curl using the
+   consumer key/secret from Setup) and calls
+   `https://api.salesforce.com/einstein/ai-agent/v1/agents/0XxgK000002MowHSAS/sessions`
+   with a real `Authorization: Bearer` header outside of Apex/Named
+   Credential entirely, that isolates whether the Named Credential/Apex
+   callout path itself is the problem (e.g. the Authorization header isn't
+   actually being attached the way `generateAuthorizationHeader=true`
+   implies) versus the endpoint genuinely 404ing for everyone regardless of
+   auth. Salesforce's own Agent API Postman Collection
+   (postman.com/salesforce-developers/salesforce-developers/collection/gwv9bjy/agent-api)
+   is the fastest way to do this with real request/response visibility.
 
 This issue's original acceptance criteria (task-scope §3) requires "the
 live smoke-test response/log from §1.4" showing a real agent response —
-that is not yet satisfied (still 404, not a session ID). Recommend the
-coordinator treat this issue as **not yet done** until a non-404 response
-(ideally a 200 with a `sessionId`) is observed, rather than closing on the
-credential scaffolding and confirmed request shape alone.
+that is not yet satisfied (still 404, not a session ID, across three
+attempts and four rounds of live config fixes). Recommend the coordinator
+treat this issue as **not yet done**, and specifically not assume any
+further guessed configuration change will fix it — the next productive
+step is entitlement verification or a non-Apex request, not another
+metadata edit.
 
 ### Secret-handling confirmation
 
