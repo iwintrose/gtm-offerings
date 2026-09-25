@@ -817,4 +817,96 @@ private class GtmPageContentReaderTest {
         Assert.isNotNull(meta, 'The variant-only field should be described in fieldMeta');
         Assert.areEqual('problem', meta.sectionKey, 'fieldMeta is remapped to the base key too');
     }
+
+    // ─── resolveForIndustry (issue #industry-variants-visibility-nav) ─────────
+
+    @IsTest
+    static void getPageLayout_hiddenForIndustry_excludesTheSectionForThatIndustryOnly() {
+        GTM_Page_Section__c sec = sectionRow(OFFERING, TMPL, 'faq', 'FAQ', 'faq', 10, true, 'Published');
+        sec.Hidden_For_Industry__c = 'healthcare';
+        insert sec;
+
+        Test.startTest();
+        GtmPageContentReader.PageLayout forHealthcare = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'healthcare');
+        GtmPageContentReader.PageLayout forRetail = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'retail');
+        GtmPageContentReader.PageLayout generic = GtmPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        Assert.areEqual(0, forHealthcare.sections.size(),
+            'A section named in Hidden_For_Industry__c must not appear for that industry');
+        Assert.areEqual(1, forRetail.sections.size(),
+            'Hiding for healthcare must not hide the section for a different industry');
+        Assert.areEqual(1, generic.sections.size(),
+            'Hiding for one industry must not affect the generic/no-industry page');
+    }
+
+    @IsTest
+    static void getPageLayout_hiddenForIndustry_multipleSlugsAreEachHonoured() {
+        GTM_Page_Section__c sec = sectionRow(OFFERING, TMPL, 'faq', 'FAQ', 'faq', 10, true, 'Published');
+        sec.Hidden_For_Industry__c = 'healthcare, retail';
+        insert sec;
+
+        Test.startTest();
+        GtmPageContentReader.PageLayout forHealthcare = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'healthcare');
+        GtmPageContentReader.PageLayout forRetail = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'retail');
+        GtmPageContentReader.PageLayout forFinance = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'finance');
+        Test.stopTest();
+
+        Assert.areEqual(0, forHealthcare.sections.size(), 'healthcare is in the comma-separated list');
+        Assert.areEqual(0, forRetail.sections.size(), 'retail is in the comma-separated list, with a leading space');
+        Assert.areEqual(1, forFinance.sections.size(), 'finance is not in the list, so it still shows');
+    }
+
+    @IsTest
+    static void getPageLayout_industrySortOverride_reordersOnlyForThatIndustry() {
+        GTM_Page_Section__c hero = sectionRow(OFFERING, TMPL, 'hero', 'Hero', 'hero', 10, true, 'Published');
+        GTM_Page_Section__c faq  = sectionRow(OFFERING, TMPL, 'faq', 'FAQ', 'faq', 20, true, 'Published');
+        // Healthcare wants FAQ before Hero; nothing else changes.
+        faq.Industry_Sort_Overrides__c = '{"healthcare": 5}';
+        insert new List<GTM_Page_Section__c>{ hero, faq };
+
+        Test.startTest();
+        GtmPageContentReader.PageLayout forHealthcare = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'healthcare');
+        GtmPageContentReader.PageLayout forRetail = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'retail');
+        GtmPageContentReader.PageLayout generic = GtmPageContentReader.getPageLayout(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        Assert.areEqual('faq', forHealthcare.sections[0].sectionKey,
+            'The override moves FAQ ahead of Hero for healthcare only');
+        Assert.areEqual('hero', forHealthcare.sections[1].sectionKey);
+
+        Assert.areEqual('hero', forRetail.sections[0].sectionKey,
+            'A different industry with no override keeps the generic order');
+        Assert.areEqual('faq', forRetail.sections[1].sectionKey);
+
+        Assert.areEqual('hero', generic.sections[0].sectionKey,
+            'The generic/no-industry page must not be affected by any industry override');
+        Assert.areEqual('faq', generic.sections[1].sectionKey);
+    }
+
+    @IsTest
+    static void getPageLayout_combinesHideSortOverrideAndVariantSubstitution() {
+        // Three base sections; healthcare hides one, reorders another, and
+        // gets a whole-section variant substitution on the third -- all
+        // through the same resolveForIndustry call.
+        GTM_Page_Section__c hero = sectionRow(OFFERING, TMPL, 'hero', 'Hero', 'hero', 10, true, 'Published');
+        GTM_Page_Section__c faq  = sectionRow(OFFERING, TMPL, 'faq', 'FAQ', 'faq', 20, true, 'Published');
+        faq.Hidden_For_Industry__c = 'healthcare';
+        GTM_Page_Section__c problem = sectionRow(OFFERING, TMPL, 'problem', 'Problem', 'hero', 30, true, 'Published');
+        problem.Industry_Sort_Overrides__c = '{"healthcare": 5}';
+        GTM_Page_Section__c variant = variantSectionRow(OFFERING, TMPL, 'problem--healthcare', 'problem',
+            'healthcare', 'The Healthcare Problem', 'card-grid', true, 'Published');
+        insert new List<GTM_Page_Section__c>{ hero, faq, problem, variant };
+
+        Test.startTest();
+        GtmPageContentReader.PageLayout layout = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'healthcare');
+        Test.stopTest();
+
+        Assert.areEqual(2, layout.sections.size(), 'faq is hidden for healthcare, leaving hero and problem');
+        Assert.areEqual('problem', layout.sections[0].sectionKey,
+            'problem\'s sort override (5) moves it ahead of hero (10)');
+        Assert.areEqual('The Healthcare Problem', layout.sections[0].label,
+            'problem still substitutes its live healthcare variant\'s label');
+        Assert.areEqual('hero', layout.sections[1].sectionKey);
+    }
 }

@@ -208,7 +208,60 @@
               </div>
             </template>
             <template if:false={settingsOpen}>
-              <div class="gcm-colhead"><span>Sections</span><span class="gcm-count">{sectionCount}</span></div>
+              <div class="gcm-colhead">
+                <span>Sections</span><span class="gcm-count">{sectionCount}</span>
+                <button class="gcm-industry-toggle" onclick={handleToggleIndustryView}>
+                  <lightning-icon icon-name="utility:world" size="x-small"></lightning-icon>
+                  {industryViewLabel}
+                </button>
+              </div>
+
+              <template if:true={industryView}>
+                <div class="gcm-industry-picker">
+                  <lightning-combobox label="Industry" variant="label-hidden"
+                                       placeholder="Choose an industry"
+                                       value={industryFilterKey}
+                                       options={industryViewOptions}
+                                       onchange={handleIndustryFilterChange}></lightning-combobox>
+                  <template if:true={industryViewError}>
+                    <p class="modal-note gcm-industry-error" role="alert">{industryViewError}</p>
+                  </template>
+                </div>
+                <template if:true={hasIndustryFilter}>
+                  <p class="gcm-hint">
+                    Showing every section's status for this industry. Drag to
+                    reorder for this industry only; the generic order and
+                    every other industry are unaffected.
+                  </p>
+                  <div class="gcm-rail-body">
+                    <template for:each={industryRailSections} for:item="s">
+                      <div key={s.sectionKey} class={s.itemClass} data-key={s.sectionKey}
+                           draggable="true" onclick={handleSelectSection}
+                           ondragstart={handleIndustryDragStart} ondragover={handleIndustryDragOver}
+                           ondrop={handleIndustryDrop}>
+                        <lightning-icon icon-name={s.icon} size="x-small" class="sec-icon"></lightning-icon>
+                        <div class="sec-main">
+                          <span class="sec-name">{s.label}</span>
+                          <span class={s.statusClass}>{s.statusLabel}</span>
+                        </div>
+                        <template if:true={s.hasVariant}>
+                          <button class="mv" data-key={s.variantSectionKey} onclick={handleIndustryOpenVariant}
+                                  title="Open this industry's variant" aria-label="Open this industry's variant">
+                            &rarr;
+                          </button>
+                        </template>
+                        <button class="mv" data-key={s.sectionKey} onclick={handleIndustryToggleHidden}
+                                title={s.toggleLabel} aria-label={s.toggleLabel}>&#9679;</button>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template if:false={hasIndustryFilter}>
+                  <p class="gcm-hint">Choose an industry to see this page's status for it.</p>
+                </template>
+              </template>
+
+              <template if:false={industryView}>
               <div class="gcm-rail-body">
                 <template for:each={railSections} for:item="s">
                   <div key={s.sectionKey} class={s.itemClass} data-key={s.sectionKey}
@@ -289,6 +342,7 @@
                 </template>
                 <p class="gcm-hint">{railHint}</p>
               </div>
+              </template>
             </template>
           </aside>
 
