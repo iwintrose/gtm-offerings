@@ -28,42 +28,21 @@
 .ov-toggle-btn--active { background: #0176d3; color: #fff; }
 .ov-toggle-btn--active:hover { background: #0176d3; }
 
-/* A column so the body takes the slack: with the grid stretching the cards to
-   one height, a non-flex card leaves its content floating at the top and the
-   card bottom empty. */
-.ov-card {
-    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
-    display: flex; flex-direction: column;
-}
-.ov-card-h {
-    display: flex; align-items: center; gap: .6rem;
-    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
-    min-height: 3rem;
-}
-.ov-card-b { padding: .5rem .6rem .65rem; flex: 1 1 auto; }
-
-/* Icon-circle slot for every .ov-card-h header (issue
-   overview-bd-heat-redesign-5-visual-parity): one shared shape, a
-   per-card background-color modifier, and the icon's own foreground
-   color set via lightning-icon's SLDS 2 styling hook rather than
-   swapping components. Applied uniformly to all six Today-view cards --
-   the three widgets built in issues -2/-3/-4 plus the two pre-existing
-   cards (Opportunities to follow up on, Assessment results) that only
-   ever had a bare icon dropped into the header row. */
+/* Card chrome (border/rail/header/icon-circle for every variant used
+   elsewhere on the page) now lives in c-gtm-card (issue 14; contract:
+   docs/architecture/gtm-card-contract.md). `.ov-ic`/`.ov-ic--results`
+   survive here ONLY because the Assessment results card's two-line stacked
+   header is projected into c-gtm-card's `header` slot (custom-header,
+   header-align="start") -- `results` isn't one of c-gtm-card's own rail/
+   icon variants (identical to its neutral default), so this is the one
+   remaining icon-circle look a consumer still has to render itself. */
 .ov-ic {
     width: 28px; height: 28px; border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
     flex: 0 0 28px;
 }
-.ov-ic--heat, .ov-ic--deals { background-color: #fdece0; }
-.ov-ic--heat lightning-icon, .ov-ic--deals lightning-icon { --sds-c-icon-color-foreground: #c23934; }
-.ov-ic--tasks { background-color: #eef4fb; }
-.ov-ic--tasks lightning-icon { --sds-c-icon-color-foreground: #0b5cab; }
-.ov-ic--readouts, .ov-ic--results { background-color: #e3f4ea; }
-.ov-ic--readouts lightning-icon, .ov-ic--results lightning-icon { --sds-c-icon-color-foreground: #2e844a; }
-.ov-ic--offerings { background-color: #f2e9fc; }
-.ov-ic--offerings lightning-icon { --sds-c-icon-color-foreground: #9050e9; }
+.ov-ic--results { background-color: #e3f4ea; }
+.ov-ic--results lightning-icon { --sds-c-icon-color-foreground: #2e844a; }
 .ov-err {
     margin-bottom: 0.75rem; padding: 0.6rem 0.8rem;
     border: 1px solid #f2c2c2; border-radius: 5px; background: #fdf2f2; color: #ba0517;
@@ -103,9 +82,9 @@
 /* Daily widgets row (issue overview-bd-heat-redesign-4-integration): tasks
    due today beside readouts awaiting response, equal-width siblings. Reuses
    .ov-cols for gap/align-items and the single 1100px stack breakpoint; each
-   child widget now renders its own full .ov-card chrome (issue
-   overview-bd-heat-redesign-5-visual-parity), so this row adds spacing
-   only, not a card wrapper of its own. */
+   child widget now renders its own full c-gtm-card chrome (issue 14,
+   superseding overview-bd-heat-redesign-5-visual-parity), so this row adds
+   spacing only, not a card wrapper of its own. */
 .ov-daily-widgets {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     margin: 0 0 1rem;
@@ -237,16 +216,11 @@ c-gtm-heat-grid {
     gap: 0.75rem;
     align-items: stretch;
 }
-.ocard {
-    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
-    display: flex; flex-direction: column;
-}
-.ocard-top {
-    display: flex; align-items: center; gap: .6rem;
-    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
-    min-height: 3rem;
-}
+/* .ocard's chrome (border/rail/hover/header row) now lives in c-gtm-card
+   (issue 14, variant="offerings"; contract:
+   docs/architecture/gtm-card-contract.md §2.3) -- `.ocard` here is only a
+   marker class on the c-gtm-card host for the grid margin-reset rule
+   below. `.ocard-id` is body-specific stacked name/key text, not chrome. */
 .ocard-id { display: flex; flex-direction: column; min-width: 0; }
 .ocard-sum, .ocard-acts { padding-left: .75rem; padding-right: .75rem; }
 .ocard-acts { padding-bottom: .7rem; }
@@ -288,45 +262,19 @@ c-gtm-heat-grid {
     display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap;
 }
 
-/* ── same language as the Content Manager home ─────────────────────────────
-   These are sibling pages and should feel like one product: the same card
-   rail, the same response to the pointer, the same restraint. */
-.ov-card, .ocard {
-  border-top: 3px solid #747474;
-  transition: box-shadow .14s ease, transform .14s ease;
-}
-.ocard         { border-top-color: #9050e9; }
-
-.ov-card:hover, .ocard:hover {
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .09);
-  transform: translateY(-1px);
-}
+/* Rail/hover/reduced-motion/SLDS-grid-margin chrome for every c-gtm-card on
+   this page (including `.ov-row2-card`/`.ocard`) now lives inside
+   c-gtm-card itself (issue 14; contract:
+   docs/architecture/gtm-card-contract.md §2.3/§3) -- there is nothing left
+   to fix up from this stylesheet for it. */
 
 /* The numbers are the point of the snapshot, so they get to be numbers:
    aligned, tabular, and large enough to read across the room. */
 .tile-value { font-variant-numeric: tabular-nums; }
 
-@media (prefers-reduced-motion: reduce) {
-  .ov-card, .ocard { transition: none; }
-  .ov-card:hover, .ocard:hover { transform: none; }
-}
-
-/* The offerings section holds offerings, so it carries their colour. Every
-   card on the page now has a rail; none is an exception. */
-.ov-offerings { border-top-color: #9050e9; }
-
-/* Same SLDS grid trap as the Content Manager home: `.slds-card + .slds-card`
-   adds a rem of top margin to every card after the first, which in a grid is
-   every card but the leftmost of the first row. */
-.ov-cols > .ov-card + .ov-card,
-.ov-cols > .ov-card { margin: 0; }
-.cards > .ocard + .ocard,
-.cards > .ocard { margin: 0; }
+/* Spacing above the Offerings card, below the view toggle -- not chrome. */
 .ov-offerings { margin-top: 1rem; }
-.ov-cols > .ov-card > .slds-card__header,
-.ov-cols > .ov-card > .slds-card__body,
-.cards > .ocard > .slds-card__header,
-.cards > .ocard > .slds-card__body { margin: 0; }
+
 .side > .side-card + .side-card,
 .side > .side-card { margin: 0; }
 
@@ -334,17 +282,19 @@ c-gtm-heat-grid {
    A table drawn with grid rather than <table>: the columns have to stay in
    step across rows, and the last one has to be able to wrap on a narrow
    window without the others moving. */
-.ov-deals { border-top-color: #fe9339; }
-/* Rail colours for the three widgets rebuilt onto .ov-card chrome (issue
-   overview-bd-heat-redesign-5-visual-parity), matching each card's
-   icon-circle family so the rail and the icon read as one accent. */
-.ov-heat { border-top-color: #c23934; }
-.ov-tasks-today { border-top-color: #0b5cab; }
-.ov-readouts { border-top-color: #2e844a; }
+/* Rail colours for this card and the three daily-widget cards now come from
+   c-gtm-card's `variant` prop (issue 14) -- `.ov-deals`/`.ov-heat`/
+   `.ov-tasks-today`/`.ov-readouts` were never reachable across the widgets'
+   own shadow DOM anyway (see gtmHeatGrid.css's/gtmTasksDueTodayWidget.css's/
+   gtmReadoutsAwaitingWidget.css's own "KEEP IN SYNC" comments, now removed),
+   so there is nothing left here to migrate for those three. `.ov-deals`
+   WAS live for this file's own deals card; also superseded. */
 /* The body is the scroll container (card is a flex column capped at
-   --ov-row2-cap with min-height: 0 down the chain). No top padding, so the sticky header sits
-   flush against the card header instead of leaving a gap rows scroll through. */
-.ov-deals-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-top: 0; }
+   --ov-row2-cap with min-height: 0 down the chain). c-gtm-card's
+   `flush-top` prop zeroes its own top padding, so the sticky header sits
+   flush against the card header instead of leaving a gap rows scroll
+   through. */
+.ov-deals-body { height: 100%; min-height: 0; overflow-y: auto; }
 .ov-sticky { position: sticky; top: 0; z-index: 1; background: #fff; }
 .ov-h-note {
     margin-left: auto;
@@ -525,23 +475,13 @@ c-gtm-heat-grid {
 @media (max-width: 1100px) {
     .ov-row3 { grid-template-columns: minmax(0, 1fr); }
 }
-/* Assessment results is the only .ov-card-h on the page with a stacked,
-   two-row header (.ov-h-stack: the h2 plus .ov-h-note's two
-   lightning-buttons and a middot). The shared .ov-card-h rule above
-   (align-items: center, min-height: 3rem) was written for every other
-   card's single-line header and vertically centers this one against
-   whatever its real content height turns out to be -- which is taller
-   than 3rem once the two lightning-buttons render at their default
-   library size -- so .ov-results-body's padding-top: 0 (inherited from
-   the single-line deals-table pattern, see .ov-deals-body above) starts
-   flush against where a single-line header would have ended, not where
-   this two-line header actually ends. Scoped to .ov-results only: every
-   other header on the page still needs align-items: center. */
-.ov-results .ov-card-h {
-    align-items: flex-start;
-    min-height: 0;
-    padding-bottom: .5rem;
-}
+/* Assessment results is the only stacked, two-row header on the page
+   (.ov-h-stack: the h2 plus .ov-h-note's two lightning-buttons and a
+   middot). That alignment/min-height override now lives in c-gtm-card
+   itself as `header-align="start"` (issue 14; see gtmOverview.html and
+   docs/architecture/gtm-card-contract.md §2.2) rather than a page-level
+   `.ov-results .ov-card-h` selector -- there is no longer a page-reachable
+   `.ov-card-h` class to scope it to. */
 /* The two action buttons had no dedicated sizing rule anywhere on the
    page (unlike .ocard-acts .slds-button's 12px scale for the Offerings
    cards), so they rendered at each browser's default lightning-button
@@ -553,11 +493,12 @@ c-gtm-heat-grid {
     font-size: 12px;
     line-height: 1.4;
 }
-/* Now that the header reserves exactly its real (flex-start, no forced
-   min-height) content height instead of a floor tuned for a single-line
-   header, the body can go back to sitting flush against it -- re-derived,
-   not assumed, from the corrected header height above. */
-.ov-results-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-top: 0; }
+/* The body sits flush against the header via c-gtm-card's `flush-top` prop
+   (see gtmOverview.html), now that the header itself reserves exactly its
+   real (flex-start, no forced min-height) content height via
+   `header-align="start"` rather than a floor tuned for a single-line
+   header. */
+.ov-results-body { height: 100%; min-height: 0; overflow-y: auto; }
 .ocard-counts {
     display: flex; gap: 0.9rem; flex-wrap: wrap;
     margin: 0 0 0.5rem; padding: 0 .75rem; font-size: 11.5px; font-weight: 700;

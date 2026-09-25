@@ -1,12 +1,5 @@
 <template>
-    <article class="slds-card ov-card ov-readouts" data-id="readouts-awaiting-widget">
-        <div class="slds-card__header ov-card-h">
-            <span class="ov-ic ov-ic--readouts">
-                <lightning-icon icon-name="standard:email" size="small"></lightning-icon>
-            </span>
-            <h2 class="ov-h">Readouts awaiting response</h2>
-        </div>
-        <div class="slds-card__body ov-card-b">
+    <c-gtm-card icon-name="standard:email" title="Readouts awaiting response" variant="readouts" data-id="readouts-awaiting-widget">
         <template if:true={isLoading}>
             <lightning-spinner alternative-text="Loading readouts" size="small"></lightning-spinner>
         </template>
@@ -33,13 +26,12 @@
                         aria-label={row.rowAriaLabel} onclick={handleRowActivate} onkeydown={handleRowActivate}>
                         <div class="slds-truncate">{row.accountName}</div>
                         <template if:true={row.opportunityName}>
-                            <div class="slds-text-body_small slds-text-color_weak">{row.opportunityName}</div>
+                            <div class="slds-truncate slds-text-body_small slds-text-color_weak">{row.opportunityName}</div>
                         </template>
-                        <div class="slds-text-body_small" data-id="readout-proxy-label">{row.proxyLabel}</div>
+                        <div class="slds-truncate slds-text-body_small" data-id="readout-proxy-label">{row.proxyLabel}</div>
                     </li>
                 </template>
             </ul>
         </template>
-        </div>
-    </article>
+    </c-gtm-card>
 </template>

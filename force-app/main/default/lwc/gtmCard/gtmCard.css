@@ -1,0 +1,79 @@
+:host { display: block; height: 100%; }
+
+/* Card chrome extracted verbatim from the four hand-duplicated .ov-card
+   blocks (gtmOverview.css, gtmHeatGrid.css, gtmTasksDueTodayWidget.css,
+   gtmReadoutsAwaitingWidget.css) -- see docs/architecture/gtm-card-contract.md
+   §1/§3. A column so the body takes the slack: with a stretching grid parent,
+   a non-flex card leaves its content floating at the top and the card
+   bottom empty. */
+.gcard {
+    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
+    display: flex; flex-direction: column; height: 100%;
+    border-top: 3px solid #747474;
+    transition: box-shadow .14s ease, transform .14s ease;
+    /* SLDS's own base stylesheet adds `margin-top: 1rem` via
+       `.slds-card + .slds-card`, which in a grid/flex layout of cards hits
+       every card but the leftmost of the first row (the "SLDS grid trap",
+       ported from gtmOverview.css/gtmContentHome's identical fix). Zeroed
+       unconditionally here instead of via a per-consumer sibling-selector
+       override, since every c-gtm-card carries the same `.slds-card` class
+       and the bug is the same regardless of which page lays it out. */
+    margin: 0;
+}
+.gcard:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .09); transform: translateY(-1px); }
+@media (prefers-reduced-motion: reduce) {
+    .gcard { transition: none; }
+    .gcard:hover { transform: none; }
+}
+
+.gcard-h {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
+    min-height: 3rem;
+}
+/* Two-line/stacked headers (header-align="start", see gtmCard.js) top-align
+   instead of vertically centering against a 3rem floor, and drop the floor
+   so the body sits flush under whatever height the real header content
+   turns out to be. Ported from gtmOverview.css's .ov-results .ov-card-h
+   scoped override -- see contract §2. */
+.gcard-h--start {
+    align-items: flex-start;
+    min-height: 0;
+    padding-bottom: .5rem;
+}
+.gcard-h, .gcard-b { margin: 0; }
+.gcard-b { padding: .5rem .6rem .65rem; flex: 1 1 auto; min-height: 0; }
+/* Zeroed top padding for a consumer whose own scroll container has a sticky
+   header row that must sit flush against the card header -- see
+   gtmCard.js's `flushTop` prop. */
+.gcard-b--flush-top { padding-top: 0; }
+
+.gcard-title { margin: 0; font-size: 14px; font-weight: 700; color: #181818; }
+
+/* Icon-circle: one shared shape, a per-variant background-color modifier,
+   and the icon's own foreground color set via lightning-icon's SLDS 2
+   styling hook. Ported from gtmOverview.css's .ov-ic/.ov-ic--* family. */
+.gcard-ic {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 28px;
+}
+.gcard-ic--heat { background-color: #fdece0; }
+.gcard-ic--heat lightning-icon { --sds-c-icon-color-foreground: #c23934; }
+.gcard-ic--tasks { background-color: #eef4fb; }
+.gcard-ic--tasks lightning-icon { --sds-c-icon-color-foreground: #0b5cab; }
+.gcard-ic--readouts { background-color: #e3f4ea; }
+.gcard-ic--readouts lightning-icon { --sds-c-icon-color-foreground: #2e844a; }
+.gcard-ic--deals { background-color: #fdece0; }
+.gcard-ic--deals lightning-icon { --sds-c-icon-color-foreground: #c23934; }
+.gcard-ic--offerings { background-color: #f2e9fc; }
+.gcard-ic--offerings lightning-icon { --sds-c-icon-color-foreground: #9050e9; }
+
+/* Rail colors, one per named variant (enum, not a free color -- contract §1).
+   Default/no-variant rail stays the neutral gray set on .gcard above. */
+.gcard--deals { border-top-color: #fe9339; }
+.gcard--heat { border-top-color: #c23934; }
+.gcard--tasks { border-top-color: #0b5cab; }
+.gcard--readouts { border-top-color: #2e844a; }
+.gcard--offerings { border-top-color: #9050e9; }

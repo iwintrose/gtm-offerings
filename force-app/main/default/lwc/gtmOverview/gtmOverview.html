@@ -114,7 +114,7 @@
               <template if:true={tile.hasNames}>
                 <ul class="at-names">
                   <template for:each={tile.names} for:item="n">
-                    <li key={n.key} class="at-name gtm-link-cell" title={n.name}>{n.name}</li>
+                    <li key={n.key} class="at-name gtm-link-cell slds-truncate" title={n.name}>{n.name}</li>
                   </template>
                 </ul>
               </template>
@@ -140,14 +140,8 @@
              This is the join a BD used to have to make in their head: an
              opportunity, the link prepared for it, and the request that link
              produced -- or did not. Scrolls inside the card; header sticks. -->
-        <article class="slds-card ov-card ov-row2-card ov-deals">
-          <div class="slds-card__header ov-card-h">
-            <span class="ov-ic ov-ic--deals">
-              <lightning-icon icon-name="standard:opportunity" size="small"></lightning-icon>
-            </span>
-            <h2 class="ov-h">Opportunities to follow up on</h2>
-          </div>
-          <div class="slds-card__body ov-card-b ov-deals-body slds-scrollable_y">
+        <c-gtm-card class="ov-row2-card" icon-name="standard:opportunity" title="Opportunities to follow up on" variant="deals" flush-top>
+          <div class="ov-deals-body slds-scrollable_y">
             <template if:true={hasDeals}>
               <div class="deals" role="table" aria-label="Opportunities to follow up on">
                 <div class="deal deal--head ov-sticky" role="row">
@@ -204,29 +198,27 @@
               <p class="ov-empty">No opportunities yet. Every engagement link you send for an opportunity shows up here with what the recipient did with it.</p>
             </template>
           </div>
-        </article>
+        </c-gtm-card>
       </div>
 
       <!-- Row 3: Assessment results -- the rep's submitted assessments,
            ranked by the SERVER (best fit first). No client-side sort. -->
       <div class="ov-cols ov-row3 ov-row3--solo">
-        <article class="slds-card ov-card ov-row2-card ov-results">
-          <div class="slds-card__header ov-card-h">
-            <span class="ov-ic ov-ic--results">
-              <lightning-icon icon-name="standard:task" size="small"></lightning-icon>
+        <c-gtm-card class="ov-row2-card ov-results" custom-header header-align="start" flush-top>
+          <span slot="header" class="ov-ic ov-ic--results">
+            <lightning-icon icon-name="standard:task" size="small"></lightning-icon>
+          </span>
+          <div slot="header" class="ov-h-stack">
+            <h2 class="ov-h">Assessment results</h2>
+            <span class="ov-h-note">
+              <lightning-button variant="base" label="View all assessments"
+                                class="ov-view-all" onclick={handleViewAllAssessments}></lightning-button>
+              &middot;
+              <lightning-button variant="base" label="Ready to book"
+                                class="ov-ready-to-book" onclick={handleReadyToBook}></lightning-button>
             </span>
-            <div class="ov-h-stack">
-              <h2 class="ov-h">Assessment results</h2>
-              <span class="ov-h-note">
-                <lightning-button variant="base" label="View all assessments"
-                                  class="ov-view-all" onclick={handleViewAllAssessments}></lightning-button>
-                &middot;
-                <lightning-button variant="base" label="Ready to book"
-                                  class="ov-ready-to-book" onclick={handleReadyToBook}></lightning-button>
-              </span>
-            </div>
           </div>
-          <div class="slds-card__body ov-card-b ov-results-body slds-scrollable_y">
+          <div class="ov-results-body slds-scrollable_y">
             <template if:true={assessmentsLoading}>
               <div class="ov-empty ar-loading">
                 <lightning-spinner alternative-text="Loading assessments" size="small"></lightning-spinner>
@@ -247,7 +239,7 @@
                                    onrowaction={handleAssessmentRowAction}></c-gtm-link-datatable>
             </template>
           </div>
-        </article>
+        </c-gtm-card>
       </div>
     </template>
 
@@ -256,23 +248,14 @@
          overview-bd-heat-redesign-1-layout-toggle). Renders ONLY when
          Offerings is selected -- never blended into Today. -->
     <template if:true={isOfferingsView}>
-      <article class="slds-card ov-card ov-offerings">
-        <div class="slds-card__header ov-card-h">
-          <span class="ov-ic ov-ic--offerings">
-            <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
-          </span>
-          <h2 class="ov-h">Offerings</h2>
-        </div>
-        <div class="slds-card__body ov-card-b">
+      <c-gtm-card class="ov-offerings" icon-name="standard:product" title="Offerings" variant="offerings">
         <div class="cards">
           <template for:each={offeringCards} for:item="o">
-            <article key={o.offeringKey} class="slds-card ocard">
-              <div class="slds-card__header ocard-top">
-                <lightning-icon icon-name="standard:product" size="small"></lightning-icon>
-                <div class="ocard-id">
-                  <span class="ocard-name">{o.label}</span>
-                  <span class="ocard-key">{o.pageList}</span>
-                </div>
+            <c-gtm-card key={o.offeringKey} class="ocard" custom-header variant="offerings">
+              <lightning-icon slot="header" icon-name="standard:product" size="small"></lightning-icon>
+              <div slot="header" class="ocard-id">
+                <span class="ocard-name">{o.label}</span>
+                <span class="ocard-key">{o.pageList}</span>
               </div>
               <p class="ocard-sum">{o.summary}</p>
               <template if:true={o.hasCounts}>
@@ -329,15 +312,14 @@
                   </template>
                 </template>
               </div>
-            </article>
+            </c-gtm-card>
           </template>
         </div>
         <template if:true={showEmptyOfferings}>
           <p class="ov-empty">No offerings set up yet — ask an admin to add one.</p>
         </template>
         <p class="ov-foot ocount-footnote">Live links = sent, active links; Draft and Rep_Direct are not counted.</p>
-        </div>
-      </article>
+      </c-gtm-card>
     </template>
 
   </div>
