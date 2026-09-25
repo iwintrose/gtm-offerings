@@ -57,6 +57,56 @@ public with sharing class GtmLifecycleNotificationService {
     // Auto_Close_Published_Tasks__c in the scope doc's 1c-RESOLVED section.
     public static final String SUBJECT_READOUT_PUBLISHED = 'Readout published';
 
+    // ---- Engagement-state subjects (issue #31) -----------------------
+    // Unlike every Subject above (WhatId = the GTM_Readout__c/
+    // GTM_Assessment_Request__c record's own Id -- "go look at this
+    // record"), these four key off the prospect's own Contact (preferred)
+    // or Account Id -- coalesce(contactId, accountId), resolved by each
+    // caller -- so the Task lands on that record's native Activity
+    // timeline, replacing the retired "Engagement Links" tab's one real
+    // job: telling a rep which prospect needs a follow-up. Deliberately
+    // distinct text from the Subjects above even though the different
+    // WhatId already prevents any real collision, so an Activity timeline
+    // or debug log never shows two identically-worded but differently-
+    // targeted Tasks. See syncEngagementStateTask below for the fire/close
+    // orchestration; GtmEngagementStateClassifier owns the state
+    // precedence these subjects are keyed off of. never_opened has
+    // deliberately no Subject/Task here -- it is classify()'s default/
+    // fallback branch, not an event (issue #31, Architect decision #1);
+    // firing a Task the instant a link is created would be noise, not a
+    // nudge.
+    public static final String SUBJECT_ENGAGEMENT_OPENED =
+        'Prospect opened the link -- follow up';
+    public static final String SUBJECT_ENGAGEMENT_STARTED =
+        'Prospect started the assessment -- follow up';
+    public static final String SUBJECT_ENGAGEMENT_SUBMITTED =
+        'Prospect submitted the assessment -- open the readout';
+    public static final String SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT =
+        'Readout published -- send to prospect';
+
+    /** Every engagement-state Subject that can be fired, keyed by the
+     *  GtmEngagementStateClassifier state it represents. sent_complete and
+     *  never_opened are deliberately absent -- neither has a Task to fire
+     *  (STATE_ACTION for both is a terminal/no-op action); sent_complete
+     *  still needs its predecessor's Task closed, which
+     *  syncEngagementStateTask handles by sweeping every Subject in this
+     *  map regardless of whether the new state itself fires one. */
+    private static final Map<String, String> ENGAGEMENT_STATE_SUBJECTS = new Map<String, String>{
+        GtmEngagementStateClassifier.STATE_OPENED          => SUBJECT_ENGAGEMENT_OPENED,
+        GtmEngagementStateClassifier.STATE_STARTED         => SUBJECT_ENGAGEMENT_STARTED,
+        GtmEngagementStateClassifier.STATE_SUBMITTED_DRAFT => SUBJECT_ENGAGEMENT_SUBMITTED,
+        GtmEngagementStateClassifier.STATE_PUBLISHED_UNSENT => SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT
+    };
+
+    private static final String ENGAGEMENT_TASK_DESCRIPTION_OPENED =
+        'The prospect opened this engagement link. Consider a follow-up.';
+    private static final String ENGAGEMENT_TASK_DESCRIPTION_STARTED =
+        'The prospect started the assessment but has not submitted it yet. Consider a follow-up.';
+    private static final String ENGAGEMENT_TASK_DESCRIPTION_SUBMITTED =
+        'The prospect submitted the assessment. Open the readout to review it.';
+    private static final String ENGAGEMENT_TASK_DESCRIPTION_PUBLISHED_UNSENT =
+        'The readout was published but has not been sent to the prospect yet.';
+
     private static final String NOTIFICATION_TYPE_NAME = 'GTM_Notification';
 
     // Cached for the life of the transaction so a caller firing a bell for
@@ -206,6 +256,83 @@ public with sharing class GtmLifecycleNotificationService {
                 ' at line ' + e.getLineNumber() + ' -- ' + e.getMessage()
             );
         }
+    }
+
+    /**
+     * Syncs the single open engagement-state Task against whatId (a
+     * Contact or Account Id, coalesced by the caller -- see the
+     * SUBJECT_ENGAGEMENT_* constants above) to state, one of
+     * GtmEngagementStateClassifier's six state keys (issue #31).
+     *
+     * Two-part contract:
+     *  1. Closes every OTHER engagement-state Subject's open Task against
+     *     whatId first -- not just the immediately-prior state's, all of
+     *     them. A link can skip ranks (e.g. never_opened -> submitted_draft
+     *     directly, if a prospect fills the form fast -- classify()'s own
+     *     header documents this), so only sweeping "the previous state"
+     *     would leave a stale Task open behind a skipped rank. Each close
+     *     is the same no-op-when-nothing-matches call closeOpenTasks always
+     *     was, so sweeping a Subject that was never fired costs one no-op
+     *     query, not an error.
+     *  2. Fires the Subject for `state`, unless a Task with that exact
+     *     WhatId+Subject is already open -- idempotency this caller needs
+     *     that fireTask/fireTasksBulk deliberately do not provide
+     *     themselves (those always insert unconditionally; every other
+     *     caller in this codebase only calls fireTask once per genuine
+     *     transition, but a prospect can revisit the same link and re-fire
+     *     the same classify() state many times over, and each such repeat
+     *     visit must not spawn a duplicate open Task).
+     *
+     * never_opened and sent_complete both have no Subject in
+     * ENGAGEMENT_STATE_SUBJECTS, so step 2 no-ops for either -- for
+     * sent_complete this is exactly right (STATE_ACTION is 'none': close
+     * published_unsent's Task, fire nothing new); never_opened is never
+     * actually passed in by any of this ticket's five wired call sites
+     * (Architect decision #1), but would degrade the same safe way if it
+     * ever were.
+     *
+     * No `ownerId` is needed to close, only to fire -- callers whose call
+     * site can only ever close (e.g. GtmReadoutController.
+     * sendPublishNotification's sent_complete transition) may pass null.
+     */
+    public static void syncEngagementStateTask(Id whatId, Id ownerId, String state) {
+        if (whatId == null || String.isBlank(state)) {
+            return;
+        }
+        String fireSubject = ENGAGEMENT_STATE_SUBJECTS.get(state);
+        for (String subject : ENGAGEMENT_STATE_SUBJECTS.values()) {
+            if (subject != fireSubject) {
+                closeOpenTasks(whatId, subject);
+            }
+        }
+        if (fireSubject == null || ownerId == null) {
+            return;
+        }
+        List<Task> alreadyOpen = [
+            SELECT Id FROM Task
+            WHERE WhatId = :whatId AND Subject = :fireSubject AND Status != 'Completed'
+            LIMIT 1
+        ];
+        if (!alreadyOpen.isEmpty()) {
+            return;
+        }
+        fireTask(whatId, ownerId, fireSubject, engagementTaskDescription(state));
+    }
+
+    private static String engagementTaskDescription(String state) {
+        if (state == GtmEngagementStateClassifier.STATE_OPENED) {
+            return ENGAGEMENT_TASK_DESCRIPTION_OPENED;
+        }
+        if (state == GtmEngagementStateClassifier.STATE_STARTED) {
+            return ENGAGEMENT_TASK_DESCRIPTION_STARTED;
+        }
+        if (state == GtmEngagementStateClassifier.STATE_SUBMITTED_DRAFT) {
+            return ENGAGEMENT_TASK_DESCRIPTION_SUBMITTED;
+        }
+        if (state == GtmEngagementStateClassifier.STATE_PUBLISHED_UNSENT) {
+            return ENGAGEMENT_TASK_DESCRIPTION_PUBLISHED_UNSENT;
+        }
+        return null;
     }
 
     /**

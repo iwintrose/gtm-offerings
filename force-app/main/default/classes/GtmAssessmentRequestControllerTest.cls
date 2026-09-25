@@ -2066,6 +2066,45 @@ private class GtmAssessmentRequestControllerTest {
         );
     }
 
+    // ------------------------------------- engagement-state Task (issue #31)
+    // Distinct from SUBJECT_NEW_REQUEST above: always fires (not gated by
+    // notifyOnNewAssessmentRequest), and targets the resolved prospect
+    // Contact, not the request record itself.
+
+    @isTest
+    static void submittingAnAssessmentRequestFiresTheEngagementSubmittedDraftTaskAgainstTheContact() {
+        Id repId = insertRoutedRep();
+        GTM_Saved_Configuration__c link = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator', Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/d', Active__c = true, OwnerId = repId
+        );
+        insert link;
+        // Deliberately off -- proves the engagement Task is independent of
+        // this setting, unlike SUBJECT_NEW_REQUEST above.
+        setNewRequestNotification(false);
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = link.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success);
+        Assert.isNotNull(result.contactId, 'applyContact should have resolved/created a Contact for this submission');
+        List<Task> tasks = [
+            SELECT WhatId, OwnerId, Subject
+            FROM Task
+            WHERE WhatId = :result.contactId
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_SUBMITTED
+        ];
+        Assert.areEqual(1, tasks.size(),
+            'Submitting should fire the engagement submitted_draft Task against the Contact even with the ' +
+            'new-request notification setting off');
+        Assert.areEqual(repId, tasks[0].OwnerId, 'The engagement Task must be owned by the link owner');
+    }
+
     @isTest
     static void enableActivitiesAllowsATaskWhatIdAgainstAnAssessmentRequest() {
         // Real-DML proof that GTM_Assessment_Request__c.enableActivities is

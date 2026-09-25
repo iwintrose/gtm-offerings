@@ -1,4 +1,17 @@
 /**
+ * NOTE (issue #31): the "Engagement Links" tab this class backs is being
+ * retired -- getEngagementSummaries below is teardown-scoped, not deleted
+ * in this same change (it is deleted once gtmContactEngagement, its only
+ * caller, is deleted). The six-state classification logic this class used
+ * to own directly (classify() plus the STATE_* / STATE_RANK / STATE_ACTION /
+ * STATE_ACTION_LABEL / STATE_LABEL constants) has already been extracted to
+ * GtmEngagementStateClassifier (Architect decision #3) -- several other
+ * classes (GtmLinkEventController, GtmAssessmentRequestController,
+ * GtmReadoutController) now call it directly to fire/close real Tasks on
+ * the Account/Contact Activity timeline via
+ * GtmLifecycleNotificationService.syncEngagementStateTask, which this
+ * class's own @AuraEnabled surface was never a suitable dependency for.
+ *
  * Backing controller for two callers of the same "one row = one engagement
  * link" data (issue-102-1-engagement-links-landing):
  *
@@ -62,74 +75,12 @@ public with sharing class GtmContactEngagementController {
     private static final String SCOPE_TEAM = 'team';
     private static final String SCOPE_ALL  = 'all';
 
-    // ---------------------------------------------------- D8 + D13 states
-    @TestVisible private static final String STATE_SUBMITTED_DRAFT  = 'submitted_draft';
-    @TestVisible private static final String STATE_PUBLISHED_UNSENT = 'published_unsent';
-    @TestVisible private static final String STATE_STARTED          = 'started_not_submitted';
-    @TestVisible private static final String STATE_OPENED           = 'opened_not_started';
-    @TestVisible private static final String STATE_NEVER_OPENED     = 'never_opened';
-    @TestVisible private static final String STATE_SENT_COMPLETE    = 'sent_complete';
-
-    /** Highest priority first -- exactly D13's six-tier order. */
-    private static final Map<String, Integer> STATE_RANK = new Map<String, Integer>{
-        STATE_SUBMITTED_DRAFT  => 1,
-        STATE_PUBLISHED_UNSENT => 2,
-        STATE_STARTED          => 3,
-        STATE_OPENED           => 4,
-        STATE_NEVER_OPENED     => 5,
-        STATE_SENT_COMPLETE    => 6
-    };
-
-    /** One primary action key per state -- the LWC switches on this, it
-     *  never re-derives state from raw fields (D13's own mandate). */
-    private static final Map<String, String> STATE_ACTION = new Map<String, String>{
-        STATE_SUBMITTED_DRAFT  => 'open_readout',
-        STATE_PUBLISHED_UNSENT => 'send_disabled',
-        STATE_STARTED          => 'follow_up',
-        STATE_OPENED           => 'follow_up',
-        STATE_NEVER_OPENED     => 'resend',
-        STATE_SENT_COMPLETE    => 'none'
-    };
-
-    private static final Map<String, String> STATE_ACTION_LABEL = new Map<String, String>{
-        STATE_SUBMITTED_DRAFT  => 'Open the readout',
-        STATE_PUBLISHED_UNSENT => 'Send to prospect',
-        STATE_STARTED          => 'Follow up',
-        STATE_OPENED           => 'Follow up',
-        STATE_NEVER_OPENED     => 'Resend',
-        STATE_SENT_COMPLETE    => '—'
-    };
-
-    /**
-     * Human-readable state labels (owner feedback on this ticket's first
-     * build: the raw enum strings -- "submitted_draft", "published_unsent",
-     * etc. -- were rendered directly in the queue row, so "the priority is
-     * hidden and unclear"). Each label names WHO is blocking / WHY the row
-     * is ranked where it is, not just a friendlier name for the same opaque
-     * code -- that's what makes D13's rank order legible instead of an
-     * invisible sort:
-     *   - submitted_draft / published_unsent (D13 ranks 1-2): the BD is the
-     *     blocker -- "Your turn -- ...".
-     *   - started_not_submitted / opened_not_started (ranks 3-4): the
-     *     prospect is mid-flow and a nudge is the right lever -- "Nudge-able
-     *     -- ...".
-     *   - never_opened (rank 5) / sent_complete (rank 6): no action is
-     *     blocked on anyone right now.
-     * Additive only -- STATE_* enum values above are unchanged (tests/
-     * ranking logic depend on them); this is purely a display label
-     * alongside `state`, computed here since classify() already owns the
-     * state logic (task-scope's own suggestion, confirmed the cleaner
-     * option -- one source of truth for state -> copy, same as
-     * STATE_ACTION_LABEL above).
-     */
-    private static final Map<String, String> STATE_LABEL = new Map<String, String>{
-        STATE_SUBMITTED_DRAFT  => 'Your turn — open the readout',
-        STATE_PUBLISHED_UNSENT => 'Your turn — send to prospect',
-        STATE_STARTED          => 'Nudge-able — they started, haven\'t finished',
-        STATE_OPENED           => 'Nudge-able — they opened, haven\'t started',
-        STATE_NEVER_OPENED     => 'Not yet opened',
-        STATE_SENT_COMPLETE    => 'Complete'
-    };
+    // D8 + D13's six states, their rank/action/label mappings, and the
+    // classify() function itself now live in GtmEngagementStateClassifier
+    // (issue #31, Architect decision #3) -- toSummary() below calls it
+    // directly. Kept out of this class entirely rather than re-declared
+    // here so there is exactly one copy of the state constants, not two
+    // that could drift.
 
     public class LinkEngagementSummary {
         /** GTM_Assessment_Request__c Id when one exists, else null -- what a
@@ -386,12 +337,14 @@ public with sharing class GtmContactEngagementController {
         s.notificationSent   = ro != null && ro.Notification_Sent_Date__c != null;
         s.readoutSent         = ro != null && ro.Status__c == 'Published';
 
-        String state = classify(s);
+        String state = GtmEngagementStateClassifier.classify(
+            s.assessmentSubmitted, s.readoutStatus, s.notificationSent, s.formOpened, s.lastPageView
+        );
         s.state              = state;
-        s.stateLabel          = STATE_LABEL.get(state);
-        s.rank                = STATE_RANK.get(state);
-        s.primaryAction       = STATE_ACTION.get(state);
-        s.primaryActionLabel  = STATE_ACTION_LABEL.get(state);
+        s.stateLabel          = GtmEngagementStateClassifier.STATE_LABEL.get(state);
+        s.rank                = GtmEngagementStateClassifier.STATE_RANK.get(state);
+        s.primaryAction       = GtmEngagementStateClassifier.STATE_ACTION.get(state);
+        s.primaryActionLabel  = GtmEngagementStateClassifier.STATE_ACTION_LABEL.get(state);
 
         DateTime last = cfg.CreatedDate;
         if (s.lastPageView != null && s.lastPageView > last) { last = s.lastPageView; }
@@ -402,39 +355,6 @@ public with sharing class GtmContactEngagementController {
         s.lastActivityAt = last;
 
         return s;
-    }
-
-    /**
-     * D8 + D13's six states, in priority order. Not blocked on #277's
-     * Status__c -- every signal here already exists (Submitted_At__c,
-     * GTM_Link_Event__c.Event_Type__c, GTM_Readout__c.Status__c /
-     * Notification_Sent_Date__c).
-     *
-     * Boundary case exercised in tests: a readout that exists but whose
-     * request has no Submitted_At__c (e.g. stale/synthetic data) is NOT
-     * treated as "submitted" just because a readout row exists -- it falls
-     * through to the engagement-signal branches like any other
-     * not-yet-submitted link, since a readout only really exists once a
-     * request is genuinely submitted (D7).
-     */
-    @TestVisible
-    private static String classify(LinkEngagementSummary s) {
-        if (s.assessmentSubmitted && s.readoutStatus != 'Published') {
-            return STATE_SUBMITTED_DRAFT;
-        }
-        if (s.readoutStatus == 'Published' && !s.notificationSent) {
-            return STATE_PUBLISHED_UNSENT;
-        }
-        if (s.readoutStatus == 'Published' && s.notificationSent) {
-            return STATE_SENT_COMPLETE;
-        }
-        if (!s.assessmentSubmitted && s.formOpened) {
-            return STATE_STARTED;
-        }
-        if (!s.assessmentSubmitted && s.lastPageView != null) {
-            return STATE_OPENED;
-        }
-        return STATE_NEVER_OPENED;
     }
 
     /** Rank ascending (1 = highest priority first); within a rank,

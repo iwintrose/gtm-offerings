@@ -2373,6 +2373,98 @@ private class GtmReadoutControllerTest {
         );
     }
 
+    // --------------------------------- engagement-state Task (issue #31) --
+    // Independent of publishedNotificationMode above -- these always fire
+    // against the prospect's own Contact/Account, not readoutId.
+
+    private static GTM_Assessment_Request__c seedRequestWithContact(Id contactId, Id accountId) {
+        GTM_Assessment_Request__c req = new GTM_Assessment_Request__c(
+            Requester_Name__c   = 'Alex Rivera',
+            Requester_Email__c  = 'alex.rivera@example.com',
+            Company__c          = 'Northwind Retail',
+            Contact__c          = contactId,
+            Account__c          = accountId,
+            Assessment_Score__c = SAMPLE_SCORE,
+            Assessment_Tier__c  = 'Prep Required',
+            Section_Scores__c   = '{"estate_scale":3,"source_access":2}'
+        );
+        insert req;
+        return req;
+    }
+
+    @isTest
+    static void publishReadoutFiresTheEngagementPublishedUnsentTaskAgainstTheContact() {
+        GtmNotificationSettingsController.NotificationSettingsDto dto =
+            new GtmNotificationSettingsController.NotificationSettingsDto();
+        dto.publishedNotificationMode = 'None';
+        GtmNotificationSettingsController.setNotificationSettings(dto);
+
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Assessment_Request__c req = seedRequestWithContact(con.Id, null);
+        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+        approve(readoutId);
+
+        Test.startTest();
+        GtmReadoutController.publishReadout(readoutId);
+        Test.stopTest();
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhatId = :con.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT],
+            'Publishing should fire the engagement published_unsent Task against the Contact ' +
+            'independent of publishedNotificationMode'
+        );
+    }
+
+    @isTest
+    static void publishReadoutWithNoContactFallsBackToTheAccountForTheEngagementTask() {
+        Account acc = new Account(Name = 'Fallback Readout Co');
+        insert acc;
+        GTM_Assessment_Request__c req = seedRequestWithContact(null, acc.Id);
+        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+        approve(readoutId);
+
+        Test.startTest();
+        GtmReadoutController.publishReadout(readoutId);
+        Test.stopTest();
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhatId = :acc.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT]
+        );
+    }
+
+    @isTest
+    static void publishingThenSuccessfullyNotifyingClosesThePublishedUnsentEngagementTaskAndFiresNothingNew() {
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Assessment_Request__c req = seedRequestWithContact(con.Id, null);
+        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+        approve(readoutId);
+
+        Test.startTest();
+        // publishReadout calls sendPublishNotification automatically at the
+        // end of the same transaction (see its own header) -- a well-formed
+        // Requester_Email__c succeeds in test context (Messaging.sendEmail
+        // never really dispatches under Test.startTest/stopTest), so
+        // Notification_Sent_Date__c gets stamped and sent_complete should
+        // sync in the same call.
+        GtmReadoutController.publishReadout(readoutId);
+        Test.stopTest();
+
+        GTM_Readout__c published = [SELECT Notification_Sent_Date__c FROM GTM_Readout__c WHERE Id = :readoutId];
+        Assert.isNotNull(published.Notification_Sent_Date__c,
+            'Sanity check: the notification must actually have sent in this test context');
+
+        List<Task> tasks = [SELECT Subject, Status FROM Task WHERE WhatId = :con.Id];
+        Assert.areEqual(1, tasks.size(), 'sent_complete must close published_unsent and fire nothing new');
+        Assert.areEqual(GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT, tasks[0].Subject);
+        Assert.areEqual('Completed', tasks[0].Status);
+    }
+
     @isTest
     static void returnToDraftFiresTaskAndBellWhenSettingIsOn() {
         GtmNotificationSettingsController.NotificationSettingsDto dto =
