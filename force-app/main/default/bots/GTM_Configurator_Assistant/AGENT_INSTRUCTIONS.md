@@ -1,5 +1,13 @@
 # GTM Configurator Assistant — Agent Instructions
 
+> **SUPERSEDED delivery target** — see `SUPERSEDED.md` in this directory.
+> gtm-staging no longer offers Einstein Copilot Studio as the creation path;
+> agents are built via Agent Script in Agentforce Builder instead. The
+> content below is still substantively valid and is being reused as the
+> basis for the Agent Script agent's instructions (see this issue's
+> click-list) — paste it into the Agent Script "Instructions" field instead
+> of "Einstein Copilot Studio → Agent Instructions".
+
 > Paste this into Einstein Copilot Studio → Agent Instructions when activating
 > the GTM_Configurator_Assistant agent. These instructions govern the agent's
 > behaviour inside the gtmConfigCustomize panel.

@@ -133,7 +133,7 @@ Non-200: `CalloutException('Gemini API returned <status>: <body>')`. The request
 Zero-DML holds: the adapter only builds HTTP requests; tools run only via
 `GtmAgentToolSurface.executeTool` (interface and surfaces unchanged).
 
-## 5. Agentforce fallback (stateless)
+## 5. Agentforce fallback (stateless) — until `runtime` issue ships
 
 `resolveEffectiveProvider(settings)` is used by `runLoop`, `getApiKey` and
 `getModel`. If the stored provider is `Agentforce`, the effective provider is
@@ -149,6 +149,97 @@ until it ships." Help text: the Agent API needs an External Client App with
 client-credentials OAuth, and does not support agents of type "Agentforce
 (Default)". Note: "The consumer secret is not stored here. It will be captured
 via a Named Credential in the later integration phase."
+
+This section (5) describes the CURRENT runtime behavior and is unchanged by
+`gus-live-agentforce-provider-auth`. `runLoop` still never calls Agentforce —
+that switch-over is `gus-live-agentforce-provider-runtime`'s job, gated on
+§5a below being fully filled in with live-verified facts, not assumptions.
+
+## 5a. Agentforce live activation (issue `gus-live-agentforce-provider-auth`)
+
+> STATUS: DRAFT SHELL. Filled in only where marked CONFIRMED below; every
+> other field is a PLACEHOLDER pending the coordinator's live Setup-UI
+> execution of this issue's click-list. Do not treat PLACEHOLDER values as
+> real, and do not let `runtime` start coding against them.
+
+### Activation path chosen
+
+CONFIRMED (coordinator, live gtm-staging Setup, 2026-09-24): the org has
+moved to Agent Script / Agentforce Builder as the only creation path for a
+first agent (Setup → Agentforce Studio → Agentforce Agents → "New Agent"
+goes directly into Agent Script; zero existing agents; legacy Bot Builder
+not offered as a path for a new agent). This supersedes the BA's three-way
+ambiguity in task-scope §1.1 (Agent API vs. Invocable Action API wrapper vs.
+embedded `<einstein-copilot-chat>`) at one level: the *creation* tooling is
+Agent Script, not legacy Bot Builder, so `GTM_Configurator_Assistant.bot-meta.xml`
+is superseded (see `force-app/main/default/bots/GTM_Configurator_Assistant/SUPERSEDED.md`).
+
+Still open, pending the live smoke test in the click-list below: whether an
+agent built via Agent Script, once created, is callable through the
+session-based **Agent API** (the chosen path per the task-scope's framing —
+server-side, via `GtmAgentProxyController`-style proxying, consistent with
+the "no LWC changes" non-goal) as long as its type is not "Agentforce
+(Default)". PLACEHOLDER until the live session-start smoke test (click-list
+step 9) returns a real response.
+
+### Agent identity
+
+| Field | Value |
+|---|---|
+| Agent display name | PLACEHOLDER — set per click-list step 3 |
+| Agent API name | PLACEHOLDER — reported by coordinator after creation |
+| Agent type (must not be "Agentforce (Default)") | PLACEHOLDER — coordinator to confirm from the agent's Setup detail page |
+| Topic(s)/Actions wired | PLACEHOLDER — GTM Configurator state read/write actions, reusing the `sessionToken`/`configId` variable shape from the superseded bot-meta |
+
+### External Client App / OAuth
+
+| Field | Value |
+|---|---|
+| External Client App name | PLACEHOLDER — set per click-list step 5 |
+| Consumer Key (client ID) | PLACEHOLDER — reported by coordinator, non-secret, safe to record here |
+| Consumer Secret | NEVER recorded here. Lives only in gtm-staging Setup (External Client App / External Credential Principal). |
+| OAuth flow | Client Credentials (confirmed required by task-scope §1.2) |
+| Scopes | `sfap_api` + "Manage user data via APIs (api)" — both required per task-scope §1.2; confirm exact scope string(s) as shown in the live wizard, which may differ in casing/label from this draft |
+| Callback/redirect URL | PLACEHOLDER — only needed if the wizard requires one for client-credentials flow; confirm live whether it's mandatory |
+
+### Named Credential / External Credential mapping
+
+Draft shells (secret-free, unverified element names — see in-file header
+comments):
+
+- `force-app/main/default/externalCredentials/GTM_Agentforce_Credential.externalCredential-meta.xml`
+- `force-app/main/default/namedCredentials/GTM_Agentforce_API.namedCredential-meta.xml`
+
+| `GTM_Agent_Settings__c` field | Maps to |
+|---|---|
+| `Agentforce_My_Domain_URL__c` | Named Credential `Url` parameter (currently a PLACEHOLDER in the shell; static per Named Credential, not read dynamically at callout time — see design note in that file) |
+| `Agentforce_Client_Id__c` | External Credential's non-secret consumer key parameter |
+| `Agentforce_Agent_Id__c` | Not part of the Named/External Credential; consumed directly by the runtime Apex call as the Agent API's agent identifier, confirmed sufficient — no new field needed (task-scope §1.3 open question resolved: existing three fields are sufficient) |
+
+No new `GTM_Agent_Settings__c` field is required. No FLS change needed
+beyond what's already granted (task-scope §1.3 confirms the existing grant
+in `GTM_Offering_Admin` only, lines 401/406/411, is correct/unchanged).
+
+### Confirmed request/response shape (Agent API)
+
+PLACEHOLDER — to be filled with the actual session-create / message-send /
+session-end request and response JSON observed live against gtm-staging
+(click-list step 9), not copied from Salesforce docs without verification
+(task-scope explicitly flags the Agent API surface "changed materially over
+2025").
+
+### Smoke-test evidence
+
+PLACEHOLDER — reference (not paste verbatim if it contains any token) to
+the live response/log captured in click-list step 9.
+
+### Secret-handling confirmation
+
+Grepped this issue's diff for secret-shaped strings before closing:
+PLACEHOLDER — re-run `git diff --stat` / a secret-pattern grep once the
+live consumer key (non-secret) and any other live values are filled in
+above, to confirm no consumer *secret* value was ever pasted into this file
+or any other committed file.
 
 ## 6. LWC contract: `gtmOfferingsSettingsAgent`
 
