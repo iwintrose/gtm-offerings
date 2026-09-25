@@ -136,6 +136,11 @@ describe('gtmAssessmentsTableModel', () => {
             expect(mapRow({ readoutStatus: 'Published' }).readoutClass).toContain('success');
             expect(mapRow({}).readoutLabel).toBe('None yet');
         });
+        it('passes through the server-computed accountBackfillHint flag', () => {
+            expect(mapRow({ accountBackfillHint: true }).accountBackfillHint).toBe(true);
+            expect(mapRow({ accountBackfillHint: false }).accountBackfillHint).toBe(false);
+            expect(mapRow({}).accountBackfillHint).toBe(false);
+        });
     });
 
     it('hasActiveFilters ignores empty values', () => {

@@ -227,7 +227,8 @@ export const COLUMNS = [
             disabled: { fieldName: 'companyDisabled' },
             title: { fieldName: 'companyTitle' },
             targetId: { fieldName: 'accountId' },
-            idField: 'accountId'
+            idField: 'accountId',
+            showBackfillHint: { fieldName: 'accountBackfillHint' }
         }
     },
     {
@@ -333,6 +334,10 @@ export function mapRow(r) {
         companyLabel: companyLabel || (row.accountId ? '' : '—'),
         companyDisabled: !row.accountId,
         companyTitle: row.accountId ? 'Open account' : 'No account on this assessment',
+        // Visibility-only nudge (issue-11): pass through the server-computed
+        // "has Company__c but no Account__c" flag so the gtmLinkCell can
+        // surface the backfill hint on this table too.
+        accountBackfillHint: !!row.accountBackfillHint,
         tierLabel: row.tier || '—',
         tierClass: tier ? tier.cls : 'slds-text-color_weak',
         tierIcon: tier ? tier.icon : '',

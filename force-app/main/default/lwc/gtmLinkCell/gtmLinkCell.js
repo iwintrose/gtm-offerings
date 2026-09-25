@@ -22,6 +22,12 @@
  *               from downstream (e.g. 'accountId' or 'contactId') -- lets one
  *               shared cell type serve both the Account and Contact columns
  *               without hardcoding either field name here
+ *   showBackfillHint - optional; true when this is a disabled/static cell
+ *               AND the row has a free-typed Company__c value with no real
+ *               Account__c lookup -- i.e. a "needs Account backfill" gap
+ *               (see docs/agent-artifacts/task-scope-11.md). Purely a visual
+ *               nudge (icon + tooltip); never renders when the cell is
+ *               interactive, and never mutates any data.
  */
 import { LightningElement, api } from 'lwc';
 
@@ -39,6 +45,14 @@ export default class GtmLinkCell extends LightningElement {
 
     get isInteractive() {
         return !(this.typeAttributes && this.typeAttributes.disabled);
+    }
+
+    get showBackfillHint() {
+        return !this.isInteractive && !!(this.typeAttributes && this.typeAttributes.showBackfillHint);
+    }
+
+    get backfillHintTitle() {
+        return 'This company has no linked Account yet -- ask an admin to backfill it.';
     }
 
     get cellClass() {

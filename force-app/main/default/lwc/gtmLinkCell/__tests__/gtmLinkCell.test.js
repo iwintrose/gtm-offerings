@@ -151,4 +151,47 @@ describe('gtmLinkCell', () => {
         expect(span.textContent).toBe('Typed Company Only');
         expect(span.title).toBe('No account on this link');
     });
+
+    it('showBackfillHint + disabled: renders the backfill nudge icon', async () => {
+        const el = mount({
+            label: 'Typed Company Only',
+            name: 'openAccount',
+            disabled: true,
+            title: 'No account on this link',
+            targetId: null,
+            idField: 'accountId',
+            showBackfillHint: true
+        });
+        await Promise.resolve();
+        const icon = el.shadowRoot.querySelector('lightning-icon');
+        expect(icon).not.toBeNull();
+        expect(icon.title).toBeTruthy();
+    });
+
+    it('showBackfillHint true but interactive (real Account lookup): icon never renders', async () => {
+        const el = mount({
+            label: 'Acme Corp',
+            name: 'openAccount',
+            disabled: false,
+            title: 'Open account',
+            targetId: '001000000000001AAA',
+            idField: 'accountId',
+            showBackfillHint: true
+        });
+        await Promise.resolve();
+        expect(el.shadowRoot.querySelector('lightning-icon')).toBeNull();
+    });
+
+    it('disabled but showBackfillHint not set: no icon renders (plain gap, not a backfill-eligible row)', async () => {
+        const el = mount({
+            label: 'Acme Co',
+            name: 'openAccount',
+            disabled: true,
+            title: 'No account on this link',
+            targetId: null,
+            idField: 'accountId'
+        });
+        await Promise.resolve();
+        expect(el.shadowRoot.querySelector('lightning-icon')).toBeNull();
+    });
 });
