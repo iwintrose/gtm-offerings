@@ -23,7 +23,7 @@ private class GtmContentDraftAgentSurfaceTest {
             Base_Section_Key__c = 'problem',
             Industry_Key__c     = 'healthcare',
             Label__c             = 'Problem (Healthcare)',
-            Layout_Type__c       = 'text-block',
+            Layout_Type__c       = 'hero',
             Width__c              = 'standard',
             Sort_Order__c         = 100,
             Active__c             = true,
@@ -124,7 +124,7 @@ private class GtmContentDraftAgentSurfaceTest {
         insert new GTM_Page_Section__c(
             Section_Address__c = OFFERING + '::' + TMPL + '::problem',
             Offering_Key__c = OFFERING, Template_Type__c = TMPL,
-            Section_Key__c = 'problem', Label__c = 'Problem', Layout_Type__c = 'text-block',
+            Section_Key__c = 'problem', Label__c = 'Problem', Layout_Type__c = 'hero',
             Width__c = 'standard', Sort_Order__c = 100, Active__c = true, Status__c = 'Published');
         GtmContentDraftAgentSurface surface =
             new GtmContentDraftAgentSurface(OFFERING, TMPL, 'problem');
