@@ -927,3 +927,19 @@ Published/Active join and its own fixture change, not done here.
   fix makes newly visible as a *pattern*. Worth a follow-up: surface these to reps
   (or an admin report) as a nudge to backfill the real Account lookup. Out of scope
   for the rendering fix itself.
+
+## Later: server-side guard against industry-variant creates on non-configurator templates
+
+- issue `industry-variant-ui-scoping-fix` hid the "Industry view" toggle and
+  "+ Industry variant" button on any template other than `configurator` (the
+  only template carrying `industry-profile` in `TEMPLATE_LAYOUTS`). This was a
+  pure UI-scoping fix -- `GtmPageSectionController.createSection`'s
+  `isVariant` branch and `GtmPageContentController.createSection`'s
+  pass-through still accept any `offeringKey`/`templateType` combination for a
+  variant create, with no allow-list check against `configurator`. Nothing in
+  the current UI can reach that path anymore, but a defensive server-side
+  guard (reject a variant create when `templateType` isn't industry-aware)
+  would be reasonable hardening against a future caller (a different LWC, an
+  API client, or Agentforce/GUS tool call) reintroducing the same gap from a
+  different angle. Small, separate PR; not folded into the UI fix per the
+  task scope's explicit non-goal.
