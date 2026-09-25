@@ -89,20 +89,45 @@ public with sharing class GtmAgentGetConfigState {
         // Collect unique industry keys from the framework's industry-chooser
         // taxonomy -- the one place industries live, whichever offering this
         // GUS session is configuring.
-        List<GTM_Page_Content__c> iRecs = [
+        //
+        // Only industries whose section is live count: Published and Active,
+        // exactly as GtmPageContentReader.getIndustryProfiles decides for the
+        // public chooser. An industry an admin has created but not yet
+        // published (Status__c = 'Draft') has content rows already, so reading
+        // GTM_Page_Content__c alone would let GUS offer a rep an industry the
+        // public site does not show yet. Draft_State__c is deliberately not
+        // read (a pending hide or delete changes nothing until Publish), and
+        // Status__c is compared positively so a null status is excluded too.
+        Set<String> liveKeys = new Set<String>();
+        for (GTM_Page_Section__c sec : [
             SELECT Section_Key__c
-            FROM   GTM_Page_Content__c
+            FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :GtmPageContentController.FRAMEWORK_KEY
             AND    Template_Type__c = :INDUSTRY_TEMPLATE
+            AND    Active__c        = true
+            AND    Status__c        = 'Published'
             AND    Section_Key__c LIKE 'industry-%'
-            AND    Active__c = true
             LIMIT  200
-        ];
+        ]) {
+            liveKeys.add(sec.Section_Key__c);
+        }
+
         Set<String> seen = new Set<String>();
-        for (GTM_Page_Content__c rec : iRecs) {
-            // 'industry-' is 9 characters; strip it to recover the key --
-            // same convention GtmPageContentReader.getIndustryProfiles uses.
-            seen.add(rec.Section_Key__c.substring(9));
+        if (!liveKeys.isEmpty()) {
+            for (GTM_Page_Content__c rec : [
+                SELECT Section_Key__c
+                FROM   GTM_Page_Content__c
+                WHERE  Offering_Key__c  = :GtmPageContentController.FRAMEWORK_KEY
+                AND    Template_Type__c = :INDUSTRY_TEMPLATE
+                AND    Section_Key__c LIKE 'industry-%'
+                AND    Section_Key__c IN :liveKeys
+                AND    Active__c = true
+                LIMIT  200
+            ]) {
+                // 'industry-' is 9 characters; strip it to recover the key --
+                // same convention GtmPageContentReader.getIndustryProfiles uses.
+                seen.add(rec.Section_Key__c.substring(9));
+            }
         }
         out.availableIndustries = new List<String>(seen);
         out.availableIndustries.sort();
