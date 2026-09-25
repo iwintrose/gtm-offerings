@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Agentforce function backing GTMDraftSectionVariant.genAiPlugin.
+  Backed by GtmAgentDraftSectionVariant.execute() (@InvocableMethod).
+  Propose-only: never writes GTM_Page_Content__c/GTM_Page_Section__c.
+  REQUIRES: Agentforce provisioned on the org.
+-->
+<GenAiFunction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Validates proposed field values for an industry variant section. Returns a proposal only.</description>
+    <invocationTarget>GtmAgentDraftSectionVariant</invocationTarget>
+    <invocationTargetType>apex</invocationTargetType>
+    <isConfirmationRequired>false</isConfirmationRequired>
+    <masterLabel>Draft GTM Section Variant Copy</masterLabel>
+</GenAiFunction>

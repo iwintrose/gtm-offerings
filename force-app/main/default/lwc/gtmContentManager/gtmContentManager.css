@@ -363,6 +363,19 @@
 .gcm-add:disabled { color: #969696; cursor: default; }
 .gcm-add-plus { font-size: 15px; line-height: 1; }
 
+.gcm-draft-ai-bar {
+    flex: none;
+    padding: 0.4rem 0.6rem 0;
+}
+.gcm-draft-ai-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid #0176d3; border-radius: var(--gtm-radius); background: #f3f8fd;
+    color: #0176d3; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.gcm-draft-ai-btn:hover:not(:disabled) { background: #e5f1fd; }
+.gcm-draft-ai-btn:disabled { color: #969696; border-color: #c9c9c9; background: var(--gtm-bg-surface); cursor: default; }
+
 .mv--danger { color: var(--gtm-danger); }
 .mv--danger:hover:not(:disabled) { background: #fdf2f2; }
 

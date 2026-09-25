@@ -17,6 +17,7 @@ import restoreSection from '@salesforce/apex/GtmPageSectionController.restoreSec
 import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
 import setSectionHiddenForIndustry from '@salesforce/apex/GtmPageSectionController.setSectionHiddenForIndustry';
 import saveIndustrySectionOrder from '@salesforce/apex/GtmPageSectionController.saveIndustrySectionOrder';
+import chatOnContentDraft from '@salesforce/apex/GtmAgentContentDraftController.chat';
 // One definition of what a layout is made of, shared with the renderer.
 import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS, FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
@@ -124,6 +125,18 @@ export default class GtmContentManager extends LightningElement {
     @track variantIndustryKey = '';
     @track variantError = '';
     @track variantIndustries = [];    // available industries, from getIndustryProfiles
+
+    // "Draft with AI" -- proposes copy for the ACTIVE variant section via
+    // GtmAgentContentDraftController.chat(). Never auto-publishes: proposed
+    // values are applied through the same writeValue() path a manual edit
+    // uses, landing as a Draft the editor still has to review and publish.
+    @track draftAiOpen = false;
+    @track draftAiPrompt = '';
+    @track draftAiBusy = false;
+    @track draftAiError = '';
+    @track draftAiReply = '';
+    draftHistoryJson = '';
+    draftHistoryKey = '';             // which activeKey draftHistoryJson belongs to
 
     // industry view -- a rail sub-navigation mode, distinct from reorderMode:
     // shows every base section's status (Generic/Customized/Hidden) for one
@@ -1179,6 +1192,79 @@ export default class GtmContentManager extends LightningElement {
                 this.loadError = this.messageFrom(err) || 'The industry variant could not be created.';
             })
             .finally(() => { this.isSaving = false; this.variantTarget = null; });
+    }
+
+    // ─── draft with AI ────────────────────────────────────────────────────────
+    // Available only on the active section when it IS an industry variant
+    // (activeIndustryKey non-blank). Calls the Content Drafting Assistant,
+    // then feeds any proposed field values through writeValue() -- the exact
+    // same method a manually-typed edit uses -- so a proposal lands as an
+    // editable Draft in the field editor and never bypasses Draft -> Publish.
+
+    get canOpenDraftWithAi() { return !!this.activeIndustryKey; }
+    get canDraftWithAiDisabled() { return this.draftAiBusy; }
+
+    handleOpenDraftWithAi() {
+        if (!this.canOpenDraftWithAi) return;
+        // A different section's history must never leak into this turn.
+        if (this.draftHistoryKey !== this.activeKey) {
+            this.draftHistoryJson = '';
+            this.draftHistoryKey = this.activeKey;
+        }
+        this.draftAiOpen = true;
+        this.draftAiPrompt = '';
+        this.draftAiError = '';
+        this.draftAiReply = '';
+    }
+
+    handleCloseDraftWithAi() { this.draftAiOpen = false; }
+
+    handleDraftAiPromptChange(event) {
+        this.draftAiPrompt = event.target.value;
+    }
+
+    handleDraftWithAi() {
+        if (this.canDraftWithAiDisabled || !this.activeKey) return;
+        const sectionKey = this.activeKey;
+        this.draftAiBusy = true;
+        this.draftAiError = '';
+        const userMessage = this.draftAiPrompt && this.draftAiPrompt.trim()
+            ? this.draftAiPrompt.trim()
+            : 'Draft this section for its industry using the research brief.';
+
+        chatOnContentDraft({
+            offeringKey: this.selectedOffering,
+            templateType: this.selectedTemplate,
+            sectionKey,
+            userMessage,
+            historyJson: this.draftHistoryJson || ''
+        })
+            .then((resultJson) => {
+                const result = JSON.parse(resultJson);
+                this.draftHistoryJson = result.historyJson || '';
+                this.draftHistoryKey = sectionKey;
+                this.draftAiReply = result.text || '';
+
+                const proposed = (result.changes && result.changes.proposedFields) || {};
+                const keys = Object.keys(proposed);
+                keys.forEach((fieldKey) => {
+                    const rec = this.records.find(
+                        (r) => r.sectionKey === sectionKey && r.fieldKey === fieldKey);
+                    // writeValue() -- unchanged, same path a manual keystroke uses:
+                    // sets draftValue/isDraft/status and schedules saveDrafts().
+                    // Never publishPage(). This is the whole regression guard.
+                    if (rec) this.writeValue(rec.id, proposed[fieldKey]);
+                });
+
+                if (keys.length) {
+                    this.draftAiOpen = false;
+                    this.saveMessage = 'AI draft added — review in the field editor before publishing';
+                }
+            })
+            .catch((err) => {
+                this.draftAiError = this.messageFrom(err) || 'GUS could not draft this section.';
+            })
+            .finally(() => { this.draftAiBusy = false; });
     }
 
     handleOpenAdd() {

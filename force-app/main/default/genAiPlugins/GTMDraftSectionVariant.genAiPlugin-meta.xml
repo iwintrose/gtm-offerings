@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Agentforce action: propose drafted copy for an industry variant section.
+  Backed by GtmAgentDraftSectionVariant.execute() (@InvocableMethod).
+  Propose-only: never writes content; the editor reviews and publishes
+  through the existing Draft -> Publish lifecycle.
+  REQUIRES: Agentforce provisioned on the org.
+-->
+<GenAiPlugin xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Proposes new copy for one or more fields of the industry variant section the editor has open. Never saves: the result goes into the editor's field editor as an editable draft.</description>
+    <developerName>GTMDraftSectionVariant</developerName>
+    <language>en_US</language>
+    <masterLabel>Draft GTM Section Variant Copy</masterLabel>
+    <pluginType>Topic</pluginType>
+    <genAiFunctions>
+        <functionName>GtmAgentDraftSectionVariant</functionName>
+    </genAiFunctions>
+    <genAiPluginInstructions>
+        <description>
+            Call this action to propose new copy for the section's fields. Only propose values for
+            fieldKeys returned by GTMGetSectionContent, never invented field names. After a
+            successful call, tell the editor plainly that nothing is saved yet and they must review
+            the proposal in the field editor before publishing.
+        </description>
+        <developerName>GTMDraftSectionVariantInstructions</developerName>
+        <language>en_US</language>
+        <masterLabel>Draft GTM Section Variant Copy Instructions</masterLabel>
+    </genAiPluginInstructions>
+</GenAiPlugin>

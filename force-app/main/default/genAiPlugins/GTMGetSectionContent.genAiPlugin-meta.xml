@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Agentforce action: read an industry variant section's current field values
+  and the matching industry research brief.
+  Backed by GtmAgentGetSectionContent.execute() (@InvocableMethod).
+  REQUIRES: Agentforce provisioned on the org.
+-->
+<GenAiPlugin xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Reads the current field values of an industry variant section and the matching industry research brief (problem, use case, solution, proof points). Call this first before proposing any drafted copy.</description>
+    <developerName>GTMGetSectionContent</developerName>
+    <language>en_US</language>
+    <masterLabel>Get GTM Section Content</masterLabel>
+    <pluginType>Topic</pluginType>
+    <genAiFunctions>
+        <functionName>GtmAgentGetSectionContent</functionName>
+    </genAiFunctions>
+    <genAiPluginInstructions>
+        <description>
+            Call this action to read the current field values of the industry variant section the
+            editor has open, plus that industry's research brief. Use the returned brief
+            (problem/useCase/solution/proofLine) to ground any drafted copy, never invent a client
+            fact the brief does not support.
+        </description>
+        <developerName>GTMGetSectionContentInstructions</developerName>
+        <language>en_US</language>
+        <masterLabel>Get GTM Section Content Instructions</masterLabel>
+    </genAiPluginInstructions>
+</GenAiPlugin>

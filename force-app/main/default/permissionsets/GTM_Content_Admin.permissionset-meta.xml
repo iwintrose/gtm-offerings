@@ -7,6 +7,10 @@
         <visible>true</visible>
     </applicationVisibilities>
     <classAccesses>
+        <apexClass>GtmAgentContentDraftController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>GtmFeedbackController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
