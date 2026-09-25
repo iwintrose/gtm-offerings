@@ -212,19 +212,25 @@ public without sharing class GtmAgentProxyController {
         String provider = getProvider();
         String apiKey    = getApiKey(provider);
         if (String.isBlank(apiKey)) {
+            String noKeyMessage;
             if (PROVIDER_GEMINI.equals(provider)) {
-                throw new AuraHandledException(
-                    'Gemini API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Google Gemini API key into the Gemini API Key field.'
-                );
+                noKeyMessage = 'Gemini API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Google Gemini API key into the Gemini API Key field.';
+            } else if (PROVIDER_OPENAI.equals(provider)) {
+                noKeyMessage = 'OpenAI API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your OpenAI API key into the OpenAI API Key field.';
+            } else {
+                noKeyMessage = 'Claude API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Anthropic API key into the Claude API Key field.';
             }
-            if (PROVIDER_OPENAI.equals(provider)) {
-                throw new AuraHandledException(
-                    'OpenAI API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your OpenAI API key into the OpenAI API Key field.'
-                );
-            }
-            throw new AuraHandledException(
-                'Claude API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Anthropic API key into the Claude API Key field.'
-            );
+            // AuraHandledException.getMessage() returns the generic
+            // "Script-thrown exception" text unless setMessage() is called
+            // explicitly, even though the constructor already took the real
+            // message -- a documented Apex quirk. Every caller of runLoop()
+            // (chat(), chatOnReadout(), GtmAgentContentDraftController.chat())
+            // needs the real, matching configuration message to actually
+            // reach both Apex callers/tests and the LWC client, so it must be
+            // set here rather than relying on the constructor alone.
+            AuraHandledException noKeyEx = new AuraHandledException(noKeyMessage);
+            noKeyEx.setMessage(noKeyMessage);
+            throw noKeyEx;
         }
 
         List<Object> history = parseHistory(historyJson);
