@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Hidden_For_Industry__c</fullName>
+    <externalId>false</externalId>
+    <inlineHelpText>Optional. Comma-separated list of industry slugs this BASE section is excluded for entirely -- not a variant substitution, the section does not render at all for that industry. Blank on variant rows themselves (Base_Section_Key__c set); only meaningful on a base section.</inlineHelpText>
+    <label>Hidden For Industry</label>
+    <length>2000</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>2</visibleLines>
+</CustomField>

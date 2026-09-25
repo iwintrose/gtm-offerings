@@ -1180,6 +1180,18 @@
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
+    <!-- Same strict-superset rule (issue-industry-variants-visibility-nav):
+         these two new GTM_Page_Section__c fields get the same elevation. -->
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Hidden_For_Industry__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Industry_Sort_Overrides__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
     <tabSettings>
         <tab>GTM_Saved_Configuration__c</tab>
         <visibility>Visible</visibility>

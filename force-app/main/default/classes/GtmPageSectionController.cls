@@ -25,7 +25,8 @@ public with sharing class GtmPageSectionController {
         for (GTM_Page_Section__c sec : [
             SELECT Id, Section_Key__c, Label__c, Help_Text__c, Layout_Type__c,
                    Width__c, Sort_Order__c, Active__c, Status__c, Draft_State__c,
-                   Industry_Key__c, Base_Section_Key__c
+                   Industry_Key__c, Base_Section_Key__c,
+                   Hidden_For_Industry__c, Industry_Sort_Overrides__c
             FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -48,6 +49,12 @@ public with sharing class GtmPageSectionController {
             e.isHidden   = d.containsKey('active');
             e.isDeleted  = d.get('deleted') == true;
             e.isDraft    = e.isNew || !d.isEmpty();
+            // Raw, un-parsed on the wire -- the rail's Industry view parses
+            // these itself per selected industry (see
+            // #industry-variants-visibility-nav); every other consumer of
+            // EditorSection ignores both fields.
+            e.hiddenForIndustry      = sec.Hidden_For_Industry__c;
+            e.industrySortOverrides  = sec.Industry_Sort_Overrides__c;
             out.add(e);
         }
         // Ordered on the effective sort, which is the pending order where one
@@ -104,6 +111,64 @@ public with sharing class GtmPageSectionController {
     }
 
     /**
+     * Persists a section order scoped to one industry only: writes
+     * Industry_Sort_Overrides__c[industryKey] for each id, in the order the
+     * rail's Industry view shows them. Never touches Sort_Order__c -- the
+     * generic/default order -- so reordering here changes nothing about any
+     * other industry or the generic page. Not a draft: unlike
+     * saveSectionOrder, an industry override applies immediately, the same
+     * way this issue's hide toggle (setSectionHiddenForIndustry) does.
+     */
+    @AuraEnabled
+    public static List<String> saveIndustrySectionOrder(List<String> sectionIds, String industryKey) {
+        if (sectionIds == null || sectionIds.isEmpty() || String.isBlank(industryKey)) {
+            return new List<String>();
+        }
+        String slug = GtmContentAddress.normaliseKey(industryKey);
+        if (String.isBlank(slug)) {
+            throw new AuraHandledException('That industry key is not usable.');
+        }
+        Set<Id> ids = new Set<Id>();
+        for (String raw : sectionIds) { if (String.isNotBlank(raw)) ids.add((Id) raw); }
+        Map<Id, GTM_Page_Section__c> byId = new Map<Id, GTM_Page_Section__c>([
+            SELECT Id, Industry_Sort_Overrides__c FROM GTM_Page_Section__c WHERE Id IN :ids
+        ]);
+
+        List<GTM_Page_Section__c> updates = new List<GTM_Page_Section__c>();
+        List<String> updatedIds = new List<String>();
+        Integer position = 0;
+        for (String raw : sectionIds) {
+            position += 10;
+            GTM_Page_Section__c sec = byId.get((Id) raw);
+            if (sec == null) continue;
+            Map<String, Object> overrides = parseSortOverrides(sec.Industry_Sort_Overrides__c);
+            overrides.put(slug, position);
+            sec.Industry_Sort_Overrides__c = JSON.serialize(overrides);
+            updates.add(sec);
+            updatedIds.add(raw);
+        }
+        try {
+            update updates;
+        } catch (DmlException e) {
+            throw new AuraHandledException('Could not save the industry order: ' + e.getMessage());
+        }
+        return updatedIds;
+    }
+
+    /** Industry_Sort_Overrides__c parsed to a map, or empty when unset/unreadable. */
+    private static Map<String, Object> parseSortOverrides(String raw) {
+        if (String.isBlank(raw)) return new Map<String, Object>();
+        try {
+            Object parsed = JSON.deserializeUntyped(raw);
+            return (parsed instanceof Map<String, Object>)
+                ? (Map<String, Object>) parsed
+                : new Map<String, Object>();
+        } catch (Exception e) {
+            return new Map<String, Object>();
+        }
+    }
+
+    /**
      * Toggles a section on or off without deleting it or its content rows.
      */
     @AuraEnabled
@@ -127,6 +192,51 @@ public with sharing class GtmPageSectionController {
         // True when this leaves the section unpublished, so the editor can
         // offer Publish rather than silently holding the change.
         return String.isNotBlank(sec.Draft_State__c);
+    }
+
+    /**
+     * Toggles a base section's membership in Hidden_For_Industry__c for one
+     * industry -- excludes it from that industry's resolved layout entirely
+     * (GtmPageContentReader.resolveForIndustry), distinct from setSectionActive
+     * which hides a section for every industry and the generic page alike.
+     * Only meaningful on a base section (Base_Section_Key__c null); a variant
+     * row has nothing to hide itself from.
+     */
+    @AuraEnabled
+    public static Boolean setSectionHiddenForIndustry(String sectionId, String industryKey, Boolean hidden) {
+        if (String.isBlank(sectionId) || String.isBlank(industryKey) || hidden == null) {
+            throw new AuraHandledException('A section id, an industry and a hidden flag are all required.');
+        }
+        List<GTM_Page_Section__c> found = [
+            SELECT Id, Hidden_For_Industry__c FROM GTM_Page_Section__c WHERE Id = :sectionId LIMIT 1
+        ];
+        if (found.isEmpty()) {
+            throw new AuraHandledException('That section no longer exists.');
+        }
+        GTM_Page_Section__c sec = found[0];
+        String slug = GtmContentAddress.normaliseKey(industryKey);
+        if (String.isBlank(slug)) {
+            throw new AuraHandledException('That industry key is not usable.');
+        }
+
+        Set<String> slugs = new Set<String>();
+        if (String.isNotBlank(sec.Hidden_For_Industry__c)) {
+            for (String s : sec.Hidden_For_Industry__c.split(',')) {
+                if (String.isNotBlank(s.trim())) slugs.add(s.trim());
+            }
+        }
+        if (hidden) {
+            slugs.add(slug);
+        } else {
+            slugs.remove(slug);
+        }
+        sec.Hidden_For_Industry__c = slugs.isEmpty() ? null : String.join(new List<String>(slugs), ',');
+        try {
+            update sec;
+        } catch (DmlException e) {
+            throw new AuraHandledException('Could not update the section: ' + e.getMessage());
+        }
+        return hidden;
     }
 
     /**
@@ -478,6 +588,13 @@ public with sharing class GtmPageSectionController {
         // baseSectionKey params below.
         @AuraEnabled public String  industryKey    { get; set; }
         @AuraEnabled public String  baseSectionKey { get; set; }
+        // Raw values for the rail's Industry view -- see
+        // #industry-variants-visibility-nav. hiddenForIndustry is a
+        // comma-separated slug list; industrySortOverrides is the JSON map
+        // Industry_Sort_Overrides__c holds. Only meaningful on a base
+        // section (baseSectionKey null).
+        @AuraEnabled public String  hiddenForIndustry     { get; set; }
+        @AuraEnabled public String  industrySortOverrides { get; set; }
     }
 
     /** Orders sections by their effective sort, blanks last, key as tiebreak. */

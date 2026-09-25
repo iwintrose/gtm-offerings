@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Industry_Sort_Overrides__c</fullName>
+    <externalId>false</externalId>
+    <inlineHelpText>Optional. JSON map of industry slug to a sort-order number that applies only when rendering that one industry, e.g. {&quot;healthcare&quot;: 25}. Does not touch Sort_Order__c (the generic/default order); only meaningful on a base section.</inlineHelpText>
+    <label>Industry Sort Overrides</label>
+    <length>4000</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

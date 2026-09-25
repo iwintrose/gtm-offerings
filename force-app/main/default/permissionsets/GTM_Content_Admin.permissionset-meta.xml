@@ -305,6 +305,16 @@
         <editable>true</editable>
     </fieldPermissions>
     <fieldPermissions>
+        <field>GTM_Page_Section__c.Hidden_For_Industry__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Industry_Sort_Overrides__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
         <field>GTM_Page_Section__c.Label__c</field>
         <readable>true</readable>
         <editable>true</editable>

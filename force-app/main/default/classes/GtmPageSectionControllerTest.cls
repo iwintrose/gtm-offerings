@@ -608,4 +608,102 @@ private class GtmPageSectionControllerTest {
             'Discarding a variant section reverts its pending change like any other section');
         System.assert(String.isBlank(afterDiscard.Draft_State__c), 'and clears the draft marker');
     }
+
+    // ─── setSectionHiddenForIndustry / saveIndustrySectionOrder
+    //     (issue #industry-variants-visibility-nav) ─────────────────────────
+
+    @IsTest
+    static void setSectionHiddenForIndustry_addsTheIndustrySlug() {
+        GTM_Page_Section__c sec = pageSection('faq', 10, true);
+        insert sec;
+
+        Test.startTest();
+        Boolean result = GtmPageSectionController.setSectionHiddenForIndustry(sec.Id, 'Healthcare', true);
+        Test.stopTest();
+
+        System.assertEquals(true, result);
+        GTM_Page_Section__c after = [SELECT Hidden_For_Industry__c FROM GTM_Page_Section__c WHERE Id = :sec.Id];
+        System.assert(after.Hidden_For_Industry__c.contains('healthcare'),
+            'The industry key is normalised and stored');
+    }
+
+    @IsTest
+    static void setSectionHiddenForIndustry_unhideRemovesOnlyThatSlug() {
+        GTM_Page_Section__c sec = pageSection('faq', 10, true);
+        sec.Hidden_For_Industry__c = 'healthcare,retail';
+        insert sec;
+
+        Test.startTest();
+        GtmPageSectionController.setSectionHiddenForIndustry(sec.Id, 'healthcare', false);
+        Test.stopTest();
+
+        GTM_Page_Section__c after = [SELECT Hidden_For_Industry__c FROM GTM_Page_Section__c WHERE Id = :sec.Id];
+        System.assert(!after.Hidden_For_Industry__c.contains('healthcare'),
+            'Un-hiding removes only the toggled industry');
+        System.assert(after.Hidden_For_Industry__c.contains('retail'),
+            'A different industry\'s hide is left untouched');
+    }
+
+    @IsTest
+    static void setSectionHiddenForIndustry_rejectsMissingArgs() {
+        GTM_Page_Section__c sec = pageSection('faq', 10, true);
+        insert sec;
+
+        Boolean threw = false;
+        try {
+            GtmPageSectionController.setSectionHiddenForIndustry(sec.Id, '', true);
+        } catch (AuraHandledException e) {
+            threw = true;
+        }
+        System.assert(threw, 'A blank industry key must be rejected');
+    }
+
+    @IsTest
+    static void saveIndustrySectionOrder_writesOverrideWithoutTouchingSortOrderOrOtherIndustries() {
+        List<GTM_Page_Section__c> secs = new List<GTM_Page_Section__c>{
+            pageSection('hero', 10, true),
+            pageSection('faq', 20, true)
+        };
+        insert secs;
+        // Pre-existing override for a different industry, to prove it survives.
+        secs[0].Industry_Sort_Overrides__c = '{"retail": 99}';
+        update secs[0];
+
+        Test.startTest();
+        // Healthcare wants faq before hero.
+        List<String> updated = GtmPageSectionController.saveIndustrySectionOrder(
+            new List<String>{ secs[1].Id, secs[0].Id }, 'healthcare');
+        Test.stopTest();
+
+        System.assertEquals(2, updated.size());
+        Map<Id, GTM_Page_Section__c> after = new Map<Id, GTM_Page_Section__c>(
+            [SELECT Id, Sort_Order__c, Industry_Sort_Overrides__c FROM GTM_Page_Section__c]);
+
+        System.assertEquals(10, after.get(secs[0].Id).Sort_Order__c,
+            'The generic Sort_Order__c must never be touched by an industry reorder');
+        System.assertEquals(20, after.get(secs[1].Id).Sort_Order__c);
+
+        Map<String, Object> heroOverrides =
+            (Map<String, Object>) JSON.deserializeUntyped(after.get(secs[0].Id).Industry_Sort_Overrides__c);
+        System.assertEquals(99, (Integer) heroOverrides.get('retail'),
+            'An existing override for a different industry is preserved');
+        System.assert(heroOverrides.containsKey('healthcare'), 'The new industry override was added');
+
+        Map<String, Object> faqOverrides =
+            (Map<String, Object>) JSON.deserializeUntyped(after.get(secs[1].Id).Industry_Sort_Overrides__c);
+        System.assert(((Integer) faqOverrides.get('healthcare')) < ((Integer) heroOverrides.get('healthcare')),
+            'faq was placed ahead of hero in the healthcare order');
+    }
+
+    @IsTest
+    static void saveIndustrySectionOrder_ignoresEmptyInput() {
+        Test.startTest();
+        List<String> a = GtmPageSectionController.saveIndustrySectionOrder(null, 'healthcare');
+        List<String> b = GtmPageSectionController.saveIndustrySectionOrder(new List<String>(), 'healthcare');
+        List<String> c = GtmPageSectionController.saveIndustrySectionOrder(new List<String>{ '001' }, '');
+        Test.stopTest();
+        System.assertEquals(0, a.size());
+        System.assertEquals(0, b.size());
+        System.assertEquals(0, c.size());
+    }
 }

@@ -15,6 +15,8 @@ import createIndustry from '@salesforce/apex/GtmPageContentController.createIndu
 import deleteSection from '@salesforce/apex/GtmPageSectionController.deleteSection';
 import restoreSection from '@salesforce/apex/GtmPageSectionController.restoreSection';
 import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
+import setSectionHiddenForIndustry from '@salesforce/apex/GtmPageSectionController.setSectionHiddenForIndustry';
+import saveIndustrySectionOrder from '@salesforce/apex/GtmPageSectionController.saveIndustrySectionOrder';
 // One definition of what a layout is made of, shared with the renderer.
 import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS, FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
@@ -122,6 +124,18 @@ export default class GtmContentManager extends LightningElement {
     @track variantIndustryKey = '';
     @track variantError = '';
     @track variantIndustries = [];    // available industries, from getIndustryProfiles
+
+    // industry view -- a rail sub-navigation mode, distinct from reorderMode:
+    // shows every base section's status (Generic/Customized/Hidden) for one
+    // selected industry, and scopes drag reordering to
+    // Industry_Sort_Overrides__c for that industry only. See
+    // #industry-variants-visibility-nav.
+    @track industryView = false;
+    @track industryFilterKey = '';
+    @track industryViewOptions = [];
+    @track industryViewError = '';
+    _industryViewLoaded = false;
+    _industryDragKey = '';
 
     // column splitter
     @track fieldsWidth = 0;
@@ -478,7 +492,10 @@ export default class GtmContentManager extends LightningElement {
     }
 
 
-    handleToggleReorder() { this.reorderMode = !this.reorderMode; }
+    handleToggleReorder() {
+        this.reorderMode = !this.reorderMode;
+        if (this.reorderMode) { this.industryView = false; this.industryFilterKey = ''; }
+    }
 
     get reorderLabel() { return this.reorderMode ? 'Done' : 'Rearrange'; }
     get reorderVariant() { return this.reorderMode ? 'brand' : 'neutral'; }
@@ -557,6 +574,170 @@ export default class GtmContentManager extends LightningElement {
                 this.saveMessage = next ? 'Section shown' : 'Section hidden';
             })
             .catch((err) => { this.loadError = this.messageFrom(err) || 'The section could not be updated.'; })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    // ─── industry view ─────────────────────────────────────────────────────────
+    // A second rail mode, mutually exclusive with reorderMode: instead of the
+    // ordinary flat sequence, shows every base section's status for one
+    // selected industry and lets an editor hide/un-hide and drag-reorder
+    // scoped to that industry only.
+
+    get industryViewLabel() { return this.industryView ? 'Exit industry view' : 'Industry view'; }
+    get industryViewVariant() { return this.industryView ? 'brand' : 'neutral'; }
+
+    handleToggleIndustryView() {
+        this.industryView = !this.industryView;
+        if (this.industryView) {
+            this.reorderMode = false;
+            if (!this._industryViewLoaded) this.loadIndustryViewOptions();
+        } else {
+            this.industryFilterKey = '';
+        }
+    }
+
+    loadIndustryViewOptions() {
+        this.industryViewError = '';
+        getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: 'industry-chooser' })
+            .then((rows) => {
+                this.industryViewOptions = (rows || []).map((ind) => ({
+                    label: ind.industryLabel || ind.industryKey,
+                    value: ind.industryKey
+                }));
+                this._industryViewLoaded = true;
+            })
+            .catch((err) => {
+                this.industryViewError = this.messageFrom(err) || 'Industries could not be loaded.';
+            });
+    }
+
+    handleIndustryFilterChange(event) {
+        this.industryFilterKey = event.detail.value;
+    }
+
+    get hasIndustryFilter() { return !!this.industryFilterKey; }
+
+    /** Hidden_For_Industry__c, comma-separated, as a Set of slugs. */
+    hiddenSlugs(raw) {
+        return new Set(String(raw || '').split(',').map((s) => s.trim()).filter((s) => !!s));
+    }
+
+    /** Industry_Sort_Overrides__c JSON, defensively parsed to a plain object. */
+    sortOverrides(raw) {
+        if (!raw) return {};
+        try {
+            const parsed = JSON.parse(raw);
+            return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    /**
+     * Every base section, decorated with its status for the selected
+     * industry (Generic / Customized / Hidden) and ordered on that
+     * industry's effective sort -- the same resolution
+     * GtmPageContentReader.resolveForIndustry applies server-side, computed
+     * here so the rail can show it live without a round trip.
+     */
+    get industryRailSections() {
+        if (!this.industryFilterKey) return [];
+        const key = this.industryFilterKey;
+        const bases = this.contentSections.filter((s) => !this.isVariantRow(s));
+        const variantByBase = new Map(
+            this.contentSections
+                .filter((v) => this.isVariantRow(v) && v.industryKey === key)
+                .map((v) => [v.baseSectionKey, v])
+        );
+        const rows = bases.map((s) => {
+            const hidden = this.hiddenSlugs(s.hiddenForIndustry).has(key);
+            const variant = variantByBase.get(s.sectionKey);
+            const overrides = this.sortOverrides(s.industrySortOverrides);
+            const hasOverride = Object.prototype.hasOwnProperty.call(overrides, key);
+            const industrySortOrder = hasOverride ? Number(overrides[key]) : (s.sortOrder || 0);
+            let status = 'Generic';
+            if (hidden) status = 'Hidden';
+            else if (variant) status = 'Customized';
+            return {
+                ...s,
+                icon: SECTION_ICONS[s.layoutType] || 'utility:record',
+                layoutLabel: LAYOUT_LABELS[s.layoutType] || s.layoutType,
+                statusLabel: status,
+                statusClass: `sec-industry-status sec-industry-status--${status.toLowerCase()}`,
+                isHiddenForIndustry: hidden,
+                variantSectionKey: variant ? variant.sectionKey : '',
+                hasVariant: !!variant,
+                industrySortOrder,
+                toggleLabel: hidden ? 'Show for this industry' : 'Hide for this industry'
+            };
+        });
+        rows.sort((a, b) => a.industrySortOrder - b.industrySortOrder
+            || a.sectionKey.localeCompare(b.sectionKey));
+        return rows.map((s, i) => ({
+            ...s,
+            isFirst: i === 0,
+            isLast: i === rows.length - 1,
+            itemClass: 'sec sec--industry'
+                + (s.sectionKey === this.activeKey ? ' sec--active' : '')
+                + (s.isHiddenForIndustry ? ' sec--off' : '')
+        }));
+    }
+
+    get hasIndustryRailSections() { return this.industryRailSections.length > 0; }
+
+    /** Toggles a base section hidden/shown for the selected industry only. */
+    handleIndustryToggleHidden(event) {
+        const key = event.currentTarget.dataset.key;
+        const section = this.sections.find((s) => s.sectionKey === key);
+        if (!section || !this.industryFilterKey) return;
+        const nextHidden = !this.hiddenSlugs(section.hiddenForIndustry).has(this.industryFilterKey);
+        this.isSaving = true;
+        setSectionHiddenForIndustry({
+            sectionId: section.id,
+            industryKey: this.industryFilterKey,
+            hidden: nextHidden
+        })
+            .then(() => {
+                this.saveMessage = nextHidden ? 'Hidden for this industry' : 'Shown for this industry';
+                return this.loadPage();
+            })
+            .catch((err) => { this.loadError = this.messageFrom(err) || 'The section could not be updated.'; })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    /** Opens the section's live variant for this industry, if one exists. */
+    handleIndustryOpenVariant(event) {
+        const key = event.currentTarget.dataset.key;
+        if (!key) return;
+        this.activeKey = key;
+        this.scrollRailTo(key);
+    }
+
+    handleIndustryDragStart(event) { this._industryDragKey = event.currentTarget.dataset.key; }
+    handleIndustryDragOver(event) { event.preventDefault(); }
+
+    handleIndustryDrop(event) {
+        event.preventDefault();
+        const target = event.currentTarget.dataset.key;
+        if (!this._industryDragKey || this._industryDragKey === target || !this.industryFilterKey) {
+            this._industryDragKey = '';
+            return;
+        }
+        const rows = this.industryRailSections;
+        const from = rows.findIndex((s) => s.sectionKey === this._industryDragKey);
+        const to = rows.findIndex((s) => s.sectionKey === target);
+        this._industryDragKey = '';
+        if (from < 0 || to < 0) return;
+        const next = [...rows];
+        next.splice(to, 0, next.splice(from, 1)[0]);
+        this.isSaving = true;
+        this.saveMessage = 'Saving industry order…';
+        saveIndustrySectionOrder({
+            sectionIds: next.map((s) => s.id),
+            industryKey: this.industryFilterKey
+        })
+            .then(() => { this.saveMessage = 'Industry order saved'; return this.loadPage(); })
+            .catch((err) => { this.loadError = this.messageFrom(err) || 'The industry order could not be saved.'; })
             .finally(() => { this.isSaving = false; });
     }
 
@@ -1294,8 +1475,9 @@ export default class GtmContentManager extends LightningElement {
 
     get hasSections() { return !this.isLoading && (this.contentSections.length > 0 || this.settingsOpen); }
     // The Rearrange affordance only makes sense over the ordinary rail --
-    // the settings panel is one fixed section, not a reorderable list.
-    get canReorder() { return this.hasSections && !this.settingsOpen; }
+    // the settings panel is one fixed section, not a reorderable list, and
+    // industry view has its own scoped drag reordering instead.
+    get canReorder() { return this.hasSections && !this.settingsOpen && !this.industryView; }
     get showPagePicker() { return this.hasOffering && !this.hasTemplate && !this.isLoading; }
     get showEditor() { return this.hasOffering && this.hasTemplate && !this.isLoading; }
     get noSections() { return this.showEditor && this.contentSections.length === 0 && !this.settingsOpen; }

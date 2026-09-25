@@ -108,14 +108,13 @@ public without sharing class GtmPageContentReader {
 
         // Whole-section variant substitution: a base section whose base key
         // has a live variant for this industry shows the variant's label/
-        // layout/width, but keeps its own sectionKey and Sort_Order__c --
-        // ordering and visibility per industry are out of scope for this
-        // issue (see #industry-variants-visibility-nav).
+        // layout/width, but keeps its own sectionKey.
         Map<String, GTM_Page_Section__c> variantsByBase =
             variantSectionsByBase(offeringKey, templateType, industryKey);
 
-        for (GTM_Page_Section__c sec : [
-            SELECT Section_Key__c, Label__c, Help_Text__c, Layout_Type__c, Width__c, Sort_Order__c
+        List<GTM_Page_Section__c> baseSections = [
+            SELECT Section_Key__c, Label__c, Help_Text__c, Layout_Type__c, Width__c, Sort_Order__c,
+                   Hidden_For_Industry__c, Industry_Sort_Overrides__c
             FROM   GTM_Page_Section__c
             WHERE  Offering_Key__c  = :offeringKey
             AND    Template_Type__c = :templateType
@@ -132,7 +131,29 @@ public without sharing class GtmPageContentReader {
             AND    Base_Section_Key__c = null
             ORDER BY Sort_Order__c ASC NULLS LAST, Section_Key__c ASC
             LIMIT 200
-        ]) {
+        ];
+
+        layout.sections = resolveForIndustry(baseSections, variantsByBase, industryKey);
+        return layout;
+    }
+
+    /**
+     * The single resolution point for everything industry-aware about a
+     * page's section sequence: skip a section hidden for this industry,
+     * substitute a live whole-section variant where one exists, apply this
+     * industry's sort override, then re-sort. Every caller that needs an
+     * industry-resolved section list goes through here rather than
+     * duplicating any one of these three steps on its own -- see
+     * #industry-variants-visibility-nav.
+     */
+    private static List<SectionDto> resolveForIndustry(
+        List<GTM_Page_Section__c> baseSections,
+        Map<String, GTM_Page_Section__c> variantsByBase,
+        String industryKey
+    ) {
+        List<SectionDto> out = new List<SectionDto>();
+        for (GTM_Page_Section__c sec : baseSections) {
+            if (isHiddenForIndustry(sec, industryKey)) continue;
             GTM_Page_Section__c variant = variantsByBase.get(sec.Section_Key__c);
             SectionDto dto = new SectionDto();
             dto.sectionKey = sec.Section_Key__c;
@@ -140,10 +161,59 @@ public without sharing class GtmPageContentReader {
             dto.helpText   = sec.Help_Text__c;
             dto.layoutType = variant != null ? variant.Layout_Type__c : sec.Layout_Type__c;
             dto.width      = variant != null ? variant.Width__c       : sec.Width__c;
-            dto.sortOrder  = sec.Sort_Order__c;
-            layout.sections.add(dto);
+            dto.sortOrder  = sortOrderForIndustry(sec, industryKey);
+            out.add(dto);
         }
-        return layout;
+        out.sort(new BySortOrder());
+        return out;
+    }
+
+    /** True when this base section's Hidden_For_Industry__c names this industry. */
+    private static Boolean isHiddenForIndustry(GTM_Page_Section__c sec, String industryKey) {
+        if (String.isBlank(industryKey) || String.isBlank(sec.Hidden_For_Industry__c)) return false;
+        for (String slug : sec.Hidden_For_Industry__c.split(',')) {
+            if (slug.trim().equalsIgnoreCase(industryKey)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * This section's sort value for one industry: the override for that
+     * industry where Industry_Sort_Overrides__c names one, the section's own
+     * Sort_Order__c otherwise. Sort_Order__c itself is never written by this
+     * -- the generic/default order stays owned by the core issue's fields.
+     */
+    private static Decimal sortOrderForIndustry(GTM_Page_Section__c sec, String industryKey) {
+        if (String.isBlank(industryKey) || String.isBlank(sec.Industry_Sort_Overrides__c)) {
+            return sec.Sort_Order__c;
+        }
+        try {
+            Object parsed = JSON.deserializeUntyped(sec.Industry_Sort_Overrides__c);
+            if (!(parsed instanceof Map<String, Object>)) return sec.Sort_Order__c;
+            Map<String, Object> overrides = (Map<String, Object>) parsed;
+            // 'override' is an Apex reserved word (virtual/override methods)
+            // and cannot be used as a variable identifier here.
+            Object overrideValue = overrides.get(industryKey);
+            if (overrideValue == null) return sec.Sort_Order__c;
+            return Decimal.valueOf(String.valueOf(overrideValue));
+        } catch (Exception e) {
+            // An unreadable override is not a reason to fail the page; fall
+            // back to the section's own order.
+            return sec.Sort_Order__c;
+        }
+    }
+
+    /** Orders resolved sections by their (possibly overridden) sort, key as tiebreak. */
+    private class BySortOrder implements Comparator<SectionDto> {
+        public Integer compare(SectionDto a, SectionDto b) {
+            if (a.sortOrder == null && b.sortOrder == null) {
+                return a.sectionKey.compareTo(b.sectionKey);
+            }
+            if (a.sortOrder == null) return 1;
+            if (b.sortOrder == null) return -1;
+            if (a.sortOrder == b.sortOrder) return a.sectionKey.compareTo(b.sectionKey);
+            return a.sortOrder > b.sortOrder ? 1 : -1;
+        }
     }
 
     public class PageLayout {

@@ -142,6 +142,23 @@
     font-size: var(--gtm-font-size-label); color: var(--gtm-text-muted); line-height: 1.5; margin: 0;
 }
 
+/* ── industry view (rail sub-navigation) ────────────────────────────────── */
+.gcm-industry-toggle {
+    margin-left: auto; border: 1px solid #c9c9c9; border-radius: var(--gtm-radius);
+    background: var(--gtm-bg-surface); cursor: pointer; padding: 0.15rem 0.5rem;
+    display: flex; align-items: center; gap: 0.25rem;
+    font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; color: #444;
+}
+.gcm-industry-toggle:hover { border-color: #0176d3; color: #0176d3; }
+.gcm-industry-picker { flex: none; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--gtm-border); }
+.sec--industry { cursor: grab; }
+.sec-industry-status {
+    font-size: var(--gtm-font-size-label); margin-top: 1px; font-weight: 600;
+}
+.sec-industry-status--generic { color: var(--gtm-text-muted); }
+.sec-industry-status--customized { color: #0176d3; }
+.sec-industry-status--hidden { color: #ba0517; }
+
 /* ── preview ─────────────────────────────────────────────────────────────── */
 .gcm-preview-body {
     flex: 1; min-height: 0; overflow: auto;
