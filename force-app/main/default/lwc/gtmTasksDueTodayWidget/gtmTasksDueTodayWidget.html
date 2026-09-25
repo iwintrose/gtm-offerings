@@ -1,12 +1,5 @@
 <template>
-    <article class="slds-card ov-card ov-tasks-today" data-id="tasks-due-today-widget">
-        <div class="slds-card__header ov-card-h">
-            <span class="ov-ic ov-ic--tasks">
-                <lightning-icon icon-name="standard:task" size="small"></lightning-icon>
-            </span>
-            <h2 class="ov-h">Your tasks due today</h2>
-        </div>
-        <div class="slds-card__body ov-card-b">
+    <c-gtm-card icon-name="standard:task" title="Your tasks due today" variant="tasks" data-id="tasks-due-today-widget">
         <template if:true={isLoading}>
             <lightning-spinner alternative-text="Loading tasks" size="small"></lightning-spinner>
         </template>
@@ -51,7 +44,7 @@
                                     <span class="slds-badge" data-id="task-due-label">{row.dueLabel}</span>
                                 </div>
                                 <template if:true={row.whatName}>
-                                    <div class="slds-text-body_small slds-text-color_weak">{row.whatName}</div>
+                                    <div class="slds-truncate slds-text-body_small slds-text-color_weak">{row.whatName}</div>
                                 </template>
                             </div>
                         </div>
@@ -59,6 +52,5 @@
                 </template>
             </ul>
         </template>
-        </div>
-    </article>
+    </c-gtm-card>
 </template>

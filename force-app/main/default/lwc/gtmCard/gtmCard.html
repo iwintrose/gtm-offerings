@@ -1,0 +1,20 @@
+<template>
+  <article class={cardClass}>
+    <div class={headerClass}>
+      <template lwc:if={showFallbackHeader}>
+        <template lwc:if={hasIcon}>
+          <span class={iconClass}>
+            <lightning-icon icon-name={iconName} size="small"></lightning-icon>
+          </span>
+        </template>
+        <template lwc:if={hasTitle}>
+          <h2 class="gcard-title slds-truncate">{title}</h2>
+        </template>
+      </template>
+      <slot name="header"></slot>
+    </div>
+    <div class={bodyClass}>
+      <slot></slot>
+    </div>
+  </article>
+</template>

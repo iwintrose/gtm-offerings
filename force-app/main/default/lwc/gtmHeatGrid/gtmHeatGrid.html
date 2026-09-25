@@ -1,12 +1,5 @@
 <template>
-    <article class="slds-card ov-card ov-heat">
-        <div class="slds-card__header ov-card-h">
-            <span class="ov-ic ov-ic--heat">
-                <lightning-icon icon-name="standard:high_velocity_sales" size="small"></lightning-icon>
-            </span>
-            <h2 class="ov-h">Who's hot right now</h2>
-        </div>
-        <div class="slds-card__body ov-card-b">
+    <c-gtm-card icon-name="standard:high_velocity_sales" title="Who's hot right now" variant="heat">
     <div class="heat-grid-scroll">
     <div class="heat-grid" role="table" aria-label="Who's hot right now">
         <template if:true={loading}>
@@ -42,7 +35,7 @@
                         <c-gtm-link-cell value={row.contactName} type-attributes={row.contactCellAttrs}></c-gtm-link-cell>
                     </span>
                     <span class="heat-grid__col heat-grid__col--stage" role="cell">
-                        <span class="gtm-link-cell gtm-link-cell_static" title={row.opportunityStage}>{row.opportunityStage}</span>
+                        <span class="gtm-link-cell gtm-link-cell_static slds-truncate" title={row.opportunityStage}>{row.opportunityStage}</span>
                     </span>
                     <span class="heat-grid__col heat-grid__col--strip" role="cell">
                         <span class="heat-strip">
@@ -52,7 +45,7 @@
                         </span>
                     </span>
                     <span class="heat-grid__col heat-grid__col--signal" role="cell">
-                        <span class="gtm-link-cell gtm-link-cell_static" title={row.latestSignal}>{row.latestSignal}</span>
+                        <span class="gtm-link-cell gtm-link-cell_static slds-truncate" title={row.latestSignal}>{row.latestSignal}</span>
                     </span>
                     <span class="heat-grid__col heat-grid__col--action" role="cell">
                         <!-- A disabled HTML element never fires hover/focus events, so a
@@ -83,6 +76,5 @@
         </template>
     </div>
     </div>
-        </div>
-    </article>
+    </c-gtm-card>
 </template>

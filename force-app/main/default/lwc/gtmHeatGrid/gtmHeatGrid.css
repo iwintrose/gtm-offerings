@@ -1,75 +1,24 @@
-/* Issue #274: Stage/Latest-signal/Next-best-action had no truncation at all
-   (only Account/Contact, via c-gtm-link-cell, did). `@import 'c/gtmLinkCell'`
-   was tried here to reuse the real component's stylesheet directly rather
-   than a third hand-duplicated copy, but LWC's cross-bundle CSS `@import`
-   pulls in the *component's JS bundle* as a module dependency too -- it
-   broke Jest compilation ("Class constructor GtmLinkCell cannot be invoked
-   without 'new'") because gtmLinkCell is a real .js component, not a
-   CSS-only module (see gtmStory.css's comment on why a CSS-only shared
-   module was rejected there for the opposite reason -- it doesn't deploy).
-   There is no working shared-stylesheet mechanism for a real LWC component
-   in this SDK version, so this is a values-only reference, kept in sync
-   deliberately: KEEP THESE THREE RULES IDENTICAL TO gtmLinkCell.css's
-   `.gtm-link-cell` (overflow/text-overflow/white-space/max-width). The
-   class name is reused on purpose so any future working shared-CSS
-   mechanism can drop this block in favor of a real import with no markup
-   change. */
-.gtm-link-cell {
-    display: block;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-}
-
+/* Issue #274 (superseded, issue 14): Stage/Latest-signal/Next-best-action
+   had no truncation at all (only Account/Contact, via c-gtm-link-cell,
+   did). The truncation rule used to be a hand-duplicated values-only copy
+   of gtmLinkCell.css's `.gtm-link-cell` (a real cross-bundle CSS `@import`
+   broke Jest -- see gtmStory.css/gtmOverview.css for the same story). That
+   duplicate rule is gone: `.gtm-link-cell` stays as a class NAME on this
+   component's markup (continuity/traceability with gtmLinkCell.css and
+   this file's own Jest spec), but its truncation behavior now comes from
+   the platform's own `.slds-truncate` utility class, applied alongside it
+   in the markup, which needs no per-component CSS at all -- see
+   docs/architecture/gtm-card-contract.md §2.4. */
 .gtm-link-cell_static {
     color: #444;
 }
 
-/* This component's own root chrome (issue overview-bd-heat-redesign-2) was
-   torn out (issue overview-bd-heat-redesign-5-visual-parity): the card
-   background/border/rail/header now live in gtmOverview.html/.css via the
-   shared .ov-card/.ov-card-h/.ov-card-b system, and this .heat-grid div is
-   just the table content sitting inside .ov-card-b.
+/* Card chrome (border/rail/header/icon-circle) now lives in c-gtm-card
+   (issue 14; contract: docs/architecture/gtm-card-contract.md). This
+   .heat-grid div is just the table content sitting inside c-gtm-card's
+   default body slot.
 
-   CORRECTION (same issue, visual-parity QA pass): LWC shadow DOM scopes a
-   component's own template to its own stylesheet only -- a class used in
-   this component's .html is never reached by gtmOverview.css, no matter
-   what the class is named. The comment above was aspirational, not true.
-   The shared class NAMES stay (readability/consistency across the four
-   files) but the actual rules this component's markup needs have to be
-   duplicated here. Keep in sync with gtmOverview.css's .ov-card/.ov-card-h/
-   .ov-card-b/.ov-ic/.ov-ic--heat/.ov-heat block if that ever changes. */
-.ov-card {
-    border: 1px solid #e5e5e5; border-radius: .25rem; background: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.05); overflow: hidden;
-    display: flex; flex-direction: column;
-    border-top: 3px solid #747474;
-    transition: box-shadow .14s ease, transform .14s ease;
-}
-.ov-card:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .09); transform: translateY(-1px); }
-@media (prefers-reduced-motion: reduce) {
-    .ov-card { transition: none; }
-    .ov-card:hover { transform: none; }
-}
-.ov-card-h {
-    display: flex; align-items: center; gap: .6rem;
-    padding: .7rem .75rem .6rem; border-bottom: 1px solid #f3f3f3;
-    min-height: 3rem;
-}
-.ov-card-b { padding: .5rem .6rem .65rem; flex: 1 1 auto; }
-.ov-ic {
-    width: 28px; height: 28px; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    flex: 0 0 28px;
-}
-.ov-ic--heat { background-color: #fdece0; }
-.ov-ic--heat lightning-icon { --sds-c-icon-color-foreground: #c23934; }
-.ov-h { margin: 0; font-size: 14px; font-weight: 700; color: #181818; }
-.ov-heat { border-top-color: #c23934; }
-
-/* Issue #274: this CSS Grid table stretched to 100% of its card's width with
+   Issue #274: this CSS Grid table stretched to 100% of its card's width with
    no independent scroll container of its own, unlike lightning-datatable
    (the "Assessment results" card and the Assessments/Pages tab tables),
    which renders its own internal horizontal-scroll wrapper sized to its
