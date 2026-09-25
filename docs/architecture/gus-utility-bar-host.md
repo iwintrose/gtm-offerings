@@ -189,8 +189,13 @@ A tool asks the host to move the rep by putting ONE object in the delta bag:
   depth) then `this[NavigationMixin.Navigate]({ type: 'standard__navItemPage',
   attributes: { apiName }, state })`.
 - Host allow-list constant `ALLOWED_NAVIGATION` in `gtmGusUtility.js`:
-  `{ home: [], GTM_Pages: ['c__stage'], GTM_Assessments: [], GTM_Analytics: [] }`
-  (apiName -> permitted `state` keys). CHANGE (app-landing-page, implemented in step 1): key `home` replaces `GTM_Offerings_Overview`; the host maps
+  `{ home: [], GTM_Pages: ['c__stage'], GTM_Assessments: ['c__astatus', 'c__aacct',
+  'c__acontact', 'c__arange'], GTM_Analytics: [] }`
+  (apiName -> permitted `state` keys). CHANGE (issue #10, `filter_by_query`):
+  `GTM_Assessments` grew from `[]` to the four keys that tool emits; tier,
+  readout, offering and preset stay disallowed until a tool sets them. See
+  `docs/architecture/gus-filter-query-tool.md` sec 9.
+  CHANGE (app-landing-page, implemented in step 1): key `home` replaces `GTM_Offerings_Overview`; the host maps
   `home` to `{ type: 'standard__namedPage', attributes: { pageName: 'home' } }`.
   See `docs/architecture/app-home-pages.md` sec 4. State keys must be `c__`-prefixed
   (platform rule), values strings <= 200 chars. Anything else is dropped and
@@ -232,6 +237,17 @@ A tool asks the host to move the rep by putting ONE object in the delta bag:
 2. Register with one line in `GtmAppAgentSurface.registeredTools()`.
 3. `GTM_Pages: ['c__stage']` is already in the host allow-list; no LWC,
    `chatOnPages`, mode, or bubble work is needed in the sibling.
+
+## 7. How `filter_by_query` attaches (issue #10, second tool on this surface)
+
+Full contract: `docs/architecture/gus-filter-query-tool.md`. Summary: a
+second `GtmAppTool` (`GtmFilterByQueryAppTool`), registered as a second line
+in `GtmAppAgentSurface.registeredTools()` alongside `GtmStageFilterAppTool`
+(`toolDefinitions()` dedupes by name, so the two tools cannot collide). Same
+propose-then-click `pageEffect` shape as `find_links_by_stage`; the ONLY host
+change this issue required was widening `GTM_Assessments`'s allow-list entry
+from `[]` to the four `c__a*` keys the new tool can set (sec 5 above) — no
+`gtmFilterBar` prop, no new LWC, no new controller entry point.
 4. There is no `compactHistory` in the repo at origin/main; if the sibling
    needs it, it owns it (apply inside `GtmAppAgentSurface`/`chatOnApp`, after
    `runLoop`, before returning). Note `trimHistory` (20 turns) already bounds

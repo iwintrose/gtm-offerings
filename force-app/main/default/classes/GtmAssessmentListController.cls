@@ -69,6 +69,20 @@ public with sharing class GtmAssessmentListController {
         'none', 'draft', 'pending', 'approved-unsent', 'approved-sent', 'published'
     };
 
+    /**
+     * Read-only accessors so a second class (GtmFilterByQueryAppTool, issue-10)
+     * can validate against the SAME status/tier key vocabulary instead of a
+     * hand-duplicated copy. No new vocabulary, no state: exposes the existing
+     * private maps' key sets only.
+     */
+    public static Set<String> statusKeys() {
+        return STATUS_BY_KEY.keySet();
+    }
+
+    public static Set<String> tierKeys() {
+        return TIER_BY_KEY.keySet();
+    }
+
     private static final String PRESET_READY_TO_BOOK = 'ready-to-book';
     private static final String SORT_BEST_FIT = 'best-fit';
     private static final Set<String> SORT_KEYS = new Set<String>{
