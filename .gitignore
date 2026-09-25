@@ -6,3 +6,5 @@ coverage/
 __pycache__/
 .env
 WORKTREE_SCOPE.md
+.DS_Store
+.scratch-verify/
