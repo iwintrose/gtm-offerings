@@ -159,13 +159,16 @@ that switch-over is `gus-live-agentforce-provider-runtime`'s job, gated on
 
 > STATUS: Credential chain confirmed live and metadata reconciled against a
 > real `sf project retrieve` (2026-09-25). Request shape confirmed correct
-> against current official docs; OAuth scope gap found and fixed live;
-> **the Agent API endpoint still returns a bare 404 indistinguishable from
-> an anonymous, unauthenticated request** — this now looks like an org
-> entitlement/infra question, not a request-shape or scope problem. See
-> "Open item" at the end of this section. Do not let `runtime` start
-> coding against the request/response shape below as final; it is still
-> unconfirmed end-to-end.
+> against current official docs (re-verified independently a second time,
+> see "Attempt 4" below); OAuth scope gap found and fixed live; a genuinely
+> separate gap (`GTM_Agent_Settings__c` had zero rows — the custom setting
+> was never populated) found and fixed live. **None of that changed the
+> outcome: the Agent API endpoint still returns a bare 404 indistinguishable
+> from an anonymous, unauthenticated request** — this remains an org
+> entitlement/infra question, not a request-shape, scope, or settings
+> problem. See "Open item" at the end of this section. Do not let `runtime`
+> start coding against the request/response shape below as final; it is
+> still unconfirmed end-to-end.
 
 ### Activation path chosen
 
@@ -380,10 +383,133 @@ To isolate further, ran three additional diagnostics:
    request in *some* observable way (a 401, a different error body, a
    trace header). It doesn't.
 
+**Attempt 4 (follow-up pass, 2026-09-25): investigated a coordinator-raised
+hypothesis that the 404s were actually caused by a blank/missing agent ID
+rather than an entitlement gap — disproven, but a real, separate bug was
+found and fixed along the way.**
+
+The coordinator found via direct SOQL that `GTM_Agent_Settings__c` (the
+custom setting `GtmAgentSettingsController` reads/writes, field
+`Agentforce_Agent_Id__c`) had **zero rows** in `gtm-staging` — confirmed
+independently here:
+
+```
+$ sf data query -q "SELECT Id, Agentforce_Agent_Id__c, Agentforce_My_Domain_URL__c, Agentforce_Client_Id__c, Chat_Provider__c FROM GTM_Agent_Settings__c" -o gtm-staging
+Total number of records retrieved: 0.
+```
+
+Also independently confirmed (matches coordinator's SOQL exactly):
+
+```
+$ sf data query -q "SELECT Id, DeveloperName, MasterLabel, Type, BotUserId FROM BotDefinition" -o gtm-staging
+0XxgK000002MowHSAS | GTM_Configurator_Assistant | GTM Configurator Assistant | ExternalCopilot | <this org's EinsteinServiceAgent User Id, redacted here -- a User Id is org-bound identity per check-references.py §12 and would be wrong in any other org; matches the BotUserId already cited elsewhere in this section by its username, gtm_configurator_assistant@00dgk00000apl69236326146.ext>
+
+$ sf data query -q "SELECT Id, BotDefinitionId, DeveloperName, Status, VersionNumber FROM BotVersion" -o gtm-staging
+0X9gK000003vlYLSAY | 0XxgK000002MowHSAS | v1 | Active | 1
+```
+
+**This is a real, confirmed-empty setting — but it was never the cause of
+Attempts 1-3's 404s.** Checked via `git log -p` on this file: every prior
+smoke-test Apex snippet (Attempts 1, 2, and 3, and the invalid-agent-ID
+diagnostic within Attempt 3) hardcoded the literal, correct BotDefinition
+Id (`0XxgK000002MowHSAS`) directly in `req.setEndpoint(...)` — none of them
+read `GTM_Agent_Settings__c.Agentforce_Agent_Id__c` at all, because that
+plumbing belongs to the `runtime` issue (task-scope's own non-goals list:
+"No changes to `GtmAgentProxyController.runLoop()`"), which hasn't started.
+So a blank custom setting could not have produced Attempts 1-3's 404s —
+those requests were never blank; they used the correct real ID the whole
+time. This corrects the coordinator's stated diagnosis before building on
+top of it (per this session's own verify-before-trusting instruction): the
+empty setting is a real latent gap worth fixing (the `runtime` issue will
+depend on it), but it is not an explanation for the observed 404 pattern.
+
+Fixed anyway, since it's required regardless and is part of this issue's
+own acceptance criteria (task-scope §1.3 confirms the three
+`GTM_Agent_Settings__c` fields are the intended parameterization). No
+browser tool is available in this Developer session (tool list is
+Read/Write/Edit/Bash/SubagentHandback only — no navigate/screenshot
+capability), so per this task's explicit fallback instruction, the value
+was written through the real `GtmAgentSettingsController.setAgentSettings`
+Apex contract method (the same code path the `gtmOfferingsSettingsAgent`
+LWC/Settings-tab UI calls on Save) rather than a raw SOQL/Tooling insert
+and rather than a live browser click — flagged explicitly rather than
+silently claimed as a UI-verified change:
+
+```apex
+GtmAgentSettingsController.AgentSettingsInput input = new GtmAgentSettingsController.AgentSettingsInput();
+input.agentforceAgentId = '0XxgK000002MowHSAS';
+GtmAgentSettingsController.setAgentSettings(input);
+```
+
+Confirmed written (`sf apex run -o gtm-staging`):
+
+```
+SAVED_AGENT_ID=0XxgK000002MowHSAS
+SAVED_CHAT_PROVIDER=Anthropic
+SAVED_ID=a1RgK000004fO0rUAE
+```
+
+Re-ran the smoke test, this time sourcing the agent ID dynamically from
+the now-populated setting (`GTM_Agent_Settings__c.getOrgDefaults()`)
+instead of a hardcoded literal, to make the "populated real agent ID" path
+genuinely load-bearing in the test:
+
+```
+USING_AGENT_ID_FROM_SETTINGS=0XxgK000002MowHSAS
+STATUS=404
+BODY=
+HEADER_KEYS=(date, content-length, connection)
+HEADER date = Fri, 25 Sep 2026 21:49:35 GMT
+HEADER content-length = 0
+HEADER connection = close
+```
+
+**Identical to every prior attempt** — same status, same empty body, same
+three-header signature, no change.
+
+**Independently re-verified the Agent-ID doc claim and the request/response
+shape against live Salesforce docs a second time** (this Developer has no
+WebFetch/WebSearch tool in this session, but does have outbound internet
+access via Bash, so fetched the actual pages with `curl` rather than
+relying on the prior session's paraphrase — flagging that distinction
+since the task asked to say which method was used):
+`developer.salesforce.com/docs/ai/agentforce/guide/agent-api-agent-id.html`
+confirms verbatim: "...the `Bot` metadata type or the `BotDefinition`
+standard object. The bot ID represents the agent ID in this case... The
+`Id` field in the query result is your agent ID" — matches
+`0XxgK000002MowHSAS`, reproducing the prior session's citation
+independently rather than trusting it. The live curl/response examples on
+`agent-api-get-started.html` match this branch's request shape byte-for-byte
+(host `api.salesforce.com`, path
+`/einstein/ai-agent/v1/agents/{AGENT_ID}/sessions`, body keys
+`externalSessionKey`/`instanceConfig.endpoint`/`streamingCapabilities`/`bypassUser`).
+
+New information found on `agent-api-troubleshooting.html` not previously
+cited in this doc: "If you receive an HTTP 404 response, verify that
+you're using the correct token and that you're using the correct
+endpoint" (generic — Salesforce's own docs don't enumerate an entitlement
+cause specifically), versus "If you receive an HTTP 400 response... Message
+field in response contains '{VALUE} is not a valid agent ID'" for a bad
+agent ID. This directly confirms the prior session's Attempt 3 diagnostic
+#1 reasoning was correctly applied: a request with a deliberately invalid
+agent ID that should produce a 400 per Salesforce's own docs, but instead
+produces the identical 404 as a request with the correct agent ID, means
+the request is not reaching the Agent API's request-validation logic —
+consistent with "wrong/unrecognized token" or a request that never reaches
+the Agent API application layer at all (edge/gateway-level), not with
+"config is subtly wrong." `agent-api-considerations.html` and
+`agent-api-get-started.html` were also checked for any documented
+demo/trial-org entitlement caveat; none exists in the current docs — the
+demo-org theory remains a plausible but *undocumented* hypothesis, not a
+docs-confirmed one.
+
 ### Open item (blocks calling this issue done)
 
 The scope gap (prior leading hypothesis) is now ruled out — confirmed
-fixed and re-tested, no change in outcome. The remaining open item is
+fixed and re-tested, no change in outcome. The blank-`GTM_Agent_Settings__c`
+hypothesis raised in Attempt 4 is also now ruled out — it was never the
+actual input to any smoke test, and populating it plus sourcing the ID
+from it live produced an identical 404. The remaining open item is
 larger than a single Setup click and needs either org-entitlement
 verification or an out-of-Apex diagnostic this Developer cannot run
 without further org access:
@@ -418,12 +544,15 @@ without further org access:
 
 This issue's original acceptance criteria (task-scope §3) requires "the
 live smoke-test response/log from §1.4" showing a real agent response —
-that is not yet satisfied (still 404, not a session ID, across three
-attempts and four rounds of live config fixes). Recommend the coordinator
-treat this issue as **not yet done**, and specifically not assume any
-further guessed configuration change will fix it — the next productive
-step is entitlement verification or a non-Apex request, not another
-metadata edit.
+that is not yet satisfied (still 404, not a session ID, across four
+attempts and five rounds of live config fixes, the last of which —
+populating `GTM_Agent_Settings__c` — was investigated specifically because
+it looked like a plausible alternate root cause and was ruled out with
+evidence rather than assumed). Recommend the coordinator treat this issue
+as **not yet done**, and specifically not assume any further guessed
+configuration or data change will fix it — the next productive step is
+entitlement verification or a non-Apex request with a manually-minted
+token, not another metadata or data edit.
 
 ### Secret-handling confirmation
 
