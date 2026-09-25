@@ -33,6 +33,19 @@ public without sharing class GtmPageContentController {
             : new List<String>{ 'story', 'configurator', 'offerings-listing' };
     }
 
+    /**
+     * Display names for the three offering-owned templates, used only by
+     * setOfferingStatus()'s publish guard below to name a missing page in
+     * its error. Mirrors TEMPLATE_LABELS in c/gtmPageLayouts.js -- that map
+     * is the client's source of truth for page names and is not reachable
+     * from Apex, so this is a small, deliberate, scoped duplicate rather
+     * than a shared constant across the two languages.
+     */
+    private static final Map<String, String> REQUIRED_PAGE_LABELS = new Map<String, String>{
+        'story'             => 'Story',
+        'configurator'      => 'Configurator',
+        'offerings-listing' => 'Offerings Listing'
+    };
 
     /**
      * Returns all active content records for the given offering + template as a flat map.
@@ -956,6 +969,12 @@ public without sharing class GtmPageContentController {
      * not a per-section setting. Ordinary DML, same instant-effect pattern as
      * setSectionActive: this is a real custom field, not custom metadata, so
      * there is no async deploy step.
+     *
+     * Draft -> Published is gated on the offering actually having built its
+     * three required pages (story, configurator, offerings-listing -- see
+     * unbuiltRequiredPages() below); Draft and Archive are never gated. The
+     * check runs before tileSectionFor() so a rejected publish attempt never
+     * leaves that method's bare-tile scaffold behind.
      */
     @AuraEnabled
     public static Boolean setOfferingStatus(String offeringKey, String status) {
@@ -969,6 +988,13 @@ public without sharing class GtmPageContentController {
             throw new AuraHandledException('Status must be Draft or Published.');
         }
 
+        if (status == 'Published') {
+            List<String> unbuilt = unbuiltRequiredPages(offeringKey);
+            if (!unbuilt.isEmpty()) {
+                throw publishBlockedError(unbuilt);
+            }
+        }
+
         GTM_Page_Section__c tile = tileSectionFor(offeringKey);
         tile.Offering_Status__c = status;
         try {
@@ -977,6 +1003,66 @@ public without sharing class GtmPageContentController {
             throw new AuraHandledException('That could not be saved: ' + ex.getMessage());
         }
         return true;
+    }
+
+    /**
+     * Which of this offering's required pages are not yet built, named by
+     * display label. "Built" = sectionCount > 0 AND fieldCount > 0 for that
+     * Offering_Key__c + Template_Type__c -- the same two aggregate queries
+     * getHomeSummary() already runs, scoped here to just this one offering.
+     *
+     * sectionCount alone is not enough: tileSectionFor() (below) inserts a
+     * bare tile section with zero content rows whenever setOfferingStatus or
+     * setOfferingArchived runs against an offering that has never built its
+     * Offerings Listing page (a deliberate side effect so toggling status
+     * never blocks on that page existing first) -- a sectionCount-only check
+     * would read that scaffold as "built", which is exactly the "1 sections
+     * / 0 fields" gap this guard exists to close.
+     */
+    private static List<String> unbuiltRequiredPages(String offeringKey) {
+        Map<String, Integer> sectionCounts = new Map<String, Integer>();
+        for (AggregateResult ar : [
+            SELECT Template_Type__c t, COUNT(Id) c
+            FROM   GTM_Page_Section__c
+            WHERE  Active__c = true AND Offering_Key__c = :offeringKey
+            GROUP BY Template_Type__c
+        ]) {
+            sectionCounts.put((String) ar.get('t'), (Integer) ar.get('c'));
+        }
+        Map<String, Integer> fieldCounts = new Map<String, Integer>();
+        for (AggregateResult ar : [
+            SELECT Template_Type__c t, COUNT(Id) c
+            FROM   GTM_Page_Content__c
+            WHERE  Active__c = true AND Offering_Key__c = :offeringKey
+            GROUP BY Template_Type__c
+        ]) {
+            fieldCounts.put((String) ar.get('t'), (Integer) ar.get('c'));
+        }
+
+        List<String> unbuilt = new List<String>();
+        for (String templateType : templatesFor(offeringKey)) {
+            Integer sections = sectionCounts.containsKey(templateType) ? sectionCounts.get(templateType) : 0;
+            Integer fields   = fieldCounts.containsKey(templateType) ? fieldCounts.get(templateType) : 0;
+            if (sections == 0 || fields == 0) {
+                unbuilt.add(REQUIRED_PAGE_LABELS.containsKey(templateType)
+                    ? REQUIRED_PAGE_LABELS.get(templateType) : templateType);
+            }
+        }
+        return unbuilt;
+    }
+
+    /**
+     * Same setMessage() pattern industryError() uses below: AuraHandledException's
+     * own getMessage() returns a generic string on the Apex side unless the
+     * message is set a second time, which is what lets both the client and
+     * this class's own tests see the actual missing-page names.
+     */
+    private static AuraHandledException publishBlockedError(List<String> missingPages) {
+        String message = 'This offering cannot be published yet -- these pages still need to be built: '
+            + String.join(missingPages, ', ') + '.';
+        AuraHandledException ex = new AuraHandledException(message);
+        ex.setMessage(message);
+        return ex;
     }
 
     /**

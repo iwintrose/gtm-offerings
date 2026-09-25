@@ -26,6 +26,30 @@ private class GtmPageContentControllerTest {
         return r;
     }
 
+    /**
+     * A minimal "built" page for setOfferingStatus's publish guard: one
+     * active section plus one active content row for offering+templateType,
+     * the same sectionCount>0 AND fieldCount>0 shape unbuiltRequiredPages()
+     * checks. createOffering() only ever seeds Offerings Listing (its tile),
+     * never Story/Configurator, so tests that need those two "real" also use
+     * this helper rather than assuming createOffering() covers them.
+     */
+    private static void seedBuiltPage(String offeringKey, String templateType) {
+        insert new GTM_Page_Section__c(
+            Section_Address__c = offeringKey + '::' + templateType + '::hero',
+            Offering_Key__c    = offeringKey,
+            Template_Type__c   = templateType,
+            Section_Key__c     = 'hero',
+            Label__c           = 'Hero',
+            Layout_Type__c     = 'hero',
+            Width__c           = 'standard',
+            Sort_Order__c      = 10,
+            Active__c          = true,
+            Status__c          = 'Published'
+        );
+        insert makeRecord(offeringKey, templateType, 'hero', 'headline', 'text', 'Hello', null, null, null, 0);
+    }
+
     // ─── getPageContent ───────────────────────────────────────────────────────
 
     @IsTest
@@ -457,6 +481,14 @@ private class GtmPageContentControllerTest {
     static void setOfferingStatus_updatesAnExistingTileSectionInPlace() {
         GtmPageContentController.createOffering('Status Toggle Offering');
         String key = 'status-toggle-offering';
+        // createOffering() only seeds the Offerings Listing tile (1 section,
+        // 3 content rows) -- Story and Configurator need their own real page
+        // here now that Draft -> Published is gated on all three being built
+        // (sectionCount > 0 AND fieldCount > 0), or this Published call would
+        // be (correctly) rejected rather than exercising the toggle-in-place
+        // behavior this test is actually about.
+        seedBuiltPage(key, 'story');
+        seedBuiltPage(key, 'configurator');
 
         Test.startTest();
         GtmPageContentController.setOfferingStatus(key, 'Draft');
@@ -470,6 +502,124 @@ private class GtmPageContentControllerTest {
         ];
         System.assertEquals(1, secs.size(), 'Toggling twice must not create a second tile section');
         System.assertEquals('Published', secs[0].Offering_Status__c);
+    }
+
+    @isTest
+    static void setOfferingStatus_blocksPublishWhenRequiredPagesAreEmpty() {
+        // A brand-new offering key with no GTM_Page_Section__c/Content__c
+        // rows at all -- none of Story, Configurator or Offerings Listing
+        // has ever been built.
+        String key = 'unbuilt-offering';
+
+        String message;
+        Test.startTest();
+        try {
+            GtmPageContentController.setOfferingStatus(key, 'Published');
+            System.assert(false, 'Publishing an offering with no built pages must be blocked');
+        } catch (AuraHandledException e) {
+            message = e.getMessage();
+        }
+        Test.stopTest();
+
+        System.assert(message.contains('Story'), 'Missing Story must be named: ' + message);
+        System.assert(message.contains('Configurator'), 'Missing Configurator must be named: ' + message);
+        System.assert(message.contains('Offerings Listing'), 'Missing Offerings Listing must be named: ' + message);
+
+        // The rejected attempt must not leave any tileSectionFor() scaffold
+        // (or any other row) behind -- the guard runs before any DML.
+        System.assertEquals(0, [SELECT COUNT() FROM GTM_Page_Section__c WHERE Offering_Key__c = :key],
+            'A blocked publish must not insert the tile-section scaffold');
+        System.assertEquals(0, [SELECT COUNT() FROM GTM_Page_Content__c WHERE Offering_Key__c = :key],
+            'A blocked publish must not insert any content row either');
+    }
+
+    @isTest
+    static void setOfferingStatus_blocksPublishWhenOfferingsListingIsScaffoldOnly() {
+        // Reproduces the exact live bug: Story and Configurator are fully
+        // built, but Offerings Listing is only the bare tile section
+        // tileSectionFor() leaves behind (1 section, 0 content rows) -- e.g.
+        // from an earlier Draft/Archive toggle on an offering that had never
+        // built its listing page. sectionCount alone would call this
+        // "built"; fieldCount = 0 must still block the publish.
+        String key = 'scaffold-only-offering';
+        seedBuiltPage(key, 'story');
+        seedBuiltPage(key, 'configurator');
+        GtmPageContentController.setOfferingStatus(key, 'Draft');
+
+        System.assertEquals(1,
+            [SELECT COUNT() FROM GTM_Page_Section__c
+             WHERE Offering_Key__c = :key AND Template_Type__c = 'offerings-listing'],
+            'Setup check: the Draft toggle should have left exactly the bare scaffold tile');
+        System.assertEquals(0,
+            [SELECT COUNT() FROM GTM_Page_Content__c
+             WHERE Offering_Key__c = :key AND Template_Type__c = 'offerings-listing'],
+            'Setup check: the scaffold tile must carry no content rows');
+
+        String message;
+        Test.startTest();
+        try {
+            GtmPageContentController.setOfferingStatus(key, 'Published');
+            System.assert(false, 'A scaffold-only Offerings Listing page must still block publish');
+        } catch (AuraHandledException e) {
+            message = e.getMessage();
+        }
+        Test.stopTest();
+
+        System.assert(message.contains('Offerings Listing'), 'Offerings Listing must be named: ' + message);
+        System.assert(!message.contains('Story'), 'Story is built and must not be named: ' + message);
+        System.assert(!message.contains('Configurator'), 'Configurator is built and must not be named: ' + message);
+
+        List<GTM_Page_Section__c> secs = [
+            SELECT Offering_Status__c FROM GTM_Page_Section__c
+            WHERE Offering_Key__c = :key AND Section_Key__c = 'tile'
+            AND Template_Type__c = 'offerings-listing'
+        ];
+        System.assertEquals(1, secs.size());
+        System.assertEquals('Draft', secs[0].Offering_Status__c,
+            'A blocked publish must leave the offering exactly as Draft, not partially updated');
+    }
+
+    @isTest
+    static void setOfferingStatus_allowsPublishOnceAllThreeRequiredPagesAreBuilt() {
+        // The regression check for a real, fully-built offering: this must
+        // still succeed once every required page has both a section and a
+        // content row, including Offerings Listing built the normal way
+        // (createOffering(), not the tileSectionFor() scaffold).
+        GtmPageContentController.createOffering('Fully Built Offering');
+        String key = 'fully-built-offering';
+        seedBuiltPage(key, 'story');
+        seedBuiltPage(key, 'configurator');
+
+        Test.startTest();
+        Boolean result = GtmPageContentController.setOfferingStatus(key, 'Published');
+        Test.stopTest();
+
+        System.assert(result, 'A fully-built offering must be allowed to publish');
+        GTM_Page_Section__c sec = [
+            SELECT Offering_Status__c FROM GTM_Page_Section__c
+            WHERE Offering_Key__c = :key AND Section_Key__c = 'tile'
+            AND Template_Type__c = 'offerings-listing'
+        ];
+        System.assertEquals('Published', sec.Offering_Status__c);
+    }
+
+    @isTest
+    static void setOfferingStatus_neverGatesDraftEvenWhenNoPagesAreBuilt() {
+        // Draft (and, separately, setOfferingArchived below) must remain
+        // unconditional -- only a Draft -> Published transition is gated.
+        String key = 'draft-only-offering';
+
+        Test.startTest();
+        Boolean result = GtmPageContentController.setOfferingStatus(key, 'Draft');
+        Test.stopTest();
+
+        System.assert(result, 'Draft must never be blocked, regardless of what is built');
+        GTM_Page_Section__c sec = [
+            SELECT Offering_Status__c FROM GTM_Page_Section__c
+            WHERE Offering_Key__c = :key AND Section_Key__c = 'tile'
+            AND Template_Type__c = 'offerings-listing'
+        ];
+        System.assertEquals('Draft', sec.Offering_Status__c);
     }
 
     @isTest

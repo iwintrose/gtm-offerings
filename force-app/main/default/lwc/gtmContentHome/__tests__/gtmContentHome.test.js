@@ -198,6 +198,97 @@ describe('c-gtm-content-home: offering Manage control (Status / Archive)', () =>
         expect(setOfferingStatus).toHaveBeenCalledWith({ offeringKey: 'ma-migrator', status: 'Draft' });
     });
 
+    // Issue #27: the Apex guard in GtmPageContentController.setOfferingStatus
+    // rejects a Draft -> Published call unless all three required pages
+    // (Story, Configurator, Offerings Listing) are built. These assertions
+    // are the client-side courtesy for that same rule -- the button disables
+    // and names what's missing, using the same templatesFor()/sectionCount/
+    // fieldCount data nextStepHintFor() already reads off getHomeSummary().
+
+    it('disables "Set to Published" and names every missing page for a Draft offering with unbuilt pages', async () => {
+        const summary = JSON.parse(JSON.stringify(HOME_SUMMARY));
+        const offering = summary.offerings[1]; // ma-migrator
+        offering.offeringStatus = 'Draft';
+        // Story never built at all.
+        offering.pages[0].sectionCount = 0;
+        offering.pages[0].fieldCount = 0;
+        getHomeSummary.mockResolvedValue(summary);
+
+        const element = createElement('c-gtm-content-home', { is: GtmContentHome });
+        document.body.appendChild(element);
+        CurrentPageReference.emit({ state: {} });
+        await flushPromises();
+
+        manageButtonFor(element, 'ma-migrator').click();
+        await flushPromises();
+
+        const statusBtn = [...element.shadowRoot.querySelectorAll('lightning-button')]
+            .find((b) => b.label === 'Set to Published');
+        expect(statusBtn).toBeDefined();
+        expect(statusBtn.disabled).toBe(true);
+
+        const hint = element.shadowRoot.querySelector('.modal-note');
+        expect(hint.textContent).toContain('Story');
+        expect(hint.textContent.toLowerCase()).toContain('still to build');
+    });
+
+    it('disables "Set to Published" and names Offerings Listing for the scaffold-only (1 section / 0 fields) bug', async () => {
+        // Reproduces the live Migration Accelerator bug exactly: Story and
+        // Configurator fully built, Offerings Listing left as the bare
+        // tileSectionFor() scaffold (1 section, 0 fields) -- sectionCount
+        // alone would read this page as built.
+        const summary = JSON.parse(JSON.stringify(HOME_SUMMARY));
+        const offering = summary.offerings[1]; // ma-migrator
+        offering.offeringStatus = 'Draft';
+        const listing = offering.pages.find((p) => p.templateType === 'offerings-listing');
+        listing.sectionCount = 1;
+        listing.fieldCount = 0;
+        getHomeSummary.mockResolvedValue(summary);
+
+        const element = createElement('c-gtm-content-home', { is: GtmContentHome });
+        document.body.appendChild(element);
+        CurrentPageReference.emit({ state: {} });
+        await flushPromises();
+
+        manageButtonFor(element, 'ma-migrator').click();
+        await flushPromises();
+
+        const statusBtn = [...element.shadowRoot.querySelectorAll('lightning-button')]
+            .find((b) => b.label === 'Set to Published');
+        expect(statusBtn).toBeDefined();
+        expect(statusBtn.disabled).toBe(true);
+
+        const hint = element.shadowRoot.querySelector('.modal-note');
+        expect(hint.textContent).toContain('Offerings Listing');
+        // Story and Configurator are actually built -- naming them too would
+        // disagree with what the card itself already shows as done.
+        expect(hint.textContent).not.toContain('Story');
+        expect(hint.textContent).not.toContain('Configurator');
+    });
+
+    it('leaves "Set to Published" enabled for a Draft offering whose required pages are all built', async () => {
+        const summary = JSON.parse(JSON.stringify(HOME_SUMMARY));
+        const offering = summary.offerings[1]; // ma-migrator -- fully built in the base fixture
+        offering.offeringStatus = 'Draft';
+        getHomeSummary.mockResolvedValue(summary);
+
+        const element = createElement('c-gtm-content-home', { is: GtmContentHome });
+        document.body.appendChild(element);
+        CurrentPageReference.emit({ state: {} });
+        await flushPromises();
+
+        manageButtonFor(element, 'ma-migrator').click();
+        await flushPromises();
+
+        const statusBtn = [...element.shadowRoot.querySelectorAll('lightning-button')]
+            .find((b) => b.label === 'Set to Published');
+        expect(statusBtn).toBeDefined();
+        expect(statusBtn.disabled).toBe(false);
+
+        const hint = element.shadowRoot.querySelector('.modal-note');
+        expect(hint.textContent.toLowerCase()).not.toContain('still to build');
+    });
+
     it('archiving asks for confirmation before calling setOfferingArchived', async () => {
         setOfferingArchived.mockResolvedValue(true);
         const element = await setup();
