@@ -105,6 +105,46 @@ describe('c-gtm-gus-utility', () => {
         });
     });
 
+    it.each([
+        ['c__astatus', { c__astatus: 'contacted' }],
+        ['c__aacct', { c__aacct: '001000000000001AAA' }],
+        ['c__acontact', { c__acontact: '003000000000001AAA' }],
+        ['c__arange', { c__arange: '2026-09-01..2026-09-24' }],
+        ['multiple allow-listed keys together', { c__astatus: 'contacted', c__arange: '2026-09-01..2026-09-24' }]
+    ])('agentaction for GTM_Assessments + %s navigates with exact args', async (_name, state) => {
+        const el = await mount();
+        chatEl(el).dispatchEvent(new CustomEvent('agentaction', {
+            detail: { type: 'navigate', label: 'Show these in Assessments', apiName: 'GTM_Assessments', state }
+        }));
+        expect(mockNavigate).toHaveBeenCalledTimes(1);
+        expect(mockNavigate).toHaveBeenCalledWith({
+            type: 'standard__navItemPage',
+            attributes: { apiName: 'GTM_Assessments' },
+            state
+        });
+    });
+
+    it('does not navigate for a still-disallowed GTM_Assessments key (c__atier)', async () => {
+        const el = await mount();
+        chatEl(el).dispatchEvent(new CustomEvent('agentaction', {
+            detail: { type: 'navigate', label: 'x', apiName: 'GTM_Assessments', state: { c__atier: 'fast-track' } }
+        }));
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('does not navigate for a mix of an allowed and a still-disallowed GTM_Assessments key', async () => {
+        const el = await mount();
+        chatEl(el).dispatchEvent(new CustomEvent('agentaction', {
+            detail: {
+                type: 'navigate',
+                label: 'x',
+                apiName: 'GTM_Assessments',
+                state: { c__astatus: 'contacted', c__aoffering: 'migration-accelerator' }
+            }
+        }));
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
     it('agentaction for home navigates to the standard named page', async () => {
         const el = await mount();
         chatEl(el).dispatchEvent(new CustomEvent('agentaction', {
