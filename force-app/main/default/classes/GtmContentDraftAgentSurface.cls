@@ -42,27 +42,27 @@ public with sharing class GtmContentDraftAgentSurface implements GtmAgentToolSur
         return
         'You are GUS, helping a Content Manager editor draft copy for ONE whole-section industry ' +
         'variant of a Publicis Sapient GTM offering page. The editor already created this variant ' +
-        'section (it starts as a copy of the base section''s fields) and wants help tailoring it to ' +
+        'section (it starts as a copy of the base section\'s fields) and wants help tailoring it to ' +
         'one industry.\n\n' +
 
         'TOOLS:\n' +
-        '• get_section_content — reads the variant''s current field values (label, current text) and ' +
+        '• get_section_content — reads the variant\'s current field values (label, current text) and ' +
         'the industry research brief (problem, use case, solution, proof points). Call this FIRST, ' +
         'every conversation.\n' +
         '• draft_section_variant — proposes new copy for one or more fields. It does NOT save. The ' +
-        'editor reviews every proposed field in the field editor and publishes (or doesn''t) through ' +
+        'editor reviews every proposed field in the field editor and publishes (or doesn\'t) through ' +
         'the normal Draft -> Publish flow.\n\n' +
 
         'RULES:\n' +
         '1. Always call get_section_content before proposing any copy.\n' +
         '2. Only propose values for fieldKeys that get_section_content actually returned for this ' +
         'section. Do not invent field names.\n' +
-        '3. Ground every proposal in the industry brief''s problem/useCase/solution/proofLine -- never ' +
+        '3. Ground every proposal in the industry brief\'s problem/useCase/solution/proofLine -- never ' +
         'invent a client fact, a statistic, or a named customer the brief does not support.\n' +
-        '4. Keep the base section''s tone and structure; you are tailoring, not rewriting the offering.\n' +
+        '4. Keep the base section\'s tone and structure; you are tailoring, not rewriting the offering.\n' +
         '5. After calling draft_section_variant, tell the editor plainly: nothing is saved yet, review ' +
         'it in the field editor.\n' +
-        '6. Stay in scope -- only this one section''s copy. Redirect other requests politely.\n\n' +
+        '6. Stay in scope -- only this one section\'s copy. Redirect other requests politely.\n\n' +
         'TONE: ' + toneClause;
     }
 
@@ -73,7 +73,7 @@ public with sharing class GtmContentDraftAgentSurface implements GtmAgentToolSur
             new Map<String, Object>{
                 'name'        => 'get_section_content',
                 'description' =>
-                    'Read this industry variant section''s current field values and its industry ' +
+                    'Read this industry variant section\'s current field values and its industry ' +
                     'research brief. Takes no arguments -- it is bound to the section the editor has open.',
                 'input_schema' => new Map<String, Object>{
                     'type'       => 'object',
@@ -84,8 +84,8 @@ public with sharing class GtmContentDraftAgentSurface implements GtmAgentToolSur
             new Map<String, Object>{
                 'name'        => 'draft_section_variant',
                 'description' =>
-                    'Propose new copy for one or more of this section''s fields. Nothing is saved -- ' +
-                    'the result goes into the editor''s field editor as an editable draft.',
+                    'Propose new copy for one or more of this section\'s fields. Nothing is saved -- ' +
+                    'the result goes into the editor\'s field editor as an editable draft.',
                 'input_schema' => new Map<String, Object>{
                     'type'       => 'object',
                     'properties' => new Map<String, Object>{
@@ -183,7 +183,7 @@ public with sharing class GtmContentDraftAgentSurface implements GtmAgentToolSur
         return JSON.serialize(new Map<String, Object>{
             'success' => true,
             'applied' => applied,
-            'note'    => 'These fields are now in the editor''s field editor as an editable draft. ' +
+            'note'    => 'These fields are now in the editor\'s field editor as an editable draft. ' +
                          'Nothing is saved until the editor reviews and publishes.'
         });
     }

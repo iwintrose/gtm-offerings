@@ -11,12 +11,12 @@
 public with sharing class GtmAgentGetSectionContent {
 
     public class Input {
-        @InvocableVariable(required=true label='Offering Key')
+        @InvocableVariable(required=true, label='Offering Key')
         public String offeringKey;
-        @InvocableVariable(required=true label='Template Type')
+        @InvocableVariable(required=true, label='Template Type')
         public String templateType;
-        @InvocableVariable(required=true label='Section Key'
-            description='The VARIANT section''s own Section_Key__c (e.g. problem--healthcare), not the base key.')
+        @InvocableVariable(required=true, label='Section Key',
+            description='The VARIANT section\'s own Section_Key__c (e.g. problem--healthcare), not the base key.')
         public String sectionKey;
     }
 
@@ -43,8 +43,8 @@ public with sharing class GtmAgentGetSectionContent {
     private static final Set<String> DRAFTABLE_TYPES = new Set<String>{ 'text', 'rich' };
 
     @InvocableMethod(
-        label='Get GTM Section Content'
-        description='Reads an industry variant section''s current field values and the matching industry research brief, for the Content Drafting Assistant.'
+        label='Get GTM Section Content',
+        description='Reads an industry variant section\'s current field values and the matching industry research brief, for the Content Drafting Assistant.',
         category='GTM Offerings'
     )
     public static List<Output> execute(List<Input> inputs) {
