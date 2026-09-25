@@ -647,6 +647,23 @@ known — CSS custom properties at the top of both stylesheets, sourced from a
 new json field beside `swatches` in the customizer-settings surface (see
 D8/§1 above), applied per-offering the same way `Inline_Style__c` already is.
 
+**D16 — FAQ items editor's "Add item" lock is UI-only; no server-side
+backstop.** Flagged in the same IA plan (`docs/agent-artifacts/content-manager-ia-plan.md`
+§3.4): `gtmFieldEditor.js` (~lines 134-136) gates the "+ Add item" button on
+`itemsLocked`, computed from `LOCKED_JSON_ITEMS` (`gtmPageLayouts.js` —
+`faq::items`), so a user working through the Content Manager UI cannot add a
+new FAQ array item. Nothing on the save path (`GtmPageContentController`'s
+`saveDrafts` or equivalent) re-checks that same lock — a client bypassing the
+UI (direct Apex/API call, or any other tooling that writes a `Page_Content__c`
+JSON payload) can add a FAQ item the UI would have refused. **Known, accepted
+gap, not urgent:** the same trust boundary already applies to every other
+JSON-array field this editor manages, no exploit path exists for a guest/
+prospect user (this editor is Content Manager-only, gated by the
+`GTM_Content_Manager`/`GTM_Content_Admin` permission sets), and closing it
+would mean duplicating the lock's validation logic server-side for a single
+field. Revisit if `LOCKED_JSON_ITEMS` grows beyond this one entry, or if a
+non-Content-Manager surface ever gets write access to the same field.
+
 ---
 
 **D15 — `GtmAgentProxyControllerReadoutTest.readoutSurfaceExecuteToolIssuesNoCallout`
