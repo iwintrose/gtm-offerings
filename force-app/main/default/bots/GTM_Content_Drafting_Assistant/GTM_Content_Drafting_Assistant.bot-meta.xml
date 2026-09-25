@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Agentforce agent for the GTM Content Manager "Draft with AI" modal.
+  REQUIRES: Agentforce (Einstein Copilot) provisioned on the org.
+  Scoped ONLY to Content Manager's drafting surface (decision F4): never
+  wired into the GTM_Offerings app's utility bar or configurator bubble, and
+  never granted the GTMGetConfigState/GTMApplyConfigUpdate actions those use.
+  Deploy this bundle with the standard sf project deploy start flow, pointing
+  its source-dir flag at force-app/main/default/bots.
+  After deploy: activate the agent in Agentforce Studio. Track A only (same
+  as GTM_Configurator_Assistant today) means this remains unwired scaffolding;
+  the live path is GtmAgentContentDraftController's Claude/OpenAI/Gemini
+  proxy, per docs/architecture/industry-variants-agentforce-draft.md.
+-->
+<Bot xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Helps Content Manager editors draft copy for a whole-section industry variant. The editor picks a section and industry; the agent reads the base fields and that industry's research brief, then proposes copy the editor reviews and publishes through the normal Draft -> Publish flow.</description>
+    <label>GTM Content Drafting Assistant</label>
+    <logPrivateConversationData>false</logPrivateConversationData>
+    <richContentEnabled>false</richContentEnabled>
+    <type>EinsteinCopilot</type>
+    <botVersions>
+        <fullName>v1</fullName>
+        <botStepMappings>
+            <botInvocationMapping>
+                <parameterName>offeringKey</parameterName>
+                <type>ConversationVariable</type>
+                <value>offeringKey</value>
+            </botInvocationMapping>
+            <botInvocationMapping>
+                <parameterName>templateType</parameterName>
+                <type>ConversationVariable</type>
+                <value>templateType</value>
+            </botInvocationMapping>
+            <botInvocationMapping>
+                <parameterName>sectionKey</parameterName>
+                <type>ConversationVariable</type>
+                <value>sectionKey</value>
+            </botInvocationMapping>
+        </botStepMappings>
+        <conversationVariables>
+            <dataType>Text</dataType>
+            <developerName>offeringKey</developerName>
+            <label>Offering Key</label>
+        </conversationVariables>
+        <conversationVariables>
+            <dataType>Text</dataType>
+            <developerName>templateType</developerName>
+            <label>Template Type</label>
+        </conversationVariables>
+        <conversationVariables>
+            <dataType>Text</dataType>
+            <developerName>sectionKey</developerName>
+            <label>Section Key</label>
+        </conversationVariables>
+        <description>Initial version: read section content + industry brief, propose drafted copy via Agentforce actions.</description>
+        <label>v1</label>
+    </botVersions>
+</Bot>

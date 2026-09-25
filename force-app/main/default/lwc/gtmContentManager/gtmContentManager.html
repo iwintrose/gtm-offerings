@@ -346,6 +346,15 @@
             </template>
           </aside>
 
+          <template if:true={canOpenDraftWithAi}>
+            <div class="gcm-draft-ai-bar">
+              <button class="gcm-draft-ai-btn" onclick={handleOpenDraftWithAi} disabled={isSaving}>
+                <lightning-icon icon-name="utility:einstein" size="x-small"></lightning-icon>
+                Draft with AI
+              </button>
+            </div>
+          </template>
+
           <c-gtm-field-editor
             class="gcm-fields"
             records={records}
@@ -485,6 +494,36 @@
             <lightning-button label="Cancel" onclick={handleCloseVariant}></lightning-button>
             <lightning-button label="Add industry variant" variant="brand" disabled={canAddVariantDisabled}
                               onclick={handleCreateVariant}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <template if:true={draftAiOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="draftAiTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="draftAiTitle">Draft with AI</h2>
+            <p>GUS proposes copy for this industry variant from its research brief. Nothing is saved
+              until you review it in the field editor and publish.</p>
+          </header>
+          <div class="modal-b">
+            <lightning-textarea label="Anything GUS should know? (optional)"
+                                 value={draftAiPrompt}
+                                 onchange={handleDraftAiPromptChange}
+                                 disabled={draftAiBusy}></lightning-textarea>
+            <template if:true={draftAiReply}>
+              <p class="modal-note">{draftAiReply}</p>
+            </template>
+            <template if:true={draftAiError}>
+              <p class="modal-note gcm-industry-error" role="alert">{draftAiError}</p>
+            </template>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseDraftWithAi}
+                              disabled={draftAiBusy}></lightning-button>
+            <lightning-button label="Draft" variant="brand" disabled={canDraftWithAiDisabled}
+                              onclick={handleDraftWithAi}></lightning-button>
           </footer>
         </div>
       </section>

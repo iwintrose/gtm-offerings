@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Agentforce function backing GTMGetSectionContent.genAiPlugin.
+  Backed by GtmAgentGetSectionContent.execute() (@InvocableMethod).
+  REQUIRES: Agentforce provisioned on the org.
+-->
+<GenAiFunction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Reads an industry variant section's current field values and the matching industry research brief.</description>
+    <invocationTarget>GtmAgentGetSectionContent</invocationTarget>
+    <invocationTargetType>apex</invocationTargetType>
+    <isConfirmationRequired>false</isConfirmationRequired>
+    <masterLabel>Get GTM Section Content</masterLabel>
+</GenAiFunction>

@@ -199,24 +199,38 @@ public without sharing class GtmAgentProxyController {
      * The Claude tool-use loop. Callouts only; the surface's executeTool does
      * no DML, so every HTTP round trip in this method happens before the
      * transaction's first (client-side, later) write.
+     *
+     * `public`, not `private`: GtmAgentContentDraftController (Content
+     * Manager's entry point, a separate class -- see its header and
+     * docs/architecture/industry-variants-agentforce-draft.md §4) calls this
+     * directly to reuse the one shared loop without needing Apex class
+     * access to GtmAgentProxyController itself, which is what keeps
+     * chat()/chatOnReadout()/chatOnApp() ungranted-and-unreachable from the
+     * Content Manager app under decision F4. No other behavior change.
      */
-    private static String runLoop(GtmAgentToolSurface surface, String userMessage, String historyJson) {
+    public static String runLoop(GtmAgentToolSurface surface, String userMessage, String historyJson) {
         String provider = getProvider();
         String apiKey    = getApiKey(provider);
         if (String.isBlank(apiKey)) {
+            String noKeyMessage;
             if (PROVIDER_GEMINI.equals(provider)) {
-                throw new AuraHandledException(
-                    'Gemini API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Google Gemini API key into the Gemini API Key field.'
-                );
+                noKeyMessage = 'Gemini API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Google Gemini API key into the Gemini API Key field.';
+            } else if (PROVIDER_OPENAI.equals(provider)) {
+                noKeyMessage = 'OpenAI API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your OpenAI API key into the OpenAI API Key field.';
+            } else {
+                noKeyMessage = 'Claude API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Anthropic API key into the Claude API Key field.';
             }
-            if (PROVIDER_OPENAI.equals(provider)) {
-                throw new AuraHandledException(
-                    'OpenAI API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your OpenAI API key into the OpenAI API Key field.'
-                );
-            }
-            throw new AuraHandledException(
-                'Claude API key not configured. Go to Setup → Custom Settings → GTM Agent Settings → Manage → New, and paste your Anthropic API key into the Claude API Key field.'
-            );
+            // AuraHandledException.getMessage() returns the generic
+            // "Script-thrown exception" text unless setMessage() is called
+            // explicitly, even though the constructor already took the real
+            // message -- a documented Apex quirk. Every caller of runLoop()
+            // (chat(), chatOnReadout(), GtmAgentContentDraftController.chat())
+            // needs the real, matching configuration message to actually
+            // reach both Apex callers/tests and the LWC client, so it must be
+            // set here rather than relying on the constructor alone.
+            AuraHandledException noKeyEx = new AuraHandledException(noKeyMessage);
+            noKeyEx.setMessage(noKeyMessage);
+            throw noKeyEx;
         }
 
         List<Object> history = parseHistory(historyJson);
