@@ -20,14 +20,14 @@ public with sharing class GtmAgentDraftSectionVariant {
     private static final Integer MAX_FIELD_LENGTH = 8000;
 
     public class Input {
-        @InvocableVariable(required=true, label='Offering Key')
+        @InvocableVariable(required=true label='Offering Key')
         public String offeringKey;
-        @InvocableVariable(required=true, label='Template Type')
+        @InvocableVariable(required=true label='Template Type')
         public String templateType;
-        @InvocableVariable(required=true, label='Section Key',
+        @InvocableVariable(required=true label='Section Key'
             description='The VARIANT section\'s own Section_Key__c.')
         public String sectionKey;
-        @InvocableVariable(required=true, label='Field Values JSON',
+        @InvocableVariable(required=true label='Field Values JSON'
             description='JSON object: {"fieldKey": "proposed copy", ...}. Only the section\'s own text/rich fields are accepted.')
         public String fieldValuesJson;
     }
@@ -39,8 +39,8 @@ public with sharing class GtmAgentDraftSectionVariant {
     }
 
     @InvocableMethod(
-        label='Draft GTM Section Variant Copy',
-        description='Validates proposed field values for an industry variant section. Returns a proposal only -- never writes content.',
+        label='Draft GTM Section Variant Copy'
+        description='Validates proposed field values for an industry variant section. Returns a proposal only -- never writes content.'
         category='GTM Offerings'
     )
     public static List<Output> execute(List<Input> inputs) {
