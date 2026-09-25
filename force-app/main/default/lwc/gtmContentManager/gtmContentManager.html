@@ -241,7 +241,38 @@
                         </template>
                       </span>
                     </template>
+                    <button class="sec-variant-add" data-key={s.sectionKey} onclick={handleOpenVariant}
+                            title="Add an industry variant of this section"
+                            aria-label="Add an industry variant of this section">+ Industry variant</button>
                   </div>
+                  <template for:each={s.variants} for:item="v">
+                    <div key={v.sectionKey} class={v.itemClass} data-key={v.sectionKey}
+                         onclick={handleSelectSection}>
+                      <lightning-icon icon-name="utility:world" size="x-small" class="sec-icon"></lightning-icon>
+                      <div class="sec-main">
+                        <span class="sec-name">{v.label} &middot; {v.industryKey}</span>
+                        <span class="sec-meta">{v.layoutLabel} &middot; {v.fieldCount} fields</span>
+                        <template if:true={v.hasPending}>
+                          <span class="sec-pending">{v.pendingLabel}</span>
+                        </template>
+                      </div>
+                      <template if:true={v.isDirty}><span class="sec-dot" title="Unsaved"></span></template>
+                      <template if:true={reorderMode}>
+                        <span class="sec-move">
+                          <button class="mv" data-key={v.sectionKey} onclick={handleToggleActive}
+                                  title={v.toggleLabel} aria-label={v.toggleLabel}>&#9679;</button>
+                          <template if:true={v.canDelete}>
+                            <button class="mv mv--danger" data-key={v.sectionKey} onclick={handleAskDelete}
+                                    title="Delete this variant" aria-label="Delete this variant">&times;</button>
+                          </template>
+                          <template if:true={v.canRestore}>
+                            <button class="mv mv--undo" data-key={v.sectionKey} onclick={handleRestore}
+                                    title="Undo the pending delete" aria-label="Undo the pending delete">&#8630;</button>
+                          </template>
+                        </span>
+                      </template>
+                    </div>
+                  </template>
                 </template>
               </div>
               <div class="gcm-rail-foot">
@@ -269,6 +300,7 @@
             section-help={activeSectionHelp}
             section-address={activeAddress}
             layout-type={activeLayoutType}
+            industry-key={activeIndustryKey}
             offering-key={selectedOffering}
             template-type={selectedTemplate}
             busy={isSaving}
@@ -370,6 +402,35 @@
             <lightning-button label="Cancel" onclick={handleCloseIndustry}></lightning-button>
             <lightning-button label="Add industry" variant="brand" disabled={canAddIndustryDisabled}
                               onclick={handleCreateIndustry}></lightning-button>
+          </footer>
+        </div>
+      </section>
+    </template>
+
+    <template if:true={variantOpen}>
+      <section role="dialog" aria-modal="true" aria-labelledby="varTitle" class="scrim">
+        <div class="modal">
+          <header class="modal-h">
+            <h2 id="varTitle">Add an industry variant</h2>
+            <p>A whole copy of this section, scoped to one industry. It starts pre-filled with the section's current fields.</p>
+          </header>
+          <div class="modal-b">
+            <template if:false={hasVariantOptions}>
+              <p class="modal-note">Every industry already has a variant of this section, or there are no industries yet.</p>
+            </template>
+            <template if:true={hasVariantOptions}>
+              <lightning-combobox label="Industry" value={variantIndustryKey}
+                                   options={variantOptions}
+                                   onchange={handleVariantIndustryChange}></lightning-combobox>
+            </template>
+            <template if:true={variantError}>
+              <p class="modal-note gcm-industry-error" role="alert">{variantError}</p>
+            </template>
+          </div>
+          <footer class="modal-f">
+            <lightning-button label="Cancel" onclick={handleCloseVariant}></lightning-button>
+            <lightning-button label="Add industry variant" variant="brand" disabled={canAddVariantDisabled}
+                              onclick={handleCreateVariant}></lightning-button>
           </footer>
         </div>
       </section>

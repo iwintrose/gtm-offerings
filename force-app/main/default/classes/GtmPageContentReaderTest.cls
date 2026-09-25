@@ -706,4 +706,115 @@ private class GtmPageContentReaderTest {
         );
         Assert.isNotNull(info.sites, 'Sites list should never be null, even if empty');
     }
+
+    // ─── industry variants (issue #industry-variants-core) ────────────────────
+
+    private static GTM_Page_Section__c variantSectionRow(
+        String offering, String tmpl, String variantKey, String baseKey,
+        String industry, String label, String layoutType, Boolean active, String status
+    ) {
+        GTM_Page_Section__c sec = sectionRow(offering, tmpl, variantKey, label, layoutType, 10, active, status);
+        sec.Base_Section_Key__c = baseKey;
+        sec.Industry_Key__c = industry;
+        return sec;
+    }
+
+    @IsTest
+    static void getPageContent_remapsALiveVariantsRowsUnderTheBaseKey() {
+        insert new List<GTM_Page_Section__c>{
+            sectionRow(OFFERING, TMPL, 'problem', 'Problem', 'hero', 10, true, 'Published'),
+            variantSectionRow(OFFERING, TMPL, 'problem--healthcare', 'problem', 'healthcare',
+                'Problem (Healthcare)', 'hero', true, 'Published')
+        };
+        insert new List<GTM_Page_Content__c>{
+            contentRow(OFFERING, TMPL, 'problem', 'headline', 'text', 'Generic problem', null, null, null, 10),
+            contentRow(OFFERING, TMPL, 'problem--healthcare', 'headline', 'text',
+                'Healthcare-specific problem', null, null, 'healthcare', 10)
+        };
+
+        Test.startTest();
+        Map<String, String> forHealthcare = GtmPageContentReader.getPageContent(OFFERING, TMPL, 'healthcare');
+        Map<String, String> forGeneric = GtmPageContentReader.getPageContent(OFFERING, TMPL, null);
+        Test.stopTest();
+
+        Assert.areEqual('Healthcare-specific problem', forHealthcare.get('problem::headline'),
+            'The variant content should be remapped under the BASE key, not the variant key');
+        Assert.isFalse(forHealthcare.containsKey('problem--healthcare::headline'),
+            'The variant key itself should never be exposed to the renderer');
+        Assert.areEqual('Generic problem', forGeneric.get('problem::headline'),
+            'With no industry selected, the base content is unaffected by the variant');
+    }
+
+    @IsTest
+    static void getPageContent_ignoresAVariantThatIsNotPublished() {
+        insert new List<GTM_Page_Section__c>{
+            sectionRow(OFFERING, TMPL, 'problem', 'Problem', 'hero', 10, true, 'Published'),
+            variantSectionRow(OFFERING, TMPL, 'problem--healthcare', 'problem', 'healthcare',
+                'Problem (Healthcare)', 'hero', true, 'Draft')
+        };
+        insert new List<GTM_Page_Content__c>{
+            contentRow(OFFERING, TMPL, 'problem', 'headline', 'text', 'Generic problem', null, null, null, 10),
+            contentRow(OFFERING, TMPL, 'problem--healthcare', 'headline', 'text',
+                'Draft healthcare problem', null, null, 'healthcare', 10)
+        };
+
+        Test.startTest();
+        Map<String, String> result = GtmPageContentReader.getPageContent(OFFERING, TMPL, 'healthcare');
+        Test.stopTest();
+
+        Assert.areEqual('Generic problem', result.get('problem::headline'),
+            'An unpublished variant must not substitute into the live page');
+    }
+
+    @IsTest
+    static void getPageLayout_substitutesVariantLabelLayoutWidthButKeepsBaseKeyAndSortOrder() {
+        GTM_Page_Section__c base = sectionRow(OFFERING, TMPL, 'problem', 'Problem', 'hero', 10, true, 'Published');
+        base.Width__c = 'standard';
+        GTM_Page_Section__c variant = variantSectionRow(OFFERING, TMPL, 'problem--healthcare', 'problem',
+            'healthcare', 'The Healthcare Problem', 'card-grid', true, 'Published');
+        variant.Width__c = 'wide';
+        insert new List<GTM_Page_Section__c>{ base, variant };
+        insert contentRow(OFFERING, TMPL, 'problem', 'headline', 'text', 'Generic', null, null, null, 10);
+
+        Test.startTest();
+        GtmPageContentReader.PageLayout layout = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'healthcare');
+        Test.stopTest();
+
+        Assert.areEqual(1, layout.sections.size(),
+            'The variant must not appear as its own entry in the sequence');
+        GtmPageContentReader.SectionDto dto = layout.sections[0];
+        Assert.areEqual('problem', dto.sectionKey, 'sectionKey stays the BASE key -- ordering is untouched');
+        Assert.areEqual(base.Sort_Order__c, dto.sortOrder, 'Sort_Order__c stays the base section\'s');
+        Assert.areEqual('The Healthcare Problem', dto.label, 'Label is substituted from the variant');
+        Assert.areEqual('card-grid', dto.layoutType, 'Layout type is substituted from the variant');
+        Assert.areEqual('wide', dto.width, 'Width is substituted from the variant');
+    }
+
+    @IsTest
+    static void getPageLayout_fieldMetaAgreesWithContentOnRemappedVariantKeys() {
+        insert new List<GTM_Page_Section__c>{
+            sectionRow(OFFERING, TMPL, 'problem', 'Problem', 'hero', 10, true, 'Published'),
+            variantSectionRow(OFFERING, TMPL, 'problem--healthcare', 'problem', 'healthcare',
+                'Problem (Healthcare)', 'hero', true, 'Published')
+        };
+        insert contentRow(OFFERING, TMPL, 'problem--healthcare', 'onlyOnVariant', 'text',
+            'Only in healthcare', null, null, 'healthcare', 10);
+
+        Test.startTest();
+        GtmPageContentReader.PageLayout layout = GtmPageContentReader.getPageLayout(OFFERING, TMPL, 'healthcare');
+        Test.stopTest();
+
+        // The field must resolve under the base key in BOTH content and
+        // fieldMeta, or the renderer -- which matches fieldMeta entries
+        // against content's section::field keys to draw fields the layout
+        // never declared -- would silently drop it.
+        Assert.areEqual('Only in healthcare', layout.content.get('problem::onlyOnVariant'),
+            'content is remapped to the base key');
+        GtmPageContentReader.FieldMeta meta;
+        for (GtmPageContentReader.FieldMeta m : layout.fieldMeta) {
+            if (m.fieldKey == 'onlyOnVariant') meta = m;
+        }
+        Assert.isNotNull(meta, 'The variant-only field should be described in fieldMeta');
+        Assert.areEqual('problem', meta.sectionKey, 'fieldMeta is remapped to the base key too');
+    }
 }

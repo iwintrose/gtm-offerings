@@ -191,8 +191,11 @@ public without sharing class GtmPageContentController {
         String offeringKey, String templateType, String sectionKey, String label,
         String layoutType, String width, List<GtmPageSectionController.FieldSeed> fields
     ) {
+        // Not a variant create -- that path is c/gtmContentManager's new
+        // "+ Industry variant" modal, which calls GtmPageSectionController
+        // directly rather than through this wrapper.
         return GtmPageSectionController.createSection(
-            offeringKey, templateType, sectionKey, label, layoutType, width, fields);
+            offeringKey, templateType, sectionKey, label, layoutType, width, fields, null, null);
     }
 
     @AuraEnabled
@@ -201,7 +204,7 @@ public without sharing class GtmPageContentController {
         String fieldKey, String fieldType, String label
     ) {
         return GtmPageSectionController.createField(
-            offeringKey, templateType, sectionKey, fieldKey, fieldType, label, null);
+            offeringKey, templateType, sectionKey, fieldKey, fieldType, label, null, null);
     }
 
     /**

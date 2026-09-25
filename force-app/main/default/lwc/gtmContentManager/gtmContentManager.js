@@ -14,6 +14,7 @@ import createSection from '@salesforce/apex/GtmPageSectionController.createSecti
 import createIndustry from '@salesforce/apex/GtmPageContentController.createIndustry';
 import deleteSection from '@salesforce/apex/GtmPageSectionController.deleteSection';
 import restoreSection from '@salesforce/apex/GtmPageSectionController.restoreSection';
+import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
 // One definition of what a layout is made of, shared with the renderer.
 import { addableLayouts, fieldsFor, templatesFor, TEMPLATE_LABELS, LAYOUT_LABELS, FRAMEWORK_KEY } from 'c/gtmPageLayouts';
 
@@ -114,6 +115,13 @@ export default class GtmContentManager extends LightningElement {
     @track industryOpen = false;
     @track industryName = '';
     @track industryError = '';
+
+    // add industry variant (any page, per base section)
+    @track variantOpen = false;
+    @track variantTarget = null;      // the base section this variant is for
+    @track variantIndustryKey = '';
+    @track variantError = '';
+    @track variantIndustries = [];    // available industries, from getIndustryProfiles
 
     // column splitter
     @track fieldsWidth = 0;
@@ -372,13 +380,20 @@ export default class GtmContentManager extends LightningElement {
 
     // ─── rail ─────────────────────────────────────────────────────────────────
 
+    /** True for a row that is a whole-section industry variant of another row. */
+    isVariantRow(s) { return !!s.baseSectionKey; }
+
     get railSections() {
         // offering-defaults never shows here -- see contentSections. It stays
         // present in this.sections (the model everything else, including
         // move()/persistOrder(), operates on) so hiding it from the rail
-        // changes nothing about its stored position.
-        const rows = this.contentSections;
-        return rows.map((s, i) => {
+        // changes nothing about its stored position. Variant rows are base
+        // rows themselves for ordering purposes (a variant's own
+        // Sort_Order__c is real, see #industry-variants-visibility-nav for
+        // per-industry ordering) but the rail groups each one under its base
+        // rather than listing it in the main sequence.
+        const rows = this.contentSections.filter((s) => !this.isVariantRow(s));
+        const decorate = (s, i, isVariant) => {
             // What is pending on this section, said in the words an editor
             // would use. A structural change is a draft like any other, so it
             // has to be visible before Publish, not only afterwards.
@@ -397,7 +412,7 @@ export default class GtmContentManager extends LightningElement {
                 layoutLabel: LAYOUT_LABELS[s.layoutType] || s.layoutType,
                 isDirty: this.dirtyKeys.indexOf(s.sectionKey) > -1,
                 fieldCount: this.records.filter((r) => r.sectionKey === s.sectionKey).length,
-                itemClass: 'sec'
+                itemClass: (isVariant ? 'sec sec--variant' : 'sec')
                     + (s.sectionKey === this.activeKey ? ' sec--active' : '')
                     + (s.active === false ? ' sec--off' : '')
                     + (s.isDeleted ? ' sec--doomed' : '')
@@ -408,12 +423,19 @@ export default class GtmContentManager extends LightningElement {
                 pendingLabel: pending,
                 hasPending: !!pending,
                 canDelete: !s.isDeleted,
-                canRestore: s.isDeleted === true
+                canRestore: s.isDeleted === true,
+                isVariant
             };
-        });
+        };
+        return rows.map((s, i) => ({
+            ...decorate(s, i, false),
+            variants: this.contentSections
+                .filter((v) => this.isVariantRow(v) && v.baseSectionKey === s.sectionKey)
+                .map((v) => decorate(v, 0, true))
+        }));
     }
 
-    get sectionCount() { return this.contentSections.length; }
+    get sectionCount() { return this.contentSections.filter((s) => !this.isVariantRow(s)).length; }
 
     // Picking a section in the rail moves the preview to it: c/gtmPagePreview
     // scrolls its canvas when activeKey changes, so setting it is the whole
@@ -881,6 +903,103 @@ export default class GtmContentManager extends LightningElement {
             .finally(() => { this.isSaving = false; });
     }
 
+    // ─── add industry variant ─────────────────────────────────────────────────
+    // A whole-section variant of an existing section, scoped to one industry.
+    // Modeled on "add industry" above: the industry list comes from the
+    // framework's Industry Chooser taxonomy, not this page's own content.
+
+    /**
+     * A snapshot of a section's current fields, in the FieldSeed shape
+     * createSection expects, used to seed a new variant with the base
+     * section's current copy instead of a blank layout.
+     */
+    fieldsSnapshotFor(sectionKey) {
+        return this.records
+            .filter((r) => r.sectionKey === sectionKey)
+            .map((r) => ({
+                fieldKey: r.fieldKey,
+                fieldType: r.fieldType || 'text',
+                label: r.label || ''
+            }));
+    }
+
+    get variantOptions() {
+        const used = new Set(
+            (this.contentSections || [])
+                .filter((s) => this.variantTarget && s.baseSectionKey === this.variantTarget.sectionKey)
+                .map((s) => s.industryKey)
+        );
+        return (this.variantIndustries || [])
+            .filter((ind) => !used.has(ind.industryKey))
+            .map((ind) => ({ label: ind.industryLabel || ind.industryKey, value: ind.industryKey }));
+    }
+
+    get hasVariantOptions() { return this.variantOptions.length > 0; }
+
+    get canAddVariantDisabled() {
+        return !this.variantIndustryKey || this.isSaving;
+    }
+
+    handleOpenVariant(event) {
+        const key = event.currentTarget.dataset.key;
+        const section = this.contentSections.find((s) => s.sectionKey === key);
+        if (!section) return;
+        this.variantTarget = section;
+        this.variantIndustryKey = '';
+        this.variantError = '';
+        this.variantOpen = true;
+        this.isSaving = true;
+        getIndustryProfiles({ offeringKey: FRAMEWORK_KEY, templateType: 'industry-chooser' })
+            .then((rows) => { this.variantIndustries = rows || []; })
+            .catch((err) => { this.variantError = this.messageFrom(err) || 'Industries could not be loaded.'; })
+            .finally(() => { this.isSaving = false; });
+    }
+
+    handleCloseVariant() { this.variantOpen = false; this.variantTarget = null; }
+
+    handleVariantIndustryChange(event) {
+        this.variantIndustryKey = event.detail.value;
+        this.variantError = '';
+    }
+
+    handleCreateVariant() {
+        if (this.canAddVariantDisabled || !this.variantTarget) return;
+        const base = this.variantTarget;
+        this.isSaving = true;
+        this.saveMessage = 'Adding industry variant…';
+        this.variantOpen = false;
+        let newKey = '';
+        createSection({
+            offeringKey: this.selectedOffering,
+            templateType: this.selectedTemplate,
+            sectionKey: '',
+            label: base.label,
+            layoutType: base.layoutType,
+            width: base.width || 'standard',
+            fields: this.fieldsSnapshotFor(base.sectionKey),
+            industryKey: this.variantIndustryKey,
+            baseSectionKey: base.sectionKey
+        })
+            .then(() => {
+                this.saveMessage = 'Industry variant added';
+                return this.loadPage();
+            })
+            .then(() => {
+                const created = this.sections.find((s) =>
+                    s.baseSectionKey === base.sectionKey && s.industryKey === this.variantIndustryKey);
+                newKey = created ? created.sectionKey : '';
+                if (newKey) {
+                    this.activeKey = newKey;
+                    this.scrollRailTo(newKey);
+                }
+            })
+            .catch((err) => {
+                this.saveMessage = '';
+                this.loadError = this.messageFrom(err) || 'The industry variant could not be created.';
+            })
+            .finally(() => { this.isSaving = false; this.variantTarget = null; });
+    }
+
     handleOpenAdd() {
         this.addOpen = true;
         this.addLayout = '';
@@ -906,7 +1025,9 @@ export default class GtmContentManager extends LightningElement {
             label: this.addLabel.trim(),
             layoutType: this.addLayout,
             width: 'standard',
-            fields: fieldsFor(this.addLayout)
+            fields: fieldsFor(this.addLayout),
+            industryKey: null,
+            baseSectionKey: null
         })
             .then(() => {
                 this.saveMessage = 'Section added';
@@ -1029,6 +1150,9 @@ export default class GtmContentManager extends LightningElement {
     get activeSectionLabel() { const s = this.activeSection; return s ? (s.label || s.sectionKey) : ''; }
     get activeSectionHelp() { const s = this.activeSection; return s ? (s.helpText || '') : ''; }
     get activeLayoutType() { const s = this.activeSection; return s ? s.layoutType : ''; }
+    // Threaded to c-gtm-field-editor so a field created while a variant
+    // section is active is stamped with the same industry automatically.
+    get activeIndustryKey() { const s = this.activeSection; return s ? (s.industryKey || '') : ''; }
     get activeAddress() {
         return `${this.selectedOffering}::${this.selectedTemplate}::${this.activeKey}`;
     }

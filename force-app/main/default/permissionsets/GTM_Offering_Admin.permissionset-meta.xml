@@ -1166,6 +1166,20 @@
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
+    <!-- Same strict-superset rule as the rest of this object's fields above
+         (issue-industry-variants-core): GTM_Offering_User does not carry
+         these two, but this permission set is elevated to match every field
+         on this object regardless. -->
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Base_Section_Key__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <field>GTM_Page_Section__c.Industry_Key__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
     <tabSettings>
         <tab>GTM_Saved_Configuration__c</tab>
         <visibility>Visible</visibility>

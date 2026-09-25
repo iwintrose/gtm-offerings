@@ -20,7 +20,7 @@ private class GtmPageSectionControllerTest {
     static void createSection_createsSectionAndItsFields() {
         Test.startTest();
         String id = GtmPageSectionController.createSection(
-            OFFERING, TMPL, 'new-beat', 'New Beat', 'card-grid', 'standard', seeds());
+            OFFERING, TMPL, 'new-beat', 'New Beat', 'card-grid', 'standard', seeds(), null, null);
         Test.stopTest();
 
         GTM_Page_Section__c sec = [
@@ -48,7 +48,7 @@ private class GtmPageSectionControllerTest {
     static void createSection_normalisesKeyForUseInAnAddress() {
         Test.startTest();
         String id = GtmPageSectionController.createSection(
-            OFFERING, TMPL, '  The Mechanism!! ', 'The Mechanism', 'hero', 'standard', seeds());
+            OFFERING, TMPL, '  The Mechanism!! ', 'The Mechanism', 'hero', 'standard', seeds(), null, null);
         Test.stopTest();
 
         GTM_Page_Section__c sec = [SELECT Section_Key__c FROM GTM_Page_Section__c WHERE Id = :id];
@@ -59,12 +59,12 @@ private class GtmPageSectionControllerTest {
     @IsTest
     static void createSection_refusesADuplicateKey() {
         GtmPageSectionController.createSection(
-            OFFERING, TMPL, 'beat', 'Beat', 'hero', 'standard', seeds());
+            OFFERING, TMPL, 'beat', 'Beat', 'hero', 'standard', seeds(), null, null);
         Boolean blocked = false;
         Test.startTest();
         try {
             GtmPageSectionController.createSection(
-                OFFERING, TMPL, 'beat', 'Beat again', 'hero', 'standard', seeds());
+                OFFERING, TMPL, 'beat', 'Beat again', 'hero', 'standard', seeds(), null, null);
         } catch (AuraHandledException e) {
             blocked = true;
         }
@@ -83,7 +83,7 @@ private class GtmPageSectionControllerTest {
         Test.startTest();
         try {
             GtmPageSectionController.createSection(
-                OFFERING, TMPL, '!!!', '!!!', 'hero', 'standard', seeds());
+                OFFERING, TMPL, '!!!', '!!!', 'hero', 'standard', seeds(), null, null);
         } catch (AuraHandledException e) {
             blocked = true;
         }
@@ -94,7 +94,7 @@ private class GtmPageSectionControllerTest {
     @IsTest
     static void deleteSection_removesTheSectionAndItsContent() {
         String id = GtmPageSectionController.createSection(
-            OFFERING, TMPL, 'doomed', 'Doomed', 'card-grid', 'standard', seeds());
+            OFFERING, TMPL, 'doomed', 'Doomed', 'card-grid', 'standard', seeds(), null, null);
 
         Test.startTest();
         Integer removed = GtmPageSectionController.deleteSection(id);
@@ -124,11 +124,11 @@ private class GtmPageSectionControllerTest {
     @IsTest
     static void createField_addsOneMissingRow() {
         GtmPageSectionController.createSection(
-            OFFERING, TMPL, 'partial', 'Partial', 'card-grid', 'standard', seeds());
+            OFFERING, TMPL, 'partial', 'Partial', 'card-grid', 'standard', seeds(), null, null);
 
         Test.startTest();
         String id = GtmPageSectionController.createField(
-            OFFERING, TMPL, 'partial', 'head', 'text', 'Head', null);
+            OFFERING, TMPL, 'partial', 'head', 'text', 'Head', null, null);
         Test.stopTest();
 
         GTM_Page_Content__c row = [SELECT Content_Address__c, Field_Type__c, Label__c
@@ -141,12 +141,12 @@ private class GtmPageSectionControllerTest {
     @IsTest
     static void createField_refusesAFieldThatAlreadyExists() {
         GtmPageSectionController.createSection(
-            OFFERING, TMPL, 'dupefield', 'Dupe Field', 'card-grid', 'standard', seeds());
+            OFFERING, TMPL, 'dupefield', 'Dupe Field', 'card-grid', 'standard', seeds(), null, null);
         Boolean blocked = false;
         Test.startTest();
         try {
             GtmPageSectionController.createField(
-                OFFERING, TMPL, 'dupefield', 'eyebrow', 'text', 'Eyebrow', null);
+                OFFERING, TMPL, 'dupefield', 'eyebrow', 'text', 'Eyebrow', null, null);
         } catch (AuraHandledException e) {
             blocked = true;
         }
@@ -332,7 +332,7 @@ private class GtmPageSectionControllerTest {
     @IsTest
     static void discard_removesASectionThatWasNeverPublished() {
         String id = GtmPageSectionController.createSection(
-            OFFERING, TMPL, 'brand-new', 'Brand New', 'card-grid', 'standard', seeds());
+            OFFERING, TMPL, 'brand-new', 'Brand New', 'card-grid', 'standard', seeds(), null, null);
 
         Test.startTest();
         GtmPageContentController.discardDrafts(OFFERING, TMPL);
@@ -351,7 +351,7 @@ private class GtmPageSectionControllerTest {
     static void createSection_startsUnpublished() {
         Test.startTest();
         String id = GtmPageSectionController.createSection(
-            OFFERING, TMPL, 'fresh', 'Fresh', 'hero', 'standard', seeds());
+            OFFERING, TMPL, 'fresh', 'Fresh', 'hero', 'standard', seeds(), null, null);
         Test.stopTest();
 
         System.assertEquals('Draft',
@@ -438,5 +438,174 @@ private class GtmPageSectionControllerTest {
         System.assertEquals(2, [SELECT COUNT() FROM GTM_Page_Section__c
             WHERE Offering_Key__c = :OFFERING AND Template_Type__c = 'offerings-listing'],
             'and nothing is duplicated');
+    }
+
+    // ─── industry variants (issue #industry-variants-core) ───────────────────
+
+    @IsTest
+    static void createSection_withIndustryParams_createsAVariantSeededFromTheBase() {
+        String baseId = GtmPageSectionController.createSection(
+            OFFERING, TMPL, 'problem', 'Problem', 'hero', 'standard', seeds(), null, null);
+
+        Test.startTest();
+        String variantId = GtmPageSectionController.createSection(
+            OFFERING, TMPL, '', 'Problem', 'hero', 'standard', seeds(), 'Healthcare!!', 'problem');
+        Test.stopTest();
+
+        GTM_Page_Section__c variant = [
+            SELECT Section_Key__c, Industry_Key__c, Base_Section_Key__c, Section_Address__c
+            FROM GTM_Page_Section__c WHERE Id = :variantId];
+        System.assertEquals('problem--healthcare', variant.Section_Key__c,
+            'The variant key is derived as <baseKey>--<industrySlug>, server-side');
+        System.assertEquals('healthcare', variant.Industry_Key__c, 'The industry is normalised and stamped');
+        System.assertEquals('problem', variant.Base_Section_Key__c, 'The base key is stamped');
+        System.assertEquals(OFFERING + '::' + TMPL + '::problem--healthcare', variant.Section_Address__c,
+            'Section_Address__c addressing is unchanged -- the variant key is just another section key');
+
+        List<GTM_Page_Content__c> rows = [
+            SELECT Field_Key__c, Industry_Key__c FROM GTM_Page_Content__c
+            WHERE Offering_Key__c = :OFFERING AND Section_Key__c = 'problem--healthcare'];
+        System.assertEquals(2, rows.size(), 'The variant is seeded from the base fields snapshot');
+        for (GTM_Page_Content__c r : rows) {
+            System.assertEquals('healthcare', r.Industry_Key__c,
+                'Every seeded field row is stamped with the variant industry');
+        }
+        System.assert(String.isNotBlank(baseId), 'sanity: base section really was created');
+    }
+
+    @IsTest
+    static void createSection_refusesADuplicateVariantForTheSameBaseAndIndustry() {
+        GtmPageSectionController.createSection(
+            OFFERING, TMPL, 'problem', 'Problem', 'hero', 'standard', seeds(), null, null);
+        GtmPageSectionController.createSection(
+            OFFERING, TMPL, '', 'Problem', 'hero', 'standard', seeds(), 'healthcare', 'problem');
+
+        Boolean blocked = false;
+        Test.startTest();
+        try {
+            // A second, concurrent-looking request for the same (base, industry)
+            // pair must be rejected by a server-side query guard, not just a
+            // client-side check.
+            GtmPageSectionController.createSection(
+                OFFERING, TMPL, '', 'Problem', 'hero', 'standard', seeds(), 'healthcare', 'problem');
+        } catch (AuraHandledException e) {
+            blocked = true;
+        }
+        Test.stopTest();
+        System.assert(blocked, 'A duplicate (base, industry) variant pair should be refused');
+        System.assertEquals(1, [SELECT COUNT() FROM GTM_Page_Section__c
+            WHERE Offering_Key__c = :OFFERING AND Base_Section_Key__c = 'problem'
+            AND Industry_Key__c = 'healthcare'], 'Only one variant should exist for the pair');
+    }
+
+    @IsTest
+    static void createSection_refusesAVariantOfANonexistentBase() {
+        Boolean blocked = false;
+        Test.startTest();
+        try {
+            GtmPageSectionController.createSection(
+                OFFERING, TMPL, '', 'Problem', 'hero', 'standard', seeds(), 'healthcare', 'no-such-base');
+        } catch (AuraHandledException e) {
+            blocked = true;
+        }
+        Test.stopTest();
+        System.assert(blocked, 'A variant of a base section that does not exist should be refused');
+    }
+
+    @IsTest
+    static void createSection_refusesIndustryWithoutBaseOrBaseWithoutIndustry() {
+        Boolean blockedIndustryOnly = false;
+        Boolean blockedBaseOnly = false;
+        Test.startTest();
+        try {
+            GtmPageSectionController.createSection(
+                OFFERING, TMPL, 'x', 'X', 'hero', 'standard', seeds(), 'healthcare', null);
+        } catch (AuraHandledException e) {
+            blockedIndustryOnly = true;
+        }
+        try {
+            GtmPageSectionController.createSection(
+                OFFERING, TMPL, 'y', 'Y', 'hero', 'standard', seeds(), null, 'problem');
+        } catch (AuraHandledException e) {
+            blockedBaseOnly = true;
+        }
+        Test.stopTest();
+        System.assert(blockedIndustryOnly, 'industryKey without baseSectionKey should be refused');
+        System.assert(blockedBaseOnly, 'baseSectionKey without industryKey should be refused');
+    }
+
+    @IsTest
+    static void createField_withIndustryKey_stampsItOnTheNewRow() {
+        GtmPageSectionController.createSection(
+            OFFERING, TMPL, 'problem', 'Problem', 'hero', 'standard', seeds(), null, null);
+        GtmPageSectionController.createSection(
+            OFFERING, TMPL, '', 'Problem', 'hero', 'standard', new List<GtmPageSectionController.FieldSeed>(),
+            'healthcare', 'problem');
+
+        Test.startTest();
+        String id = GtmPageSectionController.createField(
+            OFFERING, TMPL, 'problem--healthcare', 'extra', 'text', 'Extra', null, 'healthcare');
+        Test.stopTest();
+
+        GTM_Page_Content__c row = [SELECT Industry_Key__c FROM GTM_Page_Content__c WHERE Id = :id];
+        System.assertEquals('healthcare', row.Industry_Key__c,
+            'A field added on a variant section is stamped with the same industry');
+    }
+
+    @IsTest
+    static void getEditorSections_returnsIndustryAndBaseSectionKeyForAVariant() {
+        GtmPageSectionController.createSection(
+            OFFERING, TMPL, 'problem', 'Problem', 'hero', 'standard', seeds(), null, null);
+        GtmPageSectionController.createSection(
+            OFFERING, TMPL, '', 'Problem', 'hero', 'standard', seeds(), 'healthcare', 'problem');
+
+        Test.startTest();
+        List<GtmPageSectionController.EditorSection> secs =
+            GtmPageSectionController.getEditorSections(OFFERING, TMPL);
+        Test.stopTest();
+
+        GtmPageSectionController.EditorSection variant;
+        for (GtmPageSectionController.EditorSection s : secs) {
+            if (s.sectionKey == 'problem--healthcare') variant = s;
+        }
+        System.assertNotEquals(null, variant, 'The variant should appear in the editor sections');
+        System.assertEquals('healthcare', variant.industryKey, 'industryKey is exposed on the DTO');
+        System.assertEquals('problem', variant.baseSectionKey, 'baseSectionKey is exposed on the DTO');
+    }
+
+    @IsTest
+    static void variantSection_publishAndDiscardWorkThroughTheGenericLifecycleUnmodified() {
+        String baseId = GtmPageSectionController.createSection(
+            OFFERING, TMPL, 'problem', 'Problem', 'hero', 'standard', seeds(), null, null);
+        update new GTM_Page_Section__c(Id = baseId, Status__c = 'Published');
+        String variantId = GtmPageSectionController.createSection(
+            OFFERING, TMPL, '', 'Problem', 'hero', 'standard', seeds(), 'healthcare', 'problem');
+
+        Test.startTest();
+        // Publish: the variant is a plain GTM_Page_Section__c row and goes
+        // live through GtmPageContentController.publishPage exactly like any
+        // other section -- no variant-specific publish code exists or should.
+        GtmPageContentController.publishPage(OFFERING, TMPL);
+        Test.stopTest();
+
+        GTM_Page_Section__c publishedVariant =
+            [SELECT Status__c FROM GTM_Page_Section__c WHERE Id = :variantId];
+        System.assertEquals('Published', publishedVariant.Status__c,
+            'A variant section publishes through the same generic path as any other section');
+
+        // Discard: hide the variant as a pending (unpublished) change, then
+        // discard it, and confirm the generic discard path reverts it exactly
+        // as it would for a non-variant section.
+        GtmPageSectionController.setSectionActive(variantId, false);
+        GTM_Page_Section__c beforeDiscard =
+            [SELECT Draft_State__c FROM GTM_Page_Section__c WHERE Id = :variantId];
+        System.assert(String.isNotBlank(beforeDiscard.Draft_State__c), 'The hide is pending');
+
+        GtmPageContentController.discardDrafts(OFFERING, TMPL);
+        GTM_Page_Section__c afterDiscard =
+            [SELECT Active__c, Draft_State__c FROM GTM_Page_Section__c WHERE Id = :variantId];
+        System.assertEquals(true, afterDiscard.Active__c,
+            'Discarding a variant section reverts its pending change like any other section');
+        System.assert(String.isBlank(afterDiscard.Draft_State__c), 'and clears the draft marker');
     }
 }

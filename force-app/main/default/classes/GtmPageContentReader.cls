@@ -38,13 +38,58 @@ public without sharing class GtmPageContentReader {
             LIMIT 1000
         ];
 
+        // Whole-section-variant keys, per base section, for this industry.
+        // Any content row addressed under a live variant's own section key
+        // is remapped to the base key below, so the renderer never needs to
+        // know a variant key exists.
+        Map<String, GTM_Page_Section__c> variantsByBase =
+            variantSectionsByBase(offeringKey, templateType, industryKey);
+        Map<String, String> baseKeyByVariantKey = new Map<String, String>();
+        for (String baseKey : variantsByBase.keySet()) {
+            baseKeyByVariantKey.put(variantsByBase.get(baseKey).Section_Key__c, baseKey);
+        }
+
         for (GTM_Page_Content__c rec : records) {
-            String mapKey = rec.Section_Key__c + '::' + rec.Field_Key__c;
+            String sectionKey = baseKeyByVariantKey.containsKey(rec.Section_Key__c)
+                ? baseKeyByVariantKey.get(rec.Section_Key__c)
+                : rec.Section_Key__c;
+            String mapKey = sectionKey + '::' + rec.Field_Key__c;
             if (!result.containsKey(mapKey)) {
                 result.put(mapKey, resolveValue(rec));
             }
         }
         return result;
+    }
+
+    /**
+     * The Published/Active variant section per base section key, for one
+     * industry -- keyed by Base_Section_Key__c. Empty when no industry is
+     * selected, so the no-industry / generic case is untouched.
+     *
+     * Only Published + Active variant rows are considered, the same "what is
+     * live" rule every other section is read under (see getPageLayout).
+     */
+    private static Map<String, GTM_Page_Section__c> variantSectionsByBase(
+        String offeringKey, String templateType, String industryKey
+    ) {
+        Map<String, GTM_Page_Section__c> out = new Map<String, GTM_Page_Section__c>();
+        if (String.isBlank(offeringKey) || String.isBlank(templateType) || String.isBlank(industryKey)) {
+            return out;
+        }
+        for (GTM_Page_Section__c sec : [
+            SELECT Section_Key__c, Base_Section_Key__c, Label__c, Layout_Type__c, Width__c
+            FROM   GTM_Page_Section__c
+            WHERE  Offering_Key__c    = :offeringKey
+            AND    Template_Type__c   = :templateType
+            AND    Active__c          = true
+            AND    Status__c          = 'Published'
+            AND    Industry_Key__c    = :industryKey
+            AND    Base_Section_Key__c != null
+            LIMIT  200
+        ]) {
+            out.put(sec.Base_Section_Key__c, sec);
+        }
+        return out;
     }
 
     /**
@@ -61,6 +106,14 @@ public without sharing class GtmPageContentReader {
             return layout;
         }
 
+        // Whole-section variant substitution: a base section whose base key
+        // has a live variant for this industry shows the variant's label/
+        // layout/width, but keeps its own sectionKey and Sort_Order__c --
+        // ordering and visibility per industry are out of scope for this
+        // issue (see #industry-variants-visibility-nav).
+        Map<String, GTM_Page_Section__c> variantsByBase =
+            variantSectionsByBase(offeringKey, templateType, industryKey);
+
         for (GTM_Page_Section__c sec : [
             SELECT Section_Key__c, Label__c, Help_Text__c, Layout_Type__c, Width__c, Sort_Order__c
             FROM   GTM_Page_Section__c
@@ -72,15 +125,21 @@ public without sharing class GtmPageContentReader {
             // is not published. A section created in the editor is Draft until
             // someone publishes it, so it does not appear at all.
             AND    Status__c        = 'Published'
+            // Variant rows are addressed under their own key
+            // (<baseKey>--<industrySlug>) and never render as their own
+            // sequence entry -- they only substitute into their base's entry
+            // above, via variantsByBase.
+            AND    Base_Section_Key__c = null
             ORDER BY Sort_Order__c ASC NULLS LAST, Section_Key__c ASC
             LIMIT 200
         ]) {
+            GTM_Page_Section__c variant = variantsByBase.get(sec.Section_Key__c);
             SectionDto dto = new SectionDto();
             dto.sectionKey = sec.Section_Key__c;
-            dto.label      = sec.Label__c;
+            dto.label      = variant != null ? variant.Label__c      : sec.Label__c;
             dto.helpText   = sec.Help_Text__c;
-            dto.layoutType = sec.Layout_Type__c;
-            dto.width      = sec.Width__c;
+            dto.layoutType = variant != null ? variant.Layout_Type__c : sec.Layout_Type__c;
+            dto.width      = variant != null ? variant.Width__c       : sec.Width__c;
             dto.sortOrder  = sec.Sort_Order__c;
             layout.sections.add(dto);
         }
@@ -137,6 +196,18 @@ public without sharing class GtmPageContentReader {
         List<FieldMeta> out = new List<FieldMeta>();
         if (String.isBlank(offeringKey) || String.isBlank(templateType)) return out;
         Set<String> seen = new Set<String>();
+        // Same remap as getPageContent: a field meta row addressed under a
+        // live variant's own section key is re-keyed to the base key, so
+        // getPageLayout's fieldMeta and its content map agree on the same
+        // section::field keys. Without this, a variant's fields would resolve
+        // in content but never be drawn, because fieldMeta would still say
+        // they live under a key the renderer never asks about.
+        Map<String, GTM_Page_Section__c> variantsByBase =
+            variantSectionsByBase(offeringKey, templateType, industryKey);
+        Map<String, String> baseKeyByVariantKey = new Map<String, String>();
+        for (String baseKey : variantsByBase.keySet()) {
+            baseKeyByVariantKey.put(variantsByBase.get(baseKey).Section_Key__c, baseKey);
+        }
         for (GTM_Page_Content__c rec : [
             SELECT Section_Key__c, Field_Key__c, Field_Type__c, Label__c,
                    Css_Class__c, Html_Id__c, Inline_Style__c
@@ -148,13 +219,16 @@ public without sharing class GtmPageContentReader {
             ORDER BY Industry_Key__c NULLS LAST, Sort_Order__c ASC
             LIMIT 1000
         ]) {
-            String addr = rec.Section_Key__c + '::' + rec.Field_Key__c;
+            String sectionKey = baseKeyByVariantKey.containsKey(rec.Section_Key__c)
+                ? baseKeyByVariantKey.get(rec.Section_Key__c)
+                : rec.Section_Key__c;
+            String addr = sectionKey + '::' + rec.Field_Key__c;
             // Same precedence as getPageContent: the industry-specific row wins
             // and the generic one is skipped, so the two never disagree.
             if (seen.contains(addr)) continue;
             seen.add(addr);
             FieldMeta m = new FieldMeta();
-            m.sectionKey = rec.Section_Key__c;
+            m.sectionKey = sectionKey;
             m.fieldKey   = rec.Field_Key__c;
             m.fieldType  = rec.Field_Type__c;
             m.label      = rec.Label__c;

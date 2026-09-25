@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Industry_Key__c</fullName>
+    <description>Optional. Set only on a variant row: the industry slug this whole-section variant applies to. Blank on base/generic sections.</description>
+    <externalId>false</externalId>
+    <label>Industry Key</label>
+    <length>80</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
