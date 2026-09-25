@@ -763,34 +763,31 @@ describe('c-gtm-overview: "Opportunities to follow up on" 3-column grouped table
         expect(element.shadowRoot.querySelector('.deal-none').textContent).toBe('—');
     });
 
-    // issue-102-1-engagement-links-landing acceptance criterion 7: this
-    // click-through's Account -> Contact grouping is unchanged (preserved
-    // unmodified per the Architect addendum this test's name used to cite)
-    // -- only the navigation TARGET moved, off GTM_Pages onto the new
-    // Engagement Links landing tab.
-    it('handleAccountClick repoints to the Engagement Links landing tab, scoped by c__rlfAccountId', async () => {
+    // issue #31: the Engagement Links landing tab this click-through used
+    // to navigate to is retired -- these now land on the Account/Contact
+    // record's own native Activity tab instead (this click-through's
+    // Account -> Contact grouping itself is unchanged).
+    it("handleAccountClick navigates to the Account record's Activity tab", async () => {
         const element = mountDeals([GROUPED_DEAL()]);
         await flushPromises();
 
         element.shadowRoot.querySelector('.deal-group-name').click();
 
         expect(mockNavigate).toHaveBeenCalledWith({
-            type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Engagement_Links' },
-            state: { c__rlfAccountId: '001000000000001' }
+            type: 'standard__recordPage',
+            attributes: { recordId: '001000000000001', objectApiName: 'Account', actionName: 'view' }
         });
     });
 
-    it('handleContactClick mirrors the account mechanism, scoped to account + contact, on the same landing tab', async () => {
+    it("handleContactClick navigates to the Contact record's Activity tab", async () => {
         const element = mountDeals([GROUPED_DEAL()]);
         await flushPromises();
 
         element.shadowRoot.querySelector('.deal-contact-name').click();
 
         expect(mockNavigate).toHaveBeenCalledWith({
-            type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Engagement_Links' },
-            state: { c__rlfAccountId: '001000000000001', c__rlfContactId: '003000000000001' }
+            type: 'standard__recordPage',
+            attributes: { recordId: '003000000000001', objectApiName: 'Contact', actionName: 'view' }
         });
     });
 

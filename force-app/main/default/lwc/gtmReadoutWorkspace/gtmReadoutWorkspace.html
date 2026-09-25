@@ -8,6 +8,17 @@
             <p class="grw-err">{loadError}</p>
         </template>
 
+        <!-- Contextual-task widget (issue #31): every open Task on this
+             request's Contact/Account, so a rep working this specific
+             Page/Assessment record is not blind to a follow-up -- the one
+             real job the retired "Engagement Links" tab used to do. Always
+             rendered (not gated on hasCfg like the link-section below --
+             a pageless/Rep_Direct request still has a resolvable Contact/
+             Account). -->
+        <div class="grw-contextual-tasks">
+            <c-gtm-contextual-tasks-widget assessment-request-id={assessmentRequestId}></c-gtm-contextual-tasks-widget>
+        </div>
+
         <!-- Preview action only (issue-pages-preview-fixes): the Assessment
              Link/Password fields that used to live here duplicated
              gtmRepLinkFinder's always-visible Engagement Link box -- same

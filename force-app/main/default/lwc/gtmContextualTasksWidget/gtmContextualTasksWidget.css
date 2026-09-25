@@ -1,0 +1,7 @@
+/* Card chrome lives in c-gtm-card (contract: docs/architecture/gtm-card-contract.md).
+   Mirrors gtmTasksDueTodayWidget's own row styling (.ov-row-main) for visual
+   consistency between the two "open tasks" surfaces in this app. */
+.ct-empty { margin: 0; font-size: 12px; color: #747474; line-height: 1.5; }
+.ct-row-main { cursor: pointer; border-radius: .2rem; padding: .25rem 0; }
+.ct-row-main:hover { background: #f7f7f7; }
+.ct-row-main:focus-visible { outline: 2px solid #0176d3; outline-offset: 1px; }

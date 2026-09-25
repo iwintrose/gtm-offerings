@@ -354,41 +354,35 @@ export default class GtmOverview extends NavigationMixin(LightningElement) {
     }
 
     /**
-     * Account name click -> the Engagement Links landing tab, scoped to
-     * that account (issue-102-1-engagement-links-landing acceptance
-     * criterion 7: repoint the navigation target only, the Account ->
-     * Contact grouping this click-through already implements is unchanged
-     * and is NOT rebuilt inside the landing's own data layer). Was GTM_Pages
-     * (gtmRepLinkFinder) before this ticket; the state param names
-     * (c__rlfAccountId) are unchanged -- gtmContactEngagement reads the same
-     * ones gtmRepLinkFinder always has.
+     * Account name click -> that Account record's native Activity tab
+     * (issue #31: the Engagement Links landing tab this used to route to
+     * is retired). The FlexiPage side of "lands on Activity, not Related"
+     * is handled by the `active` flag flip on GTM_Account_Record_Page, not
+     * by anything this NavigationMixin call can express.
      */
     handleAccountClick(event) {
         const accountId = event.currentTarget.dataset.accountId;
         if (!accountId) return;
         this[NavigationMixin.Navigate]({
-            type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Engagement_Links' },
-            state: { c__rlfAccountId: accountId }
+            type: 'standard__recordPage',
+            attributes: { recordId: accountId, objectApiName: 'Account', actionName: 'view' }
         });
     }
 
     /**
-     * Contact name click -> the Engagement Links landing tab, scoped to
-     * that account and contact (issue-102-1-engagement-links-landing
-     * acceptance criterion 7 -- mirrors handleAccountClick's exact
-     * mechanism, navigation target only). The account id rides along too:
-     * every deal row here always has one by construction once it has a
-     * contact.
+     * Contact name click -> that Contact record's native Activity tab
+     * (issue #31: the Engagement Links landing tab this used to route to
+     * is retired -- mirrors handleAccountClick's exact mechanism, just
+     * targeting Contact instead of Account). The FlexiPage side is the
+     * `active` flag flip on GTM_Contact_Record_Page.
      */
     handleContactClick(event) {
         const accountId = event.currentTarget.dataset.accountId;
         const contactId = event.currentTarget.dataset.contactId;
         if (!accountId || !contactId) return;
         this[NavigationMixin.Navigate]({
-            type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Engagement_Links' },
-            state: { c__rlfAccountId: accountId, c__rlfContactId: contactId }
+            type: 'standard__recordPage',
+            attributes: { recordId: contactId, objectApiName: 'Contact', actionName: 'view' }
         });
     }
 

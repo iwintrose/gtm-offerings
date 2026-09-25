@@ -16,13 +16,15 @@ import markTaskComplete from '@salesforce/apex/GtmTasksDueTodayController.markTa
  * Two distinct, separately-clickable targets per row (issue
  * tasks-widget-row-navigation):
  *   - The row's main content (subject/badge/account name) is click/Enter/
- *     Space-activatable and navigates to the Engagement Links landing tab
- *     (GTM_Engagement_Links), scoped to the task's own Account -- the SAME
- *     apiName/state-param shape as gtmOverview.js's handleAccountClick
- *     (issue-102-1-engagement-links-landing), not a bare
- *     `standard__recordPage` on the Task. GTM has no in-app "working view"
- *     of a bare Task, but it does of an Account's engagement links, which
- *     is what a rep chasing a task on that account actually wants next.
+ *     Space-activatable and navigates to the task's own Account record's
+ *     native Activity tab (issue #31 -- the Engagement Links tab this used
+ *     to route to is retired; same apiName/type shape as
+ *     gtmOverview.js's handleAccountClick), not a bare `standard__recordPage`
+ *     on the Task itself. A bare Task detail page has no relationship
+ *     context (no other open items on that Account visible alongside it),
+ *     while the Activity tab shows every open Task for that record
+ *     together -- exactly the multi-Task, "what's outstanding on this
+ *     account" view a rep chasing a follow-up wants.
  *   - A "Mark complete" checkbox updates the Task's Status inline via
  *     GtmTasksDueTodayController.markTaskComplete, without navigating; on
  *     success the row removes itself (it is no longer due once complete).
@@ -87,12 +89,16 @@ export default class GtmTasksDueTodayWidget extends NavigationMixin(LightningEle
     }
 
     /**
-     * Click, Enter or Space on a row's main content -> the Engagement
-     * Links landing tab, scoped to that task's Account. Mirrors
-     * gtmOverview.js's handleAccountClick exactly (same apiName/state-param
-     * shape) -- no new navigation convention. A row with no resolved
-     * accountId (rare: an Opportunity WhatId with no AccountId) has
-     * nowhere in-app to route to, so it no-ops rather than guessing.
+     * Click, Enter or Space on a row's main content -> that task's Account
+     * record, Activity tab (issue #31). Same shape as gtmOverview.js's
+     * handleAccountClick -- no new navigation convention, just retargeted
+     * from the dead tab to the record's own Activity tab. The FlexiPage
+     * side of "lands on Activity, not Related" is handled by the `active`
+     * flag flip on GTM_Account_Record_Page, not by anything this
+     * NavigationMixin call can express -- standard__recordPage has no
+     * documented way to deep-link a specific FlexiPage tab. A row with no
+     * resolved accountId (rare: an Opportunity WhatId with no AccountId)
+     * has nowhere in-app to route to, so it no-ops rather than guessing.
      */
     handleRowActivate(event) {
         if (event.type === 'keydown') {
@@ -103,9 +109,8 @@ export default class GtmTasksDueTodayWidget extends NavigationMixin(LightningEle
         const accountId = event.currentTarget.dataset.accountId;
         if (!accountId) return;
         this[NavigationMixin.Navigate]({
-            type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Engagement_Links' },
-            state: { c__rlfAccountId: accountId }
+            type: 'standard__recordPage',
+            attributes: { recordId: accountId, objectApiName: 'Account', actionName: 'view' }
         });
     }
 

@@ -73,6 +73,13 @@
         <apexClass>GtmTasksDueTodayController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <!-- GtmContextualTasksController: see the matching grant/comment in
+         GTM_Offering_User.permissionset-meta.xml. Admin needs the same
+         gtmReadoutWorkspace contextual-task widget access (issue #31). -->
+    <classAccesses>
+        <apexClass>GtmContextualTasksController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <classAccesses>
         <apexClass>GtmLinkEventController</apexClass>
         <enabled>true</enabled>

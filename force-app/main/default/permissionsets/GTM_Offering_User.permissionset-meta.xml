@@ -77,6 +77,16 @@
         <apexClass>GtmTasksDueTodayController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <!-- GtmContextualTasksController (issue #31): the contextual-task widget
+         mounted inside gtmReadoutWorkspace (shared by gtmRepLinkFinder/
+         GTM_Pages and gtmReadoutsOverview/GTM_Assessments) calls
+         getOpenTasksForAssessmentRequest so a rep working a specific
+         Page/Assessment record is not blind to open Tasks on that record's
+         Contact/Account. -->
+    <classAccesses>
+        <apexClass>GtmContextualTasksController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <classAccesses>
         <apexClass>GtmLinkEventController</apexClass>
         <enabled>true</enabled>
