@@ -556,14 +556,31 @@ Full plan, file-by-file plus QA protocol:
 `docs/agent-artifacts/d11-resolution-plan.md`. Decision record:
 `docs/architecture/adr/0008-the-guest-assessment-is-hosted-by-the-engagement-link-not-by-a-standalone-route.md`.
 
-***RESOLVED*** *(ADR-0008 implemented, phases 1-7, deployed to `gtm-prod`).*
-The live `/configurator` overlay now renders `gtmAssessmentQuestionnaire`
-instead of `gtmConfigBooking`, so a real prospect submitting through the live
-engagement link answers the eight scored questions, the six complexity
-questions and the pair's supplements, and the request comes back with real
-`Section_Scores__c`. `gtmConfigBooking` is deleted. Zero files under
-`force-app/main/default/experiences/` changed; `GTM` is still `Live` and
-`GTM_Accelerator1` is still `DownForMaintenance`, both unchanged.
+***RESOLVED — implemented and unit-tested on `main`*** *(ADR-0008, all 7
+phases of `docs/agent-artifacts/d11-resolution-plan.md`; independently
+re-verified file-by-file against the current codebase for issue #7, see
+`docs/agent-artifacts/task-scope-7.md`).* The `/configurator` overlay now
+renders `gtmAssessmentQuestionnaire` instead of `gtmConfigBooking`, so a real
+prospect submitting through the live engagement link answers the eight
+scored questions, the six complexity questions and the pair's supplements,
+and the request comes back with real `Section_Scores__c`. `gtmConfigBooking`
+is deleted. Zero files under `force-app/main/default/experiences/` changed;
+`GTM` is still `Live` and `GTM_Accelerator1` is still `DownForMaintenance`,
+both unchanged. **Correction to an earlier draft of this note:** this had
+briefly been logged here as "deployed to `gtm-prod`" — that was premature.
+Per this repo's promotion flow (worktree → QA validate-only against
+`gtm-staging` → merge → deploy `main` to `gtm-staging` for owner review →
+`gtm-prod` only on the owner's explicit go-ahead), no agent runs a real
+deploy, and there is no record of the owner's go-ahead for this change. The
+accurate status is: implemented and unit-tested on `main`
+(`gtmConfigurator.readout.test.js` + `gtmAssessmentQuestionnaire` suites, 71
+passed / 1 skipped; `check-references.py` clean), **not yet deployed to
+`gtm-staging` or `gtm-prod`**, and — critically — the plan's own "QA
+verification protocol" section (real anonymous submission scoring, the
+resubmit guard blocked all four ways, the button state machine walked live)
+has not been run by anyone before issue #7. It is being executed live, for
+the first time, as part of issue #7's QA step — not re-confirming a prior
+validation.
 
 What landed beyond the swap itself, each because leaving it out would have
 turned a fix into a different bug:
