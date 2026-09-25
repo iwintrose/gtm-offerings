@@ -21,3 +21,14 @@
 .gtm-link-cell_static {
     color: #444;
 }
+
+.gtm-link-cell_static-wrap {
+    display: flex;
+    align-items: center;
+    max-width: 100%;
+}
+
+.gtm-link-cell_backfill-hint {
+    flex: 0 0 auto;
+    margin-left: 0.25rem;
+}

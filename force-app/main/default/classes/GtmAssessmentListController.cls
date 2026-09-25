@@ -121,6 +121,11 @@ public with sharing class GtmAssessmentListController {
         @AuraEnabled public String contactName;
         @AuraEnabled public Id accountId;
         @AuraEnabled public String company;
+        /** Visibility-only nudge (issue-11): true when this row has a
+         *  free-typed Company__c value but no real Account__c lookup, so the
+         *  LWC can flag the gap surfaced by the disabled-cell rendering fix.
+         *  No write path; purely informational. */
+        @AuraEnabled public Boolean accountBackfillHint;
         @AuraEnabled public String requesterName;
         @AuraEnabled public String offeringKey;
         @AuraEnabled public String tier;
@@ -705,6 +710,7 @@ public with sharing class GtmAssessmentListController {
         row.company = (r.Account__r != null && String.isNotBlank(r.Account__r.Name))
             ? r.Account__r.Name
             : r.Company__c;
+        row.accountBackfillHint = r.Account__c == null && String.isNotBlank(r.Company__c);
         row.requesterName = r.Requester_Name__c;
         row.offeringKey = r.Offering_Key__c;
         row.tier = r.Assessment_Tier__c;

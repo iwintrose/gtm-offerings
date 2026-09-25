@@ -89,6 +89,23 @@ describe('buildRows', () => {
         const [r] = buildRows([link({ Company__c: 'Typed Only', Account__c: null, Account__r: null })], []);
         expect(r.company).toBe('Typed Only');
     });
+
+    it('flags accountBackfillHint when Company__c is set but Account__c is null', () => {
+        const [r] = buildRows([link({ Company__c: 'Typed Only', Account__c: null, Account__r: null })], []);
+        expect(r.accountBackfillHint).toBe(true);
+        expect(r.accountDisabled).toBe(true);
+    });
+
+    it('does not flag accountBackfillHint when a real Account is linked', () => {
+        const [r] = buildRows([link({ Company__c: 'Acme', Account__c: 'A1' })], []);
+        expect(r.accountBackfillHint).toBe(false);
+    });
+
+    it('does not flag accountBackfillHint when there is no Company__c either (nothing to backfill)', () => {
+        const [r] = buildRows([link({ Company__c: null, Account__c: null, Account__r: null })], []);
+        expect(r.accountBackfillHint).toBe(false);
+        expect(r.accountDisabled).toBe(true);
+    });
 });
 
 describe('sortRows', () => {

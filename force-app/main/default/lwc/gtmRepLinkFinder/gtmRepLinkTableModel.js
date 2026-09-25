@@ -48,7 +48,8 @@ const BASE_COLUMNS_BEFORE_OWNER = [
         typeAttributes: {
             label: { fieldName: 'company' }, name: 'openAccount',
             disabled: { fieldName: 'accountDisabled' }, title: { fieldName: 'accountTitle' },
-            targetId: { fieldName: 'accountId' }, idField: 'accountId'
+            targetId: { fieldName: 'accountId' }, idField: 'accountId',
+            showBackfillHint: { fieldName: 'accountBackfillHint' }
         }
     },
     {
@@ -147,6 +148,11 @@ export function buildRows(links, stats, industries) {
             ownerName: l.Owner ? l.Owner.Name : '',
             accountDisabled: noAccount,
             accountTitle: noAccount ? 'No account on this page' : 'Open account',
+            // Visibility-only nudge (issue-11): flag rows with a free-typed
+            // Company__c value but no real Account__c lookup, so reps/admins
+            // notice the gap surfaced by the disabled-cell rendering fix
+            // without this issue touching any write path.
+            accountBackfillHint: noAccount && !!l.Company__c,
             contactDisabled: !l.Contact__c,
             contactTitle: l.Contact__c ? 'Open contact' : 'No contact on this page',
             // A page with no account still opens (by its link id alone).

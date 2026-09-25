@@ -10,6 +10,17 @@
         >{label}</a>
     </template>
     <template if:false={isInteractive}>
-        <span class={cellClass} title={titleText}>{label}</span>
+        <div class="gtm-link-cell_static-wrap">
+            <span class={cellClass} title={titleText}>{label}</span>
+            <template if:true={showBackfillHint}>
+                <lightning-icon
+                    icon-name="utility:warning"
+                    size="xx-small"
+                    variant="warning"
+                    class="gtm-link-cell_backfill-hint"
+                    title={backfillHintTitle}
+                ></lightning-icon>
+            </template>
+        </div>
     </template>
 </template>

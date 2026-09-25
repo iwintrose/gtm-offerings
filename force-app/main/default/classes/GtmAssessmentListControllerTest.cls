@@ -199,6 +199,47 @@ private class GtmAssessmentListControllerTest {
         Assert.areEqual('Globex Corp', row.company, 'Account.Name wins over Company__c when both are populated');
     }
 
+    @isTest
+    static void accountBackfillHintIsTrueWhenCompanySetButNoAccountLinked() {
+        // issue-11: visibility-only nudge for rows that have a free-typed
+        // Company__c value but no real Account__c lookup -- req() already
+        // sets Company__c and leaves Account__c null, exactly this gap.
+        GTM_Assessment_Request__c r = seed('New', 'Fast-Track', 30, Datetime.now(), 'offer-a');
+
+        GtmAssessmentListController.AssessmentRow row =
+            GtmAssessmentListController.getAssessmentPage(query()).rows[0];
+
+        Assert.areEqual(r.Company__c, row.company);
+        Assert.isNull(row.accountId);
+        Assert.isTrue(row.accountBackfillHint, 'Company__c with no Account__c should be flagged for backfill');
+    }
+
+    @isTest
+    static void accountBackfillHintIsFalseWhenAccountIsLinked() {
+        Account acct = new Account(Name = 'Globex Corp');
+        insert acct;
+        GTM_Assessment_Request__c r = req('New', 'Fast-Track', 30, Datetime.now(), 'offer-a');
+        r.Account__c = acct.Id;
+        insert r;
+
+        GtmAssessmentListController.AssessmentRow row =
+            GtmAssessmentListController.getAssessmentPage(query()).rows[0];
+
+        Assert.isFalse(row.accountBackfillHint, 'A row with a real Account link is not a backfill gap');
+    }
+
+    @isTest
+    static void accountBackfillHintIsFalseWhenNeitherCompanyNorAccountIsSet() {
+        GTM_Assessment_Request__c r = req('New', 'Fast-Track', 30, Datetime.now(), 'offer-a');
+        r.Company__c = null;
+        insert r;
+
+        GtmAssessmentListController.AssessmentRow row =
+            GtmAssessmentListController.getAssessmentPage(query()).rows[0];
+
+        Assert.isFalse(row.accountBackfillHint, 'Nothing typed and no Account is not a backfill gap, just empty');
+    }
+
     // ----------------------------------------------------------- dimensions
 
     @isTest
