@@ -12,7 +12,8 @@ private class GtmSetupChecklistControllerTest {
     private static final List<String> ALWAYS_KEYS = new List<String>{
         'admin_assigned', 'reps_assigned', 'guest_permset', 'site_active', 'framework_pages',
         'industry_added', 'offering_created', 'offering_published', 'offering_listed',
-        'triage_queue', 'scheduled_jobs', 'site_members', 'page_offerings', 'page_faq_bd',
+        'triage_queue', 'scheduled_jobs', 'site_members', 'sdo_demo_flow', 'agentforce_agent',
+        'page_offerings', 'page_faq_bd',
         'page_faq_cm', 'page_assistant', 'analytics_digest', 'ai_keys', 'approval_routing',
         'offering_pages', 'org_digital_experiences', 'org_my_domain', 'org_chatter', 'org_email'
     };
@@ -310,9 +311,88 @@ private class GtmSetupChecklistControllerTest {
         Assert.areEqual('analytics-notifications', m.get('analytics_digest').navState.get('sectionId'));
         Assert.areEqual('claude-gus', m.get('ai_keys').navState.get('sectionId'));
         Assert.areEqual('approval-routing', m.get('approval_routing').navState.get('sectionId'));
+        Assert.areEqual('claude-gus', m.get('agentforce_agent').navState.get('sectionId'));
         Assert.areEqual('NAV_ITEM', m.get('page_faq_bd').linkKind);
         Assert.areEqual('faq-bd', m.get('page_faq_bd').navState.get('c__template'));
         Assert.areEqual('gtm', m.get('page_faq_bd').navState.get('c__offering'));
+    }
+
+    @IsTest
+    static void newDetectorsAreRecommendedTierAndNeverCountedRequired() {
+        Map<String, GtmSetupChecklistController.SetupItem> m = byKey(GtmSetupChecklistController.getChecklist());
+        Assert.areEqual('RECOMMENDED', m.get('sdo_demo_flow').tier);
+        Assert.areEqual('RECOMMENDED', m.get('agentforce_agent').tier);
+    }
+
+    /**
+     * FlowDefinitionView reflects real, deployed org metadata that a hermetic
+     * test cannot insert or fabricate: a scratch/CI org never carries the SDO
+     * demo-org flow bundle at all, so DONE (absent) is the only branch this
+     * test can prove. The TODO (present and active) branch was independently
+     * confirmed live against gtm-staging before the fix (see
+     * docs/agent-artifacts/task-scope-38.md's evidence log) and is a QA
+     * manual/live-org verification item, not something to fabricate here.
+     */
+    @IsTest
+    static void sdoDemoFlowRowIsDoneWhenTheKnownFlowIsAbsentFromThisOrg() {
+        GtmSetupChecklistController.SetupItem row = byKey(GtmSetupChecklistController.getChecklist()).get('sdo_demo_flow');
+        Assert.isTrue(VALID_STATUSES.contains(row.status), row.status);
+        if (row.status == 'DONE') {
+            Assert.areEqual('NONE', row.actionType);
+            Assert.areEqual('NONE', row.linkKind);
+        } else if (row.status == 'TODO') {
+            Assert.areEqual('LINK', row.actionType);
+            Assert.areEqual('SETUP_PATH', row.linkKind);
+            Assert.isTrue(row.detail.contains('CANNOT_EXECUTE_FLOW_TRIGGER'), row.detail);
+        }
+    }
+
+    @IsTest
+    static void agentforceAgentRowIsTodoWhenUnsetAndBlockedWhenTheIdDoesNotResolve() {
+        GTM_Agent_Settings__c s = GTM_Agent_Settings__c.getOrgDefaults();
+        s.Agentforce_Agent_Id__c = null;
+        upsert s;
+        GtmSetupChecklistController.SetupItem unset = byKey(GtmSetupChecklistController.getChecklist()).get('agentforce_agent');
+        Assert.areEqual('TODO', unset.status);
+        Assert.areEqual('claude-gus', unset.navState.get('sectionId'));
+
+        // Not a well-formed Id at all: still "does not resolve", not "unreadable".
+        s.Agentforce_Agent_Id__c = 'not-a-real-id';
+        upsert s;
+        GtmSetupChecklistController.SetupItem malformed = byKey(GtmSetupChecklistController.getChecklist()).get('agentforce_agent');
+        Assert.areEqual('BLOCKED', malformed.status);
+        Assert.isTrue(malformed.blockedBy.isEmpty(), 'blockedBy must stay empty: this is a dangling external reference, not an unmet checklist row');
+
+        // Well-formed 15-char Id shape (no checksum to fail), but not a real
+        // BotDefinition in this org: the (Id) cast succeeds, so this exercises
+        // the query-returns-zero path rather than the cast-failure path.
+        // Whether BotVersion itself is queryable depends on org feature
+        // licensing this test cannot control (same class of org-state
+        // dependency as Network/CronTrigger elsewhere in this file), so BLOCKED
+        // (query ran, found nothing) and UNKNOWN (query itself failed) are both
+        // accepted; only a false DONE is disallowed.
+        s.Agentforce_Agent_Id__c = '0XxAAAAAAAAAAAA';
+        upsert s;
+        GtmSetupChecklistController.SetupItem nonResolving = byKey(GtmSetupChecklistController.getChecklist()).get('agentforce_agent');
+        Assert.areNotEqual('DONE', nonResolving.status);
+        Assert.isTrue(nonResolving.status == 'BLOCKED' || nonResolving.status == 'UNKNOWN', nonResolving.status);
+        if (nonResolving.status == 'BLOCKED') {
+            Assert.isTrue(nonResolving.blockedBy.isEmpty(), 'blockedBy must stay empty');
+        }
+    }
+
+    @IsTest
+    static void newDetectorsFailIsolatedToOwnRow() {
+        GtmSetupChecklistController.forceFailKey = 'sdo_demo_flow';
+        Map<String, GtmSetupChecklistController.SetupItem> m1 = byKey(GtmSetupChecklistController.getChecklist());
+        Assert.areEqual('UNKNOWN', m1.get('sdo_demo_flow').status);
+        Assert.areNotEqual('UNKNOWN', m1.get('agentforce_agent').status);
+        Assert.areNotEqual('UNKNOWN', m1.get('framework_pages').status);
+
+        GtmSetupChecklistController.forceFailKey = 'agentforce_agent';
+        Map<String, GtmSetupChecklistController.SetupItem> m2 = byKey(GtmSetupChecklistController.getChecklist());
+        Assert.areEqual('UNKNOWN', m2.get('agentforce_agent').status);
+        Assert.areNotEqual('UNKNOWN', m2.get('sdo_demo_flow').status);
     }
 
     @IsTest

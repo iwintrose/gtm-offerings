@@ -36,7 +36,8 @@ const SCHEDULED_JOB_KEYS = ['purgeRecordsBatch', 'assessmentDraftPurge'];
 const SETTINGS_SECTION_BY_KEY = {
     analytics_digest: 'analytics-notifications',
     ai_keys: 'claude-gus',
-    approval_routing: 'approval-routing'
+    approval_routing: 'approval-routing',
+    agentforce_agent: 'claude-gus'
 };
 const GENERIC_ERROR = 'Something went wrong. Nothing was changed. Try Re-check, then try again.';
 

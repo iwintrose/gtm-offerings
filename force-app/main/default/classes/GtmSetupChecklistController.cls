@@ -75,8 +75,16 @@ public with sharing class GtmSetupChecklistController {
         'digital_experiences'  => '/lightning/setup/NetworkSettings/home',
         'my_domain'            => '/lightning/setup/OrgDomain/home',
         'chatter'              => '/lightning/setup/CollaborationSettings/home',
-        'email_deliverability' => '/lightning/setup/OrgEmailSettings/home'
+        'email_deliverability' => '/lightning/setup/OrgEmailSettings/home',
+        'flows'                => '/lightning/setup/Flows/home'
     };
+
+    /** Issue #38: the specific org-bundled sample flow that silently blocked
+     * every Case insert in gtm-staging on 2026-09-26 (CANNOT_EXECUTE_FLOW_TRIGGER).
+     * Scoped to this one confirmed flow only -- see docs/backlog.md "Later:
+     * SDO_Service_Case_Status_Updated" for the named, unconfirmed follow-up. */
+    @TestVisible
+    private static final String SDO_FLOW_API_NAME = 'SDO_Service_Case_Creation';
 
     /** Test seam: forces the named detector to throw so isolation can be proven. */
     @TestVisible private static String forceFailKey;
@@ -156,6 +164,10 @@ public with sharing class GtmSetupChecklistController {
                 'Old drafts and deleted records are purged on a schedule; the app works without it.', false),
             new Spec('site_members', TIER_RECOMMENDED, CAT_SITE, 'Reps are members of the site',
                 'Reps who open the site themselves must be members of it.', true),
+            new Spec('sdo_demo_flow', TIER_RECOMMENDED, CAT_CONFIGURATION, 'No blocking SDO demo-org flow is active on Case',
+                'A bundled Salesforce "SDO Service" demo flow can silently block every Case insert (CANNOT_EXECUTE_FLOW_TRIGGER) with no error shown to anyone.', true),
+            new Spec('agentforce_agent', TIER_RECOMMENDED, CAT_CONFIGURATION, 'The Agentforce Agent API is configured',
+                'GUS\'s Agentforce integration needs an Agent Id that resolves to a real, active agent before it can be turned on.', true),
             new Spec('page_offerings', TIER_OPTIONAL, CAT_CONTENT, 'Offerings page intro copy',
                 'Intro copy on the front page that lists every offering.', true),
             new Spec('page_faq_bd', TIER_OPTIONAL, CAT_CONTENT, 'Rep help panel',
@@ -412,6 +424,8 @@ public with sharing class GtmSetupChecklistController {
             when 'manager_on_reps'         { return detectManagers(i, c); }
             when 'scheduled_jobs'          { return detectJobs(i, c); }
             when 'site_members'            { return detectMembers(i, c); }
+            when 'sdo_demo_flow'           { return detectSdoDemoFlow(i, c); }
+            when 'agentforce_agent'        { return detectAgentforceAgent(i, c); }
             when 'page_offerings'          { return detectPage(i, 'offerings-page'); }
             when 'page_faq_bd'             { return detectPage(i, 'faq-bd'); }
             when 'page_faq_cm'             { return detectPage(i, 'faq-content-manager'); }
@@ -669,6 +683,87 @@ public with sharing class GtmSetupChecklistController {
         i.status = STATUS_TODO;
         i.detail = 'The site has no members yet.';
         return i;
+    }
+
+    /**
+     * Issue #38: the specific "SDO Service - Case - On Create" demo flow
+     * (`SDO_Service_Case_Creation`) requires a `helperConfig` input variable
+     * no Apex insert ever supplies, so an active copy of it silently blocks
+     * every Case insert with CANNOT_EXECUTE_FLOW_TRIGGER (fileReviewCase's
+     * own try/catch swallows this into a debug log only -- see
+     * docs/runbooks/fresh-org-deploy.md item 15). Scoped to this one
+     * confirmed flow by design, not a generic "any SDO flow" scan -- a
+     * fresh/CI org never carries the SDO demo bundle at all, so the
+     * "absent -> DONE" branch is the only one an automated test can prove;
+     * the "active -> TODO" branch needs a live org that actually ships the
+     * bundle (see GtmSetupChecklistControllerTest's comment on this row).
+     */
+    private static SetupItem detectSdoDemoFlow(SetupItem i, Ctx c) {
+        setupLink(i, 'flows', 'Open Flows');
+        List<FlowDefinitionView> rows;
+        try {
+            rows = [
+                SELECT Id, IsActive FROM FlowDefinitionView
+                WHERE ApiName = :SDO_FLOW_API_NAME
+                LIMIT 1
+            ];
+        } catch (Exception e) {
+            return unknown(specFor(i));
+        }
+        if (rows.isEmpty() || rows[0].IsActive != true) {
+            return done(i, 'The SDO Service demo flow (' + SDO_FLOW_API_NAME + ') is absent or inactive.');
+        }
+        i.status = STATUS_TODO;
+        i.detail = 'The SDO Service demo flow (' + SDO_FLOW_API_NAME + ') is active and blocks every Case '
+            + 'insert with CANNOT_EXECUTE_FLOW_TRIGGER. Deactivate it in Setup > Flows.';
+        return i;
+    }
+
+    /**
+     * Issue #38: GTM_Agent_Settings__c.Agentforce_Agent_Id__c is a non-secret
+     * identifier (see GtmAgentSettingsController's header). "Active" is not a
+     * field on BotDefinition itself -- it is tracked on the related
+     * BotVersion row's Status ('Active'/'Draft'/etc; live-confirmed in
+     * docs/architecture/gus-chat-provider-settings.md), so resolution here
+     * means "at least one Active BotVersion for this BotDefinitionId", not a
+     * field read directly off BotDefinition. A set-but-malformed Id (fails
+     * the (Id) cast) is treated the same as a set-but-non-resolving Id: both
+     * are BLOCKED with blockedBy left null on purpose -- this is a dangling
+     * external reference, not an unmet prerequisite on another checklist row
+     * (matching the existing null-blockedBy precedent in detectSiteActive's
+     * "no site exists" branch and detectQueue's "queue not deployed" branch).
+     * UNKNOWN is reserved for a read that could not be attempted at all.
+     */
+    private static SetupItem detectAgentforceAgent(SetupItem i, Ctx c) {
+        sectionLink(i, 'claude-gus', 'Open GUS settings');
+        GtmAgentSettingsController.AgentSettingsDto d = GtmAgentSettingsController.getAgentSettings();
+        String agentId = d != null ? d.agentforceAgentId : null;
+        if (String.isBlank(agentId)) {
+            i.status = STATUS_TODO;
+            i.detail = 'No Agentforce Agent Id is set yet.';
+            return i;
+        }
+        Id botId;
+        try {
+            botId = (Id) agentId;
+        } catch (Exception e) {
+            botId = null;
+        }
+        if (botId == null) {
+            return blocked(i, 'The Agentforce Agent Id is set but is not a valid record Id, so it cannot '
+                + 'resolve to a real agent. Confirm the Id in Setup > Agentforce Studio > Agentforce Agents.', null);
+        }
+        Integer activeVersions;
+        try {
+            activeVersions = [SELECT COUNT() FROM BotVersion WHERE BotDefinitionId = :botId AND Status = 'Active'];
+        } catch (Exception e) {
+            return unknown(specFor(i));
+        }
+        if (activeVersions >= 1) {
+            return done(i, 'The Agentforce Agent Id resolves to an active agent.');
+        }
+        return blocked(i, 'The Agentforce Agent Id is set but does not resolve to an active agent. Confirm the '
+            + 'Id in Setup > Agentforce Studio > Agentforce Agents.', null);
     }
 
     private static SetupItem detectPage(SetupItem i, String template) {
