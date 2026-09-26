@@ -2,6 +2,7 @@ import { LightningElement, api, track } from 'lwc';
 import chat from '@salesforce/apex/GtmAgentProxyController.chat';
 import chatOnReadout from '@salesforce/apex/GtmAgentProxyController.chatOnReadout';
 import chatOnApp from '@salesforce/apex/GtmAgentProxyController.chatOnApp';
+import { loadBrandFonts } from 'c/gtmBrandFonts';
 
 const FALLBACK_PLACEHOLDER = 'Ask me to update company, industry, accent color…';
 const MODE_CONFIG = 'config';
@@ -87,6 +88,13 @@ export default class GtmAgentChat extends LightningElement {
     draft = '';
     historyJson = '';
     _msgCounter = 0;
+
+    connectedCallback() {
+        // Every GUS chat mount runs through this one component, so loading
+        // the brand fonts here once covers gtmGusUtility, gtmAgentBubble and
+        // gtmReadoutAssist without each host needing its own call.
+        loadBrandFonts();
+    }
 
     get isReadoutMode() {
         return this.mode === MODE_READOUT;

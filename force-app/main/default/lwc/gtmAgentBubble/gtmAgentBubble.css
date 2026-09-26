@@ -1,3 +1,18 @@
+/* Brand tokens copied by value (not import) from gtmStory.css lines ~33-112 --
+   LWC shadow DOM has no shared :root, so each GUS surface keeps its own copy
+   of only the subset it actually uses (see docs/agent-artifacts/
+   task-scope-gus-chat-branding-refresh.md §1.3 / Open Fork F3). */
+:host {
+    --ps-red: #e90130;
+    --ps-red-hover: #be0128;
+    --ps-red-on-grey: #be0128; /* 6.03:1 -- use on any tinted surface */
+    --ps-ink: #000000;
+    --ps-white: #ffffff;
+    --ps-font-display: "Lexend Deca", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --ps-font-body: "Roboto", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --ps-font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
 /* Bottom-right, above the page, out of the way of the page's own footer. */
 .ab-root {
     position: fixed;
@@ -8,7 +23,7 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--ps-font-body);
 }
 
 /* Live-site pattern: a plain circular red FAB, white icon, no visible text
@@ -27,7 +42,7 @@
     padding: 0;
     border: none;
     border-radius: 50%;
-    background: #E90024;
+    background: #E90130;
     color: #fff;
     font: inherit;
     font-size: 13px;
@@ -37,7 +52,7 @@
     transition: transform .14s ease, box-shadow .14s ease;
 }
 .ab-fab:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(0, 0, 0, .22); }
-.ab-fab:focus-visible { outline: 2px solid #E90024; outline-offset: 2px; }
+.ab-fab:focus-visible { outline: 2px solid #E90130; outline-offset: 2px; }
 /* Open, the bubble is just the character: the panel above it carries the name. */
 .ab-fab--open { padding: 0; }
 .ab-fab-lbl {
@@ -72,7 +87,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, .1);
 }
 .ab-id { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
-.ab-name { font-size: 13px; font-weight: 700; }
+.ab-name { font-size: 13px; font-weight: 700; font-family: var(--ps-font-display); }
 .ab-role { font-size: 11px; opacity: .65; }
 .ab-x {
     margin-left: auto;
