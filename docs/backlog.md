@@ -1034,3 +1034,23 @@ Published/Active join and its own fixture change, not done here.
   results wholesale. The Engagement Links tab itself is **not** resolved or
   removed anywhere yet -- not on `main`, not in the unmerged worktree, not
   in the org.
+
+## Later: SDO_Service_Case_Status_Updated (second SDO demo flow, unconfirmed)
+
+- Issue #38's `sdo_demo_flow` Setup-checklist detector is scoped to the one
+  confirmed flow (`SDO_Service_Case_Creation`) that silently blocked every
+  Case insert in `gtm-staging` on 2026-09-26 (`CANNOT_EXECUTE_FLOW_TRIGGER`).
+  A full audit of every `%SDO%` flow in that org at the time found one other
+  active, Case-triggered flow worth a look: `SDO_Service_Case_Status_Updated`
+  ("SDO Service - Case - Status Updated"), `IsActive: true`,
+  `RecordTriggerType: CreateAndUpdate` on Case -- it fires on Case *creation*
+  too, not just update, so if it carries the same "required input variable
+  with no default" defect as `SDO_Service_Case_Creation` did, it would
+  produce the identical `CANNOT_EXECUTE_FLOW_TRIGGER` symptom, undetected by
+  a checklist that only names the one already-fixed flow. Not confirmed
+  broken -- that needs either a live test Case insert or retrieving and
+  reading the flow definition's input-variable metadata, neither done here.
+  Follow-up: confirm live, then either extend `sdo_demo_flow`'s query or add
+  its own row, whichever the confirmation points to. Not folded into issue
+  #38 per that issue's own scope ("this is specifically about the known SDO
+  bundle", not a generalized scan).

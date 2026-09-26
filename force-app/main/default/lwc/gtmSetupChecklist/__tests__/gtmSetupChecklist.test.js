@@ -26,7 +26,7 @@ import getStatuses from '@salesforce/apex/GtmScheduledJobsController.getStatuses
 import scheduleJob from '@salesforce/apex/GtmScheduledJobsController.scheduleJob';
 import { starterFor } from 'c/gtmPageLayouts';
 import GtmSetupChecklist from 'c/gtmSetupChecklist';
-import { blankChecklist, allDoneChecklist, unknownRequiredChecklist, CATALOGUE } from './fixtures';
+import { blankChecklist, allDoneChecklist, unknownRequiredChecklist, CATALOGUE, item } from './fixtures';
 /* eslint-enable import/first, import/order */
 
 jest.mock('@salesforce/apex/GtmSetupChecklistController.getChecklist', () => ({ default: jest.fn() }), { virtual: true });
@@ -281,6 +281,22 @@ describe('c-gtm-setup-checklist', () => {
             'analytics-notifications',
             'claude-gus'
         ]);
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    // Issue #38, finding (d): SETTINGS_SECTION_BY_KEY is a second, client-side
+    // key->section map the server's navState.sectionId does not drive by
+    // itself; a new sectionLink()-based row that is only added server-side
+    // silently does nothing on click. This proves the agentforce_agent entry
+    // was actually added to that map, not just to the Apex catalogue.
+    it('fires selectsection for the agentforce_agent row (client-side section map)', async () => {
+        const agentforceRow = item(['agentforce_agent', 'RECOMMENDED', 'CONFIGURATION', 'LINK', 'NONE'], 'TODO');
+        const checklist = { ...blankChecklist, items: [...blankChecklist.items, agentforceRow] };
+        const el = await mount(checklist);
+        const handler = jest.fn();
+        el.addEventListener('selectsection', handler);
+        await fire(el, 'agentforce_agent', { actionType: 'LINK', linkKind: 'NONE' });
+        expect(handler.mock.calls.map((c) => c[0].detail.sectionId)).toEqual(['claude-gus']);
         expect(mockNavigate).not.toHaveBeenCalled();
     });
 
