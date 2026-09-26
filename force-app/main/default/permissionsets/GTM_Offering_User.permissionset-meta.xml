@@ -43,10 +43,6 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>GtmContactEngagementController</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
         <apexClass>GtmHomeSnapshotController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -953,12 +949,6 @@
     </tabSettings>
     <tabSettings>
         <tab>GTM_Assessments</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <!-- issue-102-1-engagement-links-landing: the new "Engagement Links"
-         landing tab (D1), gtmContactEngagement in landing mode. -->
-    <tabSettings>
-        <tab>GTM_Engagement_Links</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <!-- standard-Case tabSettings + the Case objectPermissions block were both

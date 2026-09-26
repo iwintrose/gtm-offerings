@@ -5,10 +5,12 @@
  * No SOQL/DML/Contact/GTM_Saved_Configuration__c fixtures needed at all:
  * classify() takes plain signal values and returns a state key, so every
  * test here calls it directly rather than round-tripping through
- * getEngagementSummaries (GtmContactEngagementControllerTest's own tests,
- * which exercise scope/pagination/role-hierarchy behavior classify() knows
- * nothing about, are untouched and keep testing that class directly --
- * getEngagementSummaries is not retired until issue #31's teardown phase).
+ * getEngagementSummaries. GtmContactEngagementControllerTest's own tests
+ * (scope/pagination/role-hierarchy behavior classify() knows nothing about)
+ * exercised only that now-deleted method -- once getEngagementSummaries and
+ * its controller were deleted in issue #31's teardown phase, nothing in that
+ * test class had a remaining reason to exist, so the whole class was deleted
+ * alongside it rather than left behind as dead test code.
  */
 @IsTest
 private class GtmEngagementStateClassifierTest {

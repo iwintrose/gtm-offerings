@@ -3,8 +3,10 @@
  * six-state precedence (issue-102-1-engagement-links-landing's original
  * design, carried forward by issue #31). Extracted out of
  * GtmContactEngagementController (issue #31, Architect decision #3): that
- * class's only @AuraEnabled method, getEngagementSummaries, is scoped to
- * the now-retiring "Engagement Links" tab, but classify()'s state machine
+ * class's only @AuraEnabled method, getEngagementSummaries, was scoped to
+ * the "Engagement Links" tab -- both the tab and that controller class were
+ * deleted outright in issue #31's teardown phase, once classify()'s state
+ * machine below was confirmed to be its only surviving dependency. classify()
  * is the single source of truth several other classes need to call
  * Apex-to-Apex to decide when to fire/close the real Task issue #31 adds to
  * the Account/Contact Activity timeline

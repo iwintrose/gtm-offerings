@@ -60,7 +60,6 @@
     <label>GTM Offerings</label>
     <navType>Standard</navType>
     <tabs>standard-home</tabs>
-    <tabs>GTM_Engagement_Links</tabs>
     <tabs>GTM_Pages</tabs>
     <tabs>GTM_Assessments</tabs>
     <tabs>GTM_Analytics</tabs>
