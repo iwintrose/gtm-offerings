@@ -43,10 +43,6 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>GtmContactEngagementController</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
         <apexClass>GtmHomeSnapshotController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -75,6 +71,16 @@
          not have loaded this widget's data before this grant existed. -->
     <classAccesses>
         <apexClass>GtmTasksDueTodayController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <!-- GtmContextualTasksController (issue #31): the contextual-task widget
+         mounted inside gtmReadoutWorkspace (shared by gtmRepLinkFinder/
+         GTM_Pages and gtmReadoutsOverview/GTM_Assessments) calls
+         getOpenTasksForAssessmentRequest so a rep working a specific
+         Page/Assessment record is not blind to open Tasks on that record's
+         Contact/Account. -->
+    <classAccesses>
+        <apexClass>GtmContextualTasksController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -958,12 +964,6 @@
     </tabSettings>
     <tabSettings>
         <tab>GTM_Assessments</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <!-- issue-102-1-engagement-links-landing: the new "Engagement Links"
-         landing tab (D1), gtmContactEngagement in landing mode. -->
-    <tabSettings>
-        <tab>GTM_Engagement_Links</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <!-- standard-Case tabSettings + the Case objectPermissions block were both

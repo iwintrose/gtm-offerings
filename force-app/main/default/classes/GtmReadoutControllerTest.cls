@@ -1177,18 +1177,22 @@ private class GtmReadoutControllerTest {
         GtmReadoutController.configOverride = new GTM_Assessment_Config__mdt(
             Create_Readout_Case__c = false
         );
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        Assert.isNotNull(readoutId, 'The readout is still generated with the Case toggle off');
-        Assert.areEqual(
-            0,
-            [SELECT COUNT() FROM Case WHERE Readout__c = :readoutId],
-            'No Case should be created when Create_Readout_Case__c is false'
-        );
+            Assert.isNotNull(readoutId, 'The readout is still generated with the Case toggle off');
+            Assert.areEqual(
+                0,
+                [SELECT COUNT() FROM Case WHERE Readout__c = :readoutId],
+                'No Case should be created when Create_Readout_Case__c is false'
+            );
+        } finally {
+            resetOwnerResolutionOverrides();
+        }
     }
 
     // ------------------------------------------------------------ triage queue
@@ -1243,26 +1247,73 @@ private class GtmReadoutControllerTest {
         GtmReadoutController.suppressDerivedOwnerCandidates = true;
     }
 
+    /**
+     * Restores the two owner-resolution test seams (GtmReadoutController.
+     * configOverride / .suppressDerivedOwnerCandidates) to their real
+     * defaults. Every test that sets either one via orphanScenario() or
+     * directly MUST call this in a finally block, the same way
+     * forceSendFailureForTests/readoutBaseUrlOverrideForTests are already
+     * reset elsewhere in this file -- Apex static variables are NOT reset
+     * between test methods within the same test class execution, so an
+     * un-reset override here silently leaks into every test method that
+     * runs afterward in the same real test run.
+     *
+     * This is exactly what produced the issue #31 round-3 failures around
+     * the published_unsent engagement Task: with
+     * suppressDerivedOwnerCandidates left true (and configOverride left
+     * pointing at a CMDT stub with no Default_Readout_Owner__c) by an
+     * earlier-running test in this class (Apex/Salesforce test execution
+     * order within a class runs alphabetically by method name, so the
+     * "a..."-named triage-queue tests below ran before the "publish..."
+     * engagement tests further down this file), every later
+     * generateDraftReadout() call resolved its readout's OwnerId to the
+     * GTM_Readout_Triage queue's Group Id instead of the running test
+     * user. GtmReadoutController.publishReadout then handed that Group Id
+     * to GtmLifecycleNotificationService.syncEngagementStateTask/fireTask
+     * as the engagement Task's OwnerId -- this org's own Setup -> Activity
+     * Settings -> "Let users assign tasks to queues" preference is off
+     * (already documented as unset/undeployable org state by
+     * fileReviewCase's own docstring above, which is exactly why THAT
+     * method files a queue-ownable Case instead of a Task), so a
+     * queue-owned Task silently fails to insert here too.
+     * Database.insert(tasks, false) never throws for that rejected row, so
+     * the Task was silently never created and the count-based assertions
+     * read back 0. Note this scenario cannot actually happen in
+     * production: submitForApproval already refuses a queue-owned readout
+     * ("Claim it first") before it can ever reach Approved/Published, so
+     * only this test file's own un-reset static leak (combined with the
+     * approve() test helper bypassing submitForApproval's DML) could ever
+     * produce a queue-owned, Approved readout.
+     */
+    private static void resetOwnerResolutionOverrides() {
+        GtmReadoutController.configOverride = null;
+        GtmReadoutController.suppressDerivedOwnerCandidates = false;
+    }
+
     @isTest
     static void anOrphanReadoutIsCreatedAndOwnedByTheTriageQueue() {
         Id queueId = ensureTriageQueue();
         orphanScenario();
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        // The behaviour change, stated directly: the readout now exists.
-        Assert.isNotNull(
-            readoutId,
-            'An orphan assessment must produce a readout for triage, not silently produce nothing'
-        );
-        Assert.areEqual(queueId, ownerOf(readoutId), 'It should be owned by the triage queue');
-        Assert.areEqual(
-            'Draft',
-            [SELECT Status__c FROM GTM_Readout__c WHERE Id = :readoutId].Status__c
-        );
+            // The behaviour change, stated directly: the readout now exists.
+            Assert.isNotNull(
+                readoutId,
+                'An orphan assessment must produce a readout for triage, not silently produce nothing'
+            );
+            Assert.areEqual(queueId, ownerOf(readoutId), 'It should be owned by the triage queue');
+            Assert.areEqual(
+                'Draft',
+                [SELECT Status__c FROM GTM_Readout__c WHERE Id = :readoutId].Status__c
+            );
+        } finally {
+            resetOwnerResolutionOverrides();
+        }
     }
 
     @isTest
@@ -1278,14 +1329,18 @@ private class GtmReadoutControllerTest {
             Default_Readout_Owner__c = named.Username
         );
         GtmReadoutController.suppressDerivedOwnerCandidates = true;
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        Assert.areEqual(named.Id, ownerOf(readoutId), 'The configured owner wins');
-        Assert.areNotEqual(queueId, ownerOf(readoutId));
+            Assert.areEqual(named.Id, ownerOf(readoutId), 'The configured owner wins');
+            Assert.areNotEqual(queueId, ownerOf(readoutId));
+        } finally {
+            resetOwnerResolutionOverrides();
+        }
     }
 
     @isTest
@@ -1327,21 +1382,25 @@ private class GtmReadoutControllerTest {
             Default_Readout_Owner__c = null
         );
         GtmReadoutController.suppressDerivedOwnerCandidates = true;
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        Assert.isNotNull(readoutId, 'The readout must not be rolled back over its review Case');
-        Assert.areEqual(queueId, ownerOf(readoutId));
+            Assert.isNotNull(readoutId, 'The readout must not be rolled back over its review Case');
+            Assert.areEqual(queueId, ownerOf(readoutId));
 
-        for (Case c : [SELECT OwnerId FROM Case WHERE Readout__c = :readoutId]) {
-            Assert.areEqual(
-                queueId,
-                c.OwnerId,
-                'A review Case for a queue-owned readout belongs to the queue, never to a bystander'
-            );
+            for (Case c : [SELECT OwnerId FROM Case WHERE Readout__c = :readoutId]) {
+                Assert.areEqual(
+                    queueId,
+                    c.OwnerId,
+                    'A review Case for a queue-owned readout belongs to the queue, never to a bystander'
+                );
+            }
+        } finally {
+            resetOwnerResolutionOverrides();
         }
     }
 
@@ -1362,13 +1421,17 @@ private class GtmReadoutControllerTest {
             return;
         }
         orphanScenario();
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        Assert.isNull(readoutId, 'With no owner and no queue, no readout should be created');
+            Assert.isNull(readoutId, 'With no owner and no queue, no readout should be created');
+        } finally {
+            resetOwnerResolutionOverrides();
+        }
     }
 
     // --------------------------------------------------------- return to draft
@@ -2371,6 +2434,116 @@ private class GtmReadoutControllerTest {
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_READOUT_PUBLISHED],
             'Mode None must fire neither a Task nor a bell'
         );
+    }
+
+    // --------------------------------- engagement-state Task (issue #31) --
+    // Independent of publishedNotificationMode above -- these always fire
+    // against the prospect's own Contact/Account, not readoutId.
+
+    private static GTM_Assessment_Request__c seedRequestWithContact(Id contactId, Id accountId) {
+        GTM_Assessment_Request__c req = new GTM_Assessment_Request__c(
+            Requester_Name__c   = 'Alex Rivera',
+            Requester_Email__c  = 'alex.rivera@example.com',
+            Company__c          = 'Northwind Retail',
+            Contact__c          = contactId,
+            Account__c          = accountId,
+            Assessment_Score__c = SAMPLE_SCORE,
+            Assessment_Tier__c  = 'Prep Required',
+            Section_Scores__c   = '{"estate_scale":3,"source_access":2}'
+        );
+        insert req;
+        return req;
+    }
+
+    @isTest
+    static void publishReadoutFiresTheEngagementPublishedUnsentTaskAgainstTheContact() {
+        GtmNotificationSettingsController.NotificationSettingsDto dto =
+            new GtmNotificationSettingsController.NotificationSettingsDto();
+        dto.publishedNotificationMode = 'None';
+        GtmNotificationSettingsController.setNotificationSettings(dto);
+
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Assessment_Request__c req = seedRequestWithContact(con.Id, null);
+        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+        approve(readoutId);
+
+        Test.startTest();
+        GtmReadoutController.publishReadout(readoutId);
+        Test.stopTest();
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhoId = :con.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT],
+            'Publishing should fire the engagement published_unsent Task against the Contact ' +
+            'independent of publishedNotificationMode'
+        );
+    }
+
+    @isTest
+    static void publishReadoutWithNoContactFallsBackToTheAccountForTheEngagementTask() {
+        Account acc = new Account(Name = 'Fallback Readout Co');
+        insert acc;
+        GTM_Assessment_Request__c req = seedRequestWithContact(null, acc.Id);
+        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+        approve(readoutId);
+
+        Test.startTest();
+        GtmReadoutController.publishReadout(readoutId);
+        Test.stopTest();
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhatId = :acc.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT]
+        );
+    }
+
+    @isTest
+    static void publishingThenSuccessfullyNotifyingClosesThePublishedUnsentEngagementTaskAndFiresNothingNew() {
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Assessment_Request__c req = seedRequestWithContact(con.Id, null);
+        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+        approve(readoutId);
+
+        // seedRequestWithContact never sets Saved_Configuration__c, so
+        // sendPublishNotification's pageUrl is null and it falls to the
+        // standalone-readout-link branch, which needs
+        // GtmSavedConfigurationController.getReadoutBaseUrl() --
+        // ConnectApi.Communities.getCommunities() always sees no sites in
+        // test context (same documented gap as readoutBaseUrlOverrideForTests'
+        // own header and GtmReadoutPublishNotificationTest's identical seam
+        // use), so without this override sendPublishNotification returns
+        // before ever reaching Messaging.sendEmail and
+        // Notification_Sent_Date__c is never stamped. This was a gap in this
+        // test's own original assumption ("a well-formed Requester_Email__c
+        // succeeds in test context"), not a product bug: it never actually
+        // exercised the send at all.
+        GtmReadoutController.setReadoutBaseUrlOverrideForTests('https://example.my.site.com/gtm/s');
+        Test.startTest();
+        try {
+            // publishReadout calls sendPublishNotification automatically at
+            // the end of the same transaction (see its own header) -- with
+            // the override above in place, sendPublishNotification's
+            // fallback branch resolves a real base URL, sends, and stamps
+            // Notification_Sent_Date__c, so sent_complete should sync in the
+            // same call.
+            GtmReadoutController.publishReadout(readoutId);
+        } finally {
+            GtmReadoutController.setReadoutBaseUrlOverrideForTests(null);
+        }
+        Test.stopTest();
+
+        GTM_Readout__c published = [SELECT Notification_Sent_Date__c FROM GTM_Readout__c WHERE Id = :readoutId];
+        Assert.isNotNull(published.Notification_Sent_Date__c,
+            'Sanity check: the notification must actually have sent in this test context');
+
+        List<Task> tasks = [SELECT Subject, Status FROM Task WHERE WhoId = :con.Id];
+        Assert.areEqual(1, tasks.size(), 'sent_complete must close published_unsent and fire nothing new');
+        Assert.areEqual(GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT, tasks[0].Subject);
+        Assert.areEqual('Completed', tasks[0].Status);
     }
 
     @isTest

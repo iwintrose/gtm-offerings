@@ -2055,6 +2055,35 @@ public with sharing class GtmReadoutController {
                 'Readout published', 'Your readout was published.');
         }
 
+        // Issue #31 engagement-state Task, independent of
+        // publishedNotificationMode above (that setting only gates the
+        // readout-owner-facing "your readout was published" Task/bell
+        // against readoutId; this one always fires against the prospect's
+        // own Contact/Account, same as every other engagement-state call
+        // site, replacing the retired Engagement Links tab's own always-on
+        // published_unsent row). GTM_Assessment_Request__c carries
+        // Contact__c/Account__c directly -- loadForUpdate's own SELECT list
+        // does not include them since none of its other 5 call sites need
+        // them, so this is its own small, targeted query rather than
+        // widening a shared helper 5 other methods also use.
+        if (readout.Assessment_Request__c != null) {
+            List<GTM_Assessment_Request__c> engagementReqs = [
+                SELECT Contact__c, Account__c
+                FROM GTM_Assessment_Request__c
+                WHERE Id = :readout.Assessment_Request__c
+                LIMIT 1
+            ];
+            if (!engagementReqs.isEmpty()) {
+                Id engagementWhatId = engagementReqs[0].Contact__c != null
+                    ? engagementReqs[0].Contact__c : engagementReqs[0].Account__c;
+                if (engagementWhatId != null) {
+                    GtmLifecycleNotificationService.syncEngagementStateTask(
+                        engagementWhatId, readout.OwnerId, GtmEngagementStateClassifier.STATE_PUBLISHED_UNSENT
+                    );
+                }
+            }
+        }
+
         // Best-effort, non-blocking. The readout is already Published above --
         // nothing past this point may roll back or block that transition. See
         // sendPublishNotification's own header for why every failure inside it
@@ -2131,7 +2160,7 @@ public with sharing class GtmReadoutController {
             }
 
             List<GTM_Assessment_Request__c> reqs = [
-                SELECT Requester_Email__c, Requester_Name__c, Company__c,
+                SELECT Requester_Email__c, Requester_Name__c, Company__c, Contact__c, Account__c,
                        Saved_Configuration__r.Generated_URL__c
                 FROM GTM_Assessment_Request__c
                 WHERE Id = :assessmentRequestId
@@ -2237,6 +2266,18 @@ public with sharing class GtmReadoutController {
 
             try {
                 update new GTM_Readout__c(Id = readoutId, Notification_Sent_Date__c = System.now());
+                // Issue #31 engagement-state Task: sent_complete's
+                // STATE_ACTION is 'none' -- there is nothing new to fire,
+                // only publishReadout's earlier published_unsent Task to
+                // close now that the prospect has actually been notified.
+                // No ownerId to pass -- syncEngagementStateTask only needs
+                // one to fire, and this state never fires.
+                Id engagementWhatId = req.Contact__c != null ? req.Contact__c : req.Account__c;
+                if (engagementWhatId != null) {
+                    GtmLifecycleNotificationService.syncEngagementStateTask(
+                        engagementWhatId, null, GtmEngagementStateClassifier.STATE_SENT_COMPLETE
+                    );
+                }
             } catch (Exception e) {
                 System.debug(
                     LoggingLevel.WARN,

@@ -188,6 +188,74 @@ private class GtmLifecycleNotificationServiceTest {
     }
 
     @isTest
+    static void fireTasksBulkRoutesAContactTargetToWhoIdNotWhatId() {
+        // Regression coverage for issue #31's real-org failure: a Contact Id
+        // in Task.WhatId is rejected at DML time with
+        // FIELD_INTEGRITY_EXCEPTION (confirmed against gtm-staging, Test Run
+        // Id 707gK00000vJA9t). fireTasksBulk must route it to WhoId instead,
+        // in the same aggregate insert as any Account/custom-object targets
+        // in the same batch.
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Assessment_Request__c req = seedRequest();
+        List<GtmLifecycleNotificationService.TaskRequest> requests =
+            new List<GtmLifecycleNotificationService.TaskRequest> {
+                new GtmLifecycleNotificationService.TaskRequest(
+                    con.Id, UserInfo.getUserId(), GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED, 'Contact'),
+                new GtmLifecycleNotificationService.TaskRequest(
+                    req.Id, UserInfo.getUserId(), GtmLifecycleNotificationService.SUBJECT_NEW_REQUEST, 'Request')
+            };
+
+        Test.startTest();
+        GtmLifecycleNotificationService.fireTasksBulk(requests);
+        Test.stopTest();
+
+        List<Task> contactTasks = [SELECT WhoId, WhatId FROM Task
+            WHERE Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED];
+        Assert.areEqual(1, contactTasks.size(), 'The Contact-targeted Task must have been created');
+        Assert.areEqual(con.Id, contactTasks[0].WhoId, 'A Contact target must land on WhoId');
+        Assert.isNull(contactTasks[0].WhatId, 'A Contact target must never be written to WhatId');
+
+        List<Task> requestTasks = [SELECT WhoId, WhatId FROM Task
+            WHERE Subject = :GtmLifecycleNotificationService.SUBJECT_NEW_REQUEST];
+        Assert.areEqual(1, requestTasks.size(), 'The custom-object-targeted Task must have been created');
+        Assert.areEqual(req.Id, requestTasks[0].WhatId, 'A custom-object target must still land on WhatId');
+        Assert.isNull(requestTasks[0].WhoId, 'A custom-object target must never be written to WhoId');
+    }
+
+    @isTest
+    static void closeOpenTasksBulkClosesAcrossAMixedSetOfContactAndCustomObjectTargets() {
+        // Same WhoId/WhatId split as the fire side, proven on the close side
+        // across one mixed batch: a Contact target's Task lives on WhoId, a
+        // custom-object target's lives on WhatId, and one aggregate query
+        // (not two, not one-per-record) must still find and close both.
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Assessment_Request__c req = seedRequest();
+        insert new List<Task> {
+            new Task(WhoId = con.Id, OwnerId = UserInfo.getUserId(),
+                Subject = GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED, Status = 'Not Started'),
+            new Task(WhatId = req.Id, OwnerId = UserInfo.getUserId(),
+                Subject = GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED, Status = 'Not Started')
+        };
+
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        GtmLifecycleNotificationService.closeOpenTasksBulk(
+            new Set<Id> { con.Id, req.Id }, GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED);
+        Integer queriesUsed = Limits.getQueries() - queriesBefore;
+        Test.stopTest();
+
+        Assert.areEqual(1, queriesUsed, 'One mixed-target set must still cost exactly one aggregate query');
+        Assert.areEqual(
+            2,
+            [SELECT COUNT() FROM Task WHERE Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED
+                AND Status = 'Completed'],
+            'Both the WhoId-targeted and WhatId-targeted Task must close'
+        );
+    }
+
+    @isTest
     static void closeOpenTasksBulkClosesMatchingTasksAcrossMultipleWhatIdsWithOneDmlStatement() {
         GTM_Assessment_Request__c reqA = seedRequest();
         GTM_Assessment_Request__c reqB = seedRequest();
@@ -233,5 +301,206 @@ private class GtmLifecycleNotificationServiceTest {
         Test.stopTest();
 
         Assert.isTrue(true, 'An empty or null whatIds set must be a silent no-op');
+    }
+
+    // ------------------------------------------- syncEngagementStateTask
+    // (issue #31 -- the fire/close orchestration behind the five wired
+    // engagement-state call sites in GtmLinkEventController/
+    // GtmAssessmentRequestController/GtmReadoutController.)
+
+    private static Contact seedContact() {
+        Contact c = new Contact(LastName = 'Prospect');
+        insert c;
+        return c;
+    }
+
+    @isTest
+    static void syncFiresTheCorrectSubjectForEachFireableState() {
+        Map<String, String> expected = new Map<String, String>{
+            GtmEngagementStateClassifier.STATE_OPENED          => GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED,
+            GtmEngagementStateClassifier.STATE_STARTED         => GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_STARTED,
+            GtmEngagementStateClassifier.STATE_SUBMITTED_DRAFT => GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_SUBMITTED,
+            GtmEngagementStateClassifier.STATE_PUBLISHED_UNSENT => GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT
+        };
+        // Test.startTest()/Test.stopTest() wrap the whole loop, not each
+        // iteration -- Apex only permits ONE start/stop pair per test method
+        // (a second call throws System.FinalException: "Testing already
+        // started"). Looping it per-state was masked pre-issue-31-WhoId-fix
+        // by an earlier assertion failure on the very first iteration (the
+        // Task silently never got created against WhatId=Contact, so
+        // Assert.areEqual(1, tasks.size(), ...) threw before the loop ever
+        // reached its second Test.startTest() call); fixing the WhoId
+        // routing let the loop actually run to a second iteration and
+        // exposed this pre-existing structural bug.
+        Test.startTest();
+        for (String state : expected.keySet()) {
+            Contact c = seedContact();
+            GtmLifecycleNotificationService.syncEngagementStateTask(c.Id, UserInfo.getUserId(), state);
+
+            List<Task> tasks = [SELECT Subject, OwnerId, Status FROM Task WHERE WhoId = :c.Id];
+            Assert.areEqual(1, tasks.size(), 'Exactly one Task should fire for ' + state);
+            Assert.areEqual(expected.get(state), tasks[0].Subject, 'Wrong subject for ' + state);
+            Assert.areEqual('Not Started', tasks[0].Status);
+            Assert.areEqual(UserInfo.getUserId(), tasks[0].OwnerId);
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void syncFiresNothingForSentCompleteOrNeverOpened() {
+        Contact c1 = seedContact();
+        Contact c2 = seedContact();
+
+        Test.startTest();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c1.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_SENT_COMPLETE);
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c2.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_NEVER_OPENED);
+        Test.stopTest();
+
+        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhoId = :c1.Id]);
+        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhoId = :c2.Id]);
+    }
+
+    @isTest
+    static void syncIsIdempotentAcrossRepeatCallsAtTheSameState() {
+        Contact c = seedContact();
+
+        Test.startTest();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_OPENED);
+        // A second prospect visit re-firing the same state (e.g. a repeat
+        // Page View while still opened_not_started) must not spawn a
+        // duplicate open Task.
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_OPENED);
+        Test.stopTest();
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhoId = :c.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED],
+            'Repeat calls at the same state must not create a duplicate open Task'
+        );
+    }
+
+    @isTest
+    static void syncAdvancingToAHigherStateClosesTheLowerOpenTask() {
+        Contact c = seedContact();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_OPENED);
+
+        Test.startTest();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_STARTED);
+        Test.stopTest();
+
+        Assert.areEqual(
+            'Completed',
+            [SELECT Status FROM Task WHERE WhoId = :c.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED LIMIT 1].Status,
+            'opened_not_started\'s Task must close once started_not_submitted fires'
+        );
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhoId = :c.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_STARTED
+                AND Status != 'Completed'],
+            'started_not_submitted\'s own Task should be open'
+        );
+    }
+
+    @isTest
+    static void syncSkippingRanksClosesEveryLowerOpenTaskNotJustTheImmediatelyPriorOne() {
+        // never_opened -> submitted_draft directly (a prospect who fills
+        // the form fast), skipping opened_not_started/started_not_submitted
+        // entirely -- both of their Tasks (fired earlier in this test to
+        // simulate a link that WAS opened/started first) must still close.
+        Contact c = seedContact();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_OPENED);
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_STARTED);
+
+        Test.startTest();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_SUBMITTED_DRAFT);
+        Test.stopTest();
+
+        Map<String, String> statusBySubject = new Map<String, String>();
+        for (Task t : [SELECT Subject, Status FROM Task WHERE WhoId = :c.Id]) {
+            statusBySubject.put(t.Subject, t.Status);
+        }
+        Assert.areEqual('Completed', statusBySubject.get(GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED));
+        Assert.areEqual('Completed', statusBySubject.get(GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_STARTED));
+        Assert.areNotEqual('Completed', statusBySubject.get(GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_SUBMITTED));
+    }
+
+    @isTest
+    static void syncSentCompleteClosesThePublishedUnsentTaskWithoutFiringAnythingNew() {
+        Contact c = seedContact();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_PUBLISHED_UNSENT);
+
+        Test.startTest();
+        // ownerId is deliberately null here -- sendPublishNotification's own
+        // call site has no owner to pass for a close-only transition.
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, null, GtmEngagementStateClassifier.STATE_SENT_COMPLETE);
+        Test.stopTest();
+
+        Assert.areEqual(
+            'Completed',
+            [SELECT Status FROM Task WHERE WhoId = :c.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT LIMIT 1].Status
+        );
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhoId = :c.Id],
+            'sent_complete must close the prior Task and fire nothing new -- exactly one Task total'
+        );
+    }
+
+    @isTest
+    static void syncIsANoOpWithNoWhatIdOrBlankState() {
+        Contact c = seedContact();
+
+        Test.startTest();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            null, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_OPENED);
+        GtmLifecycleNotificationService.syncEngagementStateTask(c.Id, UserInfo.getUserId(), null);
+        GtmLifecycleNotificationService.syncEngagementStateTask(c.Id, UserInfo.getUserId(), '');
+        Test.stopTest();
+
+        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhoId = :c.Id]);
+    }
+
+    @isTest
+    static void syncFireStepIsANoOpWithNoOwnerIdButCloseStepStillRuns() {
+        Contact c = seedContact();
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, UserInfo.getUserId(), GtmEngagementStateClassifier.STATE_OPENED);
+
+        Test.startTest();
+        // No ownerId -- the fire half must no-op, but the close-every-other-
+        // subject half must still run (a null ownerId is only ever passed
+        // by a close-only call site, but this proves the method degrades
+        // safely even for a would-be-fireable state).
+        GtmLifecycleNotificationService.syncEngagementStateTask(
+            c.Id, null, GtmEngagementStateClassifier.STATE_STARTED);
+        Test.stopTest();
+
+        Assert.areEqual(
+            'Completed',
+            [SELECT Status FROM Task WHERE WhoId = :c.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED LIMIT 1].Status,
+            'The close-every-other-subject sweep must still run even when ownerId is null'
+        );
+        Assert.areEqual(
+            0,
+            [SELECT COUNT() FROM Task WHERE WhoId = :c.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_STARTED],
+            'No ownerId means the fire step must no-op'
+        );
     }
 }

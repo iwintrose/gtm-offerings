@@ -1030,6 +1030,30 @@ public without sharing class GtmAssessmentRequestController {
                 GtmLifecycleNotificationService.fireBell(req.OwnerId, req.Id,
                     'New assessment request', 'A new assessment request came in and needs review.');
             }
+
+            // Issue #31 engagement-state Task, distinct from the
+            // notification-settings-gated SUBJECT_NEW_REQUEST Task just
+            // above: that one targets req.Id (the request record itself,
+            // "go review this"), always owned by req.OwnerId, and is
+            // switchable off by an org-wide setting. This one targets the
+            // prospect's own Contact (preferred) or Account -- coalesce
+            // applied here, Contact preferred, same as every other
+            // engagement-state call site -- so it lands on that record's
+            // Activity timeline, and always fires: it is not a
+            // "notify someone" preference, it is the same-shape replacement
+            // for the retired Engagement Links tab's own always-on
+            // submitted_draft row. ctx.contactId reflects applyContact's
+            // already-run resolution (a Contact is created/found before
+            // this request is even inserted -- see applyContact and its own
+            // `ctx.contactId = target.Id`), so this is almost always
+            // non-null for a real submission; ctx.accountId is the fallback
+            // for the rare case a Contact could not be resolved at all.
+            Id engagementWhatId = ctx.contactId != null ? ctx.contactId : ctx.accountId;
+            if (engagementWhatId != null && req.OwnerId != null) {
+                GtmLifecycleNotificationService.syncEngagementStateTask(
+                    engagementWhatId, req.OwnerId, GtmEngagementStateClassifier.STATE_SUBMITTED_DRAFT
+                );
+            }
         } catch (Exception e) {
             // The request is already saved; don't fail the submission over the
             // nice-to-have follow-ups (feed post, readout).

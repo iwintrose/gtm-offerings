@@ -43,6 +43,9 @@ public without sharing class GtmLinkEventController {
         try {
             GtmLinkOwnerStamp.stamp(new List<SObject>{ evt }, GtmLinkOwnerStamp.ownerForLink(resolvedConfigId));
             insert evt;
+            if (eventType == 'Page View' || eventType == 'Form Opened') {
+                syncEngagementTask(resolvedConfigId);
+            }
         } catch (Exception e) {
             // Best-effort; never fail the prospect-facing page over a logging error.
         }
@@ -79,6 +82,7 @@ public without sharing class GtmLinkEventController {
         if (events == null || events.isEmpty()) return;
 
         List<SObject> rows = new List<SObject>();
+        Boolean sawEngagementSignal = false;
         for (EventInput e : events) {
             if (e == null || String.isBlank(e.eventType)) continue;
             if (rows.size() >= MAX_EVENTS_PER_CALL) break;
@@ -94,16 +98,105 @@ public without sharing class GtmLinkEventController {
             row.put('Dwell_Seconds__c', e.dwellSeconds == null ? null : e.dwellSeconds.setScale(1));
             row.put('Sequence__c', e.sequence);
             rows.add(row);
+            if (e.eventType == 'Page View' || e.eventType == 'Form Opened') {
+                sawEngagementSignal = true;
+            }
         }
         if (rows.isEmpty()) return;
 
         try {
             GtmLinkOwnerStamp.stamp(rows, GtmLinkOwnerStamp.ownerForLink(resolvedConfigId));
             insert rows;
+            if (sawEngagementSignal) {
+                syncEngagementTask(resolvedConfigId);
+            }
         } catch (Exception ex) {
             // Best-effort, like the single-event path: a prospect's page never
             // fails over analytics.
         }
+    }
+
+    /**
+     * Recomputes GtmEngagementStateClassifier's state for this one
+     * link/config and syncs its engagement-state Task via
+     * GtmLifecycleNotificationService.syncEngagementStateTask (issue #31).
+     * Only called for 'Page View'/'Form Opened' events -- the two event
+     * types classify() actually reads -- so the far more frequent dwell/
+     * scroll events this class also logs never pay this method's query
+     * cost. Scoped to a single config, matching this class's own existing
+     * one-configId-per-call shape (see this file's own header and
+     * MAX_EVENTS_PER_CALL above); if a future change ever batches multiple
+     * configs into one logEvents-style call, this must move to
+     * GtmLifecycleNotificationService's bulk-safe variants per that class's
+     * own stated discipline.
+     *
+     * without sharing, guest-context, best-effort: called from inside the
+     * same try/catch as the event insert itself above, so any failure here
+     * (a missing config, a malformed related row) is swallowed exactly like
+     * a logging failure would be -- it must never fail the prospect-facing
+     * page.
+     */
+    private static void syncEngagementTask(Id configId) {
+        // Bound to a bind variable, not a literal ('Page View', 'Form
+        // Opened') list, so the subquery's WHERE clause needs no parens of
+        // its own nested inside the (SELECT ...) subquery's own parens.
+        Set<String> relevantEventTypes = new Set<String>{ 'Page View', 'Form Opened' };
+        List<GTM_Saved_Configuration__c> cfgs = [
+            SELECT Contact__c, Account__c, OwnerId,
+                (SELECT Event_Type__c, CreatedDate FROM GTM_Link_Events__r
+                    WHERE Event_Type__c IN :relevantEventTypes ORDER BY CreatedDate DESC),
+                (SELECT Id, Submitted_At__c FROM GTM_Assessment_Requests__r ORDER BY CreatedDate DESC LIMIT 1)
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :configId
+            LIMIT 1
+        ];
+        if (cfgs.isEmpty()) return;
+        GTM_Saved_Configuration__c cfg = cfgs[0];
+
+        Id whatId = cfg.Contact__c != null ? cfg.Contact__c : cfg.Account__c;
+        if (whatId == null || cfg.OwnerId == null) return;
+
+        DateTime lastPageView = null;
+        Boolean formOpened = false;
+        for (GTM_Link_Event__c evt : cfg.GTM_Link_Events__r) {
+            if (evt.Event_Type__c == 'Page View' && lastPageView == null) {
+                lastPageView = evt.CreatedDate;
+            }
+            if (evt.Event_Type__c == 'Form Opened') {
+                formOpened = true;
+            }
+        }
+
+        GTM_Assessment_Request__c req = cfg.GTM_Assessment_Requests__r.isEmpty()
+            ? null : cfg.GTM_Assessment_Requests__r[0];
+        Boolean submitted = req != null && req.Submitted_At__c != null;
+
+        // Read the most recent readout's Status__c/Notification_Sent_Date__c
+        // too, not just the request-submitted signal above -- without this,
+        // a late 'Page View' after the readout is already published/sent
+        // would wrongly be classified as submitted_draft (readoutStatus
+        // defaulting to null passes classify()'s first branch) and regress
+        // an already-correct published_unsent/sent_complete Task state.
+        String readoutStatus = null;
+        Boolean notificationSent = false;
+        if (req != null) {
+            List<GTM_Readout__c> readouts = [
+                SELECT Status__c, Notification_Sent_Date__c
+                FROM GTM_Readout__c
+                WHERE Assessment_Request__c = :req.Id
+                ORDER BY CreatedDate DESC
+                LIMIT 1
+            ];
+            if (!readouts.isEmpty()) {
+                readoutStatus = readouts[0].Status__c;
+                notificationSent = readouts[0].Notification_Sent_Date__c != null;
+            }
+        }
+
+        String state = GtmEngagementStateClassifier.classify(
+            submitted, readoutStatus, notificationSent, formOpened, lastPageView
+        );
+        GtmLifecycleNotificationService.syncEngagementStateTask(whatId, cfg.OwnerId, state);
     }
 
     /**

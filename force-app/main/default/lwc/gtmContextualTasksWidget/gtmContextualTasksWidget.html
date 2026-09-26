@@ -1,0 +1,40 @@
+<template>
+    <c-gtm-card icon-name="standard:task" title="Open tasks" variant="tasks" data-id="contextual-tasks-widget">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading open tasks" size="small"></lightning-spinner>
+        </template>
+
+        <template if:true={loadError}>
+            <div class="slds-text-color_error" data-id="contextual-tasks-error">
+                <p>{loadError}</p>
+                <lightning-button label="Retry" onclick={handleRetry}></lightning-button>
+            </div>
+        </template>
+
+        <template if:true={showEmpty}>
+            <p class="ct-empty" data-id="contextual-tasks-empty">
+                No open tasks on this contact or account.
+            </p>
+        </template>
+
+        <template if:true={showRows}>
+            <ul class="slds-has-dividers_top-space" data-id="contextual-tasks-list">
+                <template for:each={rows} for:item="row">
+                    <li key={row.taskId} class="slds-item" data-id="contextual-task-row">
+                        <div class="ct-row-main" data-id="contextual-task-row-main"
+                            data-what-id={row.whatId} data-what-object-type={row.whatObjectType}
+                            role="button" tabindex="0" aria-label={row.rowAriaLabel}
+                            onclick={handleRowActivate} onkeydown={handleRowActivate}>
+                            <div class="slds-grid slds-grid_align-spread">
+                                <span class="slds-truncate">{row.subject}</span>
+                                <template if:true={row.dueLabel}>
+                                    <span class="slds-badge" data-id="contextual-task-due-label">{row.dueLabel}</span>
+                                </template>
+                            </div>
+                        </div>
+                    </li>
+                </template>
+            </ul>
+        </template>
+    </c-gtm-card>
+</template>

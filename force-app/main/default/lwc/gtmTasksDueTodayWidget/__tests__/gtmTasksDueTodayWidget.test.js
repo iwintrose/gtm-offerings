@@ -126,7 +126,7 @@ describe('gtmTasksDueTodayWidget', () => {
         expect(rowMain.textContent).toContain('Acme Inc');
     });
 
-    it("clicking a row's main content navigates to the Engagement Links tab scoped to that task's Account", async () => {
+    it("clicking a row's main content navigates to that task's Account record, Activity tab", async () => {
         getTasksDueToday.mockResolvedValue([
             { taskId: '00T000000001AAA', subject: 'Call Acme', activityDate: '2026-09-22', isOverdue: false, whatId: '001000000001AAA', whatName: 'Acme Inc', accountId: '001000000001AAA' },
             { taskId: '00T000000002BBB', subject: 'Follow up Beta', activityDate: '2026-09-18', isOverdue: true, whatId: '006000000002BBB', whatName: 'Beta Co', accountId: '001000000002BBB' }
@@ -139,9 +139,8 @@ describe('gtmTasksDueTodayWidget', () => {
 
         expect(mockNavigate).toHaveBeenCalledTimes(1);
         expect(mockNavigate).toHaveBeenCalledWith({
-            type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Engagement_Links' },
-            state: { c__rlfAccountId: '001000000002BBB' }
+            type: 'standard__recordPage',
+            attributes: { recordId: '001000000002BBB', objectApiName: 'Account', actionName: 'view' }
         });
     });
 
@@ -157,9 +156,8 @@ describe('gtmTasksDueTodayWidget', () => {
 
         expect(mockNavigate).toHaveBeenCalledTimes(1);
         expect(mockNavigate).toHaveBeenCalledWith({
-            type: 'standard__navItemPage',
-            attributes: { apiName: 'GTM_Engagement_Links' },
-            state: { c__rlfAccountId: '001000000001AAA' }
+            type: 'standard__recordPage',
+            attributes: { recordId: '001000000001AAA', objectApiName: 'Account', actionName: 'view' }
         });
     });
 

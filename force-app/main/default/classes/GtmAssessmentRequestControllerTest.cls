@@ -1793,8 +1793,22 @@ private class GtmAssessmentRequestControllerTest {
             WHERE Saved_Configuration__c = :link.Id], 'Exactly one request for the link');
         Assert.areEqual(1, [SELECT COUNT() FROM Contact
             WHERE Email = 'alex.rivera@example.com'], 'No duplicate Contact');
-        Assert.areEqual(1, [SELECT COUNT() FROM Task WHERE WhoId = :result.contactId],
-            'No duplicate Task');
+        // Two DIFFERENT Tasks legitimately land on the same Contact from one
+        // successful submission -- logActivity's own submission-summary Task
+        // (Subject = 'Environment assessment request', always fired,
+        // predates issue #31) and the issue #31 engagement-state Task
+        // (Subject = SUBJECT_ENGAGEMENT_SUBMITTED, fired from
+        // postInsertBestEffort). A bare "COUNT() WHERE WhoId = :contactId"
+        // with no Subject filter conflates the two, so a retry that
+        // correctly creates exactly one of EACH type still reads as 2 -- not
+        // a duplicate. Scope each assertion to its own Subject so a genuine
+        // retry-duplicate of either Task is still caught.
+        Assert.areEqual(1, [SELECT COUNT() FROM Task WHERE WhoId = :result.contactId
+                AND Subject = 'Environment assessment request'],
+            'No duplicate activity-log Task');
+        Assert.areEqual(1, [SELECT COUNT() FROM Task WHERE WhoId = :result.contactId
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_SUBMITTED],
+            'No duplicate engagement-state Task');
         Assert.isTrue(GtmConfigurationStatusController.hasSubmittedAssessment(link.Id));
     }
 
@@ -2064,6 +2078,45 @@ private class GtmAssessmentRequestControllerTest {
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_NEW_REQUEST],
             'No routed owner means no Task, even with the setting on'
         );
+    }
+
+    // ------------------------------------- engagement-state Task (issue #31)
+    // Distinct from SUBJECT_NEW_REQUEST above: always fires (not gated by
+    // notifyOnNewAssessmentRequest), and targets the resolved prospect
+    // Contact, not the request record itself.
+
+    @isTest
+    static void submittingAnAssessmentRequestFiresTheEngagementSubmittedDraftTaskAgainstTheContact() {
+        Id repId = insertRoutedRep();
+        GTM_Saved_Configuration__c link = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator', Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/d', Active__c = true, OwnerId = repId
+        );
+        insert link;
+        // Deliberately off -- proves the engagement Task is independent of
+        // this setting, unlike SUBJECT_NEW_REQUEST above.
+        setNewRequestNotification(false);
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = link.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success);
+        Assert.isNotNull(result.contactId, 'applyContact should have resolved/created a Contact for this submission');
+        List<Task> tasks = [
+            SELECT WhoId, OwnerId, Subject
+            FROM Task
+            WHERE WhoId = :result.contactId
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_SUBMITTED
+        ];
+        Assert.areEqual(1, tasks.size(),
+            'Submitting should fire the engagement submitted_draft Task against the Contact even with the ' +
+            'new-request notification setting off');
+        Assert.areEqual(repId, tasks[0].OwnerId, 'The engagement Task must be owned by the link owner');
     }
 
     @isTest

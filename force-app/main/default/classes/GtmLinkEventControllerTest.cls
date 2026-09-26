@@ -104,4 +104,190 @@ private class GtmLinkEventControllerTest {
         GtmLinkEventController.logEvents(UserInfo.getUserId(), 's', batch(3));
         Assert.areEqual(0, [SELECT COUNT() FROM GTM_Link_Event__c]);
     }
+
+    // ---------------------------- engagement-state Task sync (issue #31) --
+
+    private static GTM_Saved_Configuration__c linkForContact(Id ownerId, Id contactId) {
+        GTM_Saved_Configuration__c c = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator', Company__c = 'Acme Bank',
+            Generated_URL__c = 'https://example.com/a', Active__c = true,
+            OwnerId = ownerId, Contact__c = contactId
+        );
+        insert c;
+        return c;
+    }
+
+    private static GTM_Saved_Configuration__c linkForAccount(Id ownerId, Id accountId) {
+        GTM_Saved_Configuration__c c = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator', Company__c = 'Acme Bank',
+            Generated_URL__c = 'https://example.com/a', Active__c = true,
+            OwnerId = ownerId, Account__c = accountId
+        );
+        insert c;
+        return c;
+    }
+
+    @IsTest
+    static void aPageViewFiresTheOpenedTaskAgainstTheContact() {
+        User rep = makeUser('repa');
+        insert rep;
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Saved_Configuration__c c = linkForContact(rep.Id, con.Id);
+
+        Test.startTest();
+        GtmLinkEventController.logEvent(c.Id, 'Page View', 'sess-1', null, null);
+        Test.stopTest();
+
+        List<Task> tasks = [
+            SELECT WhoId, OwnerId, Subject FROM Task WHERE WhoId = :con.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED
+        ];
+        Assert.areEqual(1, tasks.size(), 'A Page View should fire the opened_not_started engagement Task');
+        Assert.areEqual(rep.Id, tasks[0].OwnerId, 'The Task must be owned by the link owner');
+    }
+
+    @IsTest
+    static void aPageViewOnAContactlessLinkFallsBackToTheAccount() {
+        User rep = makeUser('repb');
+        insert rep;
+        Account acc = new Account(Name = 'Fallback Co');
+        insert acc;
+        GTM_Saved_Configuration__c c = linkForAccount(rep.Id, acc.Id);
+
+        Test.startTest();
+        GtmLinkEventController.logEvent(c.Id, 'Page View', 'sess-1', null, null);
+        Test.stopTest();
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhatId = :acc.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED],
+            'With no Contact on the link, the Task must fall back to the Account'
+        );
+    }
+
+    @IsTest
+    static void aSecondPageViewDoesNotDuplicateTheOpenedTask() {
+        User rep = makeUser('repc');
+        insert rep;
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Saved_Configuration__c c = linkForContact(rep.Id, con.Id);
+
+        GtmLinkEventController.logEvent(c.Id, 'Page View', 'sess-1', null, null);
+
+        Test.startTest();
+        // A second visit generating another Page View must not spawn a
+        // second open Task for the same state.
+        GtmLinkEventController.logEvent(c.Id, 'Page View', 'sess-2', null, null);
+        Test.stopTest();
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhoId = :con.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED]
+        );
+    }
+
+    @IsTest
+    static void aFormOpenedEventAfterAPageViewClosesTheOpenedTaskAndFiresStarted() {
+        User rep = makeUser('repd');
+        insert rep;
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Saved_Configuration__c c = linkForContact(rep.Id, con.Id);
+        GtmLinkEventController.logEvent(c.Id, 'Page View', 'sess-1', null, null);
+
+        Test.startTest();
+        GtmLinkEventController.logEvent(c.Id, 'Form Opened', 'sess-1', null, null);
+        Test.stopTest();
+
+        Assert.areEqual(
+            'Completed',
+            [SELECT Status FROM Task WHERE WhoId = :con.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED LIMIT 1].Status
+        );
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhoId = :con.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_STARTED
+                AND Status != 'Completed']
+        );
+    }
+
+    @IsTest
+    static void anIrrelevantEventTypeNeverFiresAnEngagementTask() {
+        User rep = makeUser('repe');
+        insert rep;
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Saved_Configuration__c c = linkForContact(rep.Id, con.Id);
+
+        Test.startTest();
+        GtmLinkEventController.logEvent(c.Id, 'Section Viewed', 'sess-1', null, null);
+        Test.stopTest();
+
+        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhoId = :con.Id]);
+    }
+
+    @IsTest
+    static void aLinkWithNeitherContactNorAccountNeverFiresAnEngagementTask() {
+        User rep = makeUser('repf');
+        insert rep;
+        GTM_Saved_Configuration__c c = link(rep.Id); // no Contact__c/Account__c set
+
+        Test.startTest();
+        GtmLinkEventController.logEvent(c.Id, 'Page View', 'sess-1', null, null);
+        Test.stopTest();
+
+        Assert.areEqual(0, [SELECT COUNT() FROM Task]);
+    }
+
+    @IsTest
+    static void logEventsBatchFiresTheOpenedTaskOnceForTheWholeBatch() {
+        User rep = makeUser('repg');
+        insert rep;
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Saved_Configuration__c c = linkForContact(rep.Id, con.Id);
+
+        List<GtmLinkEventController.EventInput> events = batch(3);
+        GtmLinkEventController.EventInput pv = new GtmLinkEventController.EventInput();
+        pv.eventType = 'Page View';
+        pv.sequence = 99;
+        events.add(pv);
+
+        Test.startTest();
+        GtmLinkEventController.logEvents(c.Id, 'sess-1', events);
+        Test.stopTest();
+
+        Assert.areEqual(
+            1,
+            [SELECT COUNT() FROM Task WHERE WhoId = :con.Id
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED],
+            'One engagement Task per batch, even though the batch carried several event rows'
+        );
+    }
+
+    @IsTest
+    static void aBatchWithOnlyIrrelevantEventTypesDoesNotPayTheEngagementQueryCost() {
+        // Mirrors aHundredEventsAcrossCallsAreAllStampedWithOneLookupPerCall's
+        // own exact-query-count assertion style: batch()'s events are all
+        // 'Section Viewed', so the engagement sync path must never run, and
+        // the per-call query cost must stay exactly what it was before this
+        // ticket's change.
+        User rep = makeUser('reph');
+        insert rep;
+        Contact con = new Contact(LastName = 'Prospect');
+        insert con;
+        GTM_Saved_Configuration__c c = linkForContact(rep.Id, con.Id);
+
+        Integer q0 = Limits.getQueries();
+        GtmLinkEventController.logEvents(c.Id, 's1', batch(5));
+        Integer cost = Limits.getQueries() - q0;
+
+        Assert.areEqual(2, cost, 'No engagement-sync queries should run for a batch with no Page View/Form Opened');
+        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhoId = :con.Id]);
+    }
 }

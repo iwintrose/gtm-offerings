@@ -43,10 +43,6 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>GtmContactEngagementController</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
         <apexClass>GtmHomeSnapshotController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -71,6 +67,13 @@
          fixed here too since Admin needs the same Overview widget access. -->
     <classAccesses>
         <apexClass>GtmTasksDueTodayController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <!-- GtmContextualTasksController: see the matching grant/comment in
+         GTM_Offering_User.permissionset-meta.xml. Admin needs the same
+         gtmReadoutWorkspace contextual-task widget access (issue #31). -->
+    <classAccesses>
+        <apexClass>GtmContextualTasksController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -1225,12 +1228,6 @@
     </tabSettings>
     <tabSettings>
         <tab>GTM_Offerings_Settings</tab>
-        <visibility>Visible</visibility>
-    </tabSettings>
-    <!-- issue-102-1-engagement-links-landing: the new "Engagement Links"
-         landing tab (D1), gtmContactEngagement in landing mode. -->
-    <tabSettings>
-        <tab>GTM_Engagement_Links</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
