@@ -37,27 +37,36 @@ String TPL = 'story';
 // Base section key -> { Layout_Type__c, Label__c } -- copied onto each
 // variant so the variant substitutes cleanly per GtmPageContentReader's
 // variantsByBase lookup (label/layout/width come from the variant row).
-Map<String, String[]> BASE_META = new Map<String, String[]>{
-    'problem' => new String[]{ 'lede-chips', 'The Problem' },
-    'capabilities' => new String[]{ 'card-grid', 'Capabilities' },
-    'clientProfile' => new String[]{ 'stat', 'Client Profile' },
-    'faq' => new String[]{ 'faq', 'FAQ' },
-};
+// Built with individual put() calls rather than one map-literal initializer
+// -- a literal this size (4 entries, each a multi-element array) triggers a
+// genuine "Unexpected token '<'" compile failure specifically under
+// anonymous-apex execution (sf apex run / Execute Anonymous), confirmed by
+// bisection: identical entries/values compile fine as a class member or as a
+// smaller literal, and fail here regardless of surrounding comments -- this
+// is about the total complexity of a single literal expression in this
+// execution context, not the Map<String, List<String>> syntax itself (which
+// compiles fine on its own). See docs/architecture/apex-anonymous-execution-gotchas.md.
+Map<String, List<String>> BASE_META = new Map<String, List<String>>();
+BASE_META.put('problem', new String[]{ 'lede-chips', 'The Problem' });
+BASE_META.put('capabilities', new String[]{ 'card-grid', 'Capabilities' });
+BASE_META.put('clientProfile', new String[]{ 'stat', 'Client Profile' });
+BASE_META.put('faq', new String[]{ 'faq', 'FAQ' });
 
 // slug -> display label. Must match seed-industry-chooser-industries.apex's
 // INDUSTRIES map keys verbatim -- diffed against that script before drafting
 // (TASK_SCOPE.md requirement); no drift found as of this run.
-Map<String, String> INDUSTRIES = new Map<String, String>{
-    'consumer-products' => 'Consumer Products',
-    'energy-commodities' => 'Energy & Commodities',
-    'financial-services' => 'Financial Services',
-    'health' => 'Health',
-    'public-sector' => 'Public Sector',
-    'retail' => 'Retail',
-    'telecommunications-media-technology' => 'Telecom, Media & Tech',
-    'transportation-mobility' => 'Transportation & Mobility',
-    'travel-hospitality' => 'Travel & Hospitality',
-};
+// Same fix as BASE_META above -- 9 entries as one literal hit the same
+// anonymous-apex compile limit.
+Map<String, String> INDUSTRIES = new Map<String, String>();
+INDUSTRIES.put('consumer-products', 'Consumer Products');
+INDUSTRIES.put('energy-commodities', 'Energy & Commodities');
+INDUSTRIES.put('financial-services', 'Financial Services');
+INDUSTRIES.put('health', 'Health');
+INDUSTRIES.put('public-sector', 'Public Sector');
+INDUSTRIES.put('retail', 'Retail');
+INDUSTRIES.put('telecommunications-media-technology', 'Telecom, Media & Tech');
+INDUSTRIES.put('transportation-mobility', 'Transportation & Mobility');
+INDUSTRIES.put('travel-hospitality', 'Travel & Hospitality');
 
 List<GTM_Page_Section__c> sectionsToUpsert = new List<GTM_Page_Section__c>();
 List<GTM_Page_Content__c> contentToUpsert = new List<GTM_Page_Content__c>();
