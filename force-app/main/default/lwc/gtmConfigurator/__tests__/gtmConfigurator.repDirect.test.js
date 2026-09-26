@@ -130,6 +130,32 @@ describe('c-gtm-configurator Rep_Direct branch (issue rep-initiated-assessment-n
         expect(element.shadowRoot.querySelector('c-gtm-assessment-questionnaire')).toBeNull();
     });
 
+    it('renders the ordinary branded chapters for a link whose stage has advanced to Assessment (post-submission, non-Rep_Direct)', async () => {
+        // Companion to issue-rep-direct-presentation-stage-flip:
+        // postInsertBestEffort() legitimately advances a normal (Sent) link
+        // to 'Assessment' after a real submission -- this asserts the client
+        // renders that server value exactly like any other non-Rep_Direct
+        // stage, i.e. isRepDirect stays strictly false and chapters render.
+        window.history.pushState({}, '', '/s/configurator?cfgId=a0X000000000054AAA&company=Acme');
+        getPublicConfiguration.mockResolvedValue({
+            isActive: true,
+            offering: 'migration-accelerator',
+            company: 'Acme',
+            configPayload: '{}',
+            presentationStage: 'Assessment'
+        });
+
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        isRep.emit(false);
+        await flushPromises();
+        await flushPromises();
+        await flushPromises();
+
+        expect(element.shadowRoot.querySelector('.chap.cover')).not.toBeNull();
+        expect(element.shadowRoot.querySelector('c-gtm-assessment-questionnaire')).toBeNull();
+    });
+
     it('still applies the password gate on a Rep_Direct link -- the branch changes CONTENT, not protection', async () => {
         window.history.pushState({}, '', '/s/configurator?cfgId=a0X000000000053AAA');
         getPublicConfiguration.mockResolvedValue({
