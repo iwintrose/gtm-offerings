@@ -75,7 +75,9 @@
   next step given the severity jump this represents.
 
   **Immediate, separate, non-code observation for the Coordinator:** the
-  stray `test` `GTM_Page_Section__c` row (`Id a1bgK00000CZYUXQA5`) is, on its
+  stray `test` `GTM_Page_Section__c` row (`Section_Key__c = 'test'`, the
+  owner's own scratch record from testing the "+ Industry variant" UI
+  earlier tonight) is, on its
   own, the direct cause of the JS fallback being suppressed for a page that
   would otherwise be showing *something* coherent (the DEFAULT_SECTIONS
   floor) instead of one blank hero. Deactivating or deleting that one record
