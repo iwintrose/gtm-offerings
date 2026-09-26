@@ -255,6 +255,18 @@ public without sharing class GtmAssessmentRequestController {
          * only for a direct booking with no link, or a link saved before
          * this field existed and never resaved since. */
         String notifyEmail;
+        /** GTM_Saved_Configuration__c.Presentation_Stage__c as it stood
+         * before this submission. Used by postInsertBestEffort() to decide
+         * whether to advance the stage to 'Assessment' -- a Rep_Direct
+         * config is permanent/pageless for its entire life (see
+         * GtmSavedConfigurationController.generateRepDirectShareLink()'s
+         * doc comment) and must never be moved out of that stage by a real
+         * submission. Null whenever resolveConfigContext() could not read
+         * the row (bad/missing id, no access, or an exception) -- treated
+         * the same as "not Rep_Direct" so the fail-open behavior of this
+         * whole method is unchanged.
+         */
+        String presentationStage;
     }
 
     public class RequestResult {
@@ -462,7 +474,7 @@ public without sharing class GtmAssessmentRequestController {
             List<GTM_Saved_Configuration__c> rows = [
                 SELECT OwnerId, Opportunity__c, Account__c, Contact__c,
                        Company__c, Offering__c, Estimated_Value__c, Link_Password__c,
-                       Notify_Email__c
+                       Notify_Email__c, Presentation_Stage__c
                 FROM GTM_Saved_Configuration__c
                 WHERE Id = :configId
                 LIMIT 1
@@ -477,6 +489,7 @@ public without sharing class GtmAssessmentRequestController {
                 ctx.estimatedValue = rows[0].Estimated_Value__c;
                 ctx.linkPassword = rows[0].Link_Password__c;
                 ctx.notifyEmail = rows[0].Notify_Email__c;
+                ctx.presentationStage = rows[0].Presentation_Stage__c;
             }
         } catch (Exception e) {
             // Malformed id, or no read access -- proceed unlinked.
@@ -969,8 +982,18 @@ public without sharing class GtmAssessmentRequestController {
         String cleanName, RequestInput input
     ) {
         try {
-            // Advance the linked config to Assessment stage
-            if (cfgId != null) {
+            // Advance the linked config to Assessment stage -- but never for
+            // a Rep_Direct config. Rep_Direct is permanent/pageless for its
+            // entire life (GtmSavedConfigurationController.
+            // generateRepDirectShareLink()'s doc comment: "never changes
+            // that value"); flipping it here would silently break the
+            // gtmConfigurator.js isRepDirect gate (line ~816) and fall the
+            // record through to branded-chapter rendering it was never
+            // meant to have. ctx.presentationStage is null whenever
+            // resolveConfigContext() could not resolve the row, which
+            // compares unequal to 'Rep_Direct' and so preserves today's
+            // fail-open behavior (advance the stage) on that path.
+            if (cfgId != null && ctx.presentationStage != 'Rep_Direct') {
                 try {
                     SObject cfgUpdate = Schema.getGlobalDescribe().get('GTM_Saved_Configuration__c').newSObject();
                     cfgUpdate.put('Id', cfgId);

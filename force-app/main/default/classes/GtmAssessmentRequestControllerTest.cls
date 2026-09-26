@@ -2086,4 +2086,87 @@ private class GtmAssessmentRequestControllerTest {
 
         Assert.areEqual(1, [SELECT COUNT() FROM Task WHERE WhatId = :req.Id]);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // REP_DIRECT STAGE GUARD (issue-rep-direct-presentation-stage-flip)
+    //
+    // postInsertBestEffort() used to unconditionally flip the linked config's
+    // Presentation_Stage__c to 'Assessment' on every submitRequest(), with no
+    // read of the current stage. A Rep_Direct config
+    // (GtmSavedConfigurationController.createRepDirectAssessment()) is
+    // documented and tested elsewhere
+    // (GtmSavedConfigurationControllerTest.
+    // generateRepDirectShareLinkPopulatesUrlAndPasswordWithoutFlippingStage)
+    // to be permanent/pageless for its entire life -- flipping it here
+    // silently broke gtmConfigurator.js's isRepDirect gate (falls through to
+    // branded-chapter rendering) and is the confirmed, live-reproduced root
+    // cause of 6 corrupted synthetic gtm-staging rows (SC-3829-SC-3834).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @isTest
+    static void submitRequestDoesNotFlipRepDirectConfigOutOfStage() {
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Presentation_Stage__c = 'Rep_Direct'
+        );
+        insert savedConfig;
+
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'The submission itself should still succeed');
+        GTM_Saved_Configuration__c updated = [
+            SELECT Presentation_Stage__c
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :savedConfig.Id
+        ];
+        Assert.areEqual(
+            'Rep_Direct',
+            updated.Presentation_Stage__c,
+            'A Rep_Direct config must stay Rep_Direct after a real submission -- it is pageless for its entire life'
+        );
+    }
+
+    @isTest
+    static void submitRequestStillAdvancesNonRepDirectConfigToAssessment() {
+        // Regression guard: a normal (Sent) link -- the realistic
+        // pre-submission stage for a real branded link -- must continue to
+        // advance to Assessment exactly as it does today. This is legitimate,
+        // unrelated behavior the Rep_Direct guard must not touch.
+        GTM_Saved_Configuration__c savedConfig = new GTM_Saved_Configuration__c(
+            Offering__c = 'migration-accelerator',
+            Company__c = 'Northwind Retail',
+            Generated_URL__c = 'https://example.com/configurator?company=Northwind',
+            Presentation_Stage__c = 'Sent',
+            OwnerId = UserInfo.getUserId()
+        );
+        insert savedConfig;
+
+        GtmAssessmentRequestController.configOverride = config(true, false, 'Task');
+        GtmAssessmentRequestController.RequestInput input = sampleInput();
+        input.savedRecordId = savedConfig.Id;
+
+        Test.startTest();
+        GtmAssessmentRequestController.RequestResult result =
+            GtmAssessmentRequestController.submitRequest(input);
+        Test.stopTest();
+
+        Assert.isTrue(result.success, 'The submission itself should still succeed');
+        GTM_Saved_Configuration__c updated = [
+            SELECT Presentation_Stage__c
+            FROM GTM_Saved_Configuration__c
+            WHERE Id = :savedConfig.Id
+        ];
+        Assert.areEqual(
+            'Assessment',
+            updated.Presentation_Stage__c,
+            'A non-Rep_Direct config must still advance to Assessment after a real submission'
+        );
+    }
 }
