@@ -126,7 +126,7 @@
   `GTM_Saved_Configuration__c` "snapshot" rows at different
   `Presentation_Stage__c` values pointing at the *same* Opportunity (e.g.
   `[DEMO] Brightfield Financial Partners`: `SC-3819` Sent, `SC-3826`
-  In_Review, `SC-3829` Assessment, all on Opportunity `006gK00000OudYmQAJ`) —
+  In_Review, `SC-3829` Assessment, all on the same Opportunity) —
   this inflates the count without adding real variation (a real client has
   ONE link whose stage advances over time via `advanceStage`, not three
   static alternate-universe copies). The curated rebuild plan in §6 below
