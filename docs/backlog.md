@@ -943,3 +943,94 @@ Published/Active join and its own fixture change, not done here.
   API client, or Agentforce/GUS tool call) reintroducing the same gap from a
   different angle. Small, separate PR; not folded into the UI fix per the
   task scope's explicit non-goal.
+
+## Later: in-app Setup UI for the Agentforce OAuth/Connected-App credential step
+
+- The Agent API 404 was resolved (d6947f1a, 2ed1c88b), the runtime wiring
+  merged (#36, d37ccdaf), and both are confirmed live in `gtm-staging`:
+  a real 3-turn Send Message conversation was run live in the browser
+  against the actual Configurator page 2026-09-26 (genuine agent-authored
+  replies each turn, 200s on the `ApexAction.execute` network call,
+  correct turn-to-turn continuity), and re-confirmed by a fresh QA Apex
+  run (68/68) the same night. **Minor hygiene follow-up, not a functional
+  gap:** `GtmAgentProxyController.cls` (~lines 578-594) still carries a
+  code comment marking the Send Message request/response shape
+  `UNVERIFIED` from before this proof existed -- worth a one-line comment
+  update in a future small PR so the source doesn't contradict what's now
+  proven.
+- The credential piece itself (Setup -> External Client Apps -> **GTM
+  Agentforce Integration** -> OAuth Settings, plus Setup -> Named
+  Credentials -> External Credentials -> **GTM Agentforce Credential** ->
+  Principal Consumer Key/Secret) is entirely a manual, org-specific Setup
+  action, documented today only as step 16 of
+  `docs/runbooks/fresh-org-deploy.md` §6 -- it has no row in the in-app
+  `gtmSetupChecklist`/`GtmSetupChecklistController` (`SETUP_PATHS` has no
+  `external_client_apps`/`named_credentials` entry) and no backlog item
+  until now. Still needed: this app is not migrating off the current org
+  imminently (per CLAUDE.md's "operational risk... until migration to the
+  core Publicis Sapient org is finalized"), and every future org (that
+  migration, or a fresh-org rebuild per the runbook) will hit this same
+  manual step cold. **Once configured for a given org it works** --
+  nothing about the connected app itself is fragile or needs redoing --
+  the gap is purely discoverability.
+- **Platform ceiling, researched 2026-09-26 (confirms what's actually
+  buildable before anyone scopes this):** a Named Credential/External
+  Credential Principal's Consumer Key/Secret cannot be set OR read back
+  programmatically by any supported API -- Salesforce's own design makes
+  it write-only via the Setup UI (encrypted on save, never shown again,
+  no Apex/Metadata/Tooling API path; the one documented programmatic path,
+  Connect REST API, is scoped to post-managed-package-install provisioning
+  and doesn't apply here). So a true "the app enters it for you" wizard is
+  not possible -- **half of step 16 will always be a manual Setup-UI
+  action.** The other half is not: the External Client App shape itself,
+  including the "Issue JWT-based access tokens for named users" toggle
+  (`ExternalClientApplication` + `ExtlClntAppOauthSettings` +
+  `ExtlClntAppOauthConfigurablePolicies`/`.ecaOauthPlcy`, Metadata API
+  since v59; this repo is on v62), **is** Metadata-API-deployable -- this
+  repo could ship "GTM Agentforce Integration" pre-configured with that
+  box already checked and the right scopes, which would shrink the manual
+  surface on every future org to just the Consumer Key/Secret entry.
+  Suggested shape for the checklist row itself, matching the existing
+  `gtmSetupChecklist` pattern (e.g. `guest_permset`'s `TIER_REQUIRED` item,
+  or `org_digital_experiences`'s `SETUP_PATH` deep-link button): a
+  `TIER_OPTIONAL` row (matches step 12's optionality -- GUS's Agentforce
+  path is opt-in/inactive by toggle per the runbook) with a `SETUP_PATH`
+  deep link straight to the Named Credential principal, plus a **live
+  health check** rather than a static status guess -- expose a thin
+  `@AuraEnabled testConnection()` on `GtmAgentSettingsController` (the
+  existing admin-only boundary class for this surface) wrapping the
+  already-proven `callAgentforceStartSession()`, so the checklist can
+  report a real pass/fail instead of just "looks configured." Not started.
+
+## Open: issue #31 (retire "Engagement Links" tab) is unmerged; `gtm-staging` has partial, untested drift from it
+
+- `docs/agent-artifacts/task-scope-31.md`'s acceptance criteria call for
+  deleting `tabs/GTM_Engagement_Links.tab-meta.xml`, its
+  `applications/GTM_Offerings.app-meta.xml` reference, and its
+  `GTM_Offering_Admin`/`GTM_Offering_User` tab-visibility grants -- **none
+  of that has happened yet.** All three still exist on `main` today
+  (confirmed by direct read, 2026-09-26). The branch itself
+  (`agent/issue-31`, worktree `../worktrees/issue-31`, HEAD `35a5fc8b`) is
+  5 commits ahead of its `main` fork point, not merged, and **not even
+  pushed to `origin`** (only the earlier `ba-scope/issue-31` scope-doc
+  branch is on the remote) -- so there is nothing to open a PR from yet.
+  What that branch has built so far is the Task-firing/Activity-timeline
+  replacement mechanism (`GtmContextualTasksController`,
+  `GtmEngagementStateClassifier`, `GtmLifecycleNotificationService`
+  extensions) and repointed the two dead-tab click-throughs -- the actual
+  tab deletion is a later step in the same ticket that hasn't been reached.
+  **New finding this session:** `gtm-staging` currently has
+  `agent/issue-31`'s `GtmReadoutControllerTest.cls` deployed (it contains
+  three test methods -- `publishReadoutFiresTheEngagementPublishedUnsentTaskAgainstTheContact`
+  and two siblings -- that exist nowhere in `main`'s source), but evidently
+  not the matching production code, because all three fail live right now
+  (`sf apex run test`, 2026-09-26: 88/91 pass, these 3 fail with "Expected:
+  1, Actual: 0" on the new published-unsent Task assertions). This is
+  `gtm-staging` drift from an unmerged branch, not a `main` regression --
+  but it means the org is not currently in a state that matches any
+  committed branch, and needs reconciling (either finish + push + merge
+  `agent/issue-31` properly, or redeploy `main`'s `GtmReadoutControllerTest`
+  over the stray version) before trusting `gtm-staging`'s current Apex test
+  results wholesale. The Engagement Links tab itself is **not** resolved or
+  removed anywhere yet -- not on `main`, not in the unmerged worktree, not
+  in the org.
