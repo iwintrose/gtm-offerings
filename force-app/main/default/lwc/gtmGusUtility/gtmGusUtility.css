@@ -1,13 +1,26 @@
+/* Brand tokens copied by value (not import) from gtmStory.css lines ~33-112 --
+   LWC shadow DOM has no shared :root, so each GUS surface keeps its own copy
+   of only the subset it actually uses (see docs/agent-artifacts/
+   task-scope-gus-chat-branding-refresh.md §1.3 / Open Fork F3). */
 :host {
     display: block;
     height: 100%;
+    --ps-red: #e90130;
+    --ps-red-hover: #be0128;
+    --ps-red-on-grey: #be0128; /* 6.03:1 -- use on any tinted surface */
+    --ps-ink: #000000;
+    --ps-white: #ffffff;
+    --ps-font-display: "Lexend Deca", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --ps-font-body: "Roboto", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --ps-font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .gus-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: #ffffff;
+    background: var(--ps-white);
+    font-family: var(--ps-font-body);
 }
 
 .gus-head {
@@ -28,6 +41,7 @@
 .gus-name {
     font-size: 0.8125rem;
     font-weight: 700;
+    font-family: var(--ps-font-display);
 }
 
 .gus-role {

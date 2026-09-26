@@ -7,7 +7,7 @@
     --gus-paper: #ffffff;
     --gus-edge: #c9c9c9;
     --gus-ink: #2b2b2b;
-    --gus-accent: var(--coral, #E90024);
+    --gus-accent: var(--coral, #E90130);
 }
 
 .gus { display: block; overflow: visible; }
