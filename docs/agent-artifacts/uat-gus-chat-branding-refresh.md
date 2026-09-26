@@ -32,3 +32,10 @@ App owner, in chat: "GUS's Agentforce chat window looks stock — redesign it co
 - Owner's explicit go-ahead required (per `CLAUDE.md` promotion flow — this is currently only merged/deployed to `gtm-staging` scope, not `main`/`gtm-prod`).
 - Recommend fixing the `GTM1` site domain issue first (or at minimum acknowledging it) so the 4th surface can be confirmed before or shortly after prod promotion.
 - The separately-flagged follow-up (3 stale `Inter` font-loader copies in `gtmConfigurator.js`/`chooseIndustry.js`/`offeringChooser.js`) is explicitly out of scope for this PR and should be filed as its own issue.
+
+## Final disposition (2026-09-26)
+
+- PR #51 merged into `main`.
+- The 7 GUS-specific components are live on `gtm-staging` (direct targeted deploy `0AfgK00000UbfHSSAZ`), confirmed correct in-browser per the table above.
+- A follow-up full-`main` deploy to `gtm-staging` hit an unrelated, pre-existing `AuthProvider` (`GTM_Employee_SSO`) blocker — logged separately in `docs/backlog.md` for the Coordinator to route; does not affect this task's own live components.
+- **`gtm-prod`: explicitly held by the owner.** This task is complete for `gtm-staging` only. No prod deploy without a fresh, separate go-ahead.
