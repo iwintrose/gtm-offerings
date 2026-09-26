@@ -872,6 +872,17 @@
         <readable>true</readable>
         <editable>true</editable>
     </fieldPermissions>
+    <!-- Case.Readout__c: plain Lookup on the standard Case object, backing the
+         review-Case comment thread (gtmArCasePanel / GtmReadoutCommentController).
+         A freshly-deployed custom field grants zero FLS to any profile/permission
+         set by default (verified live 2026-09-26), so this explicit grant is
+         required for every org this app is deployed to. See GTM_Offering_User's
+         copy of this comment for the full story. -->
+    <fieldPermissions>
+        <field>Case.Readout__c</field>
+        <readable>true</readable>
+        <editable>true</editable>
+    </fieldPermissions>
     <fieldPermissions>
         <field>GTM_Readout_Version__c.Change_Summary__c</field>
         <readable>true</readable>

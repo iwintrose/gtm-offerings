@@ -263,6 +263,21 @@
          these: it is the object's MasterDetail parent link, implicitly
          required, and (like every other required field here) cannot take an
          explicit fieldPermissions grant at all. -->
+    <!-- Case.Readout__c (not to be confused with GTM_Readout_Version__c.Readout__c
+         above) is a plain Lookup on the standard Case object, set once by
+         GtmReadoutController.fileReviewCase and never edited by a rep. It
+         backs the review-Case comment thread (gtmArCasePanel /
+         GtmReadoutCommentController) and needs read-only visibility here.
+         A freshly-deployed custom field grants zero FLS to any
+         profile/permission set by default (verified live 2026-09-26, this
+         had been the whole "field doesn't exist" saga), so this explicit
+         grant is required, not optional, for every org this app is deployed
+         to, not just gtm-staging. -->
+    <fieldPermissions>
+        <field>Case.Readout__c</field>
+        <readable>true</readable>
+        <editable>false</editable>
+    </fieldPermissions>
     <fieldPermissions>
         <field>GTM_Readout_Version__c.Change_Summary__c</field>
         <readable>true</readable>
