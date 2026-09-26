@@ -90,7 +90,9 @@
             </template>
             <template lwc:elseif={isAgentforceSelected}>
                 <p class="agentforce-notice slds-text-body_small slds-m-bottom_small">
-                    Saved for the upcoming Agentforce integration — GUS will keep using the first configured provider until it ships.
+                    Live for the GUS configurator chat only — the readout editor and utility bar keep using
+                    Claude/OpenAI/Gemini even when Agentforce is selected here. Agentforce replies
+                    conversationally but cannot apply configurator field changes on the rep's behalf yet.
                 </p>
                 <lightning-input
                     type="text"
@@ -115,7 +117,8 @@
                     onchange={handleAgentforceClientIdChange}
                 ></lightning-input>
                 <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
-                    The consumer secret is not stored here. It will be captured via a Named Credential in the later integration phase.
+                    The consumer secret is not stored here. It lives only in the GTM_Agentforce_Credential
+                    External Credential in Setup, never in this custom setting or this form.
                     The Agent API requires an External Client App with client-credentials OAuth, and does not support agents of type "Agentforce (Default)".
                 </p>
             </template>

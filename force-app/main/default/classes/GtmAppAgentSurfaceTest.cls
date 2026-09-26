@@ -299,4 +299,29 @@ private class GtmAppAgentSurfaceTest {
         // 20 kept turns * 2 messages + new user + new assistant
         Assert.areEqual(42, h.size());
     }
+
+    /**
+     * Fork 2 (task-scope-gus-live-agentforce-provider-runtime.md §6, "DECIDED
+     * -- configurator chat surface only"): only chat()/ConfigSurface may
+     * resolve Chat_Provider__c='Agentforce' to the real Agent API. The
+     * app-wide utility bar (chatOnApp) must keep using the existing stateless
+     * Claude/OpenAI/Gemini fallback regardless -- this is the replacement for
+     * the pre-runtime-issue test that used to assert this same fallback
+     * through chat() (now covered by GtmAgentProxyControllerTest's
+     * chat_agentforceSelected_* tests, which assert the OPPOSITE for that
+     * surface).
+     */
+    @IsTest
+    static void chatOnApp_agentforceSelected_stillFallsBackToAnthropic() {
+        seed('Agentforce', 'k', null, null);
+        CapturingMock mock = new CapturingMock(ANTHROPIC_OK);
+        Test.setMock(HttpCalloutMock.class, mock);
+        Test.startTest();
+        String out = GtmAgentProxyController.chatOnApp('{}', 'hi', '');
+        Test.stopTest();
+        Assert.areEqual(1, mock.requests.size());
+        Assert.areEqual('https://api.anthropic.com/v1/messages', mock.requests[0].getEndpoint());
+        Map<String,Object> r = (Map<String,Object>) JSON.deserializeUntyped(out);
+        Assert.areEqual('Hi from GUS', r.get('text'));
+    }
 }

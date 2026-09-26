@@ -247,7 +247,7 @@ describe('c-gtm-offerings-settings-agent', () => {
             agentforceClientId: 'ck'
         });
         expect(element.shadowRoot.querySelector('.agentforce-notice').textContent).toContain(
-            'GUS will keep using the first configured provider until it ships.'
+            'cannot apply configurator field changes on the rep\'s behalf yet.'
         );
         const inputs = element.shadowRoot.querySelectorAll('lightning-input');
         expect(Array.from(inputs).map((i) => i.value)).toEqual([

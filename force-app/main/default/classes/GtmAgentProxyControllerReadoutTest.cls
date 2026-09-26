@@ -232,4 +232,34 @@ private class GtmAgentProxyControllerReadoutTest {
         System.assert(parsed.containsKey('historyJson'));
         System.assert(parsed.containsKey('changes'));
     }
+
+    /**
+     * Fork 2 (task-scope-gus-live-agentforce-provider-runtime.md §6, "DECIDED
+     * -- configurator chat surface only"): the readout editor must keep
+     * routing through the existing stateless Claude/OpenAI/Gemini fallback
+     * even when Chat_Provider__c='Agentforce' -- only chat()/ConfigSurface may
+     * resolve to the real Agent API. ScriptedClaude.respond() itself asserts
+     * the endpoint is api.anthropic.com/v1/messages, so this test would fail
+     * outright (mock never invoked / wrong endpoint) if chatOnReadout() were
+     * ever changed to attempt the Agentforce path instead.
+     */
+    @isTest
+    static void chatOnReadout_agentforceSelected_stillFallsBackToClaude() {
+        insert new GTM_Agent_Settings__c(
+            SetupOwnerId = UserInfo.getOrganizationId(),
+            Chat_Provider__c = 'Agentforce',
+            Claude_API_Key__c = 'sk-ant-test-key-not-real'
+        );
+        GTM_Readout__c r = seedReadout();
+        ScriptedClaude mock = new ScriptedClaude(new List<String>{ textTurn('Their tier is Prep Required.') });
+        Test.setMock(HttpCalloutMock.class, mock);
+
+        Test.startTest();
+        String out = GtmAgentProxyController.chatOnReadout(r.Id, DRAFT, 'What tier are they?', null);
+        Test.stopTest();
+
+        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(out);
+        System.assertEquals('Their tier is Prep Required.', (String) parsed.get('text'));
+        System.assertEquals(1, mock.calls);
+    }
 }
