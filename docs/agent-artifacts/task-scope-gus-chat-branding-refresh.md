@@ -462,49 +462,75 @@ Flagging the tension for the owner's awareness only; do not act on it here.
 
 ## 4. Open Forks for the Architect (not settled here)
 
-- **F1 — FAB fill strategy.** Keep `gtmAgentBubble`'s solid-red circular
-  fill and just correct the hex (`#E90024`→`#E90130`) vs. redesign to lead
-  with black/white and use red as a smaller accent/ring, per the
-  requester's "red is not the primary button colour" guidance (Tier C, not
-  independently verified by this BA pass). Genuine visual-design fork, not
-  guessed here.
-- **F2 — Font-loading mechanism** (§1.4). Reuse `gtmStory`'s proven
-  Google-Fonts-CDN link-injection pattern (recommended) vs. self-host as a
-  new `staticresources` entry + `@font-face`. Also: extract a shared
-  JS-only `c/gtmBrandFonts`-style module (precedented, viable) vs. duplicate
-  the ~15-line loader 2-3 times (matches the existing CSS-token duplication
-  precedent/reasoning in `gtmStory.css`).
-- **F3 — Brand-token copy scope** (§1.3). Copy the full ~35-token
-  `gtmStory.css` set into each GUS component's own `:host` block vs. copy
-  only the subset actually used (red variants, ink, a couple of surfaces,
-  the three font tokens). CSS custom properties cannot cross shadow
-  boundaries between these sibling component trees either way, so some form
-  of duplication is required regardless — the fork is only about how much.
-- **F4 — Include `gtmReadoutAssist` in this pass?** (§1.2 item 4). Since it
-  shares `gtmAgentChat.css`, restyling that file changes this surface's
-  appearance regardless of intent. Recommended: yes, explicitly, since
-  leaving it stock while its siblings get rebranded reintroduces the exact
-  "inconsistent surfaces" problem this task exists to fix — but the brief
-  never named it, so the Architect/owner should confirm rather than have it
-  happen as an unannounced side effect.
-- **F5 — `gtmReadoutAssist`'s `utility:einstein` icon → `c-gtm-mascot`.**
-  Low-risk swap (no existing test references the icon, confirmed via
-  `Grep`), bundle with F4 if accepted, otherwise skip.
-- **F6 — `buildYourOwn.json` scope** (§1.5). Minimal 2-value color sync
-  (recommended) vs. full site-chrome rebrand (fonts via `themes/
-  buildYourOwn.json`'s `customCSS`, nav bar grays, login page). Recommend
-  minimal; full chrome rebrand is separate, larger, higher-blast-radius work
-  (touches every page of the live prod site) and should be its own scoped
-  task.
-- **F7 — Logo mark on `gtmGusUtility`** (§1.6). Add a PS shorthand mark
-  (hard-blocked on the owner/brand team supplying an actual approved image
-  asset — nothing to source in-code) vs. skip and keep `c-gtm-mascot` + text
-  label only. Recommend skip by default; nothing in the request required a
-  literal mark.
-- **F8 — Mascot shape** (§1.7). No change (default, matches the request's
-  literal scope: "the chat window," not the character) vs. some shape
-  adjustment toward the brand's "architectural/grid-driven" language.
-  Recommend no change; flagged for the owner's awareness only.
+> **Owner decisions (2026-09-26):** F1, F4, F5, F6, and F7 below are
+> resolved per the app owner's direct decisions, recorded in
+> `docs/agent-artifacts/handover-gus-chat-branding-refresh.md` §6. F2 is
+> sharpened but still open. F3 and F8 remain open exactly as originally
+> scoped — no owner input yet.
+
+- **F1 — FAB fill strategy: RESOLVED.** Keep `gtmAgentBubble`'s solid-red
+  circular fill exactly as structured today; do **not** restructure toward
+  a black/white-led design. Just correct the hex `#E90024` → `#E90130`
+  (including the `:focus-visible` outline on the same rule, and recompute
+  any derived shades wherever they appear). Rationale: the owner checked
+  prior art first — the solid-red circular FAB is confirmed-intentional
+  prior art (commit `79dd8c88`, a deliberate copy of publicissapient.com's
+  live launcher button), not a stock default in need of redesign.
+- **F2 — Font-loading mechanism** (§1.4). Sharpened, still open: it is
+  actually **4** duplicate `FONTS_HREF`/Google-Fonts-link
+  implementations — `gtmConfigurator.js`, `chooseIndustry.js`, and
+  `offeringChooser.js` each carry their own copy, all three still pointing
+  at the stale `Inter` font, live today. Only `gtmStory.js` already has the
+  correct loader. This strengthens (does not settle) the recommendation to
+  extract a shared JS-only `c/gtmBrandFonts`-style module now rather than
+  add a 5th inline copy for GUS's surfaces. Architect must still: (a)
+  confirm shared-module extraction, and (b) decide whether to fast-follow
+  fix the 3 stale `Inter` consumers in this same pass or file separately —
+  **recommended: file separately**, since those are configurator pages, not
+  GUS chat surfaces, and folding them in expands blast radius beyond what
+  was actually asked for.
+- **F3 — Brand-token copy scope** (§1.3). Still open, no owner input yet.
+  Copy the full ~35-token `gtmStory.css` set into each GUS component's own
+  `:host` block vs. copy only the subset actually used (red variants, ink,
+  a couple of surfaces, the three font tokens). CSS custom properties
+  cannot cross shadow boundaries between these sibling component trees
+  either way, so some form of duplication is required regardless — the
+  fork is only about how much.
+- **F4 — Include `gtmReadoutAssist` in this pass?: RESOLVED, yes.** The
+  owner confirmed bringing it into this pass. Since it shares
+  `gtmAgentChat.css`, restyling that file already changes this surface's
+  appearance regardless — leaving it stock would reintroduce the exact
+  "inconsistent surfaces" problem this task exists to fix.
+- **F5 — `gtmReadoutAssist`'s `utility:einstein` icon → `c-gtm-mascot`:
+  RESOLVED, do it.** The owner confirmed GUS's icon/mascot already exists
+  and should be reused, not rebuilt. Low-risk swap (no existing test
+  references the icon, confirmed via `Grep`).
+- **F6 — `buildYourOwn.json` scope: RESOLVED, broader than "minimal
+  2-value."** The owner wants the fix reusable across any current or
+  future GTM Offerings Experience Cloud site, not a single-file patch —
+  this refines "minimal," it does not adopt the doc's "full site-chrome
+  rebrand" alternative (nav bar grays, login page, etc. stay out of scope;
+  that remains separate, larger, higher-blast-radius work touching every
+  page of the live prod site). Do both: (a) fix `GTM1`'s
+  `ActionColor`/`LinkColor` `#E90024` → `#E90130` (+ derived shades), and
+  (b) write the exact field/value table up as a clear, reusable reference
+  (in this doc or an architecture doc) so any future site's branding set
+  is a copy-paste — mirroring how issue #128's original rollout synced a
+  second site's branding set (worth checking that PR's history if it still
+  exists). **Open sub-question the owner did not answer:** whether
+  `PrimaryFont`/`HeaderFonts` (currently `Inter`) should also be corrected
+  in the same pass — since Experience Builder chrome here is Aura-rendered
+  with no LWC-style JS hook to inject a font `<link>` (§1.5), the Architect
+  must verify whether the branding-set `PrimaryFont` field even accepts an
+  arbitrary font name, or only a fixed platform list, before assuming this
+  is a trivial value swap.
+- **F7 — Logo mark on `gtmGusUtility`: RESOLVED, skip.** Matches this
+  doc's original default recommendation. No literal PS mark anywhere;
+  `gtmGusUtility` keeps `c-gtm-mascot` + its existing "GUS" text label.
+- **F8 — Mascot shape** (§1.7). Still open, no owner input yet. No change
+  (default, matches the request's literal scope: "the chat window," not
+  the character) vs. some shape adjustment toward the brand's
+  "architectural/grid-driven" language. Soft note only, not a mandate.
 
 ## 5. Ambiguities that only a human can resolve
 
