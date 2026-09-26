@@ -1177,18 +1177,22 @@ private class GtmReadoutControllerTest {
         GtmReadoutController.configOverride = new GTM_Assessment_Config__mdt(
             Create_Readout_Case__c = false
         );
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        Assert.isNotNull(readoutId, 'The readout is still generated with the Case toggle off');
-        Assert.areEqual(
-            0,
-            [SELECT COUNT() FROM Case WHERE Readout__c = :readoutId],
-            'No Case should be created when Create_Readout_Case__c is false'
-        );
+            Assert.isNotNull(readoutId, 'The readout is still generated with the Case toggle off');
+            Assert.areEqual(
+                0,
+                [SELECT COUNT() FROM Case WHERE Readout__c = :readoutId],
+                'No Case should be created when Create_Readout_Case__c is false'
+            );
+        } finally {
+            resetOwnerResolutionOverrides();
+        }
     }
 
     // ------------------------------------------------------------ triage queue
@@ -1243,26 +1247,73 @@ private class GtmReadoutControllerTest {
         GtmReadoutController.suppressDerivedOwnerCandidates = true;
     }
 
+    /**
+     * Restores the two owner-resolution test seams (GtmReadoutController.
+     * configOverride / .suppressDerivedOwnerCandidates) to their real
+     * defaults. Every test that sets either one via orphanScenario() or
+     * directly MUST call this in a finally block, the same way
+     * forceSendFailureForTests/readoutBaseUrlOverrideForTests are already
+     * reset elsewhere in this file -- Apex static variables are NOT reset
+     * between test methods within the same test class execution, so an
+     * un-reset override here silently leaks into every test method that
+     * runs afterward in the same real test run.
+     *
+     * This is exactly what produced the issue #31 round-3 failures around
+     * the published_unsent engagement Task: with
+     * suppressDerivedOwnerCandidates left true (and configOverride left
+     * pointing at a CMDT stub with no Default_Readout_Owner__c) by an
+     * earlier-running test in this class (Apex/Salesforce test execution
+     * order within a class runs alphabetically by method name, so the
+     * "a..."-named triage-queue tests below ran before the "publish..."
+     * engagement tests further down this file), every later
+     * generateDraftReadout() call resolved its readout's OwnerId to the
+     * GTM_Readout_Triage queue's Group Id instead of the running test
+     * user. GtmReadoutController.publishReadout then handed that Group Id
+     * to GtmLifecycleNotificationService.syncEngagementStateTask/fireTask
+     * as the engagement Task's OwnerId -- this org's own Setup -> Activity
+     * Settings -> "Let users assign tasks to queues" preference is off
+     * (already documented as unset/undeployable org state by
+     * fileReviewCase's own docstring above, which is exactly why THAT
+     * method files a queue-ownable Case instead of a Task), so a
+     * queue-owned Task silently fails to insert here too.
+     * Database.insert(tasks, false) never throws for that rejected row, so
+     * the Task was silently never created and the count-based assertions
+     * read back 0. Note this scenario cannot actually happen in
+     * production: submitForApproval already refuses a queue-owned readout
+     * ("Claim it first") before it can ever reach Approved/Published, so
+     * only this test file's own un-reset static leak (combined with the
+     * approve() test helper bypassing submitForApproval's DML) could ever
+     * produce a queue-owned, Approved readout.
+     */
+    private static void resetOwnerResolutionOverrides() {
+        GtmReadoutController.configOverride = null;
+        GtmReadoutController.suppressDerivedOwnerCandidates = false;
+    }
+
     @isTest
     static void anOrphanReadoutIsCreatedAndOwnedByTheTriageQueue() {
         Id queueId = ensureTriageQueue();
         orphanScenario();
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        // The behaviour change, stated directly: the readout now exists.
-        Assert.isNotNull(
-            readoutId,
-            'An orphan assessment must produce a readout for triage, not silently produce nothing'
-        );
-        Assert.areEqual(queueId, ownerOf(readoutId), 'It should be owned by the triage queue');
-        Assert.areEqual(
-            'Draft',
-            [SELECT Status__c FROM GTM_Readout__c WHERE Id = :readoutId].Status__c
-        );
+            // The behaviour change, stated directly: the readout now exists.
+            Assert.isNotNull(
+                readoutId,
+                'An orphan assessment must produce a readout for triage, not silently produce nothing'
+            );
+            Assert.areEqual(queueId, ownerOf(readoutId), 'It should be owned by the triage queue');
+            Assert.areEqual(
+                'Draft',
+                [SELECT Status__c FROM GTM_Readout__c WHERE Id = :readoutId].Status__c
+            );
+        } finally {
+            resetOwnerResolutionOverrides();
+        }
     }
 
     @isTest
@@ -1278,14 +1329,18 @@ private class GtmReadoutControllerTest {
             Default_Readout_Owner__c = named.Username
         );
         GtmReadoutController.suppressDerivedOwnerCandidates = true;
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        Assert.areEqual(named.Id, ownerOf(readoutId), 'The configured owner wins');
-        Assert.areNotEqual(queueId, ownerOf(readoutId));
+            Assert.areEqual(named.Id, ownerOf(readoutId), 'The configured owner wins');
+            Assert.areNotEqual(queueId, ownerOf(readoutId));
+        } finally {
+            resetOwnerResolutionOverrides();
+        }
     }
 
     @isTest
@@ -1327,21 +1382,25 @@ private class GtmReadoutControllerTest {
             Default_Readout_Owner__c = null
         );
         GtmReadoutController.suppressDerivedOwnerCandidates = true;
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        Assert.isNotNull(readoutId, 'The readout must not be rolled back over its review Case');
-        Assert.areEqual(queueId, ownerOf(readoutId));
+            Assert.isNotNull(readoutId, 'The readout must not be rolled back over its review Case');
+            Assert.areEqual(queueId, ownerOf(readoutId));
 
-        for (Case c : [SELECT OwnerId FROM Case WHERE Readout__c = :readoutId]) {
-            Assert.areEqual(
-                queueId,
-                c.OwnerId,
-                'A review Case for a queue-owned readout belongs to the queue, never to a bystander'
-            );
+            for (Case c : [SELECT OwnerId FROM Case WHERE Readout__c = :readoutId]) {
+                Assert.areEqual(
+                    queueId,
+                    c.OwnerId,
+                    'A review Case for a queue-owned readout belongs to the queue, never to a bystander'
+                );
+            }
+        } finally {
+            resetOwnerResolutionOverrides();
         }
     }
 
@@ -1362,13 +1421,17 @@ private class GtmReadoutControllerTest {
             return;
         }
         orphanScenario();
-        GTM_Assessment_Request__c req = seedRequest();
+        try {
+            GTM_Assessment_Request__c req = seedRequest();
 
-        Test.startTest();
-        Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
-        Test.stopTest();
+            Test.startTest();
+            Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
+            Test.stopTest();
 
-        Assert.isNull(readoutId, 'With no owner and no queue, no readout should be created');
+            Assert.isNull(readoutId, 'With no owner and no queue, no readout should be created');
+        } finally {
+            resetOwnerResolutionOverrides();
+        }
     }
 
     // --------------------------------------------------------- return to draft
