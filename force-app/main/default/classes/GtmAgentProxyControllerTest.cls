@@ -1055,17 +1055,52 @@ private class GtmAgentProxyControllerTest {
         Assert.isFalse(msg.contains('gm-test-key-123'), 'The key must never be echoed in an error');
     }
 
-    // ── Agentforce selected: never called, stateless fallback ────────────────
+    // ── Agentforce selected on chat()/ConfigSurface: LIVE as of ─────────────
+    // gus-live-agentforce-provider-runtime (task-scope §6 Fork 2 -- the
+    // configurator surface only). These replace the pre-runtime-issue tests
+    // that asserted chat() fell back to Claude/OpenAI/Gemini when Agentforce
+    // was selected -- that is no longer this surface's behavior. Fallback
+    // coverage for the surfaces that DO still fall back (chatOnApp,
+    // chatOnReadout) lives in GtmAppAgentSurfaceTest and
+    // GtmAgentProxyControllerReadoutTest respectively.
 
-    @IsTest
-    static void chat_agentforceSelected_fallsBackToAnthropicWhenItHasAKey() {
+    private static void seedAgentforce(String agentId, String myDomainUrl) {
         insert new GTM_Agent_Settings__c(
             SetupOwnerId = UserInfo.getOrganizationId(),
             Chat_Provider__c = 'Agentforce',
+            // A Claude key is deliberately ALSO present in some tests below to
+            // prove chat() does not fall back to it now that Agentforce is live
+            // for this surface.
             Claude_API_Key__c = 'test-api-key-123',
-            OpenAI_API_Key__c = 'sk-x'
+            Agentforce_Agent_Id__c = agentId,
+            Agentforce_My_Domain_URL__c = myDomainUrl
         );
-        SequencedMock mock = new SequencedMock(new List<HttpResponse>{ endTurnResponse('Claude answered.') });
+    }
+
+    private static HttpResponse agentforceStartSessionResponse(String sessionId) {
+        return jsonResponse(200, JSON.serialize(new Map<String,Object>{
+            'sessionId' => sessionId,
+            'messages'  => new List<Object>{
+                new Map<String,Object>{ 'type' => 'Inform', 'message' => 'Hi, I\'m an AI assistant. How can I help you?' }
+            }
+        }));
+    }
+
+    private static HttpResponse agentforceSendMessageResponse(String replyText) {
+        return jsonResponse(200, JSON.serialize(new Map<String,Object>{
+            'messages' => new List<Object>{
+                new Map<String,Object>{ 'type' => 'Inform', 'message' => replyText }
+            }
+        }));
+    }
+
+    @IsTest
+    static void chat_agentforceSelected_startsRealAgentApiSessionInsteadOfFallingBack() {
+        seedAgentforce('0XxAgent000000001', 'https://example.my.salesforce.com');
+        SequencedMock mock = new SequencedMock(new List<HttpResponse>{
+            agentforceStartSessionResponse('sess-123'),
+            agentforceSendMessageResponse('The agent replied for real.')
+        });
         Test.setMock(HttpCalloutMock.class, mock);
 
         Test.startTest();
@@ -1073,37 +1108,145 @@ private class GtmAgentProxyControllerTest {
         Test.stopTest();
 
         Map<String,Object> parsed = (Map<String,Object>) JSON.deserializeUntyped(resultJson);
-        Assert.areEqual('Claude answered.', (String) parsed.get('text'));
-        Assert.areEqual('https://api.anthropic.com/v1/messages', mock.capturedRequests[0].getEndpoint());
+        Assert.areEqual('The agent replied for real.', (String) parsed.get('text'));
+        Assert.isTrue(((Map<String,Object>) parsed.get('changes')).isEmpty(),
+            'Fork 1: changes must always be empty on the Agentforce path -- no tool was ever offered to the model');
+        Assert.isTrue(((String) parsed.get('historyJson')).contains('sess-123'));
+        Assert.areEqual('sess-123', (String) parsed.get('agentSessionId'));
+
+        Assert.areEqual(2, mock.capturedRequests.size(), 'Start Session, then exactly one Send Message');
+        Assert.isTrue(mock.capturedRequests[0].getEndpoint().endsWith('/agents/0XxAgent000000001/sessions'));
+        Assert.isTrue(mock.capturedRequests[1].getEndpoint().contains('sess-123'));
+        // A Claude key IS present on this settings row (seedAgentforce) -- this
+        // proves chat() no longer falls back to it now that Agentforce is live
+        // for the configurator surface.
+        for (HttpRequest req : mock.capturedRequests) {
+            Assert.isFalse(req.getEndpoint().contains('anthropic'),
+                'chat() must not fall back to Claude when Agentforce is selected');
+        }
     }
 
+    /**
+     * Hard non-negotiable (task-scope §6, "Hard non-negotiable ... called out
+     * separately per Architect review"; see also
+     * docs/architecture/gus-chat-provider-settings.md §5a "RESOLVED"): a
+     * missing trailing slash on instanceConfig.endpoint 404s in a way
+     * byte-for-byte indistinguishable from an unauthenticated request, and
+     * this was the actual root cause chased across four live debugging
+     * attempts. Asserts directly on the constructed OUTGOING request body --
+     * not merely that the mocked call "succeeded" -- because a happy-path
+     * mock 200s either way and would not catch a regression here.
+     */
     @IsTest
-    static void chat_agentforceSelected_fallsBackToOpenAiThenGemini() {
-        insert new GTM_Agent_Settings__c(
-            SetupOwnerId = UserInfo.getOrganizationId(),
-            Chat_Provider__c = 'Agentforce',
-            OpenAI_API_Key__c = 'sk-x',
-            Gemini_API_Key__c = 'gm-x'
-        );
-        SequencedMock mock = new SequencedMock(new List<HttpResponse>{ openAiEndTurnResponse('OpenAI answered.') });
+    static void chat_agentforceSelected_startSessionBodyEndpointHasTrailingSlash() {
+        // Deliberately NO trailing slash on the stored value -- matches
+        // GtmAgentSettingsController.setAgentSettings(), which always strips
+        // one before saving Agentforce_My_Domain_URL__c.
+        seedAgentforce('0XxAgent000000001', 'https://example.my.salesforce.com');
+        SequencedMock mock = new SequencedMock(new List<HttpResponse>{
+            agentforceStartSessionResponse('sess-abc'),
+            agentforceSendMessageResponse('ok')
+        });
         Test.setMock(HttpCalloutMock.class, mock);
+
         Test.startTest();
         GtmAgentProxyController.chat('tok', '', 'Hi', null);
         Test.stopTest();
-        Assert.areEqual('https://api.openai.com/v1/chat/completions', mock.capturedRequests[0].getEndpoint());
 
-        GTM_Agent_Settings__c s = GTM_Agent_Settings__c.getOrgDefaults();
-        s.OpenAI_API_Key__c = null;
-        update s;
-        Assert.areEqual('Gemini', GtmAgentProxyController.resolveEffectiveProvider(s));
+        String startSessionBody = mock.capturedRequests[0].getBody();
+        Map<String,Object> parsedBody = (Map<String,Object>) JSON.deserializeUntyped(startSessionBody);
+        Map<String,Object> instanceConfig = (Map<String,Object>) parsedBody.get('instanceConfig');
+        String endpoint = (String) instanceConfig.get('endpoint');
+        Assert.isTrue(endpoint.endsWith('/'), 'instanceConfig.endpoint must end with a trailing slash: ' + endpoint);
+        Assert.areEqual('https://example.my.salesforce.com/', endpoint);
+    }
+
+    /**
+     * Success metric (task-scope §5): a second turn in the same browser
+     * session must reuse the SAME Agent API session -- Start Session exactly
+     * once, then one Send Message per turn -- proving the agentSessionId
+     * threaded back through historyJson (see class header of the Agentforce
+     * adapter section in GtmAgentProxyController) actually persists
+     * continuity rather than restarting a session every turn.
+     */
+    @IsTest
+    static void chat_agentforceSelected_reusesSameSessionAcrossTwoTurns() {
+        seedAgentforce('0XxAgent000000001', 'https://example.my.salesforce.com');
+        SequencedMock mock = new SequencedMock(new List<HttpResponse>{
+            agentforceStartSessionResponse('sess-continuity'),
+            agentforceSendMessageResponse('Turn one reply.'),
+            agentforceSendMessageResponse('Turn two reply.')
+        });
+        Test.setMock(HttpCalloutMock.class, mock);
+
+        Test.startTest();
+        String firstResult = GtmAgentProxyController.chat('tok', '', 'Hi', null);
+        Map<String,Object> firstParsed = (Map<String,Object>) JSON.deserializeUntyped(firstResult);
+        String secondResult = GtmAgentProxyController.chat(
+            'tok', '', 'Second message', (String) firstParsed.get('historyJson'));
+        Test.stopTest();
+
+        Map<String,Object> secondParsed = (Map<String,Object>) JSON.deserializeUntyped(secondResult);
+        Assert.areEqual('Turn two reply.', (String) secondParsed.get('text'));
+        Assert.areEqual(3, mock.capturedRequests.size(),
+            'exactly one Start Session total, plus one Send Message per turn');
+        Assert.isTrue(mock.capturedRequests[0].getEndpoint().endsWith('/sessions'));
+        Assert.isTrue(mock.capturedRequests[1].getEndpoint().contains('sess-continuity'));
+        Assert.isTrue(mock.capturedRequests[2].getEndpoint().contains('sess-continuity'));
+
+        // Guards the Apex JSON.deserializeUntyped()-returns-Double-not-Integer
+        // pitfall (see agentforceStateInt() in GtmAgentProxyController): a
+        // naive `instanceof Integer` check on turnCount round-tripped through
+        // historyJson would silently reset to 0 every turn after the first,
+        // so both Send Message calls would send sequenceId=1. Assert directly
+        // on the constructed request bodies that the second call actually
+        // incremented.
+        Map<String,Object> firstSendBody =
+            (Map<String,Object>) JSON.deserializeUntyped(mock.capturedRequests[1].getBody());
+        Map<String,Object> secondSendBody =
+            (Map<String,Object>) JSON.deserializeUntyped(mock.capturedRequests[2].getBody());
+        // JSON.deserializeUntyped() returns a JSON number as Double (e.g.
+        // stringifies as "1.0"), so this reads it via Decimal.valueOf(String)
+        // + intValue() -- the same pattern GtmAssessmentFrames.asInt() already
+        // uses -- rather than a direct (Integer) cast (throws
+        // System.TypeException) or Integer.valueOf(String) (throws on the
+        // ".0" suffix). This is the exact class of bug agentforceStateInt()
+        // in GtmAgentProxyController exists to avoid.
+        Object firstSeq = ((Map<String,Object>) firstSendBody.get('message')).get('sequenceId');
+        Object secondSeq = ((Map<String,Object>) secondSendBody.get('message')).get('sequenceId');
+        Assert.areEqual(1, Decimal.valueOf(String.valueOf(firstSeq)).intValue());
+        Assert.areEqual(2, Decimal.valueOf(String.valueOf(secondSeq)).intValue());
     }
 
     @IsTest
-    static void chat_agentforceSelected_noKeysAnywhere_surfacesExistingMissingKeyError() {
+    static void chat_agentforceSelected_startSessionNon200_throwsCalloutExceptionLikeOtherProviders() {
+        seedAgentforce('0XxAgent000000001', 'https://example.my.salesforce.com');
+        Test.setMock(HttpCalloutMock.class, new SequencedMock(new List<HttpResponse>{
+            jsonResponse(401, 'Unauthorized')
+        }));
+        Boolean threw = false;
+        String msg;
+        Test.startTest();
+        try {
+            GtmAgentProxyController.chat('tok', '', 'Hi', null);
+        } catch (CalloutException e) {
+            threw = true;
+            msg = e.getMessage();
+        }
+        Test.stopTest();
+        Assert.isTrue(threw);
+        Assert.isTrue(msg.contains('401'));
+    }
+
+    @IsTest
+    static void chat_agentforceSelected_notConfigured_throwsAuraHandledExceptionBeforeAnyCallout() {
         insert new GTM_Agent_Settings__c(
             SetupOwnerId = UserInfo.getOrganizationId(),
             Chat_Provider__c = 'Agentforce'
+            // Agentforce_Agent_Id__c / Agentforce_My_Domain_URL__c left blank
         );
+        SequencedMock mock = new SequencedMock(new List<HttpResponse>{ endTurnResponse('should never be reached') });
+        Test.setMock(HttpCalloutMock.class, mock);
         Boolean threw = false;
         Test.startTest();
         try {
@@ -1112,6 +1255,64 @@ private class GtmAgentProxyControllerTest {
             threw = true;
         }
         Test.stopTest();
-        Assert.isTrue(threw, 'No configured provider is the pre-existing missing-key error, not a provider-value failure');
+        Assert.isTrue(threw, 'Agentforce selected but not configured must be a clear config error');
+        Assert.areEqual(0, mock.capturedRequests.size(), 'must fail closed before spending a callout');
+    }
+
+    @IsTest
+    static void agentforceInstanceEndpoint_addsTrailingSlashOnlyWhenMissing() {
+        Assert.areEqual('https://example.my.salesforce.com/',
+            GtmAgentProxyController.agentforceInstanceEndpoint('https://example.my.salesforce.com'));
+        Assert.areEqual('https://example.my.salesforce.com/',
+            GtmAgentProxyController.agentforceInstanceEndpoint('https://example.my.salesforce.com/'),
+            'must not double the slash when one is already present');
+        Assert.areEqual('', GtmAgentProxyController.agentforceInstanceEndpoint(null));
+        Assert.areEqual('', GtmAgentProxyController.agentforceInstanceEndpoint('   '));
+    }
+
+    // ── End Session: adapter exists and is tested, not yet wired to any
+    // runtime caller -- see its class-header comment (task-scope §3.2 leaves
+    // "when/whether to end a session" an open Architect/product decision).
+
+    @IsTest
+    static void callAgentforceEndSession_blankSessionId_noCalloutMade() {
+        SequencedMock mock = new SequencedMock(new List<HttpResponse>{ jsonResponse(204, '') });
+        Test.setMock(HttpCalloutMock.class, mock);
+        Test.startTest();
+        GtmAgentProxyController.callAgentforceEndSession(null);
+        GtmAgentProxyController.callAgentforceEndSession('');
+        Test.stopTest();
+        Assert.areEqual(0, mock.capturedRequests.size());
+    }
+
+    @IsTest
+    static void callAgentforceEndSession_success_issuesDeleteToTheSessionPath() {
+        SequencedMock mock = new SequencedMock(new List<HttpResponse>{ jsonResponse(204, '') });
+        Test.setMock(HttpCalloutMock.class, mock);
+        Test.startTest();
+        GtmAgentProxyController.callAgentforceEndSession('sess-to-end');
+        Test.stopTest();
+        Assert.areEqual(1, mock.capturedRequests.size());
+        Assert.areEqual('DELETE', mock.capturedRequests[0].getMethod());
+        Assert.isTrue(mock.capturedRequests[0].getEndpoint().endsWith('/sessions/sess-to-end'));
+    }
+
+    @IsTest
+    static void callAgentforceEndSession_non2xx_throwsCalloutExceptionLikeOtherProviders() {
+        Test.setMock(HttpCalloutMock.class, new SequencedMock(new List<HttpResponse>{
+            jsonResponse(404, 'Not found')
+        }));
+        Boolean threw = false;
+        String msg;
+        Test.startTest();
+        try {
+            GtmAgentProxyController.callAgentforceEndSession('sess-gone');
+        } catch (CalloutException e) {
+            threw = true;
+            msg = e.getMessage();
+        }
+        Test.stopTest();
+        Assert.isTrue(threw);
+        Assert.isTrue(msg.contains('404'));
     }
 }

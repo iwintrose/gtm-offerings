@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Agentforce_My_Domain_URL__c</fullName>
-    <description>Org My Domain URL (https://...) used for the Agentforce Agent API OAuth flow in the upcoming integration. Saved but inactive. Not a secret.</description>
+    <description>Org My Domain URL (https://...) used for the Agentforce Agent API OAuth flow and as the Start Session instanceConfig.endpoint value (Apex re-appends the required trailing slash; stored without one). Live for the GUS configurator chat (chat()) only. Not a secret.</description>
     <label>Agentforce My Domain URL</label>
     <length>255</length>
     <type>Text</type>

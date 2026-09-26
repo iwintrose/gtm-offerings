@@ -98,8 +98,15 @@ public with sharing class GtmAgentSettingsController {
      *
      * The Agentforce Agent ID / My Domain URL / consumer key are trimmed;
      * blank leaves the stored value unchanged. A non-blank My Domain URL must
-     * start with https:// and has any trailing slash stripped. Agentforce is
-     * saved-but-inactive: GtmAgentProxyController never calls it.
+     * start with https:// and has any trailing slash stripped -- Agentforce
+     * is live for GtmAgentProxyController.chat() (the configurator surface)
+     * as of gus-live-agentforce-provider-runtime, and that call site is
+     * responsible for re-appending exactly one trailing slash when it builds
+     * the Start Session request's instanceConfig.endpoint (see
+     * docs/architecture/gus-chat-provider-settings.md §5a "RESOLVED" -- a
+     * missing trailing slash there 404s indistinguishably from an
+     * unauthenticated request). chatOnReadout()/chatOnApp() still never call
+     * Agentforce; they keep the stateless Claude/OpenAI/Gemini fallback.
      *
      * chatProvider is validated against an explicit allow-list
      * ('Anthropic'/'OpenAI'/'Gemini'/'Agentforce', case-sensitive) here at

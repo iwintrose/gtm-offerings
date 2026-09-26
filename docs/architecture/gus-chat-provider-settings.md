@@ -133,27 +133,35 @@ Non-200: `CalloutException('Gemini API returned <status>: <body>')`. The request
 Zero-DML holds: the adapter only builds HTTP requests; tools run only via
 `GtmAgentToolSurface.executeTool` (interface and surfaces unchanged).
 
-## 5. Agentforce fallback (stateless) — until `runtime` issue ships
+## 5. Agentforce fallback (stateless) — `chatOnReadout`/`chatOnApp` only, as of `runtime`
 
-`resolveEffectiveProvider(settings)` is used by `runLoop`, `getApiKey` and
-`getModel`. If the stored provider is `Agentforce`, the effective provider is
-Anthropic if it has a key, else OpenAI if it has a key, else Gemini if it has a
-key, else Anthropic (surfacing the existing "Claude API key not configured"
-error, which is pre-existing behaviour). Any other stored value passes
-through (unknown values behave as before: Claude). Never throws on the
-provider value. Agentforce is never called.
+`resolveEffectiveProvider(settings, allowAgentforce)` is used by `runLoop`,
+`getApiKey` and `getModel`. When `allowAgentforce` is false (every caller
+except `chat()`/`ConfigSurface` — see §5b), if the stored provider is
+`Agentforce`, the effective provider is Anthropic if it has a key, else
+OpenAI if it has a key, else Gemini if it has a key, else Anthropic
+(surfacing the existing "Claude API key not configured" error, which is
+pre-existing behaviour). Any other stored value passes through (unknown
+values behave as before: Claude). Never throws on the provider value.
+Agentforce is never called on this path (`chatOnReadout()`/`chatOnApp()`).
 
-Form notice, shown only when Agentforce is selected: "Saved for the upcoming
-Agentforce integration — GUS will keep using the first configured provider
-until it ships." Help text: the Agent API needs an External Client App with
-client-credentials OAuth, and does not support agents of type "Agentforce
-(Default)". Note: "The consumer secret is not stored here. It will be captured
-via a Named Credential in the later integration phase."
+Form notice, shown only when Agentforce is selected (current text, updated by
+`gus-live-agentforce-provider-runtime`): "Live for the GUS configurator chat
+only — the readout editor and utility bar keep using Claude/OpenAI/Gemini
+even when Agentforce is selected here. Agentforce replies conversationally
+but cannot apply configurator field changes on the rep's behalf yet." Help
+text: the Agent API needs an External Client App with client-credentials
+OAuth, and does not support agents of type "Agentforce (Default)". Note:
+"The consumer secret is not stored here. It lives only in the
+GTM_Agentforce_Credential External Credential in Setup, never in this custom
+setting or this form."
 
-This section (5) describes the CURRENT runtime behavior and is unchanged by
-`gus-live-agentforce-provider-auth`. `runLoop` still never calls Agentforce —
-that switch-over is `gus-live-agentforce-provider-runtime`'s job, gated on
-§5a below being fully filled in with live-verified facts, not assumptions.
+This section (5) describes `chatOnReadout()`/`chatOnApp()`'s CURRENT runtime
+behavior, unchanged by either `gus-live-agentforce-provider-auth` or
+`gus-live-agentforce-provider-runtime` — see §5b below for why those two
+surfaces deliberately stay on this stateless fallback while `chat()`/
+`ConfigSurface`'s behavior is DIFFERENT as of `gus-live-agentforce-provider-
+runtime`.
 
 ## 5a. Agentforce live activation (issue `gus-live-agentforce-provider-auth`)
 
@@ -610,10 +618,11 @@ it will silently reproduce this exact 404 and look identical to an auth
 failure. This is a documented Agent API requirement, not an org quirk —
 worth a code comment at the call site, not just here.
 
-GUS itself (`GtmAgentProxyController`) does **not** call this endpoint
-yet — `Chat_Provider__c = 'Agentforce'` is still scaffolded-but-unwired
-per §5 above. Wiring it to actually use this now-proven connection is a
-separate, not-yet-started piece of work.
+GUS itself (`GtmAgentProxyController`) did **not** call this endpoint at
+the time this section was written — `Chat_Provider__c = 'Agentforce'` was
+still scaffolded-but-unwired per §5 above. Wiring it to actually use this
+now-proven connection was the separate `gus-live-agentforce-provider-runtime`
+issue -- see §5b below for what actually shipped.
 
 ### Secret-handling confirmation
 
@@ -623,6 +632,94 @@ and committed XML for `secret`/`password`/a bare Consumer Secret or
 Consumer Key value — none present. The only match for the substring
 `secret` is the OAuth flow-type name `ClientCredentialsClientSecretBasic`,
 confirmed not a credential value.
+
+## 5b. Agentforce runtime wiring (issue `gus-live-agentforce-provider-runtime`)
+
+Ships the actual dispatch: `GtmAgentProxyController.chat()` (the configurator
+surface / `ConfigSurface` only) now routes `Chat_Provider__c = 'Agentforce'`
+to a real Agent API session instead of §5's stateless fallback.
+`chatOnReadout()` and `chatOnApp()` are UNCHANGED and still always fall
+back per §5 — Agentforce never runs on those two surfaces regardless of
+this setting. This is a firm, Architect-decided scope boundary
+(task-scope-gus-live-agentforce-provider-runtime.md §6 Fork 2), not an
+oversight: the live agent's instructions are configurator-flavored only,
+and Agent API has no per-session system-prompt override that would make it
+safe to reuse the same agent for the readout editor or the app-wide
+utility bar.
+
+**Conversational-text-only (§6 Fork 1, firm decision).** The live "GTM
+Configurator Assistant" agent has zero Topics/Actions wired, and Agent
+API's Start Session/Send Message bodies have no per-call tool-definition
+parameter the way Claude/OpenAI/Gemini accept
+(`GtmAgentToolSurface.toolDefinitions()`'s own doc comment calls these
+"Anthropic tool definitions"). `apply_gtm_config_update`/
+`get_gtm_config_state` are never called on this path; `changes` returned to
+the LWC is always an empty map. Wiring `GTMApplyConfigUpdate`/
+`GTMGetConfigState` as real Topics/Actions on the Agent-Script agent is
+Agentforce Studio authoring, tracked as a separate follow-up issue, not
+attempted here. The Settings tab (`gtmOfferingsSettingsAgent`) discloses
+this in its Agentforce notice text.
+
+**Session lifecycle implemented:**
+- **Start Session** — the exact proven shape from §5a's "RESOLVED" live
+  proof above, including the mandatory `instanceConfig.endpoint` trailing
+  slash (re-appended in Apex via `agentforceInstanceEndpoint()`, since
+  `GtmAgentSettingsController.setAgentSettings()` always strips any
+  trailing slash before storing `Agentforce_My_Domain_URL__c`). Called
+  once per conversation, only when no existing session id is available.
+- **Send Message** — **UNVERIFIED SHAPE.** Official Agent API docs 403'd on
+  every fetch attempt in both this issue's session and the BA's prior
+  session (same bot-protection block noted in
+  task-scope-gus-live-agentforce-provider-runtime.md §3.1). Built
+  defensively as `POST {base}/sessions/{sessionId}/messages` with a
+  `{message: {sequenceId, type: 'Text', text}}` body, and a tolerant
+  response parser that prefers a `type='Inform'` entry's `message` text
+  (matching Start Session's own confirmed response shape) and falls back to
+  the first non-blank `message` field otherwise. **Needs a live/browser
+  verification pass before this is treated as proven** the way Start
+  Session is.
+- **End Session** — adapter exists (`callAgentforceEndSession`,
+  `@TestVisible`, unverified `DELETE {base}/sessions/{sessionId}` shape)
+  but is **not called from any runtime path**. Whether/when to call it (e.g.
+  wiring `gtmAgentChat.js`'s `reset()` to call a new Apex method, vs.
+  relying on the Agent API's own idle-session timeout) was explicitly left
+  as an open product decision in the task scope, not resolved by the
+  Architect's addendum — flagged for a follow-up decision rather than
+  silently picked here.
+- **Session continuity across turns** — no new persistence mechanism.
+  `agentSessionId` is threaded back through the exact same opaque
+  `historyJson` channel `gtmAgentChat.js` already holds in component state
+  and resends verbatim every turn (see that file's `handleSend()`/`_send()`
+  — it never parses `historyJson`'s contents). On the Agentforce path, that
+  string's shape stops being an Anthropic-shaped turn array and becomes
+  `{"agentSessionId": "...", "turnCount": N}` instead — there is nothing to
+  replay locally since Agent API keeps the conversation server-side. This
+  needed **zero LWC changes**: `reset()`'s existing `this.historyJson = ''`
+  already clears it, mirroring `historyJson`'s lifecycle exactly. (Also
+  surfaced as a top-level `agentSessionId` key in the response envelope,
+  purely additive and ignored by today's LWC, for a future direct-read
+  enhancement.) Do not confuse this with `sessionToken` (LWC/empApi routing
+  id, unrelated).
+- **`bypassUser: true`** — kept as-is, no per-caller variant (§3.3).
+- **Error handling** — unchanged pattern: any non-200 (Start Session or Send
+  Message) throws `CalloutException('Agentforce Agent API returned ' +
+  status + ': ' + body)`, uncaught by `runLoop()`, surfaced client-side as
+  the same generic apology bubble every other provider failure already
+  produces. No per-status-code branching was added; a missing/blank
+  `Agentforce_Agent_Id__c`/`Agentforce_My_Domain_URL__c` fails closed with a
+  clear `AuraHandledException` before any callout, mirroring the existing
+  "API key not configured" pattern.
+
+**Testing:** `GtmAgentProxyControllerTest.cls`'s `SequencedMock` (unmodified)
+covers Start-Session-then-Send-Message happy path, the trailing-slash
+assertion parsed directly off the constructed outgoing request body (not
+just a passing mocked call), non-200 handling, and 2-turn session-continuity.
+The pre-existing tests that asserted `chat()` fell back to Claude/OpenAI/
+Gemini when Agentforce was selected were replaced (that behavior is gone for
+this surface, by design); equivalent fallback coverage for `chatOnApp()`/
+`chatOnReadout()` was added in `GtmAppAgentSurfaceTest`/
+`GtmAgentProxyControllerReadoutTest` to prove those two surfaces are
+unaffected.
 
 ## 6. LWC contract: `gtmOfferingsSettingsAgent`
 

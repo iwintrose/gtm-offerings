@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Agentforce_Agent_Id__c</fullName>
-    <description>ID of the published Agentforce agent for the upcoming Agent API integration. Saved but inactive: GUS does not call Agentforce yet. Not a secret.</description>
+    <description>BotDefinition Id of the published Agentforce agent used by the Agent API. Live for the GUS configurator chat (chat()) only -- the readout editor and utility bar keep using Claude/OpenAI/Gemini. Not a secret.</description>
     <label>Agentforce Agent ID</label>
     <length>50</length>
     <type>Text</type>

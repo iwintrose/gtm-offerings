@@ -31,8 +31,15 @@ const PROVIDER_OPTIONS = [
  * write-only. They always start empty, regardless of whether a key is stored
  * -- the hasXxxApiKey flags only drive "Key is set" / "No key set" status
  * lines. Agentforce Agent ID / My Domain URL / consumer key are not secrets
- * and are prefilled. There is NO Agentforce consumer-secret input; it is
- * captured via a Named Credential in a later phase.
+ * and are prefilled. There is NO Agentforce consumer-secret input; it lives
+ * only in the GTM_Agentforce_Credential External Credential in Setup (see
+ * docs/architecture/gus-chat-provider-settings.md §5a).
+ *
+ * Agentforce is live for the GUS configurator chat only (issue
+ * gus-live-agentforce-provider-runtime) -- conversational replies, no
+ * configurator field changes applied yet (no Topics/Actions wired on the live
+ * agent). The readout editor and utility bar keep using Claude/OpenAI/Gemini
+ * regardless of this setting. See the in-panel notice text below.
  *
  * Imperative Apex rather than @wire, matching gtmReadoutApprovalSettings's
  * convention for a single-consumer admin surface.
