@@ -256,9 +256,9 @@ value matches this exact `BotDefinition.Id` — confirming both that tonight's
 fix (item 1 in the issue) is live now, and that the "resolves to a real
 BotDefinition row" detection path is real and exercisable, not speculative:
 ```
-$ sf data query --target-org gtm-staging --query "SELECT Agentforce_Agent_Id__c, Agentforce_My_Domain_URL__c, Agentforce_Client_Id__c, Chat_Provider__c FROM GTM_Agent_Settings__c WHERE SetupOwnerId = '00DgK00000aPL69UAG'"
+$ sf data query --target-org gtm-staging --query "SELECT Agentforce_Agent_Id__c, Agentforce_My_Domain_URL__c, Agentforce_Client_Id__c, Chat_Provider__c FROM GTM_Agent_Settings__c WHERE SetupOwnerId = '<org-default-setup-owner-id>'"
 { "records": [ { "Agentforce_Agent_Id__c": "0XxgK000002MowHSAS",
-    "Agentforce_My_Domain_URL__c": "https://pu1789790920110.my.salesforce.com",
+    "Agentforce_My_Domain_URL__c": "<redacted -- org-specific My Domain URL>",
     "Agentforce_Client_Id__c": null, "Chat_Provider__c": "Agentforce" } ] }
 ```
 
