@@ -1502,3 +1502,36 @@ blocker surfaces requiring an owner decision, not a repeat check-in.
 See `docs/PROJECT_TIMELINE.md` for the row-by-row status this pass produced,
 including the new #48/#49/#50 rows and the re-sequenced #26/#30/ps-brand-overhaul
 rows.
+
+---
+
+## Logged late per intake gate: Content Manager rail hides industry-variant sections + Offerings Listing template gaps (2026-09-26)
+
+Found live, this evening, by the owner directly in gtm-staging's Content Manager (not filed before BA was dispatched -- correcting that now per the intake-gate rule, after the fact rather than before; flagging the process miss, not hiding it).
+
+**What's broken (root-caused, not guessed):**
+1. **Story editor rail silently drops all 36 real industry-variant sections.** `GtmPageSectionController.getEditorSections('migration-accelerator','story')` correctly returns 37 sections when called directly -- the bug is client-side only. `gtmContentManager.js`'s `railSections` getter groups variants under a matching base (non-variant) row, but Story's seed data deliberately has zero base rows for `problem`/`capabilities`/`clientProfile`/`faq` (Story relies on hardcoded JS defaults as the floor instead) -- so every variant has nothing to nest under and the rail drops it. An editor cannot see or edit any of the 36 real seeded sections today, even though they're correctly stored and (unconfirmed, Architect to verify) likely still render correctly on the live page itself.
+2. **"Offerings Listing" template wrongly shows a "+ Industry variant" button.** The owner already settled, explicitly, that Offering Listing must never have industry variation -- confirmed live via screenshot that the button renders there anyway, same as on Story/Configurator.
+3. **"Offerings Listing" has no real field for the offering's blurb.** Confirmed live: "1 sections, 0 fields." Nothing to author into. The framework's "choose your offering" cards need this content sourced from a real field, not hardcode.
+
+**Intended outcome, explicitly, so this isn't just "a bug is filed":**
+- An editor opens Migration Accelerator's Story page in Content Manager and sees and can edit all 36 real industry-variant sections (grouped sensibly, even without a base row to nest under -- exact UI shape is Architect's call).
+- The "+ Industry variant" affordance appears ONLY on templates that are actually allowed to carry industry variation (Configurator today; Story once its own base-row question is resolved) -- never on Offerings Listing.
+- Offerings Listing has a real, editable blurb field, and the "choose your offering" card pulls from it instead of hardcoded JS.
+- No regression to Configurator (still correctly empty, still owned by #39) or to the already-shipped `demo-seed-integrity-rebuild`/`rep-direct-presentation-stage-flip` work.
+
+**Status:** BA already dispatched and working (before this backlog entry existed -- the process gap being corrected here). Task-scope doc will land at `docs/agent-artifacts/task-scope-<id>.md` per the normal flow; this entry exists so the item is visible here and in `docs/PROJECT_TIMELINE.md` regardless of which session picks up the Architect/Developer/QA steps.
+
+---
+
+## Deploy blocker: `GTM_Employee_SSO` AuthProvider has an unfilled placeholder (found 2026-09-26, deploying PR #51)
+
+**What's broken:** `force-app/main/default/authproviders/GTM_Employee_SSO.authprovider-meta.xml`'s `ExecutionUser` field is still the literal placeholder value `REPLACE_WITH_EXECUTION_USER` -- no User with that name exists in `gtm-staging`, so any full `./scripts/deploy.sh gtm-staging` (or `gtm-prod`) run fails on this single component and the whole deploy rolls back (deploy.sh is all-or-nothing, see `docs/agent-artifacts/handover-gus-chat-branding-refresh.md`-adjacent note in PROJECT_TIMELINE re: this same gotcha).
+
+**Confirmed pre-existing, not introduced by any recent PR:** `git log --oneline -- force-app/main/default/authproviders/GTM_Employee_SSO.authprovider-meta.xml` shows only one commit, `2077c908 Initial import: current state of GTM Offerings main` -- this has been broken since the repo's initial import.
+
+**How it surfaced:** merging PR #51 (`gus-chat-branding-refresh`) and running a full `main` deploy to `gtm-staging` to let the owner see the change live. The 7 GUS-specific components deployed fine directly (already live, verified in browser); the full-`main` deploy failed on this unrelated component, deploy ID `0AfgK00000UbivFSAR`.
+
+**Needs an owner/Architect decision, not a guess:** either (a) fill in a real `ExecutionUser` (whose identity/username, and is `GTM_Employee_SSO` actually wired up and in use anywhere, or a dead scaffold that should be removed instead), or (b) remove/deactivate the AuthProvider entirely if it's unused. Until resolved, every future full-`main` deploy to any org hits this same wall regardless of what else is in the diff.
+
+**Status:** Unowned. Flagging for Coordinator to pick up and route to BA/Architect.
