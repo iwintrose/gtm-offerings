@@ -3,9 +3,13 @@ import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
 import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
 import getSiteInfo from '@salesforce/apex/GtmPageContentReader.getSiteInfo';
 import { FRAMEWORK_KEY } from 'c/gtmPageLayouts';
+import { injectBrandTokens } from 'c/gtmBrandTokens';
 
+// Same family list as gtmStory's FONTS_HREF (the proven-correct reference
+// implementation) -- this used to request Inter, which nothing on this page
+// is styled with anymore now that chooseIndustry.css consumes --ps-font-*.
 const FONTS_HREF =
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
+    'https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;500;600&family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@300;400;500;700&display=swap';
 
 function buildBuilderUrl(orgUrl) {
     // The previous per-site deep link (/apex/networkbranding) pointed at a
@@ -261,8 +265,13 @@ export default class ChooseIndustry extends LightningElement {
             });
     }
 
-
-
+    renderedCallback() {
+        // this.template is still empty during connectedCallback (LWC renders
+        // after it returns), so the one-time --ps-* stamp has to happen here
+        // instead -- injectBrandTokens is dataset-marker-guarded, so repeat
+        // calls on every re-render are a cheap no-op after the first.
+        injectBrandTokens(this.template.querySelector('.ci-root'));
+    }
 
     loadFonts() {
         try {

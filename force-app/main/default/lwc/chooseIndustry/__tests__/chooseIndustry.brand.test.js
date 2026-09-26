@@ -1,7 +1,7 @@
 import { createElement } from 'lwc';
-import OfferingChooser from 'c/offeringChooser';
+import ChooseIndustry from 'c/chooseIndustry';
 import getPageLayout from '@salesforce/apex/GtmPageContentReader.getPageLayout';
-import getOfferingTiles from '@salesforce/apex/GtmPageContentReader.getOfferingTiles';
+import getIndustryProfiles from '@salesforce/apex/GtmPageContentReader.getIndustryProfiles';
 import getSiteInfo from '@salesforce/apex/GtmPageContentReader.getSiteInfo';
 
 jest.mock(
@@ -10,7 +10,7 @@ jest.mock(
     { virtual: true }
 );
 jest.mock(
-    '@salesforce/apex/GtmPageContentReader.getOfferingTiles',
+    '@salesforce/apex/GtmPageContentReader.getIndustryProfiles',
     () => ({ default: jest.fn() }),
     { virtual: true }
 );
@@ -26,13 +26,13 @@ function flushPromises() {
 }
 
 function createEl() {
-    return createElement('c-offering-chooser', { is: OfferingChooser });
+    return createElement('c-choose-industry', { is: ChooseIndustry });
 }
 
 beforeEach(() => {
     getPageLayout.mockResolvedValue({ content: {} });
     getSiteInfo.mockResolvedValue({ orgUrl: 'https://test.my.salesforce.com', lightningUrl: '', sites: [] });
-    getOfferingTiles.mockResolvedValue([]);
+    getIndustryProfiles.mockResolvedValue([]);
     delete window.location;
     window.location = { search: '' };
     document.querySelectorAll('link[data-gtm-fonts="1"]').forEach((l) => l.remove());
@@ -46,8 +46,8 @@ afterEach(() => {
     jest.clearAllMocks();
 });
 
-describe('offeringChooser brand pass', () => {
-    it('injects the corrected Lexend Deca/Roboto/Roboto Mono Google Fonts link, not Inter', async () => {
+describe('chooseIndustry brand pass', () => {
+    it('injects the corrected Lexend Deca/Roboto/Roboto Mono Google Fonts link, not Inter/IBM Plex', async () => {
         const el = createEl();
         document.body.appendChild(el);
         await flushPromises();
@@ -74,25 +74,12 @@ describe('offeringChooser brand pass', () => {
         expect(document.querySelectorAll('link[data-gtm-fonts="1"]').length).toBe(1);
     });
 
-    it('renders the wordmark as two-tone "publicis"/"sapient" spans', async () => {
-        const el = createEl();
-        document.body.appendChild(el);
-        await flushPromises();
-
-        const black = el.shadowRoot.querySelector('.bar-wm .wm-black');
-        const red = el.shadowRoot.querySelector('.bar-wm .wm-red');
-        expect(black).not.toBeNull();
-        expect(red).not.toBeNull();
-        expect(black.textContent.trim()).toBe('Publicis');
-        expect(red.textContent.trim()).toBe('Sapient');
-    });
-
     it('stamps the shared --ps-* brand tokens (correct red, correct fonts) onto its root element', async () => {
         const el = createEl();
         document.body.appendChild(el);
         await flushPromises();
 
-        const root = el.shadowRoot.querySelector('.oc-root');
+        const root = el.shadowRoot.querySelector('.ci-root');
         expect(root.style.getPropertyValue('--ps-red')).toBe('#e90130');
         expect(root.style.getPropertyValue('--ps-font-display')).toContain('Lexend Deca');
         expect(root.style.getPropertyValue('--ps-font-body')).toContain('Roboto');

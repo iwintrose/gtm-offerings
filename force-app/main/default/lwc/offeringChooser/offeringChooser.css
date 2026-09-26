@@ -27,8 +27,12 @@
   --ink-faint: #8b8e96;
   --line: #E6E6E6;
   --panel: #E6E6E6;
-  --accent: #E90024;
-  --accent-soft: rgba(233, 0, 36, 0.09);
+  /* --accent/--accent-soft resolve from the shared c/gtmBrandTokens palette
+     (injectBrandTokens sets --ps-* on this element) instead of a hardcoded
+     hex that had drifted from the brand red -- see
+     docs/architecture/gtm-brand-tokens.md. */
+  --accent: var(--ps-red, #e90130);
+  --accent-soft: color-mix(in srgb, var(--ps-red, #e90130) 9%, transparent);
   --shadow: 0 16px 40px -20px rgba(23, 24, 28, 0.16);
   --shadow-soft: 0 6px 18px -10px rgba(23, 24, 28, 0.12);
 
@@ -36,11 +40,17 @@
   min-height: var(--story-vh, 100vh);
   background: var(--bg);
   color: var(--ink);
-  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--ps-font-body, 'Roboto', -apple-system, 'Segoe UI', sans-serif);
   -webkit-font-smoothing: antialiased;
   line-height: 1.55;
 }
 
+/* This component keeps its own pre-existing, user-facing light/dark toggle
+   (the "Theme" button below) -- unrelated to, and out of scope with, the
+   ambient gtmStory.css dark-mode mechanism that c/gtmBrandTokens deliberately
+   does not carry forward (docs/architecture/gtm-brand-tokens.md section 5).
+   Only the wrong accent hue is corrected here, in both branches alike; the
+   rest of this dark palette is untouched. */
 @media (prefers-color-scheme: dark) {
   .oc-root:not(.light) {
     --bg: #131417;
@@ -50,8 +60,8 @@
     --ink-faint: #6e717a;
     --line: #2a2c33;
     --panel: #1f2025;
-    --accent: #E90024;
-    --accent-soft: rgba(233, 0, 36, 0.15);
+    --accent: var(--ps-red, #e90130);
+    --accent-soft: color-mix(in srgb, var(--ps-red, #e90130) 15%, transparent);
     --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
     --shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
   }
@@ -65,8 +75,8 @@
   --ink-faint: #6e717a;
   --line: #2a2c33;
   --panel: #1f2025;
-  --accent: #E90024;
-  --accent-soft: rgba(233, 0, 36, 0.15);
+  --accent: var(--ps-red, #e90130);
+  --accent-soft: color-mix(in srgb, var(--ps-red, #e90130) 15%, transparent);
   --shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.55);
   --shadow-soft: 0 8px 22px -12px rgba(0, 0, 0, 0.45);
 }
@@ -79,8 +89,8 @@
   --ink-faint: #8b8e96;
   --line: #E6E6E6;
   --panel: #E6E6E6;
-  --accent: #E90024;
-  --accent-soft: rgba(233, 0, 36, 0.09);
+  --accent: var(--ps-red, #e90130);
+  --accent-soft: color-mix(in srgb, var(--ps-red, #e90130) 9%, transparent);
   --shadow: 0 16px 40px -20px rgba(23, 24, 28, 0.16);
   --shadow-soft: 0 6px 18px -10px rgba(23, 24, 28, 0.12);
 }
@@ -90,7 +100,7 @@
 }
 
 .mono {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--ps-font-mono, 'Roboto Mono', ui-monospace, monospace);
 }
 
 .bar {
@@ -126,11 +136,11 @@
   text-transform: lowercase;
 }
 .bar-wm .wm-red {
-  color: #E90024;
+  color: var(--ps-red, #e90130);
   text-transform: lowercase;
 }
 .bar-tag {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono, 'Roboto Mono', monospace);
   font-size: 0.68rem;
   color: var(--ink-faint);
   letter-spacing: 0.04em;
@@ -162,7 +172,7 @@
     clamp(4rem, 10vh, 6rem);
 }
 .eyebrow {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono, 'Roboto Mono', monospace);
   font-size: 0.72rem;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -181,7 +191,7 @@
   flex: none;
 }
 h1 {
-  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--ps-font-display, 'Lexend Deca', -apple-system, 'Segoe UI', sans-serif);
   font-weight: 800;
   font-size: clamp(2rem, 6vw, 3.1rem);
   line-height: 1.08;
@@ -245,8 +255,8 @@ h1 {
     border-color 0.15s ease;
 }
 .tile.live {
-  --tile-accent: #E90024;
-  --tile-accent-soft: rgba(233, 0, 36, 0.1);
+  --tile-accent: var(--ps-red, #e90130);
+  --tile-accent-soft: color-mix(in srgb, var(--ps-red, #e90130) 10%, transparent);
 }
 .tile:hover {
   transform: translateY(-3px);
@@ -270,13 +280,13 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--ps-font-body, 'Roboto', -apple-system, 'Segoe UI', sans-serif);
   font-weight: 700;
   font-size: 1rem;
   margin-bottom: 1.1rem;
 }
 .tile-name {
-  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--ps-font-display, 'Lexend Deca', -apple-system, 'Segoe UI', sans-serif);
   font-weight: 700;
   font-size: 1.12rem;
   margin-bottom: 0.5rem;
@@ -289,7 +299,7 @@ h1 {
   margin-bottom: 1.1rem;
 }
 .tile-go {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono, 'Roboto Mono', monospace);
   font-size: 0.72rem;
   color: var(--tile-accent, var(--accent));
   letter-spacing: 0.02em;
@@ -312,7 +322,7 @@ h1 {
   color: var(--ink-faint);
 }
 .soon-tag {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono, 'Roboto Mono', monospace);
   font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -325,7 +335,7 @@ h1 {
 
 .pf {
   padding: 1.6rem clamp(1.1rem, 4vw, 2rem) 2.4rem;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--ps-font-mono, 'Roboto Mono', monospace);
   font-size: 0.72rem;
   color: var(--ink-faint);
   display: flex;
