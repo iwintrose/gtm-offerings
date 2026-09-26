@@ -97,7 +97,7 @@ private class GtmReadoutsAwaitingControllerTest {
      *  assessmentRequestId, offeringKey), so both ids must be on the row. */
     @IsTest
     static void rowCarriesAssessmentRequestIdAndOfferingKeyForNavigation() {
-        User rep = createUser('rawrepnav');
+        User rep = createUser('rawrepnv');
         Account acct;
         Opportunity opp;
         GTM_Assessment_Request__c req;
