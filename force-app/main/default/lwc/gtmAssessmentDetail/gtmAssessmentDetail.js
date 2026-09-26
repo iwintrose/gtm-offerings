@@ -1,6 +1,7 @@
 import { LightningElement, api, wire } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import { openEngagementLink, openAssessment } from 'c/gtmNavigate';
+import { hasMeaningfulAnswers as computeHasMeaningfulAnswers } from 'c/gtmAssessmentAnswerFields';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import getReadoutByRequest from '@salesforce/apex/GtmReadoutController.getReadoutByRequest';
 
@@ -52,16 +53,6 @@ const FIELDS = [
     DECISION_MAKERS, BUDGET_RANGE, URGENCY_DRIVER, KEY_INTEGRATIONS,
     EXEC_SPONSORSHIP, TARGET_PLATFORM, TEAM_SIZE, SEND_VOLUME, CONTACT_COUNT,
     OFFERING_KEY
-];
-
-// The instrument's own answer fields -- the same ones "Prospect's Answers"
-// renders below. "At least one non-blank" is treated as "the prospect has
-// actually answered", independent of Submitted_At__c (see isSubmitted's
-// doc comment for why).
-const ANSWER_FIELDS = [
-    PAIN_POINTS, MIGRATION_GOALS, SUCCESS_CRITERIA, DECISION_MAKERS,
-    BUDGET_RANGE, URGENCY_DRIVER, KEY_INTEGRATIONS, EXEC_SPONSORSHIP,
-    TARGET_PLATFORM, TEAM_SIZE, SEND_VOLUME, CONTACT_COUNT
 ];
 
 export default class GtmAssessmentDetail extends NavigationMixin(LightningElement) {
@@ -186,7 +177,7 @@ export default class GtmAssessmentDetail extends NavigationMixin(LightningElemen
     // sanity check against a stamped-but-empty record). Neither alone is
     // sufficient.
     get hasMeaningfulAnswers() {
-        return ANSWER_FIELDS.some((field) => !!this._fv(field));
+        return computeHasMeaningfulAnswers(this._record);
     }
 
     get isSubmitted() {

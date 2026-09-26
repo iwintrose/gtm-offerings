@@ -1,6 +1,7 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
 import GtmAssessmentPreviewModal from 'c/gtmAssessmentPreviewModal';
+import { ANSWER_FIELDS, hasMeaningfulAnswers as computeHasMeaningfulAnswers } from 'c/gtmAssessmentAnswerFields';
 import generateReadoutForRequest from '@salesforce/apex/GtmReadoutController.generateReadoutForRequest';
 import getOfferingHasConduit from '@salesforce/apex/GtmAssessmentRequestController.getOfferingHasConduit';
 
@@ -10,28 +11,6 @@ import REQ_NAME       from '@salesforce/schema/GTM_Assessment_Request__c.Request
 import ACCOUNT_NAME  from '@salesforce/schema/GTM_Assessment_Request__c.Account__r.Name';
 import COMPANY_FIELD from '@salesforce/schema/GTM_Assessment_Request__c.Company__c';
 import CFG_ID        from '@salesforce/schema/GTM_Assessment_Request__c.Saved_Configuration__c';
-import PAIN_POINTS      from '@salesforce/schema/GTM_Assessment_Request__c.Pain_Points__c';
-import MIGRATION_GOALS  from '@salesforce/schema/GTM_Assessment_Request__c.Migration_Goals__c';
-import SUCCESS_CRITERIA from '@salesforce/schema/GTM_Assessment_Request__c.Success_Criteria__c';
-import DECISION_MAKERS  from '@salesforce/schema/GTM_Assessment_Request__c.Decision_Makers__c';
-import BUDGET_RANGE     from '@salesforce/schema/GTM_Assessment_Request__c.Budget_Range__c';
-import URGENCY_DRIVER   from '@salesforce/schema/GTM_Assessment_Request__c.Urgency_Driver__c';
-import KEY_INTEGRATIONS from '@salesforce/schema/GTM_Assessment_Request__c.Key_Integrations__c';
-import EXEC_SPONSORSHIP from '@salesforce/schema/GTM_Assessment_Request__c.Executive_Sponsorship__c';
-import TARGET_PLATFORM  from '@salesforce/schema/GTM_Assessment_Request__c.Target_Platform__c';
-import TEAM_SIZE        from '@salesforce/schema/GTM_Assessment_Request__c.Internal_Team_Size__c';
-import SEND_VOLUME      from '@salesforce/schema/GTM_Assessment_Request__c.Monthly_Send_Volume__c';
-import CONTACT_COUNT    from '@salesforce/schema/GTM_Assessment_Request__c.Contact_Count__c';
-
-// The instrument's own answer fields -- same list c-gtm-assessment-detail's
-// "Prospect's Answers" section renders and gates on. Kept in sync with that
-// component's own ANSWER_FIELDS; see its isSubmitted doc comment for why
-// Submitted_At__c alone is not used as the gate.
-const ANSWER_FIELDS = [
-    PAIN_POINTS, MIGRATION_GOALS, SUCCESS_CRITERIA, DECISION_MAKERS,
-    BUDGET_RANGE, URGENCY_DRIVER, KEY_INTEGRATIONS, EXEC_SPONSORSHIP,
-    TARGET_PLATFORM, TEAM_SIZE, SEND_VOLUME, CONTACT_COUNT
-];
 
 const REQUEST_FIELDS = [
     SUBMITTED_AT, CONTACT_NAME, REQ_NAME, ACCOUNT_NAME, COMPANY_FIELD, CFG_ID,
@@ -163,10 +142,11 @@ export default class GtmReadoutWorkspace extends LightningElement {
     // prospect actually completed and submitted the form) AND at least one
     // instrument answer field must be non-blank (a sanity check against a
     // stamped-but-empty record). Matches c-gtm-assessment-detail's own gate
-    // exactly (independent getters over the same fields, not shared code --
-    // see that component's isSubmitted doc comment).
+    // exactly -- both now build on the same shared ANSWER_FIELDS list and
+    // hasMeaningfulAnswers helper (c/gtmAssessmentAnswerFields), each still
+    // combining it with its own independent Submitted_At__c check.
     get hasMeaningfulAnswers() {
-        return ANSWER_FIELDS.some((field) => !!getFieldValue(this._requestRecord, field));
+        return computeHasMeaningfulAnswers(this._requestRecord);
     }
 
     get isSubmitted() {
