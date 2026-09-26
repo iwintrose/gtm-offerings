@@ -172,14 +172,25 @@ public with sharing class GtmLifecycleNotificationService {
             if (req.whatId == null || req.ownerId == null || String.isBlank(req.subject)) {
                 continue;
             }
-            tasks.add(new Task(
-                WhatId       = req.whatId,
+            Task t = new Task(
                 OwnerId      = req.ownerId,
                 Subject      = req.subject,
                 Description  = req.description,
                 Status       = 'Not Started',
                 ActivityDate = Date.today()
-            ));
+            );
+            // Task field integrity: Contact/Lead targets are only ever valid
+            // on WhoId -- the platform rejects a Contact/Lead Id in WhatId at
+            // DML time with FIELD_INTEGRITY_EXCEPTION (confirmed against
+            // gtm-staging, issue #31). Every other target this class routes
+            // (GTM_Readout__c, GTM_Assessment_Request__c, Account) is a
+            // legitimate WhatId target. See isWhoIdTarget below.
+            if (isWhoIdTarget(req.whatId)) {
+                t.WhoId = req.whatId;
+            } else {
+                t.WhatId = req.whatId;
+            }
+            tasks.add(t);
         }
         if (tasks.isEmpty()) {
             return;
@@ -235,10 +246,25 @@ public with sharing class GtmLifecycleNotificationService {
         if (whatIds == null || whatIds.isEmpty() || String.isBlank(subject)) {
             return;
         }
+        // Split by target type first -- see isWhoIdTarget's header. A
+        // Contact/Lead's open Task lives on WhoId, never WhatId, so a single
+        // "WhatId IN :whatIds" WHERE clause (the pre-issue-#31 shape) would
+        // silently find zero rows for any Contact/Lead in the set even
+        // though fireTasksBulk above did create the Task correctly.
+        Set<Id> whoTargetIds = new Set<Id>();
+        Set<Id> whatTargetIds = new Set<Id>();
+        for (Id targetId : whatIds) {
+            if (isWhoIdTarget(targetId)) {
+                whoTargetIds.add(targetId);
+            } else {
+                whatTargetIds.add(targetId);
+            }
+        }
         List<Task> openTasks = [
             SELECT Id, Status
             FROM Task
-            WHERE WhatId IN :whatIds AND Subject = :subject AND Status != 'Completed'
+            WHERE (WhoId IN :whoTargetIds OR WhatId IN :whatTargetIds)
+              AND Subject = :subject AND Status != 'Completed'
         ];
         if (openTasks.isEmpty()) {
             return;
@@ -308,15 +334,38 @@ public with sharing class GtmLifecycleNotificationService {
         if (fireSubject == null || ownerId == null) {
             return;
         }
-        List<Task> alreadyOpen = [
-            SELECT Id FROM Task
-            WHERE WhatId = :whatId AND Subject = :fireSubject AND Status != 'Completed'
-            LIMIT 1
-        ];
+        // Same WhoId/WhatId split as fireTasksBulk/closeOpenTasksBulk above --
+        // a Contact/Lead's open Task lives on WhoId, so this idempotency
+        // check must look there for one, not on WhatId, or it will never
+        // find the Task fireTask below just correctly created and will
+        // re-fire a duplicate on every repeat visit.
+        List<Task> alreadyOpen = isWhoIdTarget(whatId)
+            ? [SELECT Id FROM Task WHERE WhoId = :whatId AND Subject = :fireSubject AND Status != 'Completed' LIMIT 1]
+            : [SELECT Id FROM Task WHERE WhatId = :whatId AND Subject = :fireSubject AND Status != 'Completed' LIMIT 1];
         if (!alreadyOpen.isEmpty()) {
             return;
         }
         fireTask(whatId, ownerId, fireSubject, engagementTaskDescription(state));
+    }
+
+    /**
+     * Whether targetId is an SObject type Salesforce requires on Task.WhoId
+     * rather than Task.WhatId -- Contact today (Lead too, if this class is
+     * ever pointed at one; nothing in this codebase resolves a Lead target
+     * as of issue #31). Every other target fireTasksBulk/closeOpenTasksBulk/
+     * syncEngagementStateTask ever routes -- GTM_Readout__c,
+     * GTM_Assessment_Request__c, Account -- is a legitimate WhatId target.
+     *
+     * Getting this wrong is not a soft failure: Database.insert(tasks, false)
+     * still no-throws on a bad row, but the platform rejects a Contact/Lead
+     * Id in WhatId at DML time with FIELD_INTEGRITY_EXCEPTION, so the Task
+     * is silently never created at all -- confirmed directly against
+     * gtm-staging (Test Run Id 707gK00000vJA9t), the root cause this method
+     * exists to fix.
+     */
+    private static Boolean isWhoIdTarget(Id targetId) {
+        Schema.SObjectType targetType = targetId.getSObjectType();
+        return targetType == Contact.SObjectType || targetType == Lead.SObjectType;
     }
 
     private static String engagementTaskDescription(String state) {

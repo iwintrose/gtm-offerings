@@ -2094,9 +2094,9 @@ private class GtmAssessmentRequestControllerTest {
         Assert.isTrue(result.success);
         Assert.isNotNull(result.contactId, 'applyContact should have resolved/created a Contact for this submission');
         List<Task> tasks = [
-            SELECT WhatId, OwnerId, Subject
+            SELECT WhoId, OwnerId, Subject
             FROM Task
-            WHERE WhatId = :result.contactId
+            WHERE WhoId = :result.contactId
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_SUBMITTED
         ];
         Assert.areEqual(1, tasks.size(),

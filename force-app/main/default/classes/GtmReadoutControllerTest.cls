@@ -2411,7 +2411,7 @@ private class GtmReadoutControllerTest {
 
         Assert.areEqual(
             1,
-            [SELECT COUNT() FROM Task WHERE WhatId = :con.Id
+            [SELECT COUNT() FROM Task WHERE WhoId = :con.Id
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT],
             'Publishing should fire the engagement published_unsent Task against the Contact ' +
             'independent of publishedNotificationMode'
@@ -2459,7 +2459,7 @@ private class GtmReadoutControllerTest {
         Assert.isNotNull(published.Notification_Sent_Date__c,
             'Sanity check: the notification must actually have sent in this test context');
 
-        List<Task> tasks = [SELECT Subject, Status FROM Task WHERE WhatId = :con.Id];
+        List<Task> tasks = [SELECT Subject, Status FROM Task WHERE WhoId = :con.Id];
         Assert.areEqual(1, tasks.size(), 'sent_complete must close published_unsent and fire nothing new');
         Assert.areEqual(GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT, tasks[0].Subject);
         Assert.areEqual('Completed', tasks[0].Status);

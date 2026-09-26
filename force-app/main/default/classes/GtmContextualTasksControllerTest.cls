@@ -18,7 +18,7 @@ private class GtmContextualTasksControllerTest {
         Contact con = new Contact(LastName = 'Prospect');
         insert con;
         GTM_Assessment_Request__c req = seedRequest(con.Id, null);
-        insert new Task(WhatId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'Follow up', Status = 'Not Started');
+        insert new Task(WhoId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'Follow up', Status = 'Not Started');
 
         Test.startTest();
         List<GtmContextualTasksController.TaskRow> rows =
@@ -56,7 +56,7 @@ private class GtmContextualTasksControllerTest {
         Contact con = new Contact(LastName = 'Prospect', AccountId = acc.Id);
         insert con;
         GTM_Assessment_Request__c req = seedRequest(con.Id, acc.Id);
-        insert new Task(WhatId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'Contact task', Status = 'Not Started');
+        insert new Task(WhoId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'Contact task', Status = 'Not Started');
         insert new Task(WhatId = acc.Id, OwnerId = UserInfo.getUserId(), Subject = 'Account task', Status = 'Not Started');
 
         Test.startTest();
@@ -73,7 +73,7 @@ private class GtmContextualTasksControllerTest {
         Contact con = new Contact(LastName = 'Prospect');
         insert con;
         GTM_Assessment_Request__c req = seedRequest(con.Id, null);
-        insert new Task(WhatId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'Done already', Status = 'Completed');
+        insert new Task(WhoId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'Done already', Status = 'Completed');
 
         Test.startTest();
         List<GtmContextualTasksController.TaskRow> rows =
@@ -101,7 +101,7 @@ private class GtmContextualTasksControllerTest {
             Username = uniq + '@gtmtest.example.com'
         );
         insert other;
-        insert new Task(WhatId = con.Id, OwnerId = other.Id, Subject = 'Owned by someone else', Status = 'Not Started');
+        insert new Task(WhoId = con.Id, OwnerId = other.Id, Subject = 'Owned by someone else', Status = 'Not Started');
 
         Test.startTest();
         List<GtmContextualTasksController.TaskRow> rows =
@@ -139,11 +139,11 @@ private class GtmContextualTasksControllerTest {
         insert con;
         GTM_Assessment_Request__c req = seedRequest(con.Id, null);
         insert new Task(
-            WhatId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'Overdue nudge',
+            WhoId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'Overdue nudge',
             Status = 'Not Started', ActivityDate = Date.today().addDays(-3)
         );
         insert new Task(
-            WhatId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'No due date yet',
+            WhoId = con.Id, OwnerId = UserInfo.getUserId(), Subject = 'No due date yet',
             Status = 'Not Started'
         );
 

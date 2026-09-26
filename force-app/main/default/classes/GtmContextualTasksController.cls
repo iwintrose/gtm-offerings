@@ -37,10 +37,18 @@ public with sharing class GtmContextualTasksController {
         @AuraEnabled public Date activityDate;
         @AuraEnabled public Boolean isOverdue = false;
         @AuraEnabled public String status;
+        /** The Contact or Account Id this row's Task is filed against --
+         *  read off Task.WhoId for a Contact target, Task.WhatId for an
+         *  Account target (Salesforce Task field integrity: Contact/Lead
+         *  targets can only ever live on WhoId). Named whatId, not whoId,
+         *  purely to match this widget's existing public/LWC contract
+         *  (gtmContextualTasksWidget.js's data-what-id/data-what-object-type
+         *  navigation attributes) -- it does not mean this Id necessarily
+         *  came off the Task row's own WhatId field. */
         @AuraEnabled public Id whatId;
-        /** 'Contact' or 'Account' -- which of the two this row's WhatId is,
-         *  so the LWC can navigate to the right objectApiName without
-         *  sniffing the Id prefix client-side. */
+        /** 'Contact' or 'Account' -- which of the two whatId is, so the LWC
+         *  can navigate to the right objectApiName without sniffing the Id
+         *  prefix client-side. */
         @AuraEnabled public String whatObjectType;
     }
 
@@ -81,18 +89,27 @@ public with sharing class GtmContextualTasksController {
             return out;
         }
 
-        Set<Id> whatIds = new Set<Id>();
-        if (reqs[0].Contact__c != null) { whatIds.add(reqs[0].Contact__c); }
-        if (reqs[0].Account__c != null) { whatIds.add(reqs[0].Account__c); }
-        if (whatIds.isEmpty()) {
+        // Contact and Account targets live on two different Task fields --
+        // Salesforce only allows a Contact/Lead Id on WhoId, never WhatId
+        // (FIELD_INTEGRITY_EXCEPTION at DML time otherwise; see
+        // GtmLifecycleNotificationService.isWhoIdTarget, the fire-side half
+        // of this same contract). A Contact target's open Task is therefore
+        // found via WhoId, not WhatId -- querying WhatId alone (the
+        // pre-issue-#31 shape) would silently return zero rows for every
+        // Contact-targeted Task even though it was correctly created.
+        Set<Id> contactIds = new Set<Id>();
+        Set<Id> accountIds = new Set<Id>();
+        if (reqs[0].Contact__c != null) { contactIds.add(reqs[0].Contact__c); }
+        if (reqs[0].Account__c != null) { accountIds.add(reqs[0].Account__c); }
+        if (contactIds.isEmpty() && accountIds.isEmpty()) {
             return out;
         }
 
         Date today = Date.today();
         for (Task t : [
-            SELECT Id, Subject, ActivityDate, Status, WhatId
+            SELECT Id, Subject, ActivityDate, Status, WhatId, WhoId
             FROM Task
-            WHERE WhatId IN :whatIds
+            WHERE (WhoId IN :contactIds OR WhatId IN :accountIds)
               AND IsClosed = false
             ORDER BY ActivityDate ASC NULLS LAST, Subject ASC
             LIMIT :TASK_LIMIT
@@ -103,8 +120,11 @@ public with sharing class GtmContextualTasksController {
             row.activityDate = t.ActivityDate;
             row.isOverdue = t.ActivityDate != null && t.ActivityDate < today;
             row.status = t.Status;
-            row.whatId = t.WhatId;
-            row.whatObjectType = t.WhatId.getSObjectType() == Contact.SObjectType ? 'Contact' : 'Account';
+            // A Contact-targeted row's navigable Id is on WhoId; an
+            // Account-targeted row's is on WhatId -- never both, per the
+            // split above.
+            row.whatId = t.WhoId != null ? t.WhoId : t.WhatId;
+            row.whatObjectType = t.WhoId != null ? 'Contact' : 'Account';
             out.add(row);
         }
         return out;

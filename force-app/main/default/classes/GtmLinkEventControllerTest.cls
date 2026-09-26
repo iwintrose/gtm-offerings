@@ -140,7 +140,7 @@ private class GtmLinkEventControllerTest {
         Test.stopTest();
 
         List<Task> tasks = [
-            SELECT WhatId, OwnerId, Subject FROM Task WHERE WhatId = :con.Id
+            SELECT WhoId, OwnerId, Subject FROM Task WHERE WhoId = :con.Id
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED
         ];
         Assert.areEqual(1, tasks.size(), 'A Page View should fire the opened_not_started engagement Task');
@@ -185,7 +185,7 @@ private class GtmLinkEventControllerTest {
 
         Assert.areEqual(
             1,
-            [SELECT COUNT() FROM Task WHERE WhatId = :con.Id
+            [SELECT COUNT() FROM Task WHERE WhoId = :con.Id
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED]
         );
     }
@@ -205,12 +205,12 @@ private class GtmLinkEventControllerTest {
 
         Assert.areEqual(
             'Completed',
-            [SELECT Status FROM Task WHERE WhatId = :con.Id
+            [SELECT Status FROM Task WHERE WhoId = :con.Id
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED LIMIT 1].Status
         );
         Assert.areEqual(
             1,
-            [SELECT COUNT() FROM Task WHERE WhatId = :con.Id
+            [SELECT COUNT() FROM Task WHERE WhoId = :con.Id
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_STARTED
                 AND Status != 'Completed']
         );
@@ -228,7 +228,7 @@ private class GtmLinkEventControllerTest {
         GtmLinkEventController.logEvent(c.Id, 'Section Viewed', 'sess-1', null, null);
         Test.stopTest();
 
-        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhatId = :con.Id]);
+        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhoId = :con.Id]);
     }
 
     @IsTest
@@ -264,7 +264,7 @@ private class GtmLinkEventControllerTest {
 
         Assert.areEqual(
             1,
-            [SELECT COUNT() FROM Task WHERE WhatId = :con.Id
+            [SELECT COUNT() FROM Task WHERE WhoId = :con.Id
                 AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_OPENED],
             'One engagement Task per batch, even though the batch carried several event rows'
         );
@@ -288,6 +288,6 @@ private class GtmLinkEventControllerTest {
         Integer cost = Limits.getQueries() - q0;
 
         Assert.areEqual(2, cost, 'No engagement-sync queries should run for a batch with no Page View/Form Opened');
-        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhatId = :con.Id]);
+        Assert.areEqual(0, [SELECT COUNT() FROM Task WHERE WhoId = :con.Id]);
     }
 }
