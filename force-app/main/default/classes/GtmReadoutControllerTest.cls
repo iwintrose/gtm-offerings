@@ -2445,14 +2445,32 @@ private class GtmReadoutControllerTest {
         Id readoutId = GtmReadoutController.generateDraftReadout(req.Id);
         approve(readoutId);
 
+        // seedRequestWithContact never sets Saved_Configuration__c, so
+        // sendPublishNotification's pageUrl is null and it falls to the
+        // standalone-readout-link branch, which needs
+        // GtmSavedConfigurationController.getReadoutBaseUrl() --
+        // ConnectApi.Communities.getCommunities() always sees no sites in
+        // test context (same documented gap as readoutBaseUrlOverrideForTests'
+        // own header and GtmReadoutPublishNotificationTest's identical seam
+        // use), so without this override sendPublishNotification returns
+        // before ever reaching Messaging.sendEmail and
+        // Notification_Sent_Date__c is never stamped. This was a gap in this
+        // test's own original assumption ("a well-formed Requester_Email__c
+        // succeeds in test context"), not a product bug: it never actually
+        // exercised the send at all.
+        GtmReadoutController.setReadoutBaseUrlOverrideForTests('https://example.my.site.com/gtm/s');
         Test.startTest();
-        // publishReadout calls sendPublishNotification automatically at the
-        // end of the same transaction (see its own header) -- a well-formed
-        // Requester_Email__c succeeds in test context (Messaging.sendEmail
-        // never really dispatches under Test.startTest/stopTest), so
-        // Notification_Sent_Date__c gets stamped and sent_complete should
-        // sync in the same call.
-        GtmReadoutController.publishReadout(readoutId);
+        try {
+            // publishReadout calls sendPublishNotification automatically at
+            // the end of the same transaction (see its own header) -- with
+            // the override above in place, sendPublishNotification's
+            // fallback branch resolves a real base URL, sends, and stamps
+            // Notification_Sent_Date__c, so sent_complete should sync in the
+            // same call.
+            GtmReadoutController.publishReadout(readoutId);
+        } finally {
+            GtmReadoutController.setReadoutBaseUrlOverrideForTests(null);
+        }
         Test.stopTest();
 
         GTM_Readout__c published = [SELECT Notification_Sent_Date__c FROM GTM_Readout__c WHERE Id = :readoutId];

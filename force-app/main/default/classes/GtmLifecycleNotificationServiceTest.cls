@@ -322,11 +322,20 @@ private class GtmLifecycleNotificationServiceTest {
             GtmEngagementStateClassifier.STATE_SUBMITTED_DRAFT => GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_SUBMITTED,
             GtmEngagementStateClassifier.STATE_PUBLISHED_UNSENT => GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_PUBLISHED_UNSENT
         };
+        // Test.startTest()/Test.stopTest() wrap the whole loop, not each
+        // iteration -- Apex only permits ONE start/stop pair per test method
+        // (a second call throws System.FinalException: "Testing already
+        // started"). Looping it per-state was masked pre-issue-31-WhoId-fix
+        // by an earlier assertion failure on the very first iteration (the
+        // Task silently never got created against WhatId=Contact, so
+        // Assert.areEqual(1, tasks.size(), ...) threw before the loop ever
+        // reached its second Test.startTest() call); fixing the WhoId
+        // routing let the loop actually run to a second iteration and
+        // exposed this pre-existing structural bug.
+        Test.startTest();
         for (String state : expected.keySet()) {
             Contact c = seedContact();
-            Test.startTest();
             GtmLifecycleNotificationService.syncEngagementStateTask(c.Id, UserInfo.getUserId(), state);
-            Test.stopTest();
 
             List<Task> tasks = [SELECT Subject, OwnerId, Status FROM Task WHERE WhoId = :c.Id];
             Assert.areEqual(1, tasks.size(), 'Exactly one Task should fire for ' + state);
@@ -334,6 +343,7 @@ private class GtmLifecycleNotificationServiceTest {
             Assert.areEqual('Not Started', tasks[0].Status);
             Assert.areEqual(UserInfo.getUserId(), tasks[0].OwnerId);
         }
+        Test.stopTest();
     }
 
     @isTest

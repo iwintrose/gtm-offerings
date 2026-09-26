@@ -1793,8 +1793,22 @@ private class GtmAssessmentRequestControllerTest {
             WHERE Saved_Configuration__c = :link.Id], 'Exactly one request for the link');
         Assert.areEqual(1, [SELECT COUNT() FROM Contact
             WHERE Email = 'alex.rivera@example.com'], 'No duplicate Contact');
-        Assert.areEqual(1, [SELECT COUNT() FROM Task WHERE WhoId = :result.contactId],
-            'No duplicate Task');
+        // Two DIFFERENT Tasks legitimately land on the same Contact from one
+        // successful submission -- logActivity's own submission-summary Task
+        // (Subject = 'Environment assessment request', always fired,
+        // predates issue #31) and the issue #31 engagement-state Task
+        // (Subject = SUBJECT_ENGAGEMENT_SUBMITTED, fired from
+        // postInsertBestEffort). A bare "COUNT() WHERE WhoId = :contactId"
+        // with no Subject filter conflates the two, so a retry that
+        // correctly creates exactly one of EACH type still reads as 2 -- not
+        // a duplicate. Scope each assertion to its own Subject so a genuine
+        // retry-duplicate of either Task is still caught.
+        Assert.areEqual(1, [SELECT COUNT() FROM Task WHERE WhoId = :result.contactId
+                AND Subject = 'Environment assessment request'],
+            'No duplicate activity-log Task');
+        Assert.areEqual(1, [SELECT COUNT() FROM Task WHERE WhoId = :result.contactId
+                AND Subject = :GtmLifecycleNotificationService.SUBJECT_ENGAGEMENT_SUBMITTED],
+            'No duplicate engagement-state Task');
         Assert.isTrue(GtmConfigurationStatusController.hasSubmittedAssessment(link.Id));
     }
 
