@@ -337,11 +337,12 @@ private class GtmSetupChecklistControllerTest {
     static void sdoDemoFlowRowIsDoneWhenTheKnownFlowIsAbsentFromThisOrg() {
         GtmSetupChecklistController.SetupItem row = byKey(GtmSetupChecklistController.getChecklist()).get('sdo_demo_flow');
         Assert.isTrue(VALID_STATUSES.contains(row.status), row.status);
-        Assert.areEqual('SETUP_PATH', row.linkKind);
         if (row.status == 'DONE') {
             Assert.areEqual('NONE', row.actionType);
+            Assert.areEqual('NONE', row.linkKind);
         } else if (row.status == 'TODO') {
             Assert.areEqual('LINK', row.actionType);
+            Assert.areEqual('SETUP_PATH', row.linkKind);
             Assert.isTrue(row.detail.contains('CANNOT_EXECUTE_FLOW_TRIGGER'), row.detail);
         }
     }
