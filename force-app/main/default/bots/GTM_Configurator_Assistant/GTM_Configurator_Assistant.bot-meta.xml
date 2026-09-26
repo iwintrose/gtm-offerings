@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+  SUPERSEDED — see SUPERSEDED.md in this directory before touching this
+  file. gtm-staging has moved to Agent Script/Agentforce Builder; this
+  EinsteinCopilot-type bot is not the activation path. Kept for reference
+  content only, not for deployment.
+
   Agentforce agent for the GTM Configurator panel.
   REQUIRES: Agentforce (Einstein Copilot) provisioned on the org.
   Deploy with: sf project deploy start, pointing its source-dir flag at
