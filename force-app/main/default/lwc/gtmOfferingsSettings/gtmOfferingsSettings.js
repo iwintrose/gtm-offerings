@@ -14,8 +14,9 @@ import { CurrentPageReference } from 'lightning/navigation';
  * Unit 1 shipped "Approval Routing" (migrated from the retired standalone
  * GTM_Readout_Approval_Settings tab). "Analytics Notifications" (issue
  * #147) folds in what would otherwise have been a standalone GTM_Settings
- * tab -- same one-tab-many-sections pattern. "Claude / GUS" (Unit 2 of
- * ADR-0010) exposes GTM_Agent_Settings__c through gtmOfferingsSettingsAgent.
+ * tab -- same one-tab-many-sections pattern. "GUS Configuration" (Unit 2 of
+ * ADR-0010; id 'claude-gus' retained for the deep-link contract) exposes
+ * GTM_Agent_Settings__c through gtmOfferingsSettingsAgent.
  * "Scheduled Jobs" (issue #184-purge-batch-autoschedule) exposes
  * GtmScheduledJobsController so an admin can activate the two purge jobs
  * without Setup/CLI access. "Setup" is the default guided checklist
@@ -33,7 +34,7 @@ const SECTIONS = [
     { id: 'setup', label: 'Setup' },
     { id: 'approval-routing', label: 'Approval Routing' },
     { id: 'analytics-notifications', label: 'Analytics Notifications' },
-    { id: 'claude-gus', label: 'Claude / GUS' },
+    { id: 'claude-gus', label: 'GUS Configuration' },
     { id: 'scheduled-jobs', label: 'Scheduled Jobs' },
     { id: 'recycle-bin', label: 'Recycle Bin' },
     { id: 'notifications', label: 'Notifications' }
