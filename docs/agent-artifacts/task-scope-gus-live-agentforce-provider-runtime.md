@@ -430,3 +430,124 @@ copy-paste of an existing adapter's test setup.
   (check-only) plus targeted `sf apex run test` against the changed
   classes is QA's job per the standard workflow, not something scoped
   here.
+
+## 6. Architect Addendum (provisioned 2026-09-25) — resolves §1's open design fork
+
+Both forks below are now firm decisions for the Developer to build against,
+not open questions. Do not revisit them mid-build; if new evidence surfaces
+that contradicts the basis for either call, stop and flag it back rather
+than silently re-deciding.
+
+**Sequencing note (superseded from §0):** §0's blocking dependency is
+resolved. PR #34 merged the `auth` issue's evidence to `main`
+(`d6947f1a`), independently confirmed present in this worktree: `§5a` /
+"RESOLVED (2026-09-25, later same day)" section in
+`docs/architecture/gus-chat-provider-settings.md`, plus
+`force-app/main/default/namedCredentials/GTM_Agentforce_API.namedCredential-meta.xml`
+and `.../externalCredentials/GTM_Agentforce_Credential.externalCredential-meta.xml`
+both present on disk. `GtmAgentProxyController.cls` still has Agentforce
+scaffolded-but-unwired on `main` (confirmed: `getProvider()`'s doc comment
+at line 911 still reads "never 'Agentforce'"; `resolveEffectiveProvider`'s
+own comment block still states Agentforce falls back) — this issue is
+still the right and only place to wire it. This worktree was branched from
+current `main` (`d6947f1a`), not from the old `auth` worktree branch.
+
+### Fork 1 (tool-calling parity): DECIDED — conversational-text-only, ship it
+
+Adopt the scope doc's own recommendation as a firm requirement, not a
+suggestion:
+
+- The Agentforce path in `runLoop()` must NOT attempt to execute
+  `apply_gtm_config_update`/`get_gtm_config_state` or feed tool results
+  back through `GtmAgentToolSurface.executeTool`. `changes` returned to the
+  LWC on this path is always an empty map.
+- This is not a preference call — it is a hard technical constraint,
+  independently confirmed: the live agent has zero Topics/Actions wired
+  (per `gus-chat-provider-settings.md` §5a's "Agent identity" table), and
+  Agent API's Start Session/Send Message bodies have no per-call
+  tool-definition parameter the way Claude/OpenAI/Gemini accept
+  (`GtmAgentToolSurface.toolDefinitions()`'s own doc comment, line 39,
+  confirms these are "Anthropic tool definitions" — there is no Agent-API
+  equivalent to send). Wiring `GTMApplyConfigUpdate`/`GTMGetConfigState` as
+  real Topics/Actions on the Agent-Script agent is Agentforce Studio
+  authoring — out of reach for an Apex-only issue — and must be filed as
+  its own follow-up issue, not attempted here or silently deferred without
+  a tracking item.
+- Required, in-scope side effect (per CLAUDE.md's "design for the rep"
+  standard — a rep flipping to Agentforce and getting silent no-ops on
+  config-edit requests is a real usability defect, not a cosmetic gap):
+  add one sentence of Settings-tab help text noting that the Agentforce
+  provider is conversational-only for now and will not apply configurator
+  edits on the rep's behalf yet. This is the one LWC copy change already
+  permitted by §4's non-goals — do not scope-creep it into anything larger.
+- Rationale for shipping now instead of blocking further: the live
+  chat connection itself (a real agent reply through a real session) is a
+  complete, independently valuable, and reversible increment
+  (CLAUDE.md §4, "prefer minimal, reversible modifications"). Gating this
+  issue on Studio-side topic wiring would indefinitely block a working
+  integration for a capability gap that is already fully deferred, tracked,
+  and disclosed to the admin/rep.
+
+### Fork 2 (surface scope): DECIDED — configurator chat surface only
+
+Agentforce becomes the live `Chat_Provider__c` path for `chat()`
+(configurator surface, `ConfigSurface`) ONLY in this issue.
+`chatOnReadout()` and `chatOnApp()` must keep routing through
+`resolveEffectiveProvider()`'s existing Claude/OpenAI/Gemini fallback logic
+even when `Chat_Provider__c = 'Agentforce'` — i.e. `resolveEffectiveProvider`
+needs a surface-aware branch (or an explicit surface/mode parameter) so
+only the configurator caller is allowed to resolve to the real Agentforce
+adapter; the other two callers should behave exactly as they do today
+(treat Agentforce as an unrecognized/fallback value).
+
+Basis, independently confirmed, not taken on the BA's word:
+- `force-app/main/default/bots/GTM_Configurator_Assistant/AGENT_INSTRUCTIONS.md`
+  is written explicitly and only for the configurator persona: "You are the
+  GTM Configurator Assistant, embedded in a Publicis Sapient sales tool...
+  These instructions govern the agent's behaviour inside the
+  gtmConfigCustomize panel," and its tool descriptions reference
+  configurator-specific actions (Get/Apply GTM Configurator State/Update).
+  `SUPERSEDED.md` confirms this exact instruction text "is being reused as
+  the basis for the real Agent Script agent's instructions" — so the one
+  live agent that exists today is provably configurator-flavored, not
+  general-purpose.
+- Agent API has no confirmed per-session system-prompt override
+  mechanism (§1 option (c) is explicitly flagged unconfirmed/legacy-model
+  in the scope doc) — routing the readout editor or app-wide utility bar
+  through this agent today would produce configurator-flavored replies in
+  the wrong context, a real user-facing regression risk, not a hypothetical
+  one.
+- Provisioning two more Agentforce agents (option (b)) is a Setup/
+  Agentforce-Studio task, out of reach for this Apex-only issue per §2's
+  non-goals, and is not being silently absorbed into this issue's scope.
+- This keeps the change asymmetric but ships a real, working Agentforce
+  path today without a second agent or an unverified prompt-override
+  mechanism. Splitting the readout/app-wide surfaces onto their own
+  Agentforce agents is explicitly left as a separate follow-up issue if the
+  business wants it later.
+
+### Hard non-negotiable, called out separately per Architect review
+
+`instanceConfig.endpoint` in every Start Session request body MUST be
+constructed with a trailing slash (`myDomainUrl + '/'`, or equivalent
+normalization that tolerates a domain value already ending in `/` without
+producing a double slash). This is the documented, live-reproduced root
+cause of the months-long 404 chased across `auth`'s Attempts 1-4 (see
+`docs/architecture/gus-chat-provider-settings.md` §5a, "RESOLVED
+(2026-09-25, later same day)," item 2) — independently verified present in
+this worktree's copy of that file (`grep -n "trailing slash"
+docs/architecture/gus-chat-provider-settings.md` → lines 583/585/608).
+Required for Definition of Done on this issue:
+- A code comment at the Agentforce adapter's Start Session call site citing
+  `gus-chat-provider-settings.md` §5a "RESOLVED" by name (the doc's own
+  explicit instruction, not new here).
+- A dedicated unit test in `GtmAgentProxyControllerTest.cls` (or the new
+  Agentforce-specific test class per §3.5) that asserts the trailing slash
+  directly on the constructed HTTP request body sent to the mock — i.e.
+  parse/inspect the JSON actually built and assert
+  `instanceConfig.endpoint` ends with `/`, not merely that the call
+  succeeds against a mock that would 200 either way. A happy-path mock
+  response passing is not sufficient evidence this regression can't
+  recur; the assertion must be on the outgoing request shape itself.
+
+— Architect, provisioned this worktree off `main` @ `d6947f1a`.
