@@ -73,7 +73,7 @@ describe('c-gtm-offerings-settings', () => {
         jest.clearAllMocks();
     });
 
-    it('renders a nav rail with all seven sections: Setup, Approval Routing, Analytics Notifications, Claude / GUS, Scheduled Jobs, Recycle Bin, and Notifications', async () => {
+    it('renders a nav rail with all seven sections: Setup, Approval Routing, Analytics Notifications, GUS Configuration, Scheduled Jobs, Recycle Bin, and Notifications', async () => {
         const element = createElement('c-gtm-offerings-settings', {
             is: GtmOfferingsSettings
         });
@@ -85,7 +85,7 @@ describe('c-gtm-offerings-settings', () => {
         expect(navItems[0].textContent).toBe('Setup');
         expect(navItems[1].textContent).toBe('Approval Routing');
         expect(navItems[2].textContent).toBe('Analytics Notifications');
-        expect(navItems[3].textContent).toBe('Claude / GUS');
+        expect(navItems[3].textContent).toBe('GUS Configuration');
         expect(navItems[4].textContent).toBe('Scheduled Jobs');
         expect(navItems[5].textContent).toBe('Recycle Bin');
         expect(navItems[6].textContent).toBe('Notifications');
@@ -181,7 +181,7 @@ describe('c-gtm-offerings-settings', () => {
         expect(activeItem.textContent).toBe('Analytics Notifications');
     });
 
-    it('switches to the Claude / GUS section child on nav click', async () => {
+    it('switches to the GUS Configuration section child on nav click', async () => {
         const element = createElement('c-gtm-offerings-settings', {
             is: GtmOfferingsSettings
         });
@@ -196,7 +196,7 @@ describe('c-gtm-offerings-settings', () => {
         expect(element.shadowRoot.querySelector('c-gtm-readout-approval-settings')).toBeNull();
 
         const activeItem = element.shadowRoot.querySelector('.slds-nav-vertical__item.slds-is-active');
-        expect(activeItem.textContent).toBe('Claude / GUS');
+        expect(activeItem.textContent).toBe('GUS Configuration');
     });
 
     it('switches to the Scheduled Jobs section child on nav click', async () => {
@@ -252,7 +252,7 @@ describe('c-gtm-offerings-settings', () => {
         it.each([
             ['approval-routing', 'c-gtm-readout-approval-settings', 'Approval Routing'],
             ['analytics-notifications', 'c-gtm-analytics-notification-settings', 'Analytics Notifications'],
-            ['claude-gus', 'c-gtm-offerings-settings-agent', 'Claude / GUS']
+            ['claude-gus', 'c-gtm-offerings-settings-agent', 'GUS Configuration']
         ])('switches to %s', async (id, tag, label) => {
             const element = await mount();
             fire(element, id);

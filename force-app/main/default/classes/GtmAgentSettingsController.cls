@@ -1,6 +1,7 @@
 /**
- * Admin-only accessor for GTM_Agent_Settings__c, backing the "Claude / GUS"
- * section of the GTM_Offerings_Settings tab / gtmOfferingsSettingsAgent LWC.
+ * Admin-only accessor for GTM_Agent_Settings__c, backing the "GUS
+ * Configuration" section of the GTM_Offerings_Settings tab /
+ * gtmOfferingsSettingsAgent LWC.
  *
  * Deliberately its own class rather than folded into GtmAgentProxyController
  * (that class's Apex class access is granted more broadly for the GUS
