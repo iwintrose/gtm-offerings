@@ -38,7 +38,7 @@ describe('gtmConfigurator brand pass', () => {
         jest.clearAllMocks();
     });
 
-    it('injects the Inter Google Fonts link on connect', async () => {
+    it('injects the corrected Lexend Deca/Roboto/Roboto Mono Google Fonts link, not Inter', async () => {
         const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
         document.body.appendChild(element);
         isRep.emit(false);
@@ -48,7 +48,10 @@ describe('gtmConfigurator brand pass', () => {
         const link = document.querySelector('link[data-gtm-fonts="1"]');
         expect(link).not.toBeNull();
         expect(link.href).toContain('fonts.googleapis.com/css2');
-        expect(link.href).toContain('family=Inter');
+        expect(link.href).toContain('family=Lexend+Deca');
+        expect(link.href).toContain('family=Roboto');
+        expect(link.href).toContain('family=Roboto+Mono');
+        expect(link.href).not.toContain('Inter');
         expect(link.href).not.toContain('Sohne');
         expect(link.href).not.toContain('Sora');
     });
@@ -66,5 +69,19 @@ describe('gtmConfigurator brand pass', () => {
         expect(red).not.toBeNull();
         expect(black.textContent.trim()).toBe('publicis');
         expect(red.textContent.trim()).toBe('sapient');
+    });
+
+    it('stamps the shared --ps-* brand tokens (correct red, correct fonts) onto its root element', async () => {
+        const element = createElement('c-gtm-configurator', { is: GtmConfigurator });
+        document.body.appendChild(element);
+        isRep.emit(false);
+        await flushPromises();
+        await flushPromises();
+
+        const root = element.shadowRoot.querySelector('.cfg-root');
+        expect(root.style.getPropertyValue('--ps-red')).toBe('#e90130');
+        expect(root.style.getPropertyValue('--ps-font-display')).toContain('Lexend Deca');
+        expect(root.style.getPropertyValue('--ps-font-body')).toContain('Roboto');
+        expect(root.style.getPropertyValue('--ps-font-mono')).toContain('Roboto Mono');
     });
 });

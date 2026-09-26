@@ -14,17 +14,19 @@ module.exports = {
     // failures of HEAD, and `npm test` stops being usable as a gate. Only
     // force-app/ is the source of truth.
     testPathIgnorePatterns: ['/node_modules/', '/\\.claude/'],
-    // `c/gtmBrandTokens` is a CSS-only LWC module (a folder holding just a
-    // .css). The real compiler resolves `@import 'c/gtmBrandTokens'` to that
-    // stylesheet, but sfdx-lwc-jest's resolver only looks for <name>.js and
-    // fails the whole suite with "Cannot find module". Adding a .js is NOT the
-    // fix — the resolver then hands the engine a module instead of a
-    // stylesheet and it dies on `$scoped$`. Point the specifier straight at
-    // the CSS so jest applies its own stylesheet transform to it.
+    // NOTE for anyone who finds gtmStory.css's "used to live in c/gtmBrandTokens,
+    // a CSS-only bundle" comment and goes looking for a matching entry here:
+    // there used to be one, mapping `c/gtmBrandTokens` straight at a .css file
+    // because sfdx-lwc-jest's resolver only looks for <name>.js and that bundle
+    // had no .js. That CSS-only bundle was deleted in issue #33 (orphaned,
+    // undeployable — no .js/.js-meta.xml) and the mapper entry was accidentally
+    // left behind pointing at the now-deleted file, silently dead since nothing
+    // imported `c/gtmBrandTokens` again until issue-ps-brand-overhaul-2 rebuilt
+    // it as a real bundle (.js + .js-meta.xml, no .html/.css) -- at which point
+    // this stale entry started shadowing it and resolving every import to
+    // `undefined`. Removed; a normal .js bundle needs no special-case mapper.
     moduleNameMapper: {
         ...(jestConfig.moduleNameMapper || {}),
-        '^c/gtmBrandTokens$':
-            '<rootDir>/force-app/main/default/lwc/gtmBrandTokens/gtmBrandTokens.css',
         // sfdx-lwc-jest ships stubs for lightning/modalHeader, modalBody and
         // modalFooter (a modal's own sub-components) but not for
         // lightning/modal itself -- the base class a modal component
