@@ -1034,3 +1034,471 @@ Published/Active join and its own fixture change, not done here.
   results wholesale. The Engagement Links tab itself is **not** resolved or
   removed anywhere yet -- not on `main`, not in the unmerged worktree, not
   in the org.
+
+---
+
+## Coordinator gate (2026-09-26)
+
+A Coordinator role now sits above BA/Architect/Developer/QA (`AGENTS.md`
+§A0, `.claude/agents/gtm-coordinator.md`). Two rules that change how this
+backlog works going forward:
+
+1. **No item reaches "Ready to build" without a joint BA+Architect
+   co-scoping stub** (perspective, plan, timing estimate, expected outcome,
+   design + strategic rationale — senior-bar reasoning). Items below this
+   line without a linked stub are NOT yet Ready to build, regardless of how
+   they're phrased.
+2. **"QA Passed" is never "Done."** Every item now also needs a Product
+   Owner UAT accept (`docs/agent-artifacts/uat-<id>.md`) before a PR opens.
+
+Cross-reference: `docs/PROJECT_TIMELINE.md` carries target dates for
+everything below — this file stays the narrative/decision record, that file
+stays the flat "when" tracker.
+
+## Open GitHub issues awaiting co-scoping (2026-09-26 inventory)
+
+Logged here per the new intake rule (nothing gets a BA dispatched without a
+backlog line first). None of these have a co-scoping stub yet — all `TBD` in
+`docs/PROJECT_TIMELINE.md` until BA+Architect run the new gate.
+
+| # | Item | Notes |
+|---|---|---|
+| #39 | Migration Accelerator overhaul (PS branding) | **BLOCKED (User Decision)** — PR #40 (BA audit) found a conflicting prior brand-scope doc (different red/fonts, real cost implications); needs the user's call before co-scoping can even start. |
+| #38 | Setup checklist detectors (Agentforce cred, demo-org block) | Worktree has uncommitted work (`guided-setup.md`, `backlog.md`, `fresh-org-deploy.md`, `GtmSetupChecklistController.cls`) — check with Developer before re-scoping over it. |
+| #35 | Author base content for Story page | Not yet scoped. |
+| #33 | Rewire GUS onto real Agentforce runLoop | Not yet scoped. |
+| #30 | GUS utility bar overlaps native Help | Not yet scoped. |
+| #27 | Content Manager: no guard on publishing empty offering | Not yet scoped. |
+| #26 | Rebuild gtmHeatGrid on lightning-datatable | Not yet scoped. |
+| #21 | Content Manager: renamePage doesn't block structural rename | Not yet scoped. |
+| #15 | Converge tile system | Not yet scoped. |
+| #14 | Extract c-gtm-card | Not yet scoped. |
+| #11 | Backfill Account lookups for typed-Company rows | Already flagged "Later" above — still not yet scoped. |
+| #10 | Ask GUS in filter bar | Already flagged "Later" above — still not yet scoped. |
+| #6 | Implement Content Manager IA plan | Not yet scoped — plan doc exists (`docs/agent-artifacts/content-manager-ia-plan.md`), but no co-scoping stub. |
+| #5 | Verify Salesforce self-approval of Readout | Not yet scoped. |
+| #4 | Contentful authoring-surface migration open design questions | **BLOCKED (User Decision)** — see B16 above; content-model mapping, draft/publish parity, sync mechanism still open. |
+
+Already tracked elsewhere and not duplicated here: #19 (PR #42 open,
+awaiting the new UAT gate), #7 (implemented per D11 above, QA verification
+protocol not yet run live), #31 (uncommitted/unpushed worktree — see the
+`gtm-staging` drift note directly above; Coordinator's first live dispatch).
+
+---
+
+## Coordinator sweep (2026-09-26, second pass same day)
+
+Full re-inventory of `git worktree list` (15 worktrees), `gh issue list`
+(18 open), `gh pr list` (8 open), `gh run list --limit 20`, and
+`gh pr list --state merged` cross-referenced against the above. Evidence
+for every claim below is the literal command output, not a summary; see
+`docs/PROJECT_TIMELINE.md` for the row-by-row status this produced.
+
+**What moved since the 2026-09-26 seed:**
+
+- Issue #31 pushed and opened as **PR #44** (was: committed-but-unpushed).
+  CI was `in_progress`/`UNSTABLE` at check time — do not treat as ready.
+- Issues #21 and #27 were combined by Developer onto one branch and opened
+  as **PR #43** (`d7c4799c`, `1f30b312`) — CLEAN/MERGEABLE, both checks
+  green. Ready for QA verification, not yet UAT'd.
+- Issue #19 unchanged: **PR #42** still open, CLEAN/MERGEABLE.
+- Issue #38's worktree now has 4 real commits (was "uncommitted") but is
+  **still not pushed to origin** — confirmed via `git ls-remote --heads
+  origin agent/issue-38` returning nothing.
+
+**New, previously untracked, found this pass:**
+
+- **`ps-brand-overhaul` initiative (7-part, only parts 1 and 2 have
+  worktrees so far)** — `issue-ps-brand-overhaul-1-default-industry-key`
+  and `issue-ps-brand-overhaul-2-brand-tokens-shapes-type`, both with full
+  BA-style co-scoping docs already written and describing parts 3–7 not
+  yet started. **This directly contradicts Issue #39's BLOCKED (User
+  Decision) status on the timeline** — build-adjacent scoping and even a
+  brand-token CSS commit are already in progress on an initiative the
+  Coordinator has been holding for a user call since the seed pass. This
+  is flagged, not resolved, in `docs/PROJECT_TIMELINE.md`; it needs the
+  user's attention before any of parts 1–7 proceed further.
+- **`issue-demo-seed-integrity-rebuild`** — a new worktree with a full
+  scope doc (rebuild `gtm-staging` demo/seed data via real Apex controller
+  entry points, not raw inserts) and one unpushed commit plus an untracked
+  `scripts/data/rebuild-gtm-demo-seed.apex`. Not previously logged in this
+  backlog; logged now as a new intake item awaiting co-scoping
+  confirmation (a scope doc exists, but it hasn't been through the
+  BA+Architect joint gate check by the Coordinator).
+- **Four merged-but-not-pruned worktrees**: `issue-industry-variant-ui-
+  scoping-fix` (PR #32, merged), `issue-gus-live-agentforce-provider-auth`
+  (PR #34, merged), `issue-industry-variants-agentforce-draft` (PR #28,
+  merged), `issue-industry-variants-visibility-nav` (PR #23, merged). All
+  represent completed work; none need action beyond `git worktree remove`
+  housekeeping. The `ui-scoping-fix` worktree also has an untracked stray
+  `TEST_FAILURES.log` sitting uncommitted — harmless but should be
+  confirmed disposable before removal.
+
+**Escalations — need a decision, not silently fixed:**
+
+1. **PR #1 (`issue-readouts-awaiting-alias-fix`) has red CI.**
+   `gh pr view 1 --json statusCheckRollup` returns two `FAILURE`
+   conclusions, no activity in 2 days. This is exactly the "CI red, no
+   flagged reason" case that must be surfaced first per the coordinator
+   role's escalation rule.
+2. **PRs #2, #3, #13 are stale** (no activity since creation, 1–2 days
+   idle, `mergeStateStatus`/`mergeable` stuck at `UNKNOWN`, source
+   worktrees 34 commits behind `main`). Needs a merge/rebase/close call.
+3. **The `ps-brand-overhaul` initiative building on a BLOCKED item** (see
+   above) — the single biggest process question from this sweep.
+
+No new GitHub issues were found beyond what this backlog already tracks
+(all of #4–#39 pre-date this pass). No CI runs execute directly against
+`main` in the last 30 Actions runs — no red build on `main` itself.
+
+## 2026-09-26 — PR #2 / #3 / #13 case-by-case review (Coordinator, reporting pass only)
+
+Context: main is 34 commits ahead of the branch point (`2077c908`) shared by
+all three PRs. `mergeable: MERGEABLE` per `gh pr view` for all three
+(earlier "stuck at UNKNOWN" note above is stale — GitHub has since computed
+it). No rebase, merge, or close was performed; this is evidence only.
+
+### PR #2 — `agent/issue-readout-navigation-consolidation-02-server-completeness-gate`
+- **Title**: feat(gtm-assessment): reject no-answer submissions before DML
+- **Base/head**: main / agent/issue-readout-navigation-consolidation-02-server-completeness-gate
+- **Files (3)**: `GtmAssessmentRequestController.cls`, `GtmAssessmentRequestControllerTest.cls`, task-scope doc.
+- **What it does**: adds a `hasMeaningfulAnswers()` pre-DML guard to `submitRequest()` so a genuinely empty submission can no longer be recorded as "submitted"; updates `sampleInput()` and adds 3 new tests.
+- **Worktree**: still exists (`../worktrees/issue-readout-navigation-consolidation-02-server-completeness-gate`), clean, 2 local commits ahead of the shared root, 34 behind main.
+- **Overlap with what's landed since**: `git log 2077c908..main -- GtmAssessmentRequestController.cls GtmAssessmentRequestControllerTest.cls` shows exactly one touch — PR #41 (merged, "rep direct presentation stage flip"), which edited `postInsertBestEffort()`/`resolveConfigContext()`, a **different method** in the same file (stage-flip logic, not the answer-completeness gate). No line-level collision expected but this needs an actual rebase+test pass to confirm, not just a grep.
+- **Is the gap still real?** Yes — grepped current main for `hasMeaningfulAnswers`: no match. The empty-submission bug this PR fixes is still live on main today.
+- **My read**: Low risk, narrow, additive (new guard + tests), touches a different method than what #41 changed. Safe to rebase-and-verify. Recommend proceeding once rebased against current main and QA re-runs the Apex tests.
+
+### PR #3 — `agent/issue-readout-navigation-consolidation-03-docs-and-answer-fields-dedup`
+- **Title**: docs(readout-workspace): fix stale isSubmitted gate prose; refactor(lwc): dedup ANSWER_FIELDS
+- **Base/head**: main / agent/issue-readout-navigation-consolidation-03-docs-and-answer-fields-dedup
+- **Files (7)**: `gtm-readout-workspace.md` (docs), `gtmAssessmentAnswerFields` (js/js-meta/test), `gtmAssessmentAnswersPreview.js`, `gtmAssessmentDetail.js`, `gtmReadoutWorkspace.js`, task-scope doc.
+- **What it does**: refactors a duplicated `ANSWER_FIELDS` constant across three LWCs into one shared source, and fixes stale docs prose. PR body itself flags: **"this and PR #2 both touch `GtmReadoutsAwaitingController`/`GtmTasksDueTodayController` overlapping surfaces from #284 — review together."**
+- **Worktree**: still exists (`issue-readout-navigation-consolidation-03-docs-and-answer-fields-dedup`), confirmed in `git worktree list`.
+- **Overlap with what's landed since**: `git log 2077c908..main` on all 7 touched files returns **zero** commits — nothing has touched these files on main since the branch point. Note the PR's own body references controllers (`GtmReadoutsAwaitingController`, `GtmTasksDueTodayController`) that are **not actually in this PR's changed-file list** — the stated overlap-with-#2 warning may be describing a different/earlier version of this PR's diff, or a documentation-only concern; needs the author's (or Architect's) confirmation before trusting the "review together" claim at face value.
+- **My read**: Diff is a pure client-side refactor + docs fix, no server-side collision found in the actual file list. Looks safe to rebase-and-verify, but the mismatch between the PR body's stated overlap and the actual diff contents is a real discrepancy — flag it, don't just proceed silently.
+
+### PR #13 — `agent/issue-278`
+- **Title**: fix(gtmStory): restore missing layout-primitive CSS lost at issue #33
+- **Base/head**: main / agent/issue-278
+- **Files (3)**: `gtmStory.css`, `gtmStory.test.js`, `task-scope-278.md`.
+- **What it does**: restores `.boxed`, `.ps-grid`, `.pc-rail`/`.pc-railbody`/`.pc-text`/`.pc-media`/`.pc-narrative`, `.ps-band*`, spacing scale, `.ps-eyebrow`/`.ps-display`, `.rv*`, `.ps-spacer` — layout primitives dropped when `gtmBrandTokens.css` was folded into `gtmStory.css` at issue #33 (commit `4fe6b5c8`). Both the live Story page and `gtmPagePreview` (shared `c-gtm-story` component) currently render as unstyled block stacking without this fix.
+- **Worktree**: still exists (`../worktrees/issue-278`), clean, 2 local commits ahead of shared root, 34 behind main.
+- **Overlap with what's landed since**: `git log 2077c908..main -- gtmStory.css gtmStory.test.js` returns **zero** commits.
+- **Verified independently** (not just trusting the PR body): current main's `gtmStory.css` has no `.boxed {`, `.ps-grid {`, or `.ps-band` definitions (`grep -n "^\.boxed {\|^\.ps-grid {\|^\.ps-band"` → no matches), while `gtmStory.html` still references `class="boxed ps-grid"`, `class="pc-rail eyebrow rv"`, etc. **The bug is real and still live on main today** — Story pages and the Content Manager preview are currently rendering unstyled.
+- **My read**: This is a real, currently-live visual regression fix, narrowly scoped (CSS + its own test file only), zero collision with anything merged since. Highest-priority of the three to land — every day it sits open is a live rendering bug on both the Story page and the Content Manager preview.
+
+---
+
+## 2026-09-26 — Issue #39 brand-spec conflict resolved (owner decision); `ba-scope/issue-ps-brand-configurator` superseded
+
+The third open fork on issue #39's brand spec — separate from, and not re-litigating, the two already resolved earlier the same day on that issue (Configurator chapter count: keep 9 distinct; proof-content disclosure: keep anonymized, do not name Medtronic — both recorded in the issue's own comment thread).
+
+**The conflict**, first flagged with an evidenced table in `docs/agent-artifacts/task-scope-ps-brand-overhaul-2-brand-tokens-shapes-type.md` §1 (BA, not resolved unilaterally — explicitly routed to the coordinator/owner): `ba-scope/issue-ps-brand-configurator` (BA scope doc committed 2026-09-13, `6f1b80b6`, never merged to `main`, no Developer worktree ever provisioned from it — confirmed via `git branch --merged main` and `git worktree list`) specifies a materially different PS brand than the `ps-brand-overhaul` initiative (parts 1–7) is scoped and building against:
+
+| | `ba-scope/issue-ps-brand-configurator` (Sept 13, unmerged) | `ps-brand-overhaul` (04.2026 PDF) |
+|---|---|---|
+| Red | `#E90024`, "primary/dominant, ~50% of palette" | `#E90130`, accent-only, never a button fill |
+| Headline font | Publicis Nouveau (no font file anywhere in this repo) | Lexend Deca |
+| Body font | Hasköy (no font file anywhere in this repo), Inter fallback | Roboto |
+| Buttons | Solid red pill, white text, primary CTA | Never red; white/black pill or solid black |
+| GUS launcher | Solid red circular FAB | Existing pill shape, not called out as circular |
+
+**Resolved directly by the owner this session, via AskUserQuestion — a direct decision, not inferred or relayed by any agent:** the `ps-brand-overhaul` spec is authoritative. **Radiant Red `#E90130`. Lexend Deca (display) / Roboto (body) / Roboto Mono (functional). Fully-rounded pill buttons. Red never fills a button.** Source: the full 44-page **"PS Brand Guidelines 04.2026"** PDF, which reconfirms "Radiant Red" by name on its own summary page — a stronger, more specific provenance than the superseded spec's source, traced back to a `live.standards.site` page attributed to a Publicis **Toronto** guideline (not a confirmed Sapient one).
+
+**`ba-scope/issue-ps-brand-configurator` is now formally superseded.** No Architect/Developer work should build against its `TASK_SCOPE.md`/scope doc going forward. It was never pushed to `origin` and no PR was ever opened from it (`git ls-remote origin` confirms no remote ref; `gh pr list --state all --head ba-scope/issue-ps-brand-configurator` returns nothing), so there is no GitHub PR/branch page to close — the branch is left in place, local-only, inert, and documented here and in the GitHub issue comment below as the two traceable records of its status. (Checked this repo's existing `archive/ba-scope-issue-<id>` branch-naming convention before choosing this mechanism: it does not apply here — every `archive/ba-scope-issue-*` ref, including ones matching this issue's and this branch's own names, predates `main`'s 2026-09-24 history-flatten import and is disconnected, unrelated pre-import debris, e.g. `archive/ba-scope-issue-39` is dated 2026-09-11 and is actually about "Contact-side link-event analytics panel (B3)," not this issue. Reusing that prefix here would have been inventing a false continuity, not following a real one.)
+
+Recorded on GitHub for traceability: https://github.com/iwintrose/gtm-offerings/issues/39#issuecomment-5848688802
+
+**Net effect:** all three brand-spec forks on issue #39 are now closed. `ps-brand-overhaul` parts 1 and 2 (already in flight) and parts 3–7 (scoped, not yet built) can proceed against one unambiguous spec. See `docs/PROJECT_TIMELINE.md` for the updated row.
+
+---
+
+## Coordinator dispatch — 2026-09-26 (third pass): issues #26, #30, #33, #35
+
+A separate, concurrent Coordinator pass was already resolving issue #39's
+brand-spec conflict and running PR#1/#2/#3/#278 housekeeping while this pass
+ran (see the two sections immediately above, and `docs/PROJECT_TIMELINE.md`'s
+concurrency note). This pass's own mandate was narrower and untouched by
+that one: decide the dispatch order for issues #26, #30, #33, #35. Every
+claim below is backed by a literal command run this pass, not a summary of
+the brief that kicked it off — two of that brief's own framing claims turned
+out to be wrong on direct verification, corrected below rather than repeated.
+
+### Correction 1 — Issue #33 is not "BA-scoped, paused on cross-session coordination." It is substantially done.
+
+`docs/agent-artifacts/task-scope-33.md` does not exist and never has
+(`ls docs/agent-artifacts/ | grep task-scope-33` → no match). Instead, merged
+PR #36 (`d37ccdaf`, `feat(gus-live-agentforce-provider-runtime)`) already
+implements the Architect-decided MVP for exactly this issue's ask. Verified
+directly against `main`, not taken from the PR body:
+
+```
+$ grep -n "PROVIDER_AGENTFORCE\|allowAgentforce" force-app/main/default/classes/GtmAgentProxyController.cls
+...
+142:    return runLoop(new ConfigSurface(configId), userMessage, historyJson, true);
+174:    return runLoop(new GtmReadoutAgentSurface(readoutId, workingDraft), userMessage, historyJson);
+...
+200:    runLoop(new GtmAppAgentSurface(ctx), userMessage, trimmed));
+...
+267:    if (allowAgentforce == true && PROVIDER_AGENTFORCE.equals(provider)) {
+```
+
+`chat()`/`ConfigSurface` (the configurator surface) passes `allowAgentforce =
+true`; `chatOnReadout()`/`chatOnApp()` call the 3-arg `runLoop()` overload,
+which defaults it to `false`. This is precisely Fork 2 from
+`task-scope-gus-live-agentforce-provider-runtime.md`'s Architect addendum
+("Agentforce becomes the live `Chat_Provider__c` path for `chat()` ...ONLY
+in this issue"), and Fork 1 (no tool-calling parity — `changes` stays empty
+on the Agentforce path) is also implemented and disclosed in Settings-tab
+help text per that same addendum's requirement. Issue #33's own "what needs
+deciding" list (5 numbered items) maps directly onto these two forks — both
+answered, both built, both merged.
+
+**No cross-session coordination block was found anywhere** — not in the
+issue thread, not in the task-scope docs, not in backlog.md's own prior
+entries. That framing in this pass's brief does not match any evidence this
+pass could find and is not repeated as fact.
+
+**What's actually left**, and it is not what issue #33 asked for: (a)
+wiring `GTMApplyConfigUpdate`/`GTMGetConfigState` as real Topics/Actions on
+the `GTM_Configurator_Assistant` agent — Agentforce Studio authoring, not an
+Apex change, explicitly deferred and flagged in Fork 1 as needing "its own
+follow-up issue, not attempted here or silently deferred without a tracking
+item" (a tracking item was never actually filed — that's the real gap); (b)
+extending Agentforce to `chatOnReadout`/`chatOnApp` — deferred per Fork 2,
+needs either a second Agentforce agent or a proven per-session prompt
+override, neither of which exists today.
+
+**Recommendation, not executed by this pass** (closing a GitHub issue is a
+definitive record change, past this role's write scope — routing it back
+rather than doing it unilaterally): close #33 with a comment citing PR #36
+and the two forks above, then file two new, narrower issues for (a) and (b)
+so they don't quietly vanish. No fresh BA/Architect dispatch on #33 itself.
+
+### Correction 2 — Issue #35 is not the "Default industry key" decision. Conflating them was a citation error.
+
+This pass's brief described #35 as "Author base content — Industry_Key__c
+'Default' as a first-class value... make sure the BA scope reflects that
+exact framing." Checked directly:
+
+```
+$ gh issue view 35 --json body -q .body | grep -i "Industry_Key\|Default"
+...covering all 11 sections, with no Industry_Key__c/Base_Section_Key__c
+(these are the generic/base rows the variant rows are meant to override)...
+```
+
+Issue #35's real, filed text asks for the **opposite** of "Default as a
+first-class value" — explicitly *no* `Industry_Key__c` on these rows. This
+isn't a close paraphrase that drifted; it's the reverse framing. Independent
+corroboration this pass found, not produced by this pass: a different
+Architect already ran this exact check while scoping
+`ps-brand-overhaul-1-default-industry-key` and reached the identical
+conclusion — that doc's own §0 states verbatim: *"The real, filed GitHub
+issue #35 is about authoring gtmStory's 11 base (non-industry) sections...
+There is no filed issue backing this [Default] decision."* Two independent
+passes, same finding — treating this as settled, not re-litigating it a
+third time.
+
+**What this means for dispatch:** #35 proceeds on its own real, stated
+terms (port `gtmStory.js`'s `DEFAULTS`/`SECTION_FALLBACKS` into real
+`GTM_Page_Section__c`/`GTM_Page_Content__c` rows, no `Industry_Key__c`,
+matching the field-key shape the industry-variant seed script already
+expects). The "Default" decision is a separate, real, user-decided-in-
+principle item with its own Architect-written scope doc
+(`task-scope-ps-brand-overhaul-1-default-industry-key.md`, currently
+homeless — no filed issue, no active worktree) — logged here, not
+double-counted under #35's number. **Recommend filing a real GitHub issue
+for the "Default" decision** before any Developer work starts on it, so
+intake discipline holds (nothing gets built that isn't in the backlog under
+its own real issue).
+
+**A genuine dependency, not a conflict:** `docs/agent-artifacts/task-scope-39.md`'s
+own sequencing note (now that issue #39 is unblocked, see the section above)
+says explicitly: *"Story base content (closing #35) must land before Story
+industry variants are touched."* It also flags a nuance the BA dispatched on
+#35 should carry forward rather than rediscover: *"Close #35 first, but
+don't just port the copy verbatim... necessary infrastructure regardless of
+what the copy says."* Read together: land the rows now, verbatim-ported
+copy is fine for this issue's own acceptance criteria (unblocks the
+industry-variant script and the infrastructure gap), but the *final*
+PS-branded copy for these 11 sections is a separate, currently-unowned
+follow-on — see the gap flagged in `docs/PROJECT_TIMELINE.md`'s new row
+(none of the 7 `ps-brand-overhaul` parts claim it: part 5 is shape-only,
+part 7 authors `industry-profile` fields, not `gtmStory`'s base sections).
+
+### Dispatch order decided this pass, and why
+
+1. **Issue #35 first.** Unblocked, well-specified in its own filed text
+   (already close to scope-doc quality), and load-bearing for both the
+   already-written industry-variant seed script and the now-unblocked
+   `ps-brand-overhaul` initiative's sequencing. No open design fork left for
+   a BA to resolve — this is close to a straight co-scoping formalization.
+2. **Issue #26 second.** Also unblocked and concretely specified (the
+   issue's own text inventories every non-trivial component a Developer
+   would need to replicate as custom `lightning-datatable` cell types, and
+   cites the Salesforce-first standing rule against the existing
+   `gtmLinkDatatable` precedent). Zero dependency on the branding
+   initiative or on #35 — safe to run in either order relative to #35, but
+   #35 was picked first for its external dependency (the seed script and
+   `ps-brand-overhaul` sequencing wait on it; nothing waits on #26).
+3. **Issue #30 third.** Real and owner-flagged, but needs materially more
+   upfront research before a BA scope doc would be worth writing: the
+   native "? Help" bubble's actual mechanism is unconfirmed, both Framework
+   FAQ pages are empty in `gtm-staging` today (a real content prerequisite
+   gap, not just a UI-wiring one), and "Agentforce-powered" is ambiguous
+   between the existing Claude tool-use loop and the real Agentforce agent.
+   **This pass found a concrete dependency #30's BA needs to inherit rather
+   than rediscover:** issue #33/PR #36 (see Correction 1 above) already
+   decided Agentforce is configurator-surface-only today —
+   `chatOnApp()`, the utility bar's own entry point and exactly where
+   GUS-Help would live, still hard-routes to Claude/OpenAI/Gemini. Folding
+   a real Agentforce-powered Help experience into the utility bar may
+   require either a second Agentforce agent (explicitly deferred scope in
+   #33's Fork 2) or extending Fork 2's surface list — a real architecture
+   question, not a research dead-end, but reason enough to sequence this
+   third rather than first.
+4. **Issue #33 — no fresh dispatch.** See Correction 1. Recommend closing
+   with a PR #36 reference and filing two narrower follow-ups instead.
+
+### Other findings surfaced this pass (not this pass's mandate, flagged for the next dispatch cycle)
+
+- **`gus-chat-branding-refresh`** (owner ask in chat, no filed GitHub issue)
+  is further along than its own paper trail suggests.
+  `docs/agent-artifacts/handover-gus-chat-branding-refresh.md` (uncommitted,
+  sitting in the main workspace right now) describes itself as awaiting an
+  Architect pass to fold in 5 owner decisions before a worktree is even
+  provisioned. Checked the actual worktree directly:
+  ```
+  $ cd ../worktrees/issue-gus-chat-branding-refresh && git log --oneline -3
+  8c4b0277 feat(gus-chat-branding-refresh): correct brand red, add PS type
+            tokens, and reuse GUS mascot across chat surfaces
+  72af4c2f chore: set docs/agent-artifacts/task-scope-gus-chat-branding-refresh.md
+            for issue #gus-chat-branding-refresh (provisioned by architect)
+  ```
+  Architect already provisioned it and Developer already built it, after
+  the handover note was written. The note is stale, not wrong about the
+  state it describes at the time it was written. **Next step is QA, not
+  another BA/Architect pass** — QA should specifically confirm the 5 owner
+  decisions listed in the handover note (F1 FAB-hex fix, F4+F5
+  `gtmReadoutAssist` mascot swap, F6 `buildYourOwn.json` reusable fix, F7
+  skip-logo, F2 shared font-loader module) actually landed in the diff,
+  since the committed scope doc this Developer built from may predate those
+  resolutions.
+- **PR #45** (issue #38) is now open but currently `mergeStateStatus: DIRTY`,
+  `mergeable: CONFLICTING` — `main` moved since its branch point. Routine
+  Developer rebase needed before it's reviewable; not a design or user
+  decision.
+- **Four merged-but-unpruned worktrees** flagged in the prior pass
+  (`issue-industry-variant-ui-scoping-fix`, `issue-gus-live-agentforce-provider-auth`,
+  `issue-industry-variants-agentforce-draft`, `issue-industry-variants-visibility-nav`)
+  are still present in `git worktree list` — unchanged, still safe
+  `git worktree remove` housekeeping, still not done.
+
+See `docs/PROJECT_TIMELINE.md` for the row-by-row status this pass produced.
+
+## QA — gus-chat-branding-refresh (2026-09-26)
+
+- **QA PASS.** 3 of 4 named mount points live-browser-confirmed on
+  `gtm-staging` (by the Coordinator, who has browser tools this QA session
+  lacks): `gtmGusUtility` (Utility Bar), `gtmAgentChat` (shared engine —
+  computed `.bubble` background is `rgb(233,1,48)` = `#E90130`, font-family
+  `Roboto`, Google Fonts CDN `<link>` present), `gtmReadoutAssist` (mascot
+  `c-gtm-mascot` now renders in place of the old `utility:einstein` icon).
+- **Known gap, pre-existing, not introduced by this diff:** `gtmAgentBubble`
+  on the live `GTM1` Experience Cloud site could not be browser-verified —
+  the site's own registered custom domain
+  (`pu1789790920110.my.site.com/gtm`, per Setup > Digital Experiences > All
+  Sites) redirects to the public publicissapient.com marketing site instead
+  of resolving to this sandbox's Experience Cloud site. Reproduced
+  identically via direct URL entry and via Setup's own link-click. This is
+  a domain/DNS misconfiguration in `gtm-staging`, unrelated to any LWC/CSS
+  change in this task. Indirect evidence the CSS itself is correct: the
+  `#E90024`→`#E90130` diff in `gtmAgentBubble.css` is textually scoped only
+  to the intended rules (confirmed via `git diff`), and
+  `sf project deploy validate` already accepted `ExperienceBundle:GTM1`'s
+  branding-set JSON schema change cleanly.
+- **Follow-up needed, separate from this PR:** fix or reassign the `GTM1`
+  Experience Cloud site's custom domain so `/configurator` actually
+  resolves in `gtm-staging` — currently untestable in the browser for any
+  future task touching that route, not just this one.
+
+---
+
+## Coordinator dispatch — 2026-09-26 (fourth pass: owner decisions on #33/#35/ps-brand-overhaul)
+
+The owner acted on all three items this pass's own report flagged as
+DECISION NEEDED. Verified each directly via `gh issue view` before writing
+anything below — not taken on the relay message's word alone.
+
+**1. Issue #48 filed** — the "Default industry key" decision (make the
+"no industry selected" fallback in `gtmConfigurator` a first-class
+`Industry_Key__c='Default'` row instead of an empty-string special case).
+Confirmed via `gh issue view 48`: title, body, and scope all match what
+`task-scope-ps-brand-overhaul-1-default-industry-key.md` already specified;
+#48's own body explicitly cites that doc as "the fuller technical scoping...
+authoritative detail" going forward, and explicitly states it was
+"miscited as issue #35 in a later BA pass" — matching this backlog's own
+third-pass correction verbatim. Intake discipline is now satisfied for this
+item: it has a real issue number to hang a co-scoping stub off.
+
+**2. Issue #33 closed, split into #49 and #50.** Confirmed via
+`gh issue view 33 --json state,closedAt,stateReason` → `CLOSED` /
+`COMPLETED` / `2026-09-26T18:39:27Z`. Matches this Coordinator's own
+third-pass recommendation exactly (close citing PR #36, file two narrower
+follow-ups rather than re-scoping #33 itself). Confirmed both follow-ups
+exist and are open:
+- **#49** — Agentforce Topics/Actions tool-parity for
+  `GTM_Configurator_Assistant` (it has zero wired actions today; PR #36's
+  own live smoke test already observed the symptom — "soft" session
+  continuity, the agent referencing "other fields" rather than recalling
+  actual facts). Scope: build Agentforce Actions/Topics equivalent to
+  GUS's existing registered Claude tools, targeting the same underlying
+  Apex methods.
+- **#50** — extend the live Agentforce provider beyond the configurator
+  surface (`chatOnReadout`/`chatOnApp`, which PR #36 deliberately left on
+  the Claude/OpenAI/Gemini fallback per Fork 2). #50's own body flags a
+  real dependency on #49 ("likely dependent on #49... app-wide/readout
+  chat likely needs a broader or different tool surface").
+
+Neither #49 nor #50 has a BA co-scoping pass yet. Logged as new Backlog
+rows in `docs/PROJECT_TIMELINE.md`, not yet placed in the active dispatch
+queue — see re-sequencing below.
+
+**3. Re-sequencing confirmed by the owner:** `ps-brand-overhaul` parts 3–7
+now jump ahead of issues #26/#30, since #39's blocking brand-spec conflict
+is resolved (PR #46, the concurrent session's UAT-accepted part 2, is
+direct proof this initiative is genuinely moving) and #48 (part 1) now has
+a real issue number. Issue #35 stays first overall — the owner explicitly
+confirmed this, matching this Coordinator's own third-pass reasoning
+(`task-scope-39.md`'s sequencing note: Story base content must land before
+Story industry variants are touched, and `ps-brand-overhaul` depends on
+that same base-content foundation existing).
+
+### Dispatch order as of this pass (owner-confirmed, not to be re-litigated absent a new blocker)
+
+1. **Issue #35** — BA+Architect co-scoping. Unchanged from third pass.
+2. **`ps-brand-overhaul` parts 3–7** (issue #48 = part 1, already filed;
+   part 2 = PR #46, UAT-accepted, awaiting owner merge decision) — Architect
+   review of the already-written BA scope docs (`ba-scope/issue-ps-brand-overhaul-3`
+   through `-7`), now that #39 is unblocked. This is a reprioritization
+   **above** #26/#30, not a replacement for dispatching them — they remain
+   queued behind it, not dropped.
+3. **Issue #26** — BA+Architect co-scoping. Slides from 2nd to 3rd.
+4. **Issue #30** — BA+Architect co-scoping. Slides from 3rd to 4th. Its
+   scope doc should now also flag dependency on #49/#50 (Agentforce
+   tool-parity / surface extension) for the "Agentforce-powered Help"
+   half of its ask, not just the pre-existing #33 cross-reference — #33
+   itself is closed now, #49/#50 are the live tracking items to cite.
+
+Issues #49 and #50 are filed and real but not yet slotted into this
+ordered queue — they'll be sequenced at the next dispatch cycle rather than
+guessed at here, since #50 is explicitly dependent on #49 and neither has
+been triaged against #26/#30's relative priority yet.
+
+**Not re-opening for further prioritization discussion per the owner's own
+instruction to "own it from here"** — this order stands until a genuine new
+blocker surfaces requiring an owner decision, not a repeat check-in.
+
+See `docs/PROJECT_TIMELINE.md` for the row-by-row status this pass produced,
+including the new #48/#49/#50 rows and the re-sequenced #26/#30/ps-brand-overhaul
+rows.
