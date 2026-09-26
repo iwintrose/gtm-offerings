@@ -1,5 +1,5 @@
 import { createElement } from 'lwc';
-import GtmContentHome from 'c/gtmContentHome';
+import GtmContentHome, { canRenamePage } from 'c/gtmContentHome';
 
 // The stock sfdx-lwc-jest navigation stub defines [NavigationMixin.Navigate]
 // on a sealed prototype, so it cannot be spied on or reassigned in place --
@@ -196,6 +196,97 @@ describe('c-gtm-content-home: offering Manage control (Status / Archive)', () =>
         await flushPromises();
 
         expect(setOfferingStatus).toHaveBeenCalledWith({ offeringKey: 'ma-migrator', status: 'Draft' });
+    });
+
+    // Issue #27: the Apex guard in GtmPageContentController.setOfferingStatus
+    // rejects a Draft -> Published call unless all three required pages
+    // (Story, Configurator, Offerings Listing) are built. These assertions
+    // are the client-side courtesy for that same rule -- the button disables
+    // and names what's missing, using the same templatesFor()/sectionCount/
+    // fieldCount data nextStepHintFor() already reads off getHomeSummary().
+
+    it('disables "Set to Published" and names every missing page for a Draft offering with unbuilt pages', async () => {
+        const summary = JSON.parse(JSON.stringify(HOME_SUMMARY));
+        const offering = summary.offerings[1]; // ma-migrator
+        offering.offeringStatus = 'Draft';
+        // Story never built at all.
+        offering.pages[0].sectionCount = 0;
+        offering.pages[0].fieldCount = 0;
+        getHomeSummary.mockResolvedValue(summary);
+
+        const element = createElement('c-gtm-content-home', { is: GtmContentHome });
+        document.body.appendChild(element);
+        CurrentPageReference.emit({ state: {} });
+        await flushPromises();
+
+        manageButtonFor(element, 'ma-migrator').click();
+        await flushPromises();
+
+        const statusBtn = [...element.shadowRoot.querySelectorAll('lightning-button')]
+            .find((b) => b.label === 'Set to Published');
+        expect(statusBtn).toBeDefined();
+        expect(statusBtn.disabled).toBe(true);
+
+        const hint = element.shadowRoot.querySelector('.modal-note');
+        expect(hint.textContent).toContain('Story');
+        expect(hint.textContent.toLowerCase()).toContain('still to build');
+    });
+
+    it('disables "Set to Published" and names Offerings Listing for the scaffold-only (1 section / 0 fields) bug', async () => {
+        // Reproduces the live Migration Accelerator bug exactly: Story and
+        // Configurator fully built, Offerings Listing left as the bare
+        // tileSectionFor() scaffold (1 section, 0 fields) -- sectionCount
+        // alone would read this page as built.
+        const summary = JSON.parse(JSON.stringify(HOME_SUMMARY));
+        const offering = summary.offerings[1]; // ma-migrator
+        offering.offeringStatus = 'Draft';
+        const listing = offering.pages.find((p) => p.templateType === 'offerings-listing');
+        listing.sectionCount = 1;
+        listing.fieldCount = 0;
+        getHomeSummary.mockResolvedValue(summary);
+
+        const element = createElement('c-gtm-content-home', { is: GtmContentHome });
+        document.body.appendChild(element);
+        CurrentPageReference.emit({ state: {} });
+        await flushPromises();
+
+        manageButtonFor(element, 'ma-migrator').click();
+        await flushPromises();
+
+        const statusBtn = [...element.shadowRoot.querySelectorAll('lightning-button')]
+            .find((b) => b.label === 'Set to Published');
+        expect(statusBtn).toBeDefined();
+        expect(statusBtn.disabled).toBe(true);
+
+        const hint = element.shadowRoot.querySelector('.modal-note');
+        expect(hint.textContent).toContain('Offerings Listing');
+        // Story and Configurator are actually built -- naming them too would
+        // disagree with what the card itself already shows as done.
+        expect(hint.textContent).not.toContain('Story');
+        expect(hint.textContent).not.toContain('Configurator');
+    });
+
+    it('leaves "Set to Published" enabled for a Draft offering whose required pages are all built', async () => {
+        const summary = JSON.parse(JSON.stringify(HOME_SUMMARY));
+        const offering = summary.offerings[1]; // ma-migrator -- fully built in the base fixture
+        offering.offeringStatus = 'Draft';
+        getHomeSummary.mockResolvedValue(summary);
+
+        const element = createElement('c-gtm-content-home', { is: GtmContentHome });
+        document.body.appendChild(element);
+        CurrentPageReference.emit({ state: {} });
+        await flushPromises();
+
+        manageButtonFor(element, 'ma-migrator').click();
+        await flushPromises();
+
+        const statusBtn = [...element.shadowRoot.querySelectorAll('lightning-button')]
+            .find((b) => b.label === 'Set to Published');
+        expect(statusBtn).toBeDefined();
+        expect(statusBtn.disabled).toBe(false);
+
+        const hint = element.shadowRoot.querySelector('.modal-note');
+        expect(hint.textContent.toLowerCase()).not.toContain('still to build');
     });
 
     it('archiving asks for confirmation before calling setOfferingArchived', async () => {
@@ -417,5 +508,42 @@ describe('c-gtm-content-home: header actions (issue page-header-actions-menu)', 
             attributes: { apiName: 'GTM_Content_Manager_Settings' },
             state: { c__section: 'recycle-bin' }
         });
+    });
+});
+
+// Issue #21: structural/Framework pages (Offerings Page, Industry Chooser,
+// both FAQ panels, Story, Configurator, Offerings Listing, Assistant) have a
+// fixed name and must not offer the rename pencil. GtmPageContentController's
+// renamePage() enforces the same rule server-side (the must-have half, since
+// it also blocks a direct Apex/API call) -- this suite covers the UX half.
+const STRUCTURAL_TEMPLATE_TYPES = [
+    'offerings-page', 'industry-chooser', 'faq-bd', 'faq-content-manager',
+    'assistant', 'story', 'configurator', 'offerings-listing'
+];
+
+describe('c-gtm-content-home: structural pages cannot be renamed (issue #21)', () => {
+    afterEach(() => {
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+        jest.clearAllMocks();
+    });
+
+    it('renders no .pg-rename button anywhere -- every page HOME_SUMMARY renders today is structural', async () => {
+        const element = await setup();
+        expect(element.shadowRoot.querySelectorAll('.pg-rename').length).toBe(0);
+    });
+
+    // The pages list is driven by templatesFor(), which today only ever
+    // yields the eight structural/Framework templateTypes, so there is no
+    // rendered row that could prove a non-structural page IS still renamable.
+    // The positive case is asserted directly against the exported
+    // canRenamePage() helper the pages mapper itself calls, using a
+    // templateType that does not exist in TEMPLATE_LABELS.
+    it('canRenamePage returns false for every structural templateType and true for a non-structural one', () => {
+        STRUCTURAL_TEMPLATE_TYPES.forEach((t) => {
+            expect(canRenamePage(t)).toBe(false);
+        });
+        expect(canRenamePage('totally-fake-non-structural-page')).toBe(true);
     });
 });

@@ -23,6 +23,30 @@ import setOfferingArchived from '@salesforce/apex/GtmPageContentController.setOf
 // instead.
 const SETTINGS_TEMPLATES = ['assistant'];
 
+// The eight structural/Framework page types -- what a page IS CALLED for
+// these is fixed product naming (Story, Configurator, Offerings Listing,
+// Offerings Page, Industry Chooser, both FAQ panels, Assistant), not
+// offering-owned content, so the rename affordance never renders for them.
+// Derived from TEMPLATE_LABELS' own keys rather than a third hand-copied
+// list -- TEMPLATE_LABELS already IS the canonical set of every known
+// templateType, imported from c/gtmPageLayouts, the single source of truth
+// this module already depends on for templatesFor()/starterFor(). Apex's
+// own STRUCTURAL_TEMPLATE_TYPES in GtmPageContentController.renamePage() is
+// the independently hand-authored mirror of this same set, matching the
+// FRAMEWORK_KEY comment convention -- server-side is the must-have half of
+// this guard, this is the should-have UX half.
+const STRUCTURAL_TEMPLATE_TYPES = Object.keys(TEMPLATE_LABELS);
+
+// Named export (alongside the default class, same pattern as CHAPTERS/
+// CHAPTER_DEFAULTS in c/gtmConfiguratorCopy) so Jest can assert the guard's
+// logic directly against a fake templateType -- every templateType the pages
+// mapper below ever actually renders comes from templatesFor(), which today
+// is entirely structural, so there is no rendered row a test could use to
+// prove the positive (non-structural, rename-allowed) case.
+export function canRenamePage(templateType) {
+    return STRUCTURAL_TEMPLATE_TYPES.indexOf(templateType) === -1;
+}
+
 // A page reads as what it is before its name is read.
 const PAGE_ICONS = {
     'story': 'utility:socialshare',
@@ -162,6 +186,32 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         return unbuilt.length ? `Still to build: ${unbuilt.join(', ')}.` : '';
     }
 
+    // Which of an offering's required pages the Apex publish guard in
+    // GtmPageContentController.setOfferingStatus would reject a Draft ->
+    // Published attempt over. Deliberately stricter than nextStepHintFor()
+    // above: "built" here is sectionCount > 0 AND fieldCount > 0, not
+    // sectionCount alone, because tileSectionFor() (Apex) inserts a bare
+    // tile section with zero content rows the first time an offering's
+    // Status/Archived flag is toggled before it has ever built its
+    // Offerings Listing page. A sectionCount-only check would wave that
+    // scaffold through as "built" and let the Manage modal offer a publish
+    // the server will still refuse -- reads off the same templatesFor() +
+    // sectionCount/fieldCount data nextStepHintFor() already receives from
+    // getHomeSummary(), so this is never a second, independent source of
+    // truth about what a page is made of.
+    unbuiltRequiredPagesFor(offering) {
+        if (!offering) return [];
+        const byType = {};
+        (offering.pages || []).forEach((p) => { byType[p.templateType] = p; });
+        return templatesFor(offering.offeringKey)
+            .filter((t) => SETTINGS_TEMPLATES.indexOf(t) === -1)
+            .filter((t) => {
+                const p = byType[t];
+                return !(p && (p.sectionCount || 0) > 0 && (p.fieldCount || 0) > 0);
+            })
+            .map((t) => this.pageLabel(offering.offeringKey, t));
+    }
+
     get cards() {
         return this.offerings.map((o) => {
             // An archived offering's tile still comes through getHomeSummary,
@@ -263,6 +313,13 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
                             pageKey,
                             label: this.pageLabel(o.offeringKey, t),
                             isRenaming: this.renamingPageKey === pageKey,
+                            // Structural/Framework page types (see
+                            // STRUCTURAL_TEMPLATE_TYPES above) have a fixed
+                            // name -- the rename pencil never renders for
+                            // them. Apex's renamePage() enforces the same
+                            // rule server-side, so a direct API call is
+                            // blocked too, not just this affordance.
+                            canRename: canRenamePage(t),
                             isBuilt,
                             detail: isBuilt
                                 ? `${sections} sections · ${fields} fields`
@@ -680,6 +737,15 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         return this.cards.find((c) => c.key === this.manageKey) || null;
     }
 
+    // The raw offering (with its unfiltered pages: sectionCount/fieldCount),
+    // not the already-flattened `cards` row -- unbuiltRequiredPagesFor()
+    // needs the per-page counts, which manageCard's transformed pages list
+    // does not carry as its own fields (only baked into a "N sections · M
+    // fields" display string).
+    get manageOffering() {
+        return this.offerings.find((o) => o.offeringKey === this.manageKey) || null;
+    }
+
     get manageLabel() {
         return this.manageCard ? this.manageCard.label : '';
     }
@@ -692,11 +758,34 @@ export default class GtmContentHome extends NavigationMixin(LightningElement) {
         return !!(this.manageCard && this.manageCard.isArchived);
     }
 
+    // Named pages standing between this offering and Published -- empty once
+    // every required page is built. Only meaningful while manageIsDraft:
+    // Published -> Draft and Archive are never gated, so this list is not
+    // consulted for either of those.
+    get manageMissingPages() {
+        return this.unbuiltRequiredPagesFor(this.manageOffering);
+    }
+
+    get manageBlocksPublish() {
+        return this.manageIsDraft && this.manageMissingPages.length > 0;
+    }
+
     get manageStatusButtonLabel() {
         return this.manageIsDraft ? 'Set to Published' : 'Set to Draft';
     }
 
+    // The real gate is server-side (GtmPageContentController.setOfferingStatus
+    // throws AuraHandledException naming the same pages); this disables the
+    // button so a rep sees why before clicking rather than only after the
+    // call round-trips and fails.
+    get manageStatusButtonDisabled() {
+        return this.manageBusy || this.manageBlocksPublish;
+    }
+
     get manageStatusHint() {
+        if (this.manageBlocksPublish) {
+            return `Still to build before this can publish: ${this.manageMissingPages.join(', ')}.`;
+        }
         return this.manageIsDraft
             ? 'Draft: hidden from the GTM Offerings Dashboard. Publishing shows it there again.'
             : 'Published: this offering appears on the GTM Offerings Dashboard listing.';
